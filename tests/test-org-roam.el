@@ -35,15 +35,18 @@
     (make-directory (file-name-directory path) t)
     (find-file path)))
 
-(defvar test-org-roam-directory (file-truename (concat default-directory "tests/roam-files"))
+(defvar test-org-roam-directory (file-truename (concat (projectile-project-root) "tests/roam-files"))
   "Directory containing org-roam test org files.")
 
 (defun test-org-roam--init ()
   "."
   (let ((original-dir test-org-roam-directory)
-        (new-dir (expand-file-name (make-temp-name "org-roam") temporary-file-directory)))
+        (new-dir (expand-file-name (make-temp-name "org-roam") temporary-file-directory))
+        (symlink (expand-file-name (make-temp-name "symlink") temporary-file-directory)))
     (copy-directory original-dir new-dir)
-    (setq org-roam-directory new-dir)
+    ;; (setq org-roam-directory new-dir)
+    (make-symbolic-link new-dir symlink)
+    (setq org-roam-directory symlink)
     (org-roam-mode +1)
     (sleep-for 2)))
 
@@ -280,6 +283,38 @@
     (expect (org-roam--split-fuzzy-link "*headline")
             :to-equal
             '(headline "" "headline" 0))))
+
+(cl-defun test-org-roam--test-insert (&key in mock-input)
+  "Test `org-roam-insert' in file IN.
+Use MOCK-INPUT as the mock input from
+`org-roam-completion--completing-read'.
+Return the inserted string."
+  (let ((orig (symbol-function 'org-roam-completion--completing-read)))
+    (defun org-roam-completion--completing-read (&rest _) mock-input)
+    (unwind-protect (with-current-buffer (find-file-noselect in)
+                      (let ((last (point-max)))
+                        (goto-char (point-max))
+                        (org-roam-insert)
+                        (prog1 (buffer-substring-no-properties
+                                (line-beginning-position) (line-end-position))
+                          (delete-region last (point-max)))))
+      (setf (symbol-function 'org-roam-completion--completing-read) orig))))
+
+(describe "Insertion"
+  (it "inserts the right path"
+    (expect
+     (test-org-roam--test-insert
+      :in (expand-file-name "alias.org" org-roam-directory)
+      :mock-input "Base")
+     :to-equal
+     "[[file:base.org][Base]]"))
+  (it "nests properly"
+    (expect
+     (test-org-roam--test-insert
+      :in (expand-file-name "alias.org" org-roam-directory)
+      :mock-input "(nested,deeply) Deeply Nested File")
+     :to-equal
+     "[[file:nested/deeply/deeply_nested_file.org][Deeply Nested File]]")))
 
 ;;; Tests
 (xdescribe "org-roam-db-build-cache"

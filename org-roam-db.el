@@ -256,18 +256,34 @@ Insertions can fail when there is an ID conflict."
   (condition-case nil
       (progn
         (org-roam-db-query
-           [:insert :into headlines
-            :values $v1]
-           headlines)
+         [:insert :into headlines
+          :values $v1]
+         headlines)
         t)
     (error
      (unless (listp headlines)
        (setq headlines (list headlines)))
-     (lwarn '(org-roam) :error
-            (format "Duplicate IDs in %s, one of:\n\n%s\n\nskipping..."
-                    (aref (car headlines) 1)
-                    (string-join (mapcar (lambda (hl)
-                                           (aref hl 0)) headlines) "\n")))
+     ;; If a duplicate ID points to a symlink, replace it with this file.
+     (dolist (headline headlines)
+       (pcase-let ((`[,id ,new-file] headlines))
+         (when (file-symlink-p
+                ;; Existing file in DB
+                (caar (org-roam-db-query
+                       [:select [file] :from headlines
+                        :where (= id $s1)]
+                       id)))
+           (org-roam-db-query [:update headlines
+                               :set (= file $s1)
+                               :where (= id $s2)]
+                              new-file
+                              id)
+           (setq headlines (delete headline headlines)))))
+     (when headlines
+       (lwarn '(org-roam) :error
+              (format "Duplicate IDs in %s, one of:\n\n%s\n\nskipping..."
+                      (aref (car headlines) 1)
+                      (string-join (mapcar (lambda (hl)
+                                             (aref hl 0)) headlines) "\n"))))
      nil)))
 
 (defun org-roam-db--insert-tags (file tags)
@@ -500,7 +516,7 @@ If FORCE, force a rebuild of the cache from scratch."
     (emacsql-with-transaction (org-roam-db)
       ;; Two-step building
       ;; First step: Rebuild files and headlines
-      (dolist (file org-roam-files)
+      (dolist-with-progress-reporter (file org-roam-files) "Step 1"
         (let* ((attr (file-attributes file))
                (atime (file-attribute-access-time attr))
                (mtime (file-attribute-modification-time attr)))
@@ -525,7 +541,7 @@ If FORCE, force a rebuild of the cache from scratch."
                  (lwarn '(org-roam) :warning
                         "Skipping unreadable file while building cache: %s" file)))))))
       ;; Second step: Rebuild the rest
-      (dolist (file org-roam-files)
+      (dolist-with-progress-reporter (file org-roam-files) "Step 2"
         (let ((contents-hash (org-roam-db--file-hash file)))
           (unless (string= (gethash file current-files)
                            contents-hash)
