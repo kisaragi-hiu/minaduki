@@ -318,7 +318,7 @@ starting ~org-roam-mode~ on startup:
 
 To build the cache manually, one can run ~M-x org-roam-db-build-cache~. The
 cache is a sqlite database named ~org-roam.db~, which defaults to residing in
-the root ~org-roam-directory~. Cache builds may take a while the first time, but
+~user-emacs-directory~. Cache builds may take a while the first time, but
 is often instantaneous in subsequent runs.
 
 Let us now create our first note. Call ~M-x org-roam-find-file~. This shows a list
