@@ -399,9 +399,9 @@ If you wish to add your own title extraction method, you may push a symbol
 
 ** Tags
 
-Tags are used as meta-data for files: they facilitate interactions with notes
-where titles are insufficient. For example, tags allow for categorization of
-notes: differentiating between bibliographical and structure notes during interactive commands.
+Tags are used as meta-data for files: they are shown in the completion, allowing you to
+, for example, differentiate between concept notes and literature notes if you store
+literature notes in a subdirectory.
 
 Org-roam calls ~org-roam--extract-tags~ to extract tags from files. It uses the
 variable ~org-roam-tag-sources~, to control how tags are extracted. The tag
