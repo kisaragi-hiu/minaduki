@@ -1341,12 +1341,15 @@ respectively."
 
 (defun org-roam--handle-title-change ()
   "Detect a title change, and run `org-roam-title-change-hook'."
-  (let ((new-title (car (org-roam--extract-titles)))
-        (old-title org-roam-current-title))
-    (unless (or (eq old-title nil)
-                (string-equal old-title new-title))
-      (run-hook-with-args 'org-roam-title-change-hook old-title new-title))
-    (setq-local org-roam-current-title new-title)))
+  ;; Optimization: no need to check whether to run the hook if the
+  ;; hook is nil.
+  (when org-roam-title-change-hook
+    (let ((new-title (car (org-roam--extract-titles)))
+          (old-title org-roam-current-title))
+      (unless (or (eq old-title nil)
+                  (string-equal old-title new-title))
+        (run-hook-with-args 'org-roam-title-change-hook old-title new-title))
+      (setq-local org-roam-current-title new-title))))
 
 (defun org-roam--setup-title-auto-update ()
   "Setup automatic link description update on title change."

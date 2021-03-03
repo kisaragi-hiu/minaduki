@@ -8,6 +8,7 @@
 
 ### Changed
 - [#1352](https://github.com/org-roam/org-roam/pull/1352) prefer lower-case for roam_tag and roam_alias in interactive commands
+- [#xxxx](https://github.com/org-roam/org-roam/pull/xxxx) speed up file saving when `org-roam-title-change-hook` is nil
 
 ### Fixed
 - [#1281](https://github.com/org-roam/org-roam/pull/1281) fixed idle-timer not instantiated on `org-roam-mode`
@@ -18,7 +19,7 @@
 - [#1347](https://github.com/org-roam/org-roam/pull/1347) allow use of `%a` element in regular Org-roam captures
 - [#1352](https://github.com/org-roam/org-roam/pull/1352) fixed org-roam-{tag/alias}-{add/delete} altering the original case of the Org property
 - [#1374](https://github.com/org-roam/org-roam/pull/1374) fix headline completions erroring out
-- [#1375](https://github.com/org-roam/org-roam/pull/1375) fix org-roam-protocol to use existing ref file 
+- [#1375](https://github.com/org-roam/org-roam/pull/1375) fix org-roam-protocol to use existing ref file
 - [#1403](https://github.com/org-roam/org-roam/issues/1403) fixed inconsistency between how we write and read props like alias and tags
 - [#1409](https://github.com/org-roam/org-roam/issues/1398) prevent inclusion of non-org-roam files in `org-roam-dailies--list-files`
 
