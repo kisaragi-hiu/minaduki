@@ -38,6 +38,7 @@
 (require 'ol)
 (require 'org-element)
 (require 'org-roam-macs)
+(require 'org-roam-extract)
 
 (defvar org-roam-directory)
 (defvar org-link-frame-setup)
@@ -51,8 +52,6 @@
 (declare-function org-roam-db--ensure-built   "org-roam-db")
 (declare-function org-roam-db--get-title      "org-roam-db")
 (declare-function org-roam-db-has-file-p      "org-roam-db")
-(declare-function org-roam--extract-refs      "org-roam")
-(declare-function org-roam--extract-titles    "org-roam")
 (declare-function org-roam--get-backlinks     "org-roam")
 (declare-function org-roam-backlinks-mode     "org-roam")
 (declare-function org-roam-mode               "org-roam")
@@ -224,8 +223,8 @@ ORIG-PATH is the path where the CONTENT originated."
               (insert "*** "
                       (if-let ((outline (plist-get prop :outline)))
                           (-> outline
-                              (string-join " > ")
-                              (org-roam-buffer-expand-links file-from))
+                            (string-join " > ")
+                            (org-roam-buffer-expand-links file-from))
                         "Top")
                       "\n"
                       (if-let ((content (funcall org-roam-buffer-preview-function file-from (plist-get prop :point))))
@@ -320,10 +319,10 @@ Valid states are 'visible, 'exists and 'none."
                     org-roam-buffer-position)))
     (save-selected-window
       (-> (get-buffer-create org-roam-buffer)
-          (display-buffer-in-side-window
-           `((side . ,position)
-             (window-parameters . ,org-roam-buffer-window-parameters)))
-          (select-window))
+        (display-buffer-in-side-window
+         `((side . ,position)
+           (window-parameters . ,org-roam-buffer-window-parameters)))
+        (select-window))
       (pcase position
         ((or 'right 'left)
          (org-roam-buffer--set-width

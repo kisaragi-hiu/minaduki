@@ -47,13 +47,12 @@
 (defvar org-roam-file-name)
 
 (defvar org-agenda-files)
-
+(declare-function org-roam--extract-titles                 "org-roam-extract")
+(declare-function org-roam--extract-refs                   "org-roam-extract")
+(declare-function org-roam--extract-tags                   "org-roam-extract")
+(declare-function org-roam--extract-ids                    "org-roam-extract")
+(declare-function org-roam--extract-links                  "org-roam-extract")
 (declare-function org-roam--org-roam-file-p                "org-roam")
-(declare-function org-roam--extract-titles                 "org-roam")
-(declare-function org-roam--extract-refs                   "org-roam")
-(declare-function org-roam--extract-tags                   "org-roam")
-(declare-function org-roam--extract-ids                    "org-roam")
-(declare-function org-roam--extract-links                  "org-roam")
 (declare-function org-roam--list-all-files                 "org-roam")
 (declare-function org-roam--path-to-slug                   "org-roam")
 (declare-function org-roam--file-name-extension            "org-roam")
@@ -297,9 +296,9 @@ Returns the number of rows inserted."
                           :where (= file $s1)]
                          file))
     (org-roam-db-query
-        [:insert :into titles
-         :values $v1]
-        rows)
+     [:insert :into titles
+      :values $v1]
+     rows)
     (length rows)))
 
 (defun org-roam-db--insert-refs (&optional update-p)
@@ -360,20 +359,20 @@ Returns the number of rows inserted."
                           :where (= file $s1)]
                          file))
     (if-let ((ids (org-roam--extract-ids file)))
-      (condition-case nil
-          (progn
-            (org-roam-db-query
-             [:insert :into ids
-              :values $v1]
-             ids)
-            (length ids))
-        (error
-         (lwarn '(org-roam) :error
-                (format "Duplicate IDs in %s, one of:\n\n%s\n\nskipping..."
-                        (aref (car ids) 1)
-                        (string-join (mapcar (lambda (hl)
-                                               (aref hl 0)) ids) "\n")))
-         0))
+        (condition-case nil
+            (progn
+              (org-roam-db-query
+               [:insert :into ids
+                :values $v1]
+               ids)
+              (length ids))
+          (error
+           (lwarn '(org-roam) :error
+                  (format "Duplicate IDs in %s, one of:\n\n%s\n\nskipping..."
+                          (aref (car ids) 1)
+                          (string-join (mapcar (lambda (hl)
+                                                 (aref hl 0)) ids) "\n")))
+           0))
       0)))
 
 (defun org-roam-db--insert-tags (&optional update-p)
@@ -398,7 +397,7 @@ Return the number of rows inserted."
 (defun org-roam-db-has-file-p (file)
   "Return t if FILE is in the database, nil otherwise."
   (> (caar (org-roam-db-query [:select (funcall count) :from files
-                              :where (= file $s1)]
+                               :where (= file $s1)]
                               file))
      0))
 
@@ -531,13 +530,13 @@ If FORCE, force a rebuild of the cache from scratch."
     (dolist (file org-roam-files)
       (let ((contents-hash (org-roam-db--file-hash file)))
         (unless (string= (gethash file current-files)
-                       contents-hash)
+                         contents-hash)
           (push (cons file contents-hash) modified-files)))
       (remhash file current-files))
     (dolist (file (hash-table-keys current-files))
-        ;; These files are no longer around, remove from cache...
-        (org-roam-db--clear-file file)
-        (setq deleted-count (1+ deleted-count)))
+      ;; These files are no longer around, remove from cache...
+      (org-roam-db--clear-file file)
+      (setq deleted-count (1+ deleted-count)))
     (setq count-plist (org-roam-db--update-files modified-files))
     (org-roam-message "total: Δ%s, files-modified: Δ%s, ids: Δ%s, links: Δ%s, tags: Δ%s, titles: Δ%s, refs: Δ%s, deleted: Δ%s"
                       (- (length org-roam-files) (plist-get count-plist :error-count))
@@ -554,7 +553,7 @@ If FORCE, force a rebuild of the cache from scratch."
   (setq file-path (or file-path
                       (buffer-file-name (buffer-base-buffer))))
   (caar (org-roam-db-query [:select hash :from files
-                              :where (= file $s1)] file-path)))
+                            :where (= file $s1)] file-path)))
 
 (defun org-roam-db-update-file (file-path)
   "Update Org-roam cache for FILE-PATH.
