@@ -52,37 +52,6 @@ roam_alias."
     ;; We have a list of lists at this point. Join them.
     (apply #'append it)))
 
-(defun org-roam--get-outline-path ()
-  "Return the outline path to the current entry.
-
-An outline path is a list of ancestors for current headline, as a
-list of strings. Statistics cookies are removed and links are
-kept.
-
-When optional argument WITH-SELF is non-nil, the path also
-includes the current headline.
-
-Assume buffer is widened and point is on a headline."
-  (org-with-wide-buffer
-   (save-match-data
-     (when (and (or (condition-case nil
-                        (org-back-to-heading t)
-                      (error nil))
-                    (org-up-heading-safe))
-                org-complex-heading-regexp)
-       (cl-loop with headings
-                do (push (let ((case-fold-search nil))
-                           (looking-at org-complex-heading-regexp)
-                           (if (not (match-end 4)) ""
-                             ;; Remove statistics cookies.
-                             (org-trim
-                              (replace-regexp-in-string
-                               "\\[[0-9]+%\\]\\|\\[[0-9]+/[0-9]+\\]" ""
-                               (match-string-no-properties 4)))))
-                         headings)
-                while (org-up-heading-safe)
-                finally return headings)))))
-
 (defun org-roam--extract-links (&optional file-path)
   "Extracts all link items within the current buffer.
 Link items are of the form:
