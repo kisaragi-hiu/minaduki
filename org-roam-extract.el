@@ -60,34 +60,28 @@ list of strings. Statistics cookies are removed and links are
 kept.
 
 When optional argument WITH-SELF is non-nil, the path also
-includes the current headline."
-  (org-with-wide-buffer
-   (save-match-data
-     (and (or (condition-case nil
-                  (org-back-to-heading t)
-                (error nil))
-              (org-up-heading-safe))
-          (reverse (org-roam--get-outline-path-1))))))
-
-(defun org-roam--get-outline-path-1 ()
-  "Return outline path to current headline.
-
-Outline path is a list of strings, in reverse order.  See
-`org-roam--get-outline-path' for details.
+includes the current headline.
 
 Assume buffer is widened and point is on a headline."
-  (when org-complex-heading-regexp
-    (let ((heading (let ((case-fold-search nil))
-                     (looking-at org-complex-heading-regexp)
-                     (if (not (match-end 4)) ""
-                       ;; Remove statistics cookies.
-                       (org-trim
-                        (replace-regexp-in-string
-                         "\\[[0-9]+%\\]\\|\\[[0-9]+/[0-9]+\\]" ""
-                         (match-string-no-properties 4)))))))
-      (if (org-up-heading-safe)
-          (cons heading (org-roam--get-outline-path-1))
-        (list heading)))))
+  (org-with-wide-buffer
+   (save-match-data
+     (when (and (or (condition-case nil
+                        (org-back-to-heading t)
+                      (error nil))
+                    (org-up-heading-safe))
+                org-complex-heading-regexp)
+       (cl-loop with headings
+                do (push (let ((case-fold-search nil))
+                           (looking-at org-complex-heading-regexp)
+                           (if (not (match-end 4)) ""
+                             ;; Remove statistics cookies.
+                             (org-trim
+                              (replace-regexp-in-string
+                               "\\[[0-9]+%\\]\\|\\[[0-9]+/[0-9]+\\]" ""
+                               (match-string-no-properties 4)))))
+                         headings)
+                while (org-up-heading-safe)
+                finally return headings)))))
 
 (defun org-roam--extract-links (&optional file-path)
   "Extracts all link items within the current buffer.
