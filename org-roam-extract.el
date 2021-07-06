@@ -13,44 +13,21 @@
 (require 'org-roam-id)
 (require 'org-roam-macs)
 
-(defun org-roam--extract-global-props-drawer (props)
-  "Extract PROPS from the file-level property drawer in Org."
-  (let (ret)
-    (org-with-point-at 1
-      (dolist (prop props ret)
-        (when-let ((v (org-entry-get (point) prop)))
-          (push (cons prop v) ret))))))
-
-(defun org-roam--collect-keywords (keywords)
-  "Collect all Org KEYWORDS in the current buffer."
-  (if (functionp 'org-collect-keywords)
-      (org-collect-keywords keywords)
-    (let ((buf (org-element-parse-buffer))
-          res)
-      (dolist (k keywords)
-        (let ((p (org-element-map buf 'keyword
-                   (lambda (kw)
-                     (when (string-equal (org-element-property :key kw) k)
-                       (org-element-property :value kw)))
-                   :first-match nil)))
-          (push (cons k p) res)))
-      res)))
-
-(defun org-roam--extract-global-props-keyword (keywords)
-  "Extract KEYWORDS from the current Org buffer."
-  (let (ret)
-    (pcase-dolist (`(,key . ,values) (org-roam--collect-keywords keywords))
-      (dolist (value values)
-        (push (cons key value) ret)))
-    ret))
-
 (defun org-roam--extract-global-props (props)
   "Extract PROPS from the current Org buffer.
 Props are extracted from both the file-level property drawer (if
 any), and Org keywords. Org keywords take precedence."
-  (append
-   (org-roam--extract-global-props-keyword props)
-   (org-roam--extract-global-props-drawer props)))
+  (let (ret)
+    ;; Org: keyword properties
+    (pcase-dolist (`(,key . ,values) (org-collect-keywords props))
+      (dolist (value values)
+        (push (cons key value) ret)))
+    ;; Org: file-level property drawer properties
+    (org-with-point-at 1
+      (dolist (prop props)
+        (when-let ((v (org-entry-get (point) prop)))
+          (push (cons prop v) ret))))
+    ret))
 
 (defun org-roam--extract-prop-as-list (prop)
   "Extract PROP from the current Org buffer as a list.
