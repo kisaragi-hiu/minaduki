@@ -52,20 +52,10 @@ roam_alias."
     ;; We have a list of lists at this point. Join them.
     (apply #'append it)))
 
-(defun org-roam--extract-links (&optional file-path)
-  "Extracts all link items within the current buffer.
-Link items are of the form:
+(defun org-roam--extract-links-org (file-path)
+  "Extract links in current buffer in Org mode format ([[target][desc]]).
 
-    [source dest type properties]
-
-This is the format that emacsql expects when inserting into the database.
-FILE-FROM is typically the buffer file path, but this may not exist, for example
-in temp buffers.  In cases where this occurs, we do know the file path, and pass
-it as FILE-PATH."
-  (require 'org-ref nil t)
-  (setq file-path (or file-path
-                      org-roam-file-name
-                      (buffer-file-name)))
+Assume links come from FILE-PATH."
   (save-excursion
     (let (links)
       (org-element-map (org-element-parse-buffer) 'link
@@ -94,6 +84,117 @@ it as FILE-PATH."
               (when name
                 (push (vector file-path name type properties) links))))))
       links)))
+
+(defun org-roam--extract-links-wiki (file-path)
+  "Extract links in current buffer in this format: [[file]].
+
+The target is assumed to be file.md in the above example.
+
+Assume links come from FILE-PATH."
+  (save-excursion
+    (goto-char (point-min))
+    (cl-loop while (re-search-forward "\\[\\[\\([^]]+\\)\\]\\]" nil t)
+             collect
+             (let* ((to-file (concat (match-string-no-properties 1) ".md"))
+                    (begin-of-block (match-beginning 0))
+                    (end-of-block (save-excursion
+                                    (unless (eobp)
+                                      (forward-sentence))
+                                    (point)))
+                    ;; get the text block = content around the link as context
+                    (content
+                     (buffer-substring-no-properties
+                      begin-of-block end-of-block)))
+               (vector file-path ; file-from
+                       (file-truename
+                        (expand-file-name
+                         to-file (file-name-directory file-path))) ; file-to
+                       "file" ; link-type
+                       (list :content content :point begin-of-block))))))
+
+(defun org-roam--extract-links-markdown (file-path)
+  "Extract Markdown links from current buffer.
+
+Links are assumed to originate from FILE-PATH."
+  (save-excursion
+    (goto-char (point-min))
+    (cl-loop
+     while (re-search-forward markdown-regex-link-inline nil t)
+     collect
+     (let ((imagep (match-string-no-properties 1))
+           (link (match-string-no-properties 6))
+           (begin-of-block)
+           (end-of-block)
+           (content)
+           (link-type "file"))
+       (when (and (not imagep)
+                  (not (url-type (url-generic-parse-url link))))
+         (save-excursion
+           ;; get the text block = content around the link as context
+           (unless (eobp)
+             (forward-sentence))
+           (setq end-of-block (point))
+           (backward-sentence)
+           (setq begin-of-block (point))
+           (setq content
+                 (buffer-substring-no-properties begin-of-block end-of-block)))
+         (vector file-path ; file-from
+                 (file-truename
+                  (expand-file-name (url-filename (url-generic-parse-url link))
+                                    (file-name-directory file-path))) ; file-to
+                 link-type
+                 (list :content content :point begin-of-block)))))))
+
+(defun org-roam--extract-links-pandoc-cite (file-path)
+  "Extract cite links defined like this: @bibkey.
+
+Assume links come from FILE-PATH."
+  (save-excursion
+    (goto-char (point-min))
+    (cl-loop while (re-search-forward
+                    "\\(?:[^[:alnum:]]\\|^\\)\\(-?@\\)\\([-a-zA-Z0-9_+:]+\\)"
+                    nil t)
+             collect
+             (let* ((to-file (match-string-no-properties 2))
+                    begin-of-block
+                    end-of-block
+                    content
+                    (link-type "cite"))
+               (save-excursion
+                 (forward-paragraph)
+                 (setq end-of-block (point))
+                 (backward-paragraph)
+                 (setq begin-of-block (point))
+                 (setq content (buffer-substring-no-properties begin-of-block end-of-block)))
+               (vector file-path ; file-from
+                       to-file
+                       link-type
+                       (list :content content :point begin-of-block))))))
+
+(defun org-roam--extract-links (&optional file-path)
+  "Extracts all link items within the current buffer.
+Link items are of the form:
+
+    [source dest type properties]
+
+This is the format that emacsql expects when inserting into the database.
+FILE-FROM is typically the buffer file path, but this may not exist, for example
+in temp buffers.  In cases where this occurs, we do know the file path, and pass
+it as FILE-PATH."
+  (require 'org-ref nil t)
+  (setq file-path (or file-path
+                      org-roam-file-name
+                      (buffer-file-name)))
+  (cond
+   ;; Using `derived-mode-p' maybe adds 3 seconds per call to the
+   ;; cache build when there are a million links. At that point 3
+   ;; seconds is probably not that much of a deal.
+   ((derived-mode-p 'org-mode) (org-roam--extract-links-org file-path))
+   ((derived-mode-p 'markdown-mode)
+    (append (org-roam--extract-links-wiki file-path)
+            (org-roam--extract-links-markdown file-path)
+            (org-roam--extract-links-pandoc-cite file-path)))
+   ((derived-mode-p 'emacs-lisp-mode) "abc")))
 
 (defun org-roam--extract-ids (&optional file-path)
   "Extract all IDs within the current buffer.
