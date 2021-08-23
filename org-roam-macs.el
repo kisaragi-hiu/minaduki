@@ -44,6 +44,53 @@
 (require 'org)
 
 ;;;; Utility Functions
+;; Alternative to `org-get-outline-path' that doesn't break
+(defun org-roam--get-outline-path ()
+  "Return the outline path to the current entry.
+
+An outline path is a list of ancestors for current headline, as a
+list of strings. Statistics cookies are removed and links are
+kept.
+
+When optional argument WITH-SELF is non-nil, the path also
+includes the current headline.
+
+Assume buffer is widened and point is on a headline."
+  (org-with-wide-buffer
+   (save-match-data
+     (when (and (or (condition-case nil
+                        (org-back-to-heading t)
+                      (error nil))
+                    (org-up-heading-safe))
+                org-complex-heading-regexp)
+       (cl-loop with headings
+                do (push (let ((case-fold-search nil))
+                           (looking-at org-complex-heading-regexp)
+                           (if (not (match-end 4)) ""
+                             ;; Remove statistics cookies.
+                             (org-trim
+                              (replace-regexp-in-string
+                               "\\[[0-9]+%\\]\\|\\[[0-9]+/[0-9]+\\]" ""
+                               (match-string-no-properties 4)))))
+                         headings)
+                while (org-up-heading-safe)
+                finally return headings)))))
+
+(defun org-roam--plist-to-alist (plist)
+  "Return an alist of the property-value pairs in PLIST."
+  (let (res)
+    (while plist
+      (let ((prop (intern (substring (symbol-name (pop plist)) 1 nil)))
+            (val (pop plist)))
+        (push (cons prop val) res)))
+    res))
+
+(defun org-roam--url-p (path)
+  "Check if PATH is a URL.
+Assume the protocol is not present in PATH; e.g. URL `https://google.com' is
+passed as `//google.com'."
+  (string-prefix-p "//" path))
+
 (defun org-roam--list-interleave (lst separator)
   "Interleaves elements in LST with SEPARATOR."
   (when lst
