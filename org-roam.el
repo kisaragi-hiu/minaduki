@@ -256,8 +256,7 @@ Function should return a filename string based on title."
     813 ; U+032D COMBINING CIRCUMFLEX ACCENT BELOW
     814 ; U+032E COMBINING BREVE BELOW
     816 ; U+0330 COMBINING TILDE BELOW
-    817 ; U+0331 COMBINING MACRON BELOW
-    )
+    817) ; U+0331 COMBINING MACRON BELOW
   "Characters to trim from Unicode normalization for slug.
 
 By default, the characters are specified to remove Diacritical
@@ -1369,7 +1368,7 @@ command will offer you to create one."
 Return added alias."
   (interactive)
   (unless org-roam-mode (org-roam-mode))
-  (let ((alias (read-string "Alias: " )))
+  (let ((alias (read-string "Alias: ")))
     (when (string-empty-p alias)
       (user-error "Alias can't be empty"))
     (org-roam--set-global-prop

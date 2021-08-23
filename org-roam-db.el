@@ -103,7 +103,7 @@ so that multi-directories are updated.")
   Updates the database if dirty, if Emacs idles for
   `org-roam-db-update-idle-seconds'."
   :type '(choice (const :tag "idle-timer" idle-timer)
-		 (const :tag "immediate" immediate))
+                 (const :tag "immediate" immediate))
   :group 'org-roam)
 
 (defcustom org-roam-db-update-idle-seconds 2
