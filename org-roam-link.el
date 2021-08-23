@@ -67,6 +67,31 @@ noabbrev  Absolute path, no abbreviation of home directory."
           (const noabbrev))
   :safe #'symbolp)
 
+;;; org-link-abbrev
+
+(defun kisaragi-notes-link/apply-link-abbrev (path)
+  "Apply `org-link-abbrev-alist' to PATH.
+
+For example, if `org-link-abbrev-alist' maps \"x\" to \"/home/\",
+and PATH is \"/home/abc\", this returns \"x:abc\".
+
+Inverse of `org-link-expand-abbrev'."
+  (catch 'ret
+    (setq path (f-canonical path))
+    (pcase-dolist (`(,key . ,abbrev) org-link-abbrev-alist)
+      ;; Get the symbol property if the value is a function / symbol
+      (when (symbolp abbrev)
+        (setq abbrev (get abbrev 'k/file-finders-abbrev-path)))
+      ;; Only do something when we actually have a string
+      (when (stringp abbrev)
+        ;; Resolving symlinks here allows us to treat different ways
+        ;; to reach a path as the same
+        (setq abbrev (f-canonical abbrev))
+        ;; starts-with is more accurate
+        (when (s-starts-with? abbrev path)
+          (throw 'ret (s-replace abbrev (concat key ":") path)))))
+    (throw 'ret path)))
+
 ;;; the roam: link
 (org-link-set-parameters "roam"
                          :follow #'org-roam-link-follow-link)

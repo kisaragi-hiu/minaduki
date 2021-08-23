@@ -529,11 +529,13 @@ Use external shell commands if defined in `org-roam-list-files-commands'."
            (slug (-reduce-from #'cl-replace (strip-nonspacing-marks title) pairs)))
       (downcase slug))))
 
-(defun org-roam-format-link (target &optional description type link-type)
+(defun org-roam-format-link (target &optional description type _link-type)
+  ;; I'll probably eventually tear down `link-type'
   "Formats an org link for a given file TARGET, link DESCRIPTION and link TYPE.
-TYPE defaults to \"file\". LINK-TYPE is the type of file link to
-be generated. Here, we also check if there is an ID for the
-file."
+TYPE defaults to \"file\".
+
+If the file has an ID and `org-roam-prefer-id-links' is non-nil,
+we will return an ID link."
   (setq type (or type "file"))
   (when-let ((id (and org-roam-prefer-id-links
                       (string-equal type "file")
@@ -543,13 +545,13 @@ file."
                                                 :limit 1]
                                                target)))))
     (setq type "id" target id))
-  (when (string-equal type "file")
-    (setq target (org-roam-link-get-path target link-type)))
-  (setq description
-        (if (functionp org-roam-link-title-format)
-            (funcall org-roam-link-title-format description type)
-          (format org-roam-link-title-format description)))
-  (org-link-make-string (concat type ":" target) description))
+  (org-link-make-string
+   (if (string-equal type "file")
+       (kisaragi-notes-link/apply-link-abbrev target)
+     (concat type ":" target))
+   (if (functionp org-roam-link-title-format)
+       (funcall org-roam-link-title-format description type)
+     (format org-roam-link-title-format description))))
 
 (defun org-roam--add-tag-string (str tags)
   "Add TAGS to STR.
