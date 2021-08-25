@@ -1,0 +1,13 @@
+* Changelog
+
+This fork starts off from Org-roam 1.2.4.
+
+** Fork 1.5
+
+I want the version to be bigger than 1.2.4 so that it never looks like a downgrade. So an arbitrary number it is then.
+
+- Consult org-link-abbrev-alist when creating links ([[https://github.com/kisaragi-hiu/org-roam/commit/15fecc6da54edc4d0f58458b81d0ef7132033f8c][15fecc6]])
+- Merge kisaragi-diary from my config into here and add some improvements
+  - Add a user option for where to look for diary entries (instead of hard-coding it to a variable in my Emacs config)
+  - Change the naming scheme for functions and variables
+  - Merge necessary helpers (=k/today=) into this repository

@@ -43,6 +43,26 @@
 ;; regardless of whether Org is loaded before their compilation.
 (require 'org)
 
+(defun kisaragi-notes//today (&optional n)
+  "Return today's date, taking `org-extend-today-until' into account.
+
+Return values look like \"2020-01-23\".
+
+If N is non-nil, return N days from today. For example, N = 1
+means tomorrow, and N = -1 means yesterday."
+  (unless n (setq n 0))
+  (format-time-string
+   "%Y-%m-%d"
+   (time-add
+    (* n 86400)
+    (time-since
+     ;; if it's bound and it's a number, do the same thing `org-today' does
+     (or (and (boundp 'org-extend-today-until)
+              (numberp org-extend-today-until)
+              (* 3600 org-extend-today-until))
+         ;; otherwise just return (now - 0) = now.
+         0)))))
+
 ;;;; Utility Functions
 ;; Alternative to `org-get-outline-path' that doesn't break
 (defun org-roam--get-outline-path ()
@@ -117,8 +137,8 @@ Kills the buffer if KEEP-BUF-P is nil, and FILE is not yet visited."
        (unless (and new-buf (not ,keep-buf-p))
          (save-buffer)))
      (if (and new-buf (not ,keep-buf-p))
-       (when (find-buffer-visiting ,file)
-         (kill-buffer (find-buffer-visiting ,file))))
+         (when (find-buffer-visiting ,file)
+           (kill-buffer (find-buffer-visiting ,file))))
      res))
 
 (defmacro org-roam--with-temp-buffer (file &rest body)
@@ -147,8 +167,8 @@ If FILE, set `org-roam-temp-file-name' to file and insert its contents."
 (defun org-roam-string-quote (str)
   "Quote STR."
   (->> str
-       (s-replace "\\" "\\\\")
-       (s-replace "\"" "\\\"")))
+    (s-replace "\\" "\\\\")
+    (s-replace "\"" "\\\"")))
 
 ;;; Shielding regions
 (defun org-roam-shield-region (beg end)
@@ -157,9 +177,9 @@ REGION must be a cons-cell containing the marker to the region
 beginning and maximum values."
   (when (and beg end)
     (add-text-properties beg end
-                           '(font-lock-face org-roam-link-shielded
-                                            read-only t)
-                           (marker-buffer beg))
+                         '(font-lock-face org-roam-link-shielded
+                                          read-only t)
+                         (marker-buffer beg))
     (cons beg end)))
 
 (defun org-roam-unshield-region (beg end)
