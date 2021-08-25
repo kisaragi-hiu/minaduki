@@ -23,6 +23,8 @@
 (require 'org)
 (require 's)
 
+(require 'parse-time)
+
 (require 'org-roam-db) ; for org-roam-db--get-title
 (require 'org-roam-macs) ; for kisaragi-notes//today
 
@@ -42,6 +44,26 @@ PROMPT is passed to `org-read-date'."
     (unwind-protect (org-read-date nil nil nil prompt)
       (remove-hook 'calendar-initial-window-hook #'kisaragi-diary//mark-calendar))))
 
+;;;###autoload
+(defun kisaragi-diary/new-entry (&optional time)
+  "Create a new diary entry in `kisaragi-diary/directory'.
+
+The entry will be stored as a file named after the current time.
+
+To create an entry for a different time, pass the time in as the
+TIME argument. Interactively, a \\[universal-argument] will
+prompt for an ISO 8601 timestamp (YYYY-MM-DDThh:mm:ssZ)."
+  (interactive
+   (list (when current-prefix-arg
+           (parse-iso8601-time-string
+            (read-string "Timestamp: " (format-time-string "%FT%T%z"))))))
+  (let ((now (or time (current-time))))
+    (find-file (f-join org-roam-directory
+                       kisaragi-diary/directory
+                       (format-time-string "%Y%m%dT%H%M%S%z.org" now)))
+    (insert "#+title: " (format-time-string "%FT%T%z" now) "\n")))
+
+;;;###autoload
 (defun kisaragi-diary/visit-entry-date (day)
   "Visit a diary entry written on DAY.
 
@@ -91,6 +113,7 @@ whether an entry is from DAY or not."
           (cdr
            (assoc selected-key title-file-alist))))))))
 
+;;;###autoload
 (defun kisaragi-diary/visit-entry-yesterday ()
   "Visit a diary entry written yesterday."
   (interactive)
