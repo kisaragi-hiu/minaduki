@@ -48,7 +48,6 @@
 (eval-when-compile (require 'subr-x))
 
 ;;;; Features
-(require 'org-roam-compat)
 (require 'org-roam-macs)
 ;; These features should be able to be loaded order independently.
 ;; @TODO: implement something akin to `org-modules' that allows

@@ -35,7 +35,6 @@
 ;;;; Dependencies
 
 (require 'ol)
-(require 'org-roam-compat)
 (require 'org-roam-macs)
 (require 'org-roam-db)
 
@@ -186,12 +185,12 @@ If there is no corresponding headline, return nil."
 If TYPE is non-nil, create a link of TYPE. Otherwise, respect
 `org-link-file-path-type'."
   (pcase (or type org-roam-link-file-path-type)
-      ('absolute
-       (abbreviate-file-name (expand-file-name path)))
-      ('noabbrev
-       (expand-file-name path))
-      ('relative
-       (file-relative-name path))))
+    ('absolute
+     (abbreviate-file-name (expand-file-name path)))
+    ('noabbrev
+     (expand-file-name path))
+    ('relative
+     (file-relative-name path))))
 
 (defun org-roam-link--split-path (path)
   "Splits PATH into title and headline.
