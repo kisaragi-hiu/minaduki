@@ -57,14 +57,6 @@
   "org-roam 1.0.0")
 (define-obsolete-function-alias 'org-roam--set-up-buffer 'org-roam-buffer--get-create
   "org-roam 1.0.0")
-(define-obsolete-function-alias 'org-roam-today 'org-roam-dailies-today
-  "org-roam 1.0.0")
-(define-obsolete-function-alias 'org-roam-tomorrow 'org-roam-dailies-tomorrow
-  "org-roam 1.0.0")
-(define-obsolete-function-alias 'org-roam-yesterday 'org-roam-dailies-yesterday
-  "org-roam 1.0.0")
-(define-obsolete-function-alias 'org-roam-date 'org-roam-dailies-date
-  "org-roam 1.0.0")
 (define-obsolete-function-alias 'org-roam-graph-show  'org-roam-graph
   "org-roam 1.0.0")
 (define-obsolete-function-alias 'org-roam-graph-build 'org-roam-graph
@@ -77,14 +69,6 @@
   "org-roam 1.1.0")
 (define-obsolete-function-alias 'org-roam-db--clear 'org-roam-db-clear
   "org-roam 1.2.0")
-(define-obsolete-function-alias 'org-roam-dailies-today 'org-roam-dailies-find-today
-  "org-roam 1.2.2")
-(define-obsolete-function-alias 'org-roam-dailies-yesterday 'org-roam-dailies-find-yesterday
-  "org-roam 1.2.2")
-(define-obsolete-function-alias 'org-roam-dailies-tomorrow 'org-roam-dailies-find-tomorrow
-  "org-roam 1.2.2")
-(define-obsolete-function-alias 'org-roam-dailies-date 'org-roam-dailies-find-date
-  "org-roam 1.2.2")
 
 ;;;; Variables
 (define-obsolete-variable-alias 'org-roam-graphviz-extra-options
@@ -97,15 +81,11 @@
   'org-roam-db--connection "org-roam 1.0.0")
 (define-obsolete-variable-alias 'org-roam--current-buffer
   'org-roam-buffer--current "org-roam 1.0.0")
-(define-obsolete-variable-alias 'org-roam-date-title-format
-  'org-roam-dailies-capture-templates "org-roam 1.0.0")
-(define-obsolete-variable-alias 'org-roam-date-filename-format
-  'org-roam-dailies-capture-templates "org-roam 1.0.0")
 (define-obsolete-variable-alias 'org-roam-update-db-idle-seconds
   'org-roam-db-update-idle-seconds "org-roam 1.2.2")
 
 (make-obsolete-variable 'org-roam-buffer-no-delete-other-windows
-  'org-roam-buffer-window-parameters "org-roam 1.1.1")
+                        'org-roam-buffer-window-parameters "org-roam 1.1.1")
 
 (provide 'org-roam-compat)
 

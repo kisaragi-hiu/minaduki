@@ -59,7 +59,6 @@
 (require 'org-roam-buffer)
 (require 'org-roam-completion)
 (require 'org-roam-capture)
-(require 'org-roam-dailies)
 (require 'org-roam-extract)
 (require 'org-roam-db)
 (require 'org-roam-doctor)

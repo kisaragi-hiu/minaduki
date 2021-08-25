@@ -48,7 +48,6 @@ ELS = org-roam-buffer.el
 ELS += org-roam-capture.el
 ELS += org-roam-compat.el
 ELS += org-roam-completion.el
-ELS += org-roam-dailies.el
 ELS += org-roam-db.el
 ELS += org-roam.el
 ELS += org-roam-graph.el
