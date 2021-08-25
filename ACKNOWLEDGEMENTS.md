@@ -1,23 +1,25 @@
-Authors
-=======
+This is a fork of Org-roam v1.
+
+When things are renamed, they will be renamed to reduce confusion. `kisaragi-notes//today` is completely different from `org-roam-today`, and calling the former `org-roam-today` can only be confusing; this also applies to existing functions if I change them at all. My `org-roam-format-link` already has a different behavior than that of even Org-roam v1.
+
+Renaming will not be done to hide all the preexisting work on Org-roam itself.
+
+# Org-roam authors
 
 The following people have contributed to Org-Roam.
 
 Names below are sorted alphabetically.
 
-Author
-------
+## Author
 
 - Jethro Kuan <jethrokuan95@gmail.com>
 
-Maintainers
-----------
+## Maintainers
 
 - Jethro Kuan <jethrokuan95@gmail.com>
 - Leo Vivier <leo.vivier+dev@gmail.com>
 
-Contributors
-------------
+## Contributors
 
 - Alexey Shmalko <rasen.dubi@gmail.com>
 - James Ravn <james@r-vn.org>

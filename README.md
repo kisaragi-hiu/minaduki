@@ -8,8 +8,8 @@ I cannot guarantee that this version will be useful for anybody other than me. T
 
 I'll probably change the name to minimize confusion.
 
-## Credit
+## Credits
 
-The vast majority of the work comes from Org-roam, © Jethro Kuan and contributors & distributed under GPLv3.
+The vast majority of the work comes from [Org-roam](https://github.com/org-roam/org-roam), © Jethro Kuan and contributors & distributed under GPLv3.
 
 I'll eventually merge the functionalities of md-roam and org-roam-bibtex (v1) into this repository as well.
