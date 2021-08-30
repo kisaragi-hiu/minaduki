@@ -149,7 +149,7 @@ Formatter may be a function that takes title as its only argument."
 (defcustom org-roam-list-files-commands
   (if (member system-type '(windows-nt ms-dos cygwin))
       nil
-    '(find rg))
+    '(rg))
   "Commands that will be used to find Org-roam files.
 
 It should be a list of symbols or cons cells representing any of the following
@@ -162,16 +162,11 @@ The Elisp implementation is used if no command in the list is found.
     Use ripgrep as the file search method.
     Example command: rg /path/to/dir/ --files -g \"*.org\" -g \"*.org.gpg\"
 
-  `find'
-    Use find as the file search method.
-    Example command:
-    find /path/to/dir -type f \( -name \"*.org\" -o -name \"*.org.gpg\" \)
-
 By default, `executable-find' will be used to look up the path to the
 executable. If a custom path is required, it can be specified together with the
 method symbol as a cons cell. For example: '(find (rg . \"/path/to/rg\"))."
-  :type '(set (const :tag "find" find)
-              (const :tag "rg" rg)))
+  :type '(set (const :tag "rg" rg))
+  :group 'org-roam)
 
 (defcustom org-roam-tag-separator ","
   "String to use to separate tags when `org-roam-tag-sources' is non-nil."
@@ -374,12 +369,12 @@ If FILE is not specified, use the current buffer's file-path."
        (f-descendant-of-p path (expand-file-name org-roam-directory))))))
 
 (defun org-roam--shell-command-files (cmd)
-  "Run CMD in the shell and return a list of files. If no files are found, an empty list is returned."
-  (--> cmd
-       (shell-command-to-string it)
-       (ansi-color-filter-apply it)
-       (split-string it "\n")
-       (seq-filter #'s-present? it)))
+  "Run CMD, a command list like in `make-process', to search for files.
+
+Return a list of files."
+  (with-temp-buffer
+    (apply #'call-process (car cmd) nil '(t nil) nil "-L" org-roam-directory (cdr cmd))
+    (s-split "\n" (buffer-string) :omit-nulls)))
 
 (defun org-roam--list-files-search-globs (exts)
   "Given EXTS, return a list of search globs.
@@ -391,15 +386,8 @@ E.g. (\".org\") => (\"*.org\" \"*.org.gpg\")"
 (defun org-roam--list-files-rg (executable dir)
   "Return all Org-roam files located recursively within DIR, using ripgrep, provided as EXECUTABLE."
   (let* ((globs (org-roam--list-files-search-globs org-roam-file-extensions))
-         (command (s-join " " `(,executable "-L" ,dir "--files"
-                                            ,@(mapcar (lambda (glob) (concat "-g " glob)) globs)))))
-    (org-roam--shell-command-files command)))
-
-(defun org-roam--list-files-find (executable dir)
-  "Return all Org-roam files located recursively within DIR, using find, provided as EXECUTABLE."
-  (let* ((globs (org-roam--list-files-search-globs org-roam-file-extensions))
-         (command (s-join " " `(,executable "-L" ,dir "-type f \\("
-                                            ,(s-join " -o " (mapcar (lambda (glob) (concat "-name " glob)) globs)) "\\)"))))
+         (command `(,executable "-L" ,dir "--files"
+                                ,@(cons "-g" (-interpose "-g" globs)))))
     (org-roam--shell-command-files command)))
 
 ;; Emacs 26 does not have FOLLOW-SYMLINKS in `directory-files-recursively'
