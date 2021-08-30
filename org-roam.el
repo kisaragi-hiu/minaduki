@@ -1214,6 +1214,29 @@ If NO-CONFIRM, assume that the user does not want to modify the initial prompt."
         (setq org-roam-capture-additional-template-props (list :finalize 'find-file))
         (org-roam-capture--capture)))))
 
+(defun kisaragi-notes/search (term)
+  "Return a list of notes matching TERM."
+  (with-temp-buffer
+    (call-process "ag" nil '(t nil) nil
+                  "--vimgrep"
+                  term ".")
+    (setf (point) (point-min))
+    (cl-loop while (re-search-forward
+                    (rx bol
+                        (group (*? any)) ":" ; file name (don't put colons in there)
+                        (group (+? digit)) ":" ; line
+                        (group (+? digit)) ":" ; column
+                        (group (* any)))
+                    nil t)
+             collect
+             (let ((file (match-string 1))
+                   (line (match-string 2))
+                   (column (match-string 3))
+                   (context (match-string 4)))
+               (list :title (org-roam-db--get-title (expand-file-name file))
+                     :tags (kisaragi-notes-db//get-file-tags (expand-file-name file))
+                     :file file :line line :column column :context context)))))
+
 ;;;###autoload
 (defun org-roam-find-directory ()
   "Find and open `org-roam-directory'."

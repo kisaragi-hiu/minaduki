@@ -416,6 +416,12 @@ Return the number of rows inserted."
                             :limit 1]
                            file)))
 
+(defun kisaragi-notes-db//get-file-tags (file)
+  "Return tags of FILE from the cache."
+  (caar (org-roam-db-query [:select [tags] :from tags
+                            :where (= file $s1)]
+                           file)))
+
 (defun org-roam-db--get-tags ()
   "Return all distinct tags from the cache."
   (let ((rows (org-roam-db-query [:select :distinct [tags] :from tags]))
