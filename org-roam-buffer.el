@@ -201,18 +201,26 @@ or to this file's ROAM_KEY.
                              (-map #'cdr (cdr titles-and-refs)))
                    (org-roam--get-backlinks (push file-path (car titles-and-refs)))))
                 (backlinks (if filter (-filter filter backlinks) backlinks))
-                (grouped-backlinks (--group-by (nth 0 it) backlinks)))
+                (backlink-groups (--group-by (nth 0 it) backlinks)))
+      ;; The heading
       (insert (let ((l (length backlinks)))
                 (format "\n\n* %d %s\n"
                         l (org-roam-buffer--pluralize heading l))))
-      (dolist (group grouped-backlinks)
+      ;; Backlinks
+      ;; Links from the same group originate from the same file
+      (dolist (group backlink-groups)
+        ;; Each group looks like:
+        ;; (GROUP (FILE-FROM FILE-TO PROPS))
+        ;; Where PROPS is a plist of props.
         (setq file-from (car group))
         (setq props (mapcar (lambda (row) (nth 2 row)) (cdr group)))
         (setq props (seq-sort-by (lambda (p) (plist-get p :point)) #'< props))
         (insert "** "
+                ;; title link
                 (org-roam-format-link file-from
                                       (kisaragi-notes//remove-org-links (org-roam-db--get-title file-from))
                                       "file")
+                ;; tags
                 (or (-some->> (org-roam-db-query [:select tags :from tags
                                                   :where (= file $s1)]
                                                  file-from)
@@ -224,21 +232,23 @@ or to this file's ROAM_KEY.
                     "")
                 "\n")
         (dolist (prop props)
-          (insert "*** "
-                  (if-let ((outline (plist-get prop :outline)))
-                      (-> outline
-                        (string-join " > ")
-                        (org-roam-buffer-expand-links file-from))
-                    "Top")
-                  "\n"
-                  (if-let ((content (plist-get prop :content)))
-                      (propertize
-                       (s-trim (s-replace "\n" " " (org-roam-buffer-expand-links content file-from)))
-                       'help-echo "mouse-1: visit backlinked note"
-                       'file-from file-from
-                       'file-from-point (plist-get prop :point))
-                    "")
-                  "\n\n"))))))
+          (insert
+           (format "/%s/"
+                   (or (-some--> (plist-get prop :outline)
+                         (string-join it " › ")
+                         (org-roam-buffer-expand-links it file-from)
+                         (format "Top › %s" it))
+                       "Top")))
+          (insert
+           "\n"
+           (if-let ((content (plist-get prop :content)))
+               (propertize
+                (s-trim (s-replace "\n" " " (org-roam-buffer-expand-links content file-from)))
+                'help-echo "mouse-1: visit backlinked note"
+                'file-from file-from
+                'file-from-point (plist-get prop :point))
+             "")
+           "\n\n"))))))
 
 (defun kisaragi-notes-buffer//insert-cite-backlinks ()
   "Insert ref backlinks.
