@@ -86,6 +86,10 @@ Has an effect if and only if `org-roam-buffer-position' is `top' or `bottom'."
   :type 'number
   :group 'org-roam)
 
+(defcustom kisaragi-notes-buffer/hidden-tags nil
+  "Tags that should not be inserted into the backlinks buffer."
+  :type '(repeat string)
+  :group 'org-roam)
 
 (defcustom org-roam-buffer "*org-roam*"
   "Org-roam buffer name."
@@ -93,8 +97,10 @@ Has an effect if and only if `org-roam-buffer-position' is `top' or `bottom'."
   :group 'org-roam)
 
 (defcustom org-roam-buffer-prepare-hook '(org-roam-buffer--insert-title
-                                          org-roam-buffer--insert-backlinks
-                                          org-roam-buffer--insert-ref-links)
+                                          kisaragi-notes-buffer//insert-cite-backlinks
+                                          kisaragi-notes-buffer//insert-reflection-backlinks
+                                          kisaragi-notes-buffer//insert-diary-backlinks
+                                          kisaragi-notes-buffer//insert-other-backlinks)
   "Hook run in the `org-roam-buffer' before it is displayed."
   :type 'hook
   :group 'org-roam)
@@ -131,6 +137,118 @@ For example: (setq org-roam-buffer-window-parameters '((no-other-window . t)))"
                        (buffer-file-name org-roam-buffer--current))
                       'font-lock-face
                       'org-document-title)))
+
+;;;; Inserting backlinks
+
+(cl-defun kisaragi-notes-buffer//insert-backlinks (&key cite? filter (heading "Backlink"))
+  "Insert the org-roam-buffer backlinks string for the current buffer.
+
+Customized:
+
+1. If FILTER is nil, only display backlinks that, when passed to
+FILTER, returns non-nil.
+
+Each backlink is a list: (LINK-FILE TO-FILE PLIST), where
+LINK-FILE is the link origin,
+TO-FILE is the target (in this case always the current file),
+and PLIST contains some properties about the link's context.
+
+2. HEADING is the \"* 3 Backlinks\" string in the backlinks buffer.
+
+It should be an English noun because it'll be turned into a
+plural automatically.
+
+3. CITE? controls whether to get backlinks to the current file,
+or to this file's ROAM_KEY.
+
+4. Nothing is inserted when there are no backlinks.
+
+5. Tags are shown for each entry, except for those in `kisaragi-notes-buffer/hidden-tags'.
+
+6. Links in titles are removed."
+  (let (props file-from)
+    (if-let* ((file-path (buffer-file-name org-roam-buffer--current))
+              (titles-and-refs
+               (with-current-buffer org-roam-buffer--current
+                 (cons (org-roam--extract-titles)
+                       (org-roam--extract-refs))))
+              (backlinks
+               (if cite?
+                   (mapcan #'org-roam--get-backlinks
+                           (-map #'cdr (cdr titles-and-refs)))
+                 (org-roam--get-backlinks (push file-path (car titles-and-refs)))))
+              (backlinks (if filter (-filter filter backlinks) backlinks))
+              (grouped-backlinks (--group-by (nth 0 it) backlinks)))
+        (progn
+          (insert (let ((l (length backlinks)))
+                    (format "\n\n* %d %s\n"
+                            l (org-roam-buffer--pluralize heading l))))
+          (dolist (group grouped-backlinks)
+            (setq file-from (car group))
+            (setq props (mapcar (lambda (row) (nth 2 row)) (cdr group)))
+            (setq props (seq-sort-by (lambda (p) (plist-get p :point)) #'< props))
+            (insert "** "
+                    (org-roam-format-link file-from
+                                          (org-roam-db--get-title file-from)
+                                          "file")
+                    (or (-some->> (org-roam-db-query [:select tags :from tags
+                                                      :where (= file $s1)]
+                                                     file-from)
+                          caar
+                          (--remove (member it kisaragi-notes-buffer/hidden-tags))
+                          (--map (s-replace " " "_" (downcase it)))
+                          (s-join ":")
+                          (format "  :%s:"))
+                        "")
+                    "\n")
+            (dolist (prop props)
+              (insert "*** "
+                      (if-let ((outline (plist-get prop :outline)))
+                          (-> outline
+                            (string-join " > ")
+                            (org-roam-buffer-expand-links file-from))
+                        "Top")
+                      "\n"
+                      (if-let ((content (plist-get prop :content)))
+                          (propertize
+                           (s-trim (s-replace "\n" " " (org-roam-buffer-expand-links content file-from)))
+                           'help-echo "mouse-1: visit backlinked note"
+                           'file-from file-from
+                           'file-from-point (plist-get prop :point))
+                        "")
+                      "\n\n")))))))
+
+(defun kisaragi-notes-buffer//insert-cite-backlinks ()
+  "Insert ref backlinks.
+
+I'm calling it \"Citation Backlinks\" because I want to
+distinguish between Org-roam's ref backlinks and backlinks that
+come from Reflections."
+  (kisaragi-notes-buffer//insert-backlinks
+   :heading "Citation Backlink"
+   :cite? t))
+
+(defun kisaragi-notes-buffer//insert-reflection-backlinks ()
+  "Insert backlinks from the \"reflections\" directory."
+  (kisaragi-notes-buffer//insert-backlinks
+   :filter (pcase-lambda (`(,from ,_to ,_plist))
+             (string-match-p "reflection/" from))
+   :heading "Reflection Backlink"))
+
+(defun kisaragi-notes-buffer//insert-diary-backlinks ()
+  "Insert backlinks from the \"diary\" directory."
+  (kisaragi-notes-buffer//insert-backlinks
+   :filter (pcase-lambda (`(,from ,_to ,_plist))
+             (string-match-p "diary/" from))
+   :heading "Diary Backlink"))
+
+(defun kisaragi-notes-buffer//insert-other-backlinks ()
+  "Insert backlinks that are not from reflections or diary entries."
+  (kisaragi-notes-buffer//insert-backlinks
+   :filter (pcase-lambda (`(,from ,_to ,_plist))
+             (not (or (string-match-p "reflection/" from)
+                      (string-match-p "diary/" from))))
+   :heading "Internal Backlink"))
 
 (defun org-roam-buffer--preview (file point)
   "Get preview content for FILE at POINT."
@@ -169,76 +287,8 @@ ORIG-PATH is the path where the CONTENT originated."
                          nil t nil 2))))
     (buffer-string)))
 
-(defun org-roam-buffer--insert-ref-links ()
-  "Insert ref backlinks for the current buffer."
-  (when-let* ((refs (with-temp-buffer
-                      (insert-buffer-substring org-roam-buffer--current)
-                      (org-roam--extract-refs)))
-              (paths (mapcar #'cdr refs)))
-    (if-let* ((key-backlinks (mapcan #'org-roam--get-backlinks paths))
-              (grouped-backlinks (--group-by (nth 0 it) key-backlinks)))
-        (progn
-          (insert (let ((l (length key-backlinks)))
-                    (format "\n\n* %d %s\n"
-                            l (org-roam-buffer--pluralize "Ref Backlink" l))))
-          (dolist (group grouped-backlinks)
-            (let ((file-from (car group))
-                  (bls (cdr group)))
-              (insert (format "** %s\n"
-                              (org-roam-format-link file-from
-                                                    (org-roam-db--get-title file-from)
-                                                    "file")))
-              (dolist (backlink bls)
-                (pcase-let ((`(,file-from _ ,props) backlink))
-                  (insert (if-let ((content (funcall org-roam-buffer-preview-function file-from (plist-get props :point))))
-                              (propertize (org-roam-buffer-expand-links content file-from)
-                                          'help-echo "mouse-1: visit backlinked note"
-                                          'file-from file-from
-                                          'file-from-point (plist-get props :point))
-                            "")
-                          "\n\n"))))))
-      (insert "\n\n* No ref backlinks!"))))
-
-(defun org-roam-buffer--insert-backlinks ()
-  "Insert the org-roam-buffer backlinks string for the current buffer."
-  (let (props file-from)
-    (if-let* ((file-path (buffer-file-name org-roam-buffer--current))
-              (titles (with-current-buffer org-roam-buffer--current
-                        (org-roam--extract-titles)))
-              (backlinks (org-roam--get-backlinks (push file-path titles)))
-              (grouped-backlinks (--group-by (nth 0 it) backlinks)))
-        (progn
-          (insert (let ((l (length backlinks)))
-                    (format "\n\n* %d %s\n"
-                            l (org-roam-buffer--pluralize "Backlink" l))))
-          (dolist (group grouped-backlinks)
-            (setq file-from (car group))
-            (setq props (mapcar (lambda (row) (nth 2 row)) (cdr group)))
-            (setq props (seq-sort-by (lambda (p) (plist-get p :point)) #'< props))
-            (insert (format "** %s\n"
-                            (org-roam-format-link file-from
-                                                  (org-roam-db--get-title file-from)
-                                                  "file")))
-            (dolist (prop props)
-              (insert "*** "
-                      (if-let ((outline (plist-get prop :outline)))
-                          (-> outline
-                            (string-join " > ")
-                            (org-roam-buffer-expand-links file-from))
-                        "Top")
-                      "\n"
-                      (if-let ((content (funcall org-roam-buffer-preview-function file-from (plist-get prop :point))))
-                          (propertize
-                           (s-trim (s-replace "\n" " " (org-roam-buffer-expand-links content file-from)))
-                           'help-echo "mouse-1: visit backlinked note"
-                           'file-from file-from
-                           'file-from-point (plist-get prop :point))
-                        "")
-                      "\n\n"))))
-      (insert "\n\n* No backlinks!"))))
-
 (defun org-roam-buffer-update ()
-  "Update the `org-roam-buffer'."
+  "Render the backlinks buffer."
   (interactive)
   (org-roam-db--ensure-built)
   (let* ((source-org-roam-directory org-roam-directory))
@@ -263,7 +313,6 @@ ORIG-PATH is the path where the CONTENT originated."
         (setq org-return-follows-link t)
         (run-hooks 'org-roam-buffer-prepare-hook)
         (read-only-mode 1)))))
-
 
 (cl-defun org-roam-buffer--update-maybe (&key redisplay)
   "Reconstructs `org-roam-buffer'.
