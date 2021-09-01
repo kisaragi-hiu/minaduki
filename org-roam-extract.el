@@ -57,32 +57,35 @@ roam_alias."
 
 Assume links come from FILE-PATH."
   (save-excursion
+    (goto-char (point-min))
     (let (links)
-      (org-element-map (org-element-parse-buffer) 'link
-        (lambda (link)
-          (goto-char (org-element-property :begin link))
-          (let* ((type (org-roam--collate-types (org-element-property :type link)))
-                 (path (org-element-property :path link))
-                 (properties (list :outline (org-roam--get-outline-path)
-                                   :point (point)))
-                 (names (pcase type
-                          ("id"
-                           (when-let ((file-path (org-roam-id-get-file path)))
-                             (list file-path)))
-                          ("cite" (list path))
-                          ("website" (list path))
-                          ("fuzzy" (list path))
-                          ("roam" (list path))
-                          (_ (if (or (file-remote-p path)
-                                     (org-roam--url-p path))
-                                 (list path)
-                               (let ((file-maybe (expand-file-name path (file-name-directory file-path))))
-                                 (if (f-exists? file-maybe)
-                                     (list file-maybe)
-                                   (list path))))))))
-            (dolist (name names)
-              (when name
-                (push (vector file-path name type properties) links))))))
+      (while (re-search-forward org-link-any-re nil t)
+        (save-excursion
+          (goto-char (match-beginning 0))
+          (when-let (link (org-element-link-parser))
+            (goto-char (org-element-property :begin link))
+            (let* ((type (org-roam--collate-types (org-element-property :type link)))
+                   (path (org-element-property :path link))
+                   (properties (list :outline (org-roam--get-outline-path)
+                                     :point (point)))
+                   (names (pcase type
+                            ("id"
+                             (when-let ((file-path (org-roam-id-get-file path)))
+                               (list file-path)))
+                            ("cite" (list path))
+                            ("website" (list path))
+                            ("fuzzy" (list path))
+                            ("roam" (list path))
+                            (_ (if (or (file-remote-p path)
+                                       (org-roam--url-p path))
+                                   (list path)
+                                 (let ((file-maybe (expand-file-name path (file-name-directory file-path))))
+                                   (if (f-exists? file-maybe)
+                                       (list file-maybe)
+                                     (list path))))))))
+              (dolist (name names)
+                (when name
+                  (push (vector file-path name type properties) links)))))))
       links)))
 
 (defun org-roam--extract-links-wiki (file-path)
@@ -189,12 +192,12 @@ it as FILE-PATH."
    ;; Using `derived-mode-p' maybe adds 3 seconds per call to the
    ;; cache build when there are a million links. At that point 3
    ;; seconds is probably not that much of a deal.
-   ((derived-mode-p 'org-mode) (org-roam--extract-links-org file-path))
+   ((derived-mode-p 'org-mode)
+    (org-roam--extract-links-org file-path))
    ((derived-mode-p 'markdown-mode)
     (append (org-roam--extract-links-wiki file-path)
             (org-roam--extract-links-markdown file-path)
-            (org-roam--extract-links-pandoc-cite file-path)))
-   ((derived-mode-p 'emacs-lisp-mode) "abc")))
+            (org-roam--extract-links-pandoc-cite file-path)))))
 
 (defun org-roam--extract-ids (&optional file-path)
   "Extract all IDs within the current buffer.
