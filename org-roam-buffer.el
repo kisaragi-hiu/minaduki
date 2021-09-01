@@ -204,7 +204,7 @@ or to this file's ROAM_KEY.
                 (backlink-groups (--group-by (nth 0 it) backlinks)))
       ;; The heading
       (insert (let ((l (length backlinks)))
-                (format "\n\n* %d %s\n"
+                (format "\n\n* %d %s"
                         l (org-roam-buffer--pluralize heading l))))
       ;; Backlinks
       ;; Links from the same group originate from the same file
@@ -215,7 +215,7 @@ or to this file's ROAM_KEY.
         (setq file-from (car group))
         (setq props (mapcar (lambda (row) (nth 2 row)) (cdr group)))
         (setq props (seq-sort-by (lambda (p) (plist-get p :point)) #'< props))
-        (insert "** "
+        (insert "\n\n** "
                 ;; title link
                 (org-roam-format-link file-from
                                       (kisaragi-notes//remove-org-links (org-roam-db--get-title file-from))
@@ -233,22 +233,23 @@ or to this file's ROAM_KEY.
                 "\n")
         (dolist (prop props)
           (insert
-           (format "/%s/"
+           (format "\n/%s/\n\n"
                    (or (-some--> (plist-get prop :outline)
                          (string-join it " › ")
                          (org-roam-buffer-expand-links it file-from)
                          (format "Top › %s" it))
                        "Top")))
-          (insert
-           "\n"
-           (if-let ((content (plist-get prop :content)))
+          (when-let ((content (plist-get prop :content)))
+            (insert
+             (--> (org-roam-buffer-expand-links content file-from)
+               (s-replace "\n" " " it)
+               s-trim
+               (format "- %s" it)
                (propertize
-                (s-trim (s-replace "\n" " " (org-roam-buffer-expand-links content file-from)))
+                it
                 'help-echo "mouse-1: visit backlinked note"
                 'file-from file-from
-                'file-from-point (plist-get prop :point))
-             "")
-           "\n\n"))))))
+                'file-from-point (plist-get prop :point))))))))))
 
 (defun kisaragi-notes-buffer//insert-cite-backlinks ()
   "Insert ref backlinks.
