@@ -43,6 +43,17 @@
 ;; regardless of whether Org is loaded before their compilation.
 (require 'org)
 
+(defun kisaragi-notes//remove-org-links (str)
+  "Remove Org bracket links from STR."
+  (let ((links (s-match-strings-all org-link-bracket-re str)))
+    (--> (cl-loop for link in links
+                  collect
+                  (let ((orig (elt link 0))
+                        (desc (or (elt link 2)
+                                  (elt link 1))))
+                    (cons orig desc)))
+      (s-replace-all it str))))
+
 (defun kisaragi-notes//today (&optional n)
   "Return today's date, taking `org-extend-today-until' into account.
 

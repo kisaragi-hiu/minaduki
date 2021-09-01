@@ -52,6 +52,29 @@
   (delete-file org-roam-db-location)
   (org-roam-db--close))
 
+(describe "Utils"
+  (it "removes Org links from a string"
+    (expect
+     (kisaragi-notes//remove-org-links
+      "Abc [[https://gnu.org][Link1]] def [[https://gnu.org][Link2]]")
+     :to-equal
+     "Abc Link1 def Link2")
+    (expect
+     (kisaragi-notes//remove-org-links
+      "Abc [not a link]")
+     :to-equal
+     "Abc [not a link]")
+    (expect
+     (kisaragi-notes//remove-org-links
+      "Abc [[https://google.com]]")
+     :to-equal
+     "Abc https://google.com")
+    (expect
+     (kisaragi-notes//remove-org-links
+      "Abc [[https://google.com][Google]]")
+     :to-equal
+     "Abc Google")))
+
 (describe "Ref extraction"
   (before-all
     (test-org-roam--init))
