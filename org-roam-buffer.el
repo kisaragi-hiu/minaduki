@@ -212,7 +212,7 @@ or to this file's ROAM_KEY.
             (setq props (seq-sort-by (lambda (p) (plist-get p :point)) #'< props))
             (insert "** "
                     (org-roam-format-link file-from
-                                          (org-roam-db--get-title file-from)
+                                          (kisaragi-notes//remove-org-links (org-roam-db--get-title file-from))
                                           "file")
                     (or (-some->> (org-roam-db-query [:select tags :from tags
                                                       :where (= file $s1)]
