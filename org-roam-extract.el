@@ -66,8 +66,10 @@ Assume links come from FILE-PATH."
             (goto-char (org-element-property :begin link))
             (let* ((type (org-roam--collate-types (org-element-property :type link)))
                    (path (org-element-property :path link))
+                   (content (buffer-substring-no-properties (line-beginning-position) (line-end-position)))
                    (properties (list :outline (org-roam--get-outline-path)
-                                     :point (point)))
+                                     :point (point)
+                                     :content content))
                    (names (pcase type
                             ("id"
                              (when-let ((file-path (org-roam-id-get-file path)))
