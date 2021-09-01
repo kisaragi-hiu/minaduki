@@ -96,11 +96,13 @@ Has an effect if and only if `org-roam-buffer-position' is `top' or `bottom'."
   :type 'string
   :group 'org-roam)
 
-(defcustom org-roam-buffer-prepare-hook '(org-roam-buffer--insert-title
-                                          kisaragi-notes-buffer//insert-cite-backlinks
-                                          kisaragi-notes-buffer//insert-reflection-backlinks
-                                          kisaragi-notes-buffer//insert-diary-backlinks
-                                          kisaragi-notes-buffer//insert-other-backlinks)
+(defcustom org-roam-buffer-prepare-hook
+  '(org-roam-buffer--insert-title
+    kisaragi-notes-buffer//insert-cite-backlinks
+    kisaragi-notes-buffer//insert-reflection-backlinks
+    kisaragi-notes-buffer//insert-diary-backlinks
+    kisaragi-notes-buffer//insert-other-backlinks
+    kisaragi-notes-buffer//restore-point)
   "Hook run in the `org-roam-buffer' before it is displayed."
   :type 'hook
   :group 'org-roam)
@@ -137,6 +139,27 @@ For example: (setq org-roam-buffer-window-parameters '((no-other-window . t)))"
                        (buffer-file-name org-roam-buffer--current))
                       'font-lock-face
                       'org-document-title)))
+
+;;;; Saving cursor position
+
+(defvar kisaragi-notes-buffer//point-map (make-hash-table :test #'equal)
+  "A hash table storing cursor position in the backlinks buffer.")
+
+(defun kisaragi-notes-buffer//save-point ()
+  "Save cursor position in org-roam-buffer for the current file."
+  (with-current-buffer org-roam-buffer
+    (puthash (buffer-file-name org-roam-buffer--current)
+             (point)
+             kisaragi-notes-buffer//point-map)))
+
+(defun kisaragi-notes-buffer//restore-point ()
+  "Restore last visited point in org-roam-buffer for this file."
+  (with-selected-window (get-buffer-window org-roam-buffer)
+    (let ((saved-point (gethash (buffer-file-name org-roam-buffer--current)
+                                kisaragi-notes-buffer//point-map)))
+      (when (and (integerp saved-point)
+                 (<= (point-min) saved-point (point-max)))
+        (goto-char saved-point)))))
 
 ;;;; Inserting backlinks
 

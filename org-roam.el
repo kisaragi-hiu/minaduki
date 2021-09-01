@@ -704,11 +704,12 @@ When UPDATE is non-nil, update the database after."
              (define-key map [mouse-1] 'org-open-at-point)
              (define-key map (kbd "RET") 'org-open-at-point)
              map)
-  (if org-roam-backlinks-mode
-      (add-hook 'org-open-at-point-functions
-                #'org-roam-open-at-point nil 'local)
-    (remove-hook 'org-open-at-point-functions
-                 #'org-roam-open-at-point 'local)))
+  (cond (org-roam-backlinks-mode
+         (add-hook 'post-command-hook #'kisaragi-notes-buffer//save-point nil :local)
+         (add-hook 'org-open-at-point-functions #'org-roam-open-at-point nil :local))
+        (t
+         (remove-hook 'post-command-hook #'kisaragi-notes-buffer//save-point :local)
+         (remove-hook 'org-open-at-point-functions #'org-roam-open-at-point :local))))
 
 (defun org-roam--in-buffer-p ()
   "Return t if in the Org-roam buffer."
