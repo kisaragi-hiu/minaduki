@@ -370,9 +370,5 @@ Each ref is returned as a cons of its type and its key."
              (push r refs)))))
     refs))
 
-(defun org-roam--extract-ref ()
-  "Extract the ref from current buffer and return the type and the key of the ref."
-  (car (org-roam--extract-refs)))
-
 (provide 'org-roam-extract)
 ;;; org-roam-extract.el ends here

@@ -1149,7 +1149,7 @@ modified, there is a number of prefined extra actions
 user actions can be set in `orb-note-actions-user'."
   (interactive)
   (let ((non-default-interfaces (list 'hydra 'ido 'ivy 'helm))
-        (citekey (cdr (org-roam--extract-ref))))
+        (citekey (cdar (org-roam--extract-ref))))
     (if citekey
         (cond ((member orb-note-actions-interface non-default-interfaces)
                (orb-note-actions--run orb-note-actions-interface citekey))

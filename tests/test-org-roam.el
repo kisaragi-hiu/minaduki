@@ -93,15 +93,15 @@
     ;; Enable "cite:" link parsing
     (org-link-set-parameters "cite")
     (it "extracts web keys"
-      (expect (test #'org-roam--extract-ref
+      (expect (test #'org-roam--extract-refs
                     "web_ref.org")
               :to-equal
-              '("website" . "//google.com/")))
+              '(("website" . "//google.com/"))))
     (it "extracts cite keys"
-      (expect (test #'org-roam--extract-ref
+      (expect (test #'org-roam--extract-refs
                     "cite_ref.org")
               :to-equal
-              '("cite" . "mitsuha2007")))
+              '(("cite" . "mitsuha2007"))))
     (it "extracts all keys"
       (expect (test #'org-roam--extract-refs
                     "multiple-refs.org")
