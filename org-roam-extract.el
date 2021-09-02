@@ -13,6 +13,8 @@
 (require 'org-roam-id)
 (require 'org-roam-macs)
 
+(defvar markdown-regex-link-inline)
+
 (defun org-roam--extract-global-props (props)
   "Extract PROPS from the current Org buffer.
 Props are extracted from both the file-level property drawer (if

@@ -185,7 +185,8 @@ or to this file's ROAM_KEY.
 
 4. Nothing is inserted when there are no backlinks.
 
-5. Tags are shown for each entry, except for those in `kisaragi-notes-buffer/hidden-tags'.
+5. Tags are shown for each entry, except for those in
+   `kisaragi-notes-buffer/hidden-tags'.
 
 6. Links in titles are removed."
   (let (props file-from)

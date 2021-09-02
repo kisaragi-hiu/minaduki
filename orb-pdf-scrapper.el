@@ -957,7 +957,7 @@ directly by user.")
 (define-minor-mode orb-pdf-scrapper-mode
   "Minor mode for special key bindings in a orb-pdf-scrapper buffer.
 Turning on this mode runs the normal hook `orb-pdf-scrapper-mode-hook'."
-  nil " OPS" orb-pdf-scrapper-mode-map
+  :lighter " OPS" :keymap orb-pdf-scrapper-mode-map
   (when orb-pdf-scrapper-mode
     (orb-pdf-scrapper--update-keymap)
     (setq-local
