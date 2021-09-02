@@ -107,6 +107,7 @@
                     "multiple-refs.org")
               :to-have-same-items-as
               '(("cite" . "orgroam2020")
+                ("cite" . "plain-key")
                 ("website" . "//www.orgroam.com/"))))))
 
 (describe "Title extraction"

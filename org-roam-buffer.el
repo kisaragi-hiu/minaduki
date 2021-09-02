@@ -45,7 +45,6 @@
 (defvar org-return-follows-link)
 (defvar org-roam-backlinks-mode)
 (defvar org-roam-last-window)
-(defvar org-ref-cite-types) ;; in org-ref-core.el
 (defvar org-roam-mode)
 (defvar org-roam--org-link-bracket-typed-re)
 

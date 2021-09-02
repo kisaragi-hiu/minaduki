@@ -345,13 +345,19 @@ backlinks."
          "website")
         (t type)))
 
-(defun org-roam--split-ref (ref)
+(defun kisaragi-notes-extract//process-ref (ref)
   "Processes REF into its type and path.
-Returns a cons cell of type and path if ref is a valid ref."
+
+Returns a cons cell '(TYPE . PATH) if ref is a valid ref.
+
+REF is either a plain link or a plain string. If it's a link, the
+protocol is treated as the TYPE (after processing through
+`org-roam--collate-types'). Otherwise, REF is assumed to be a cite ref."
   (save-match-data
-    (when (string-match org-link-plain-re ref)
-      (cons (org-roam--collate-types (match-string 1 ref))
-            (match-string 2 ref)))))
+    (if (string-match org-link-plain-re ref)
+        (cons (org-roam--collate-types (match-string 1 ref))
+              (match-string 2 ref))
+      (cons "cite" ref))))
 
 (defun org-roam--extract-refs ()
   "Extract all refs (ROAM_KEY statements) from the current buffer.
@@ -366,7 +372,7 @@ Each ref is returned as a cons of its type and its key."
           ((pred string-empty-p)
            (user-error "Org property #+roam_key cannot be empty"))
           (ref
-           (when-let ((r (org-roam--split-ref ref)))
+           (when-let ((r (kisaragi-notes-extract//process-ref ref)))
              (push r refs)))))
     refs))
 

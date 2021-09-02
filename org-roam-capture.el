@@ -33,6 +33,7 @@
 (require 'org-capture)
 (require 'org-roam-macs)
 (require 'org-roam-db)
+(require 'org-roam-extract)
 (require 'dash)
 (require 's)
 (require 'cl-lib)
@@ -48,7 +49,6 @@
 (declare-function  org-roam--get-ref-path-completions   "org-roam")
 (declare-function  org-roam--find-file                  "org-roam")
 (declare-function  org-roam-format-link                "org-roam")
-(declare-function  org-roam--split-ref                 "org-roam")
 (declare-function  org-roam-mode                        "org-roam")
 (declare-function  org-roam-completion--completing-read "org-roam-completion")
 
@@ -538,7 +538,7 @@ This function is used solely in Org-roam's capture templates: see
                        (org-roam-capture--new-file 'allow-existing))
                       ('ref
                        (if-let ((ref (cdr (assoc 'ref org-roam-capture--info))))
-                           (pcase (org-roam--split-ref ref)
+                           (pcase (kisaragi-notes-extract//process-ref ref)
                              (`(,type . ,path)
                               (or (org-roam-capture--get-ref-path type path)
                                   (org-roam-capture--new-file)))
