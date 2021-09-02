@@ -37,6 +37,7 @@
 (require 's)
 
 (defvar org-roam-verbose)
+(defvar kisaragi-notes/slug-replacements)
 
 ;; This is necessary to ensure all dependents on this module see
 ;; `org-mode-hook' and `org-inhibit-startup' as dynamic variables,
@@ -73,6 +74,22 @@ means tomorrow, and N = -1 means yesterday."
               (* 3600 org-extend-today-until))
          ;; otherwise just return (now - 0) = now.
          0)))))
+
+;;;; Title/Path/Slug conversion
+
+(defun kisaragi-notes//title-to-slug (title)
+  "Convert TITLE to a filename-suitable slug."
+  (let ((slug
+         (--> title
+           ;; Normalize combining characters (use single character ä
+           ;; instead of combining a + #x308 (combining diaeresis))
+           ucs-normalize-NFC-string
+           ;; Do the replacement. Note that `s-replace-all' does not
+           ;; use regexp.
+           (--reduce-from
+            (replace-regexp-in-string (car it) (cdr it) acc) it
+            kisaragi-notes/slug-replacements))))
+    (downcase slug)))
 
 ;;;; Utility Functions
 ;; Alternative to `org-get-outline-path' that doesn't break

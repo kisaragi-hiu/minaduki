@@ -54,17 +54,21 @@
 
 (describe "Utils"
   (it "converts a title to a slug"
-    (expect (org-roam--title-to-slug "English")
+    (expect (kisaragi-notes//title-to-slug "English")
             :to-equal "english")
-    (expect (org-roam--title-to-slug "Text with space と漢字")
+    (expect (kisaragi-notes//title-to-slug "Text with space と漢字")
             :to-equal "text_with_space_と漢字")
-    (expect (org-roam--title-to-slug "many____underscores")
+    (expect (kisaragi-notes//title-to-slug "many____underscores")
             :to-equal "many_underscores")
-    (expect (org-roam--title-to-slug "äöü")
-            :to-equal "aou")
-    (expect (org-roam--title-to-slug "_starting and ending_")
+    ;; Keep diacritics
+    (expect (kisaragi-notes//title-to-slug "äöü")
+            :to-equal "äöü")
+    ;; Normalizes to composed from
+    (expect (kisaragi-notes//title-to-slug (string ?て #x3099))
+            :to-equal (string ?で))
+    (expect (kisaragi-notes//title-to-slug "_starting and ending_")
             :to-equal "starting_and_ending")
-    (expect (org-roam--title-to-slug "isn't alpha numeric")
+    (expect (kisaragi-notes//title-to-slug "isn't alpha numeric")
             :to-equal "isn_t_alpha_numeric"))
   (it "removes Org links from a string"
     (expect
