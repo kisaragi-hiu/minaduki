@@ -90,7 +90,7 @@
 
 (defvar bibtex-completion-bibliography)
 (defvar bibtex-completion-find-note-functions)
-(declare-function bibtex-completion-apa-get-value
+(declare-function bibtex-completion-get-value
                   "bibtex-completion" (field entry &optional default))
 (declare-function bibtex-completion-get-entry
                   "bibtex-completion" (entry-key))
@@ -604,14 +604,14 @@ is a BibTeX entry as returned by `bibtex-completion-get-entry'."
               (or (if (and file-keyword (string= field-name file-keyword))
                       (prog1
                           (orb-process-file-field
-                           (bibtex-completion-apa-get-value "=key=" entry))
+                           (bibtex-completion-get-value "=key=" entry))
                         ;; we're done so don't even compare file-name with
                         ;; file-keyword in the successive cycles
                         (setq file-keyword nil))
                     ;; do the usual processing otherwise
                     ;; condition-case to temporary workaround an upstream bug
                     (condition-case nil
-                        (bibtex-completion-apa-get-value field-name entry)
+                        (bibtex-completion-get-value field-name entry)
                       (error "")))
                   ""))
              ;; org-capture prompt wildcard
@@ -693,7 +693,7 @@ a capture session."
              (org-roam-capture--convert-template template))
             (citekey-formatted (format (or orb-citekey-format "%s") citekey))
             (title
-             (or (bibtex-completion-apa-get-value "title" entry)
+             (or (bibtex-completion-get-value "title" entry)
                  (orb-warning "Title not found for this entry")
                  ;; this is not critical, the user may input their own
                  ;; title
