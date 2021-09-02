@@ -1,5 +1,6 @@
 /.sandbox/
 **/*.elc
+*.elc
 /doc/dir
 /doc/*.info
 /doc/*.pdf

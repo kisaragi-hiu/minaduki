@@ -1,6 +1,6 @@
 * Changelog
 
-This fork starts off from Org-roam 1.2.4.
+This fork starts off from Org-roam 1.2.4 and Org-roam-bibtex 0.4 ([[https://github.com/org-roam/org-roam-bibtex/commit/5236917e1d8a4f88daadacc690248854f53facb4][5236917]]).
 
 ** Fork 1.5
 
@@ -13,3 +13,12 @@ I want the version to be bigger than 1.2.4 so that it never looks like a downgra
   - Add a user option for where to look for diary entries (instead of hard-coding it to a variable in my Emacs config)
   - Change the naming scheme for functions and variables
   - Merge necessary helpers (=k/today=) into this repository
+- Speed up =org-roam--list-files-rg= by using =call-process= directly and not through =shell-command=
+- Remove =org-roam--list-files-find=
+- Use my own backlinks insertion functions
+  - Add support for indexing and showing links in titles
+    - Not highlighted in Org mode, but will show up as backlinks.
+- Overhaul the backlinks buffer
+  - When you open another note then go back to the previous one, the backlinks buffer now remembers where your cursor was.
+  - Link context is also saved and displayed
+- Merge org-roam-bibtex 0.4 ([[https://github.com/org-roam/org-roam-bibtex/commit/5236917e1d8a4f88daadacc690248854f53facb4][5236917]]) in here
