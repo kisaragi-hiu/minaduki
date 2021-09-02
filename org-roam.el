@@ -499,20 +499,21 @@ Use external shell commands if defined in `org-roam-list-files-commands'."
 
 (defun org-roam--title-to-slug (title)
   "Convert TITLE to a filename-suitable slug."
-  (cl-flet* ((nonspacing-mark-p (char)
-                                (memq char org-roam-slug-trim-chars))
-             (strip-nonspacing-marks (s)
-                                     (ucs-normalize-NFC-string
-                                      (apply #'string (seq-remove #'nonspacing-mark-p
-                                                                  (ucs-normalize-NFD-string s)))))
-             (cl-replace (title pair)
-                         (replace-regexp-in-string (car pair) (cdr pair) title)))
-    (let* ((pairs `(("[^[:alnum:][:digit:]]" . "_")  ;; convert anything not alphanumeric
-                    ("__*" . "_")  ;; remove sequential underscores
-                    ("^_" . "")  ;; remove starting underscore
-                    ("_$" . "")))  ;; remove ending underscore
-           (slug (-reduce-from #'cl-replace (strip-nonspacing-marks title) pairs)))
-      (downcase slug))))
+  (let* ((pairs `(("[^[:alnum:][:digit:]]" . "_")  ;; convert anything not alphanumeric
+                  ("__*" . "_")  ;; remove sequential underscores
+                  ("^_" . "")  ;; remove starting underscore
+                  ("_$" . "")))  ;; remove ending underscore
+         (slug
+          (--> title
+            ;; Strip nonspacing marks
+            ucs-normalize-NFD-string
+            (seq-remove (lambda (char) (memq char org-roam-slug-trim-chars)) it)
+            (apply #'string it)
+            ucs-normalize-NFC-string
+            ;; Do the replacement. Note that `s-replace-all' does not
+            ;; use regexp.
+            (--reduce-from (replace-regexp-in-string (car it) (cdr it) acc) it pairs))))
+    (downcase slug)))
 
 (defun org-roam-format-link (target &optional description type _link-type)
   ;; I'll probably eventually tear down `link-type'
