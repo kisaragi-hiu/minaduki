@@ -1132,7 +1132,7 @@ details."
           ,@actions)))
     (orb-note-actions-hydra/body)))
 
-(defun orb-note-actions--run (interface citekey )
+(defun orb-note-actions--run (interface citekey)
   "Run note actions on CITEKEY with INTERFACE."
   (let ((fun (intern (concat "orb-note-actions-" (symbol-name interface)))))
     (if (fboundp fun)

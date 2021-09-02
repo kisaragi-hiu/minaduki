@@ -185,7 +185,7 @@ Finally, if the control string is nil, the object will be formatted as \"%s\":
              (file-exists-p orb--temp-dir)
              orb--temp-dir)
         (make-temp-file "orb-" t))
-"Directory to hold temporary files created during reference parsing.
+    "Directory to hold temporary files created during reference parsing.
 Used by `orb-temp-file'.  This directory will be removed on Emacs
 shutdown."))
 

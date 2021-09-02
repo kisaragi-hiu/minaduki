@@ -371,7 +371,7 @@ This is an auxiliary function for command
     ;; TODO: for testing until implemented
     (when natural-order
       (cl-pushnew `("natural-order" . ,natural-order) entry))
-     (cons new-key (cons entry validp))))
+    (cons new-key (cons entry validp))))
 
 (defun orb-pdf-scrapper--sort-refs (refs)
   "Sort references REFS.
@@ -411,8 +411,7 @@ available in the user databases;
 ;; ============================================================================
 
 (defsubst orb-pdf-scrapper--get-numbering-source ()
-  "."
-  )
+  ".")
 
 (defun orb-pdf-scrapper--get-reference-number
     (entry &optional numbering-source)
@@ -480,15 +479,15 @@ Similar to `bibtex-completion-get-value' but does some additional cleaning."
     (cond
      ((member field '("author" "editor"))
       (--> value
-           (split-string it " and " t "[ ,.;:-]+")
-           (if (> (length it) 3)
-               (append (-take 3 it) '("et.al."))
-             it)
-           (concat (mapconcat #'identity it "; "))))
+        (split-string it " and " t "[ ,.;:-]+")
+        (if (> (length it) 3)
+            (append (-take 3 it) '("et.al."))
+          it)
+        (concat (mapconcat #'identity it "; "))))
      ((string= field "citation-number")
       (orb-pdf-scrapper--get-reference-number entry))
      ((string= field "=key=")
-       (format orb-pdf-scrapper-citekey-format value))
+      (format orb-pdf-scrapper-citekey-format value))
      (t value))))
 
 (defun orb-pdf-scrapper--insert-org-as-table (ref-alist)
@@ -519,26 +518,26 @@ list otherwise."
   (cond
    (orb-pdf-scrapper-group-references
     (dolist (ref-group
-           (orb-pdf-scrapper--sort-refs orb-pdf-scrapper--refs))
-    (when-let* ((group (car ref-group))
-                (refs (cdr ref-group))
-                (heading
-                 (cdr (assoc group
-                             orb-pdf-scrapper-grouped-export)))
-                (title (car heading))
-                (type (cadr heading)))
-      (org-insert-heading '(16) nil t)
-      ;; insert heading
-      (insert (format "%s\n" title))
-      (org-demote)
-      (org-end-of-subtree)
-      ;; insert references
-      (insert (format "\n#+name: %s\n" group))
-      (cl-case type
-        ('table
-         (orb-pdf-scrapper--insert-org-as-table refs))
-        (t
-         (orb-pdf-scrapper--insert-org-as-list refs))))))
+             (orb-pdf-scrapper--sort-refs orb-pdf-scrapper--refs))
+      (when-let* ((group (car ref-group))
+                  (refs (cdr ref-group))
+                  (heading
+                   (cdr (assoc group
+                               orb-pdf-scrapper-grouped-export)))
+                  (title (car heading))
+                  (type (cadr heading)))
+        (org-insert-heading '(16) nil t)
+        ;; insert heading
+        (insert (format "%s\n" title))
+        (org-demote)
+        (org-end-of-subtree)
+        ;; insert references
+        (insert (format "\n#+name: %s\n" group))
+        (cl-case type
+          ('table
+           (orb-pdf-scrapper--insert-org-as-table refs))
+          (t
+           (orb-pdf-scrapper--insert-org-as-list refs))))))
    (t
     (insert "\n")
     (let ((refs (nreverse orb-pdf-scrapper--refs)))
@@ -948,7 +947,7 @@ process."
   "Keymap for `orb-pdf-scrapper-mode' minor mode.
 The keymap is updated automatically according to the Orb PDF
 Scrapper process context.  It is not supposed to be modified
-directly by user." )
+directly by user.")
 
 (defcustom orb-pdf-scrapper-mode-hook nil
   "Hook for the `orb-pdf-scrapper-mode' minor mode."
