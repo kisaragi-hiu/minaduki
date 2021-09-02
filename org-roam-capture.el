@@ -42,7 +42,6 @@
 (defvar org-roam-encrypt-files)
 (defvar org-roam-directory)
 (defvar org-roam-mode)
-(defvar org-roam-title-to-slug-function)
 (defvar org-roam-file-extensions)
 
 (declare-function  org-roam--get-title-path-completions "org-roam")
@@ -628,7 +627,7 @@ Arguments GOTO and KEYS see `org-capture'."
          (title (or (plist-get res :title) title-with-keys))
          (file-path (plist-get res :path)))
     (let ((org-roam-capture--info (list (cons 'title title)
-                                        (cons 'slug (funcall org-roam-title-to-slug-function title))
+                                        (cons 'slug (kisaragi-notes//title-to-slug title))
                                         (cons 'file file-path)))
           (org-roam-capture--context 'capture))
       (condition-case err

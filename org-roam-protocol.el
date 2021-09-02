@@ -62,7 +62,7 @@ It opens or creates a note with the given ref.
     (unless (assoc 'ref decoded-alist)
       (error "No ref key provided"))
     (when-let ((title (cdr (assoc 'title decoded-alist))))
-      (push (cons 'slug (funcall org-roam-title-to-slug-function title)) decoded-alist))
+      (push (cons 'slug (kisaragi-notes//title-to-slug title)) decoded-alist))
     (let-alist decoded-alist
       (let* ((ref (org-protocol-sanitize-uri .ref))
              (type (and (string-match org-link-plain-re ref)

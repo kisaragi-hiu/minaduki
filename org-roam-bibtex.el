@@ -71,6 +71,7 @@
 ;; ============================================================================
 
 (require 'orb-core)
+(require 'org-roam-macs)
 
 (when (featurep 'ivy-bibtex)
   (require 'orb-ivy))
@@ -224,11 +225,11 @@ Supported values are symbols `citekey' and `title'.
 A special variable `${slug}` in `orb-templates' (and
 `org-roam-capture-templates') is used as a placeholder for an
 automatically generated string which is meant to be used in
-filenames.  Org Roam uses the note's title to create a slug.  ORB
-also allows for the citekey.  The function specified in
-`org-roam-title-to-slug-function' is used to create the slug.
-This operation typilcally involves removing whitespace and
-converting words to lowercase, among possibly other things."
+filenames. Org Roam uses the note's title to create a slug. ORB
+also allows for the citekey. `kisaragi-notes//title-to-slug' is
+used to create the slug. This operation typilcally involves
+removing whitespace and converting words to lowercase, among
+possibly other things."
   :type '(choice
           (const citekey)
           (const title))
@@ -719,9 +720,7 @@ or `title' should be used for slug: %s not supported" orb-slug-source))))
                          (org-roam-capture--info
                           `((title . ,title)
                             (ref . ,citekey-formatted)
-                            (slug . ,(funcall
-                                      org-roam-title-to-slug-function
-                                      slug-source)))))
+                            (slug . ,(kisaragi-notes//title-to-slug slug-source)))))
                     (setq org-roam-capture-additional-template-props
                           (list :finalize 'find-file))
                     (org-roam-capture--capture))

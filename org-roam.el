@@ -945,7 +945,7 @@ replaced links are made relative to the current buffer."
 (defcustom org-roam-rename-file-on-title-change t
   "If non-nil, alter the filename on title change.
 The new title is converted into a slug using
-`org-roam-title-to-slug-function', and compared with the current
+`kisaragi-notes//title-to-slug', and compared with the current
 filename."
   :group 'org-roam
   :type 'boolean)
@@ -994,18 +994,18 @@ To be added to `org-roam-title-change-hook'."
 (defun org-roam--update-file-name-on-title-change (old-title new-title)
   "Update the file name on title change.
 The slug is computed from OLD-TITLE using
-`org-roam-title-to-slug-function'. If the slug is part of the
+`kisaragi-notes//title-to-slug'. If the slug is part of the
 current filename, the new slug is computed with NEW-TITLE, and
 that portion of the filename is renamed.
 
 To be added to `org-roam-title-change-hook'."
   (org-roam--save-buffers)
   (when org-roam-rename-file-on-title-change
-    (let* ((old-slug (funcall org-roam-title-to-slug-function old-title))
+    (let* ((old-slug (kisaragi-notes//title-to-slug old-title))
            (file (buffer-file-name (buffer-base-buffer)))
            (file-name (file-name-nondirectory file)))
       (when (string-match-p old-slug file-name)
-        (let* ((new-slug (funcall org-roam-title-to-slug-function new-title))
+        (let* ((new-slug (kisaragi-notes//title-to-slug new-title))
                (new-file-name (replace-regexp-in-string old-slug new-slug file-name)))
           (unless (string-equal file-name new-file-name)
             (rename-file file-name new-file-name)
@@ -1173,7 +1173,7 @@ If NO-CONFIRM, assume that the user does not want to modify the initial prompt."
     (if file-path
         (org-roam--find-file file-path)
       (let ((org-roam-capture--info `((title . ,title-with-tags)
-                                      (slug  . ,(funcall org-roam-title-to-slug-function title-with-tags))))
+                                      (slug  . ,(kisaragi-notes//title-to-slug title-with-tags))))
             (org-roam-capture--context 'title))
         (setq org-roam-capture-additional-template-props (list :finalize 'find-file))
         (org-roam-capture--capture)))))
@@ -1283,7 +1283,7 @@ If DESCRIPTION is provided, use this as the link label.  See
                  (insert (org-roam-format-link target-file-path description link-type)))
                 (t
                  (let ((org-roam-capture--info `((title . ,title-with-tags)
-                                                 (slug . ,(funcall org-roam-title-to-slug-function title-with-tags))))
+                                                 (slug . ,(kisaragi-notes//title-to-slug title-with-tags))))
                        (org-roam-capture--context 'title))
                    (setq org-roam-capture-additional-template-props (list :region (org-roam-shield-region beg end)
                                                                           :insert-at (point-marker)
