@@ -630,7 +630,7 @@ is a BibTeX entry as returned by `bibtex-completion-get-entry'."
             (if (string= (match-string 1 tp) rplc-s)
                 (progn
                   (setq pos (length tp))
-                  (cl-pushnew (list rplc-s field-value i) lst ))
+                  (cl-pushnew (list rplc-s field-value i) lst))
               (setq pos (match-end 1)
                     i (1+ i)))))
         ;; Replace org-roam-capture prompt wildcards
@@ -672,11 +672,11 @@ a capture session."
                                ;; if only one template is defined, use it
                                (car org-capture-templates)
                              (org-capture-select-template))
-                           (copy-tree it)
-                           ;; optionally preformat templates
-                           (if orb-preformat-templates
-                               (orb--preformat-template it entry)
-                             it)))
+                        (copy-tree it)
+                        ;; optionally preformat templates
+                        (if orb-preformat-templates
+                            (orb--preformat-template it entry)
+                          it)))
             ;; pretend we had only one template
             ;; `org-roam-capture--capture' behaves specially in this case
             ;; NOTE: this circumvents using functions other than
@@ -720,8 +720,8 @@ or `title' should be used for slug: %s not supported" orb-slug-source))))
                           `((title . ,title)
                             (ref . ,citekey-formatted)
                             (slug . ,(funcall
-                                     org-roam-title-to-slug-function
-                                     slug-source)))))
+                                      org-roam-title-to-slug-function
+                                      slug-source)))))
                     (setq org-roam-capture-additional-template-props
                           (list :finalize 'find-file))
                     (org-roam-capture--capture))
