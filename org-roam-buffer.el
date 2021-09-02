@@ -229,11 +229,10 @@ or to this file's ROAM_KEY.
                       (--map (s-replace " " "_" (downcase it)))
                       (s-join ":")
                       (format "  :%s:"))
-                    "")
-                "\n")
+                    ""))
         (dolist (prop props)
           (insert
-           (format "\n/%s/\n\n"
+           (format "\n\n/%s/\n\n"
                    (or (-some--> (plist-get prop :outline)
                          (string-join it " › ")
                          (org-roam-buffer-expand-links it file-from)
