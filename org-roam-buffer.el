@@ -218,8 +218,7 @@ or to this file's ROAM_KEY.
         (insert "\n\n** "
                 ;; title link
                 (org-roam-format-link file-from
-                                      (kisaragi-notes//remove-org-links (org-roam-db--get-title file-from))
-                                      "file")
+                                      (kisaragi-notes//remove-org-links (org-roam-db--get-title file-from)))
                 ;; tags
                 (or (-some->> (org-roam-db-query [:select tags :from tags
                                                   :where (= file $s1)]

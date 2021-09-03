@@ -267,9 +267,9 @@ the target of LINK (title or heading content)."
     (list link-type loc desc mkr)))
 
 ;;; Conversion Functions
-(defun org-roam-link--replace-link (link-type loc &optional desc)
+(defun org-roam-link--replace-link (type loc &optional desc)
   "Replace link at point with a vanilla Org link.
-LINK-TYPE is the Org link type, typically \"file\" or \"id\".
+TYPE is the Org link type, typically \"file\" or \"id\".
 LOC is path for the Org link.
 DESC is the link description."
   (save-excursion
@@ -277,7 +277,7 @@ DESC is the link description."
       (unless (org-in-regexp org-link-bracket-re 1)
         (user-error "No link at point"))
       (replace-match "")
-      (insert (org-roam-format-link loc desc link-type)))))
+      (insert (org-roam-format-link loc desc type)))))
 
 (defun org-roam-link-replace-all ()
   "Replace all roam links in the current buffer."

@@ -477,8 +477,7 @@ Use external shell commands if defined in `org-roam-list-files-commands'."
       (file-relative-name (expand-file-name org-roam-directory))
       (file-name-sans-extension)))
 
-(defun org-roam-format-link (target &optional description type _link-type)
-  ;; I'll probably eventually tear down `link-type'
+(defun org-roam-format-link (target &optional description type)
   "Formats an org link for a given file TARGET, link DESCRIPTION and link TYPE.
 TYPE defaults to \"file\".
 
@@ -908,12 +907,11 @@ updated. Else, update with NEW-DESC."
             path (org-element-property :path link))
       (when (and (string-equal (expand-file-name path) old-path)
                  (org-in-regexp org-link-bracket-re 1))
-        (setq link-type (when (file-name-absolute-p path) 'absolute)
-              label (if (match-end 2)
+        (setq label (if (match-end 2)
                         (match-string-no-properties 2)
                       (org-link-unescape (match-string-no-properties 1))))
         (setq new-label (if (string-equal label old-desc) new-desc label))
-        (org-roam-format-link new-path new-label type link-type)))))
+        (org-roam-format-link new-path new-label type)))))
 
 (defun org-roam--replace-link (old-path new-path &optional old-desc new-desc)
   "Replace Org-roam file links with path OLD-PATH to path NEW-PATH.
@@ -1236,11 +1234,11 @@ included as a candidate."
   (find-file (seq-random-elt (org-roam--list-all-files))))
 
 ;;;###autoload
-(defun org-roam-insert (&optional lowercase completions filter-fn description link-type)
+(defun org-roam-insert (&optional lowercase completions filter-fn description type)
   "Find an Org-roam file, and insert a relative org link to it at point.
 Return selected file if it exists.
 If LOWERCASE is non-nil, downcase the link description.
-LINK-TYPE is the type of link to be created. It defaults to \"file\".
+TYPE is the type of link to be created. It defaults to \"file\".
 COMPLETIONS is a list of completions to be used instead of
 `org-roam--get-title-path-completions`.
 FILTER-FN is the name of a function to apply on the candidates
@@ -1280,14 +1278,14 @@ If DESCRIPTION is provided, use this as the link label.  See
                    (delete-region beg end)
                    (set-marker beg nil)
                    (set-marker end nil))
-                 (insert (org-roam-format-link target-file-path description link-type)))
+                 (insert (org-roam-format-link target-file-path description type)))
                 (t
                  (let ((org-roam-capture--info `((title . ,title-with-tags)
                                                  (slug . ,(kisaragi-notes//title-to-slug title-with-tags))))
                        (org-roam-capture--context 'title))
                    (setq org-roam-capture-additional-template-props (list :region (org-roam-shield-region beg end)
                                                                           :insert-at (point-marker)
-                                                                          :link-type link-type
+                                                                          :link-type type
                                                                           :link-description description
                                                                           :finalize 'insert-link))
                    (org-roam-capture--capture))))
