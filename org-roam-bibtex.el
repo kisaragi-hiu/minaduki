@@ -720,6 +720,8 @@ or `title' should be used for slug: %s not supported" orb-slug-source))))
                          (org-roam-capture--info
                           `((title . ,title)
                             (ref . ,citekey-formatted)
+                            ,@(when-let (url (bibtex-completion-get-value "url" entry))
+                                `((url . ,url)))
                             (slug . ,(kisaragi-notes//title-to-slug slug-source)))))
                     (setq org-roam-capture-additional-template-props
                           (list :finalize 'find-file))
