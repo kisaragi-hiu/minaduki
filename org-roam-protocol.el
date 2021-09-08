@@ -37,73 +37,33 @@
 ;;; Code:
 (require 'org-protocol)
 (require 'org-roam)
-(require 'ol) ;; for org-link-decode
-
-(defcustom org-roam-protocol-store-links nil
-  "Whether to store links when capturing websites with `org-roam-protocol'."
-  :type 'boolean
-  :group 'org-roam)
+(require 'org-roam-bibtex) ; orb-edit-notes
 
 ;;;; Functions
-(defun org-roam-protocol-open-ref (info)
-  "Process an org-protocol://roam-ref?ref= style url with INFO.
+(cl-defun kisaragi-notes-protocol/open-file ((&key file key))
+  "An org-protocol handler to open a note file.
 
-It opens or creates a note with the given ref.
+Arguments are passed in as a plist like (:file FILE :key KEY).
+This corresponds to the org-protocol URL
+\"org-protocol://notes?file=FILE&key=KEY\".
 
-  javascript:location.href = \\='org-protocol://roam-ref?template=r&ref=\\='+ \\
-        encodeURIComponent(location.href) + \\='&title=\\=' + \\
-        encodeURIComponent(document.title) + \\='&body=\\=' + \\
-        encodeURIComponent(window.getSelection())"
-  (when-let* ((alist (org-roam--plist-to-alist info))
-              (decoded-alist (mapcar (lambda (k.v)
-                                       (let ((key (car k.v))
-                                             (val (cdr k.v)))
-                                         (cons key (org-link-decode val)))) alist)))
-    (unless (assoc 'ref decoded-alist)
-      (error "No ref key provided"))
-    (when-let ((title (cdr (assoc 'title decoded-alist))))
-      (push (cons 'slug (kisaragi-notes//title-to-slug title)) decoded-alist))
-    (let-alist decoded-alist
-      (let* ((ref (org-protocol-sanitize-uri .ref))
-             (type (and (string-match org-link-plain-re ref)
-                        (match-string 1 ref)))
-             (title (or .title ""))
-             (body (or .body ""))
-             (orglink
-              (org-link-make-string ref (or (org-string-nw-p title) ref))))
-        (when org-roam-protocol-store-links
-          (push (list ref title) org-stored-links))
-        (org-link-store-props :type type
-                              :link ref
-                              :annotation orglink
-                              :initial body)))
-    (let* ((org-roam-capture-templates org-roam-capture-ref-templates)
-           (org-roam-capture--context 'ref)
-           (org-roam-capture--info decoded-alist)
-           (org-capture-link-is-already-stored t)
-           (template (cdr (assoc 'template decoded-alist))))
-      (raise-frame)
-      (org-roam-capture--capture nil template)
-      (org-roam-message "Item captured.")))
-  nil)
+FILE: a path relative to `org-roam-directory'.
+KEY: a cite key corresponding to the ROAM_KEY keyword
 
-(defun org-roam-protocol-open-file (info)
-  "This handler simply opens the file with emacsclient.
+FILE takes precedence over KEY.
 
-INFO is an alist containing additional information passed by the protocol URL.
-It should contain the FILE key, pointing to the path of the file to open.
+Example:
 
-  Example protocol string:
+emacsclient 'org-protocol://notes?file=characters/闇音レンリ.org'
+emacsclient 'org-protocol://notes?key=banjoazusa2020'"
+  (cond (file
+         (find-file (f-join org-roam-directory file)))
+        (key
+         (orb-edit-notes key))))
 
-org-protocol://roam-file?file=/path/to/file.org"
-  (when-let ((file (plist-get info :file)))
-    (raise-frame)
-    (org-roam--find-file file))
-  nil)
-
-(push '("org-roam-ref"  :protocol "roam-ref"   :function org-roam-protocol-open-ref)
-      org-protocol-protocol-alist)
-(push '("org-roam-file"  :protocol "roam-file"   :function org-roam-protocol-open-file)
+(push '("kisaragi-notes"
+        :protocol "notes"
+        :function kisaragi-notes-protocol/open-file)
       org-protocol-protocol-alist)
 
 (provide 'org-roam-protocol)
