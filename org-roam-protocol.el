@@ -40,6 +40,8 @@
 (require 'org-roam-bibtex) ; orb-edit-notes
 
 ;;;; Functions
+
+;;;###autoload
 (cl-defun kisaragi-notes-protocol/open-file ((&key file key))
   "An org-protocol handler to open a note file.
 
@@ -61,10 +63,12 @@ emacsclient 'org-protocol://notes?key=banjoazusa2020'"
         (key
          (orb-edit-notes key))))
 
-(push '("kisaragi-notes"
-        :protocol "notes"
-        :function kisaragi-notes-protocol/open-file)
-      org-protocol-protocol-alist)
+;;;###autoload
+(cl-pushnew '("kisaragi-notes"
+              :protocol "notes"
+              :function kisaragi-notes-protocol/open-file)
+            org-protocol-protocol-alist
+            :test #'equal)
 
 (provide 'org-roam-protocol)
 
