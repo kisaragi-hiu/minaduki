@@ -1,9 +1,13 @@
 ;;; org-roam-protocol.el --- Protocol handler for roam:// links  -*- coding: utf-8; lexical-binding: t; -*-
 
+;; Copyright © 2021 Kisaragi Hiu <mail@kisaragi-hiu.com>
 ;; Copyright © 2020 Jethro Kuan <jethrokuan95@gmail.com>
-;; Author: Jethro Kuan <jethrokuan95@gmail.com>
-;; URL: https://github.com/org-roam/org-roam
-;; Keywords: org-mode, roam, convenience
+;;
+;; Author: Kisaragi Hiu <mail@kisaragi-hiu.com>
+;;         Jethro Kuan <jethrokuan95@gmail.com>
+;; URL: https://github.com/kisaragi-hiu/org-roam
+;;
+;; Keywords: org-mode, convenience, org-protocol
 ;; Version: 1.2.3
 ;; Package-Requires: ((emacs "26.1") (org "9.3"))
 
@@ -26,13 +30,34 @@
 
 ;;; Commentary:
 ;;
-;; We extend org-protocol, adding custom Org-roam handlers. The setup
-;; instructions for `org-protocol' can be found in org-protocol.el.
+;; org-protocol handlers. After loading this file,
 ;;
-;; We define 2 protocols:
+;;    emacsclient 'org-protocol://notes?key=banjoazusa2020'
 ;;
-;; 1. "roam-file": This protocol simply opens the file given by the FILE key
-;; 2. "roam-ref": This protocol creates or opens a note with the given REF
+;; will open the file associated the cite key "banjoazusa2020", and
+;;
+;;    emacsclient 'org-protocol://notes?file=blender.org'
+;;
+;; will open /path/to/org-roam-directory/blender.org.
+;;
+;; One way to set up org-protocol:// links on Linux, assuming you
+;; always want to use `emacsclient -c':
+;;
+;; 1. Copy /usr/share/applications/emacs.desktop to
+;;    ~/.local/share/applications/emacs.desktop, where it will shadow
+;;    the system-wide file
+;;
+;; 2. Change Exec= from "emacs %F" to "emacsclient -c %U"
+;;    - We use %U to get URLs
+;;    - It seems to open files just fine, though if the desktop passed
+;;      a file:// link to Emacs it will fail
+;;
+;; 3. Add "x-scheme-handler/org-protocol;" to the end of MimeType
+;;
+;; 4. Wait a bit for it to take effect
+;;
+;; 5. Try opening an org-protocol:// link again from, say, Firefox. It
+;;    should ask you whether you want to open this link with it.
 ;;
 ;;; Code:
 (require 'org-protocol)
