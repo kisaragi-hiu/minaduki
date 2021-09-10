@@ -89,11 +89,12 @@ emacsclient 'org-protocol://notes?key=banjoazusa2020'"
          (orb-edit-notes key))))
 
 ;;;###autoload
-(cl-pushnew '("kisaragi-notes"
-              :protocol "notes"
-              :function kisaragi-notes-protocol/open-file)
-            org-protocol-protocol-alist
-            :test #'equal)
+(with-eval-after-load 'org-protocol
+  (cl-pushnew '("kisaragi-notes"
+                :protocol "notes"
+                :function kisaragi-notes-protocol/open-file)
+              org-protocol-protocol-alist
+              :test #'equal))
 
 (provide 'org-roam-protocol)
 
