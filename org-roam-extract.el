@@ -54,6 +54,18 @@ roam_alias."
     ;; We have a list of lists at this point. Join them.
     (apply #'append it)))
 
+(defun kisaragi-notes-extract//org-links-context ()
+  "Return the context around point."
+  (let ((context (buffer-substring-no-properties
+                  (line-beginning-position)
+                  (line-end-position))))
+    (when (eq 'quote-block
+              (car (-> (org-element-at-point)
+                     org-element-lineage
+                     -last-item)))
+      (setq context (format "#+begin_quote\n%s\n#+end_quote" context)))
+    context))
+
 (defun org-roam--extract-links-org (file-path)
   "Extract links in current buffer in Org mode format ([[target][desc]]).
 
@@ -64,32 +76,33 @@ Assume links come from FILE-PATH."
       (while (re-search-forward org-link-any-re nil t)
         (save-excursion
           (goto-char (match-beginning 0))
-          (when-let (link (org-element-link-parser))
-            (goto-char (org-element-property :begin link))
-            (let* ((type (org-roam--collate-types (org-element-property :type link)))
-                   (path (org-element-property :path link))
-                   (content (buffer-substring-no-properties (line-beginning-position) (line-end-position)))
-                   (properties (list :outline (org-roam--get-outline-path)
-                                     :point (point)
-                                     :content content))
-                   (names (pcase type
-                            ("id"
-                             (when-let ((file-path (org-roam-id-get-file path)))
-                               (list file-path)))
-                            ("cite" (list path))
-                            ("website" (list path))
-                            ("fuzzy" (list path))
-                            ("roam" (list path))
-                            (_ (if (or (file-remote-p path)
-                                       (org-roam--url-p path))
-                                   (list path)
-                                 (let ((file-maybe (expand-file-name path (file-name-directory file-path))))
-                                   (if (f-exists? file-maybe)
-                                       (list file-maybe)
-                                     (list path))))))))
-              (dolist (name names)
-                (when name
-                  (push (vector file-path name type properties) links)))))))
+          (let ((link (org-element-link-parser)))
+            (when link
+              (goto-char (org-element-property :begin link))
+              (let* ((type (org-roam--collate-types (org-element-property :type link)))
+                     (path (org-element-property :path link))
+                     (content (kisaragi-notes-extract//org-links-context))
+                     (properties (list :outline (org-roam--get-outline-path)
+                                       :point (point)
+                                       :content content))
+                     (names (pcase type
+                              ("id"
+                               (when-let ((file-path (org-roam-id-get-file path)))
+                                 (list file-path)))
+                              ("cite" (list path))
+                              ("website" (list path))
+                              ("fuzzy" (list path))
+                              ("roam" (list path))
+                              (_ (if (or (file-remote-p path)
+                                         (org-roam--url-p path))
+                                     (list path)
+                                   (let ((file-maybe (expand-file-name path (file-name-directory file-path))))
+                                     (if (f-exists? file-maybe)
+                                         (list file-maybe)
+                                       (list path))))))))
+                (dolist (name names)
+                  (when name
+                    (push (vector file-path name type properties) links))))))))
       links)))
 
 (defun org-roam--extract-links-wiki (file-path)
@@ -189,9 +202,7 @@ FILE-FROM is typically the buffer file path, but this may not exist, for example
 in temp buffers.  In cases where this occurs, we do know the file path, and pass
 it as FILE-PATH."
   (require 'org-ref nil t)
-  (setq file-path (or file-path
-                      org-roam-file-name
-                      (buffer-file-name)))
+  (setq file-path (or file-path org-roam-file-name (buffer-file-name)))
   (cond
    ;; Using `derived-mode-p' maybe adds 3 seconds per call to the
    ;; cache build when there are a million links. At that point 3
