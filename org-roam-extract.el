@@ -76,8 +76,12 @@ Assume links come from FILE-PATH."
       (while (re-search-forward org-link-any-re nil t)
         (save-excursion
           (goto-char (match-beginning 0))
-          (let ((link (org-element-link-parser)))
-            (when link
+          (let ((link (org-element-link-parser))
+                (elem-at-point (org-element-at-point)))
+            (when (and link
+                       (not (and (eq 'keyword (car elem-at-point))
+                                 (equal "ROAM_KEY"
+                                        (org-element-property :key elem-at-point)))))
               (goto-char (org-element-property :begin link))
               (let* ((type (org-roam--collate-types (org-element-property :type link)))
                      (path (org-element-property :path link))
