@@ -240,9 +240,10 @@ or to this file's ROAM_KEY.
           (when-let ((content (plist-get prop :content)))
             (insert
              (--> (org-roam-buffer-expand-links content file-from)
-               (s-replace "\n" " " it)
                s-trim
-               (format "- %s" it)
+               (if (= ?* (elt it 0))
+                   (concat "  " it)
+                 it)
                (propertize
                 it
                 'help-echo "mouse-1: visit backlinked note"
