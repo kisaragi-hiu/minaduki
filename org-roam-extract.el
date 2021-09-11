@@ -56,15 +56,21 @@ roam_alias."
 
 (defun kisaragi-notes-extract//org-links-context ()
   "Return the context around point."
-  (let ((context (buffer-substring-no-properties
-                  (line-beginning-position)
-                  (line-end-position))))
-    (when (eq 'quote-block
-              (car (-> (org-element-at-point)
-                     org-element-lineage
-                     -last-item)))
-      (setq context (format "#+begin_quote\n%s\n#+end_quote" context)))
-    context))
+  (let* ((elem-at-point (org-element-at-point))
+         (content
+          (buffer-substring-no-properties
+           (org-element-property :begin elem-at-point)
+           (org-element-property :end elem-at-point))))
+    (cond
+     ((eq 'quote-block
+          (org-element-type
+           (-last-item
+            (org-element-lineage
+             elem-at-point))))
+      (format "#+begin_quote\n%s\n#+end_quote"
+              (s-trim content)))
+     (t
+      content))))
 
 (defun org-roam--extract-links-org (file-path)
   "Extract links in current buffer in Org mode format ([[target][desc]]).
