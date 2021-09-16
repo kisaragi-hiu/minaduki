@@ -41,7 +41,8 @@
 (defun test-org-roam--init ()
   "."
   (let ((original-dir test-org-roam-directory)
-        (new-dir (expand-file-name (make-temp-name "org-roam") temporary-file-directory)))
+        (new-dir (expand-file-name (make-temp-name "org-roam") temporary-file-directory))
+        (org-roam-verbose nil))
     (copy-directory original-dir new-dir)
     (setq org-roam-directory new-dir)
     (org-roam-mode +1)
