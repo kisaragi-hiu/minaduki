@@ -641,8 +641,7 @@ If BUFFER is not specified, use the current buffer."
   (let ((buffer (or buffer (current-buffer)))
         path)
     (with-current-buffer buffer
-      (and (derived-mode-p 'org-mode)
-           (setq path (buffer-file-name (buffer-base-buffer)))
+      (and (setq path (buffer-file-name (buffer-base-buffer)))
            (org-roam--org-roam-file-p path)))))
 
 (defun org-roam--get-roam-buffers ()
