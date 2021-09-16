@@ -51,7 +51,7 @@ ELS += org-roam-db.el
 ELS += org-roam.el
 ELS += org-roam-graph.el
 ELS += org-roam-macs.el
-ELS += org-roam-protocol.el
+ELS += kisaragi-notes-org-protocol.el
 ELCS = $(ELS:.el=.elc)
 ELMS = org-roam.el $(filter-out $(addsuffix .el,$(PACKAGES)),$(ELS))
 ELGS = org-roam-autoloads.el org-roam-version.el

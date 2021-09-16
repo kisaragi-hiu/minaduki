@@ -1048,7 +1048,7 @@ To enable Org-roam's protocol extensions, you have to add the following to your
 init file:
 
 #+BEGIN_SRC emacs-lisp
-(require 'org-roam-protocol)
+(require 'kisaragi-notes-org-protocol)
 #+END_SRC
 
 The instructions for setting up ~org-protocol~ are reproduced below.

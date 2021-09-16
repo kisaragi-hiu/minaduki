@@ -1,4 +1,4 @@
-;;; org-roam-protocol.el --- Protocol handler for roam:// links  -*- coding: utf-8; lexical-binding: t; -*-
+;;; kisaragi-notes-org-protocol.el --- Org-protocol handler for org-protocol://notes links  -*- lexical-binding: t; -*-
 
 ;; Copyright © 2021 Kisaragi Hiu <mail@kisaragi-hiu.com>
 ;; Copyright © 2020 Jethro Kuan <jethrokuan95@gmail.com>
@@ -30,7 +30,7 @@
 
 ;;; Commentary:
 ;;
-;; org-protocol handlers. After loading this file,
+;; An org-protocol handler. After loading this file,
 ;;
 ;;    emacsclient 'org-protocol://notes?key=banjoazusa2020'
 ;;
@@ -96,6 +96,6 @@ emacsclient 'org-protocol://notes?key=banjoazusa2020'"
               org-protocol-protocol-alist
               :test #'equal))
 
-(provide 'org-roam-protocol)
+(provide 'kisaragi-notes-org-protocol)
 
-;;; org-roam-protocol.el ends here
+;;; kisaragi-notes-org-protocol.el ends here
