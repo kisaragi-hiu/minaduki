@@ -231,17 +231,17 @@ it as FILE-PATH."
 If FILE-PATH is nil, use the current file."
   (setq file-path (or file-path org-roam-file-name (buffer-file-name)))
   (let (result)
-      ;; We need to handle the special case of the file property drawer (at outline level 0)
-      (org-with-point-at (point-min)
-        (when-let ((before-first-heading (= 0 (org-outline-level)))
-                   (id (org-entry-get nil "ID")))
-           (push (vector id file-path 0) result)))
-      (org-map-region
-       (lambda ()
-         (when-let ((id (org-entry-get nil "ID")))
-           (push (vector id file-path (org-outline-level)) result)))
-       (point-min) (point-max))
-      result))
+    ;; We need to handle the special case of the file property drawer (at outline level 0)
+    (org-with-point-at (point-min)
+      (when-let ((before-first-heading (= 0 (org-outline-level)))
+                 (id (org-entry-get nil "ID")))
+        (push (vector id file-path 0) result)))
+    (org-map-region
+     (lambda ()
+       (when-let ((id (org-entry-get nil "ID")))
+         (push (vector id file-path (org-outline-level)) result)))
+     (point-min) (point-max))
+    result))
 
 (defun org-roam--extract-titles-title ()
   "Return title from \"#+title\" of the current buffer."
@@ -391,12 +391,12 @@ Each ref is returned as a cons of its type and its key."
         (`(,_ . ,roam-key)
          (org-roam--extract-global-props '("ROAM_KEY")))
       (pcase roam-key
-          ('nil nil)
-          ((pred string-empty-p)
-           (user-error "Org property #+roam_key cannot be empty"))
-          (ref
-           (when-let ((r (kisaragi-notes-extract//process-ref ref)))
-             (push r refs)))))
+        ('nil nil)
+        ((pred string-empty-p)
+         (user-error "Org property #+roam_key cannot be empty"))
+        (ref
+         (when-let ((r (kisaragi-notes-extract//process-ref ref)))
+           (push r refs)))))
     refs))
 
 (provide 'org-roam-extract)
