@@ -72,7 +72,7 @@ roam_alias."
       (format "#+begin_quote\n%s\n#+end_quote"
               (s-trim content)))
      (t
-      content))))
+      (s-trim content)))))
 
 (defun org-roam--extract-links-org (file-path)
   "Extract links in current buffer in Org mode format ([[target][desc]]).
@@ -234,6 +234,8 @@ it as FILE-PATH."
      ;; with wiki links, however, that's simply not the case.
      ;;
      ;; (org-roam--extract-links-wiki file-path)
+
+     ;; I won't bother to support Org links in Markdown.
      (org-roam--extract-links-markdown file-path)
      (org-roam--extract-links-pandoc-cite file-path)))))
 
