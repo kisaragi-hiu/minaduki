@@ -235,7 +235,7 @@
                 (--map (seq-take it 3)))
               :to-have-same-items-as
               `([,(test-org-roam--abs-path "baz.md")
-                 ,(test-org-roam--abs-path "bar.org")
+                 ,(test-org-roam--abs-path "nested/bar.org")
                  "file"]
                 [,(test-org-roam--abs-path "baz.md")
                  "乙野四方字20180920"
