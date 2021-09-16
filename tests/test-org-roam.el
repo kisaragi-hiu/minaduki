@@ -3,7 +3,6 @@
 ;; Copyright (C) 2020 Jethro Kuan
 
 ;; Author: Jethro Kuan <jethrokuan95@gmail.com>
-;; Package-Requires: ((buttercup))
 
 ;; This program is free software; you can redistribute it and/or modify
 ;; it under the terms of the GNU General Public License as published by
@@ -23,6 +22,7 @@
 
 (require 'buttercup)
 (require 'org-roam)
+(require 'seq)
 (require 'dash)
 
 (defun test-org-roam--abs-path (file-path)
@@ -214,6 +214,41 @@
                         "titles/combination.org"))
                 :to-equal
                 '("Headline" "roam" "alias" "TITLE PROP"))))))
+
+(describe "Link extraction"
+  (before-all
+    (test-org-roam--init))
+
+  (after-all
+    (test-org-roam--teardown))
+
+  (cl-flet
+      ((test (fn file)
+             (let ((buf (find-file-noselect
+                         (test-org-roam--abs-path file))))
+               (with-current-buffer buf
+                 (funcall fn)))))
+    (it "extracts links from Markdown files"
+      (expect (->> (test #'org-roam--extract-links
+                         "baz.md")
+                (--map (seq-take it 2)))
+              :to-have-same-items-as
+              `([,(test-org-roam--abs-path "baz.md")
+                 ,(test-org-roam--abs-path "bar.org")])))
+    (it "extracts links from Org files"
+      (expect (->> (test #'org-roam--extract-links
+                         "foo.org")
+                ;; Drop the link type and properties
+                (--map (seq-take it 2)))
+              :to-have-same-items-as
+              `([,(test-org-roam--abs-path "foo.org")
+                 ,(test-org-roam--abs-path "baz.md")]
+                [,(test-org-roam--abs-path "foo.org")
+                 "foo@john.com"]
+                [,(test-org-roam--abs-path "foo.org")
+                 "google.com"]
+                [,(test-org-roam--abs-path "foo.org")
+                 ,(test-org-roam--abs-path "bar.org")])))))
 
 (describe "Tag extraction"
   :var (kisaragi-notes/tag-sources)
