@@ -190,7 +190,9 @@ Assume links come from FILE-PATH."
   (save-excursion
     (goto-char (point-min))
     (cl-loop while (re-search-forward
-                    "\\(?:[^[:alnum:]]\\|^\\)\\(-?@\\)\\([-a-zA-Z0-9_+:]+\\)"
+                    (rx (or (not alnum) bol)
+                        (group (opt "-") "@")
+                        (group (one-or-more (any alnum "+:_-"))))
                     nil t)
              collect
              (let* ((target (match-string-no-properties 2))
