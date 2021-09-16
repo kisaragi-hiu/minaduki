@@ -1,0 +1,20 @@
+#+title: Conventions
+
+Trying to follow [[https://www.conventionalcommits.org/en/v1.0.0/][Conventional Commits]] for commits:
+
+#+begin_src text
+type(scope): description
+
+body
+
+footer
+#+end_src
+
+* Type
+
+- fix
+- feat
+- ci
+- docs
+- test
+- misc
