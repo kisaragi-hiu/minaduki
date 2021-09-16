@@ -93,12 +93,13 @@ All Org files, at any level of nesting, are considered part of the Org-roam."
   :type 'boolean
   :group 'org-roam)
 
-(defcustom org-roam-file-extensions '("org")
-  "Detected file extensions to include in the Org-roam ecosystem.
+(defcustom org-roam-file-extensions '("org" "md")
+  "Only files with these extensions are indexed.
+
 The first item in the list is used as the default file extension.
-While the file extensions may be different, the file format needs
-to be an `org-mode' file, and it is the user's responsibility to
-ensure that."
+
+While the file extensions may be different, the only supported
+file formats are Org-mode and Markdown (partially)."
   :type '(repeat string)
   :group 'org-roam)
 
