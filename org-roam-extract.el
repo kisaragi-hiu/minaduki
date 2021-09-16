@@ -356,6 +356,45 @@ Tags are obtained via:
      (t
       (cl-sort tags #'string-lessp :key #'downcase)))))
 
+;; Modified from md-roam's `org-roam--extract-tags-md-buffer'
+(defun kisaragi-notes-extract/tags-zettlr (&optional _file)
+  "Extracts tags written in Zettlr style.
+
+Tags are specified in Zettlr style like this:
+
+    #tag1 #tag-with-hyphen #tag_with_underscore"
+  (save-excursion
+    (goto-char (point-min))
+    (cl-loop while (re-search-forward "\\([^/s]\\)\\([#@][[:alnum:]_-]+\\)" nil t)
+             when (match-string-no-properties 2)
+             collect it)))
+
+;; Modified from md-roam's `org-roam--extract-tags-md-frontmatter'
+;;
+;; Right now this doesn't actually read YAML because there is no YAML
+;; parser in Emacs Lisp, apart from maybe
+;; https://github.com/syohex/emacs-libyaml.
+(defun kisaragi-notes-extract/tags-zettlr-frontmatter (&optional _file)
+  "Extract Zettlr style tags in a YAML frontmatter.
+
+Tags are specified like this at the beginning of the buffer:
+
+    ---
+    tags: #tag1 #tag-with-hyphen #tag_with_underscore
+    ---"
+  (save-excursion
+    (goto-char (point-min))
+    (-when-let* ((start
+                  ;; The beginning of the frontmatter, which has to be at the
+                  ;; beginning of the buffer (before char position 4).
+                  (re-search-forward "^---$" 4 t))
+                 (end
+                  ;; The end of the frontmatter
+                  (re-search-forward "^---$" nil t)))
+      (save-restriction
+        (narrow-to-region start end)
+        (kisaragi-notes-extract/tags-zettlr)))))
+
 (defun org-roam--collate-types (type)
   "Collate TYPE into a parent type.
 Packages like `org-ref' introduce many different link prefixes,

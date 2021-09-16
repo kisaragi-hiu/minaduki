@@ -229,6 +229,18 @@
                     (buf (find-file-noselect fname)))
                (with-current-buffer buf
                  (funcall fn fname)))))
+    (it "extracts Zettlr style tags, but only from frontmatter"
+      (expect (test #'kisaragi-notes-extract/tags-zettlr-frontmatter
+                    "tags/tag.md")
+              :to-equal
+              '("#abc" "#def" "#ghi")))
+
+    (it "extracts Zettlr style tags"
+      (expect (test #'kisaragi-notes-extract/tags-zettlr
+                    "tags/tag.md")
+              :to-equal
+              '("#abc" "#def" "#ghi" "#not-frontmatter-a" "#not-front-matter-b")))
+
     (it "extracts from prop"
       (expect (test #'org-roam--extract-tags-prop
                     "tags/tag.org")
