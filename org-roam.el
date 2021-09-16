@@ -901,7 +901,7 @@ Will update link to NEW-PATH. If OLD-DESC is set, and is not the
 same as the link description, it is assumed that the user has
 modified the description, and the description will not be
 updated. Else, update with NEW-DESC."
-  (let (type path link-type label new-label)
+  (let (type path label new-label)
     (when-let ((link (org-element-lineage (org-element-context) '(link) t)))
       (setq type (org-element-property :type link)
             path (org-element-property :path link))
