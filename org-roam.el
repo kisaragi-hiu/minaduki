@@ -340,7 +340,7 @@ If FILE is not specified, use the current buffer's file-path."
   (when-let ((path (or file
                        org-roam-file-name
                        (-> (buffer-base-buffer)
-                           (buffer-file-name)))))
+                         (buffer-file-name)))))
     (save-match-data
       (and
        (org-roam--org-file-p path)
@@ -474,8 +474,8 @@ Use external shell commands if defined in `org-roam-list-files-commands'."
 (defun org-roam--path-to-slug (path)
   "Return a slug from PATH."
   (-> path
-      (file-relative-name (expand-file-name org-roam-directory))
-      (file-name-sans-extension)))
+    (file-relative-name (expand-file-name org-roam-directory))
+    (file-name-sans-extension)))
 
 (defun org-roam-format-link (target &optional description type)
   "Formats an org link for a given file TARGET, link DESCRIPTION and link TYPE.
@@ -724,8 +724,8 @@ citation key, for Org-ref cite links."
   (unless (listp targets)
     (setq targets (list targets)))
   (let ((conditions (--> targets
-                         (mapcar (lambda (i) (list '= 'dest i)) it)
-                         (org-roam--list-interleave it :or))))
+                      (mapcar (lambda (i) (list '= 'dest i)) it)
+                      (org-roam--list-interleave it :or))))
     (org-roam-db-query `[:select [source dest properties] :from links
                          :where ,@conditions
                          :order-by (asc source)])))
@@ -831,7 +831,7 @@ currently opened Org-roam file in the backlink buffer, or
 file."
   (save-match-data
     (let* ((in-note (-> (buffer-file-name (buffer-base-buffer))
-                        (org-roam--org-roam-file-p)))
+                      (org-roam--org-roam-file-p)))
            (custom (or (and in-note org-roam-link-use-custom-faces)
                        (eq org-roam-link-use-custom-faces 'everywhere))))
       (cond ((and custom
@@ -855,7 +855,7 @@ currently opened Org-roam file in the backlink buffer, or
 file."
   (save-match-data
     (let* ((in-note (-> (buffer-file-name (buffer-base-buffer))
-                        (org-roam--org-roam-file-p)))
+                      (org-roam--org-roam-file-p)))
            (custom (or (and in-note org-roam-link-use-custom-faces)
                        (eq org-roam-link-use-custom-faces 'everywhere))))
       (cond ((and (org-roam--in-buffer-p)
@@ -1094,7 +1094,7 @@ M-x info for more information at Org-roam > Installation > Post-Installation Tas
     (add-hook 'org-open-at-point-functions #'org-roam-open-id-at-point)
     (when (and (not org-roam-db-file-update-timer)
                (eq org-roam-db-update-method 'idle-timer))
-        (setq org-roam-db-file-update-timer (run-with-idle-timer org-roam-db-update-idle-seconds t #'org-roam-db-update-cache-on-timer)))
+      (setq org-roam-db-file-update-timer (run-with-idle-timer org-roam-db-update-idle-seconds t #'org-roam-db-update-cache-on-timer)))
     (advice-add 'rename-file :after #'org-roam--rename-file-advice)
     (advice-add 'delete-file :before #'org-roam--delete-file-advice)
     (advice-add 'org-id-new :after #'org-roam--id-new-advice)
@@ -1224,7 +1224,7 @@ included as a candidate."
                                                     completions
                                                     :require-match t))
          (file (-> (cdr (assoc ref completions))
-                   (plist-get :path))))
+                 (plist-get :path))))
     (org-roam--find-file file)))
 
 ;;;###autoload
@@ -1259,9 +1259,9 @@ If DESCRIPTION is provided, use this as the link label.  See
                     (setq region-text (org-link-display-format (buffer-substring-no-properties beg end)))))
                (completions (--> (or completions
                                      (org-roam--get-title-path-completions))
-                                 (if filter-fn
-                                     (funcall filter-fn it)
-                                   it)))
+                              (if filter-fn
+                                  (funcall filter-fn it)
+                                it)))
                (title-with-tags (org-roam-completion--completing-read "File: " completions
                                                                       :initial-input region-text))
                (res (cdr (assoc title-with-tags completions)))
