@@ -148,6 +148,7 @@ Assume links come from FILE-PATH."
                        "file" ; link-type
                        (list :content content :point begin-of-block))))))
 
+;; Modified from md-roam's `md-roam--extract-file-links'
 (defun org-roam--extract-links-markdown (file-path)
   "Extract Markdown links from current buffer.
 
@@ -181,6 +182,7 @@ Links are assumed to originate from FILE-PATH."
                  link-type
                  (list :content content :point begin-of-block)))))))
 
+;; Modified from md-roam's `md-roam--extract-cite-links'
 (defun org-roam--extract-links-pandoc-cite (file-path)
   "Extract cite links defined like this: @bibkey.
 
@@ -191,7 +193,7 @@ Assume links come from FILE-PATH."
                     "\\(?:[^[:alnum:]]\\|^\\)\\(-?@\\)\\([-a-zA-Z0-9_+:]+\\)"
                     nil t)
              collect
-             (let* ((to-file (match-string-no-properties 2))
+             (let* ((target (match-string-no-properties 2))
                     begin-of-block
                     end-of-block
                     content
@@ -203,7 +205,7 @@ Assume links come from FILE-PATH."
                  (setq begin-of-block (point))
                  (setq content (buffer-substring-no-properties begin-of-block end-of-block)))
                (vector file-path ; file-from
-                       to-file
+                       target
                        link-type
                        (list :content content :point begin-of-block))))))
 

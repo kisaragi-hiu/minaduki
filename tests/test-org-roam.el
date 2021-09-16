@@ -231,10 +231,17 @@
     (it "extracts links from Markdown files"
       (expect (->> (test #'org-roam--extract-links
                          "baz.md")
-                (--map (seq-take it 2)))
+                (--map (seq-take it 3)))
               :to-have-same-items-as
               `([,(test-org-roam--abs-path "baz.md")
-                 ,(test-org-roam--abs-path "bar.org")])))
+                 ,(test-org-roam--abs-path "bar.org")
+                 "file"]
+                [,(test-org-roam--abs-path "baz.md")
+                 "乙野四方字20180920"
+                 "cite"]
+                [,(test-org-roam--abs-path "baz.md")
+                 "quro2017"
+                 "cite"])))
     (it "extracts links from Org files"
       (expect (->> (test #'org-roam--extract-links
                          "foo.org")
