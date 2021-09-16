@@ -350,6 +350,21 @@
             :to-equal
             '(headline "" "headline" 0))))
 
+(describe "Accessing the DB"
+  (before-all
+    (test-org-roam--init))
+
+  (after-all
+    (test-org-roam--teardown))
+
+  (it "Returns a file from its title"
+    (expect (kisaragi-notes//get-files "Foo")
+            :to-equal
+            (list (test-org-roam--abs-path "foo.org")))
+    (expect (kisaragi-notes//get-files "Deeply Nested File")
+            :to-equal
+            (list (test-org-roam--abs-path "nested/deeply/deeply_nested_file.org")))))
+
 ;;; Tests
 (xdescribe "org-roam-db-build-cache"
   (before-each

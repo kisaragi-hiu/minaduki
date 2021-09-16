@@ -490,6 +490,20 @@ plist containing the path and title for the file."
               (v (list :path file-path :title title)))
           (push (cons k v) completions))))))
 
+(defun kisaragi-notes//get-files (title)
+  "Return files matching TITLE in the DB."
+  (->> (org-roam-db-query
+        ;; Leaving the join syntax here so that it's easier to modify
+        ;; later to support retrieving filepaths with tags, ids, and refs
+        [:select [files:file] :from files
+         :left-join titles
+         :on (= titles:file files:file)
+         :where (= title $s0)]
+        title)
+    ;; The above returns ((path1) (path2) ...).
+    ;; Turn it into (path1 path2 ...).
+    (apply #'nconc)))
+
 (defun org-roam--get-index-path ()
   "Return the path to the index in `org-roam-directory'.
 The path to the index can be defined in `org-roam-index-file'.
