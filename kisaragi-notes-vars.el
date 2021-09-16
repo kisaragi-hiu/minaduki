@@ -38,6 +38,7 @@ Currently available sources:
     Extract the first directory relative to `org-roam-directory'.
     That is, if a file is located at relative path foo/bar/file.org,
     the file will have tag \"foo\"."
+  :group 'org-roam
   :type '(set (const :tag "#+roam_tags"
                      org-roam--extract-tags-prop)
               (const :tag "buffer org tags"
