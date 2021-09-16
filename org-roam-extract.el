@@ -13,6 +13,8 @@
 (require 'org-roam-id)
 (require 'org-roam-macs)
 
+(require 'kisaragi-notes-vars)
+
 (defvar markdown-regex-link-inline)
 
 (defun org-roam--extract-global-props (props)
@@ -334,27 +336,25 @@ This includes all tags used in the buffer."
 
 (defun org-roam--extract-tags (&optional file)
   "Extract tags from the current buffer.
-If file-path FILE, use it to determine the directory tags.
+
+If file-path FILE is non-nil, use it to determine the directory tags.
+
 Tags are obtained via:
 
 1. Directory tags: Relative to `org-roam-directory': each folder
    path is considered a tag.
 2. The key #+roam_tags."
   (let* ((file (or file (buffer-file-name (buffer-base-buffer))))
-         (tags (-uniq
-                (mapcan (lambda (source)
-                          (funcall (intern (concat "org-roam--extract-tags-"
-                                                   (symbol-name source)))
-                                   file))
-                        org-roam-tag-sources))))
-    (pcase org-roam-tag-sort
-      ('nil tags)
-      ((pred booleanp) (cl-sort tags 'string-lessp :key 'downcase))
-      (`(,(pred symbolp) . ,_)
-       (apply #'cl-sort (push tags org-roam-tag-sort)))
-      (wrong-type (signal 'wrong-type-argument
-                          `((booleanp (list symbolp))
-                            ,wrong-type))))))
+         (tags (->> kisaragi-notes/tag-sources
+                 (mapcan (lambda (it) (funcall it file)))
+                 -uniq)))
+    (cond
+     ((not org-roam-tag-sort)
+      tags)
+     ((listp org-roam-tag-sort)
+      (apply #'cl-sort tags org-roam-tag-sort))
+     (t
+      (cl-sort tags #'string-lessp :key #'downcase)))))
 
 (defun org-roam--collate-types (type)
   "Collate TYPE into a parent type.

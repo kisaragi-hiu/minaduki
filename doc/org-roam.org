@@ -504,6 +504,8 @@ additional extraction methods, see [[id:c986edba-9498-4af1-b033-c94b733d42c8][Cu
 :ID:       c986edba-9498-4af1-b033-c94b733d42c8
 :END:
 
+TODO: replaced with =kisaragi-notes/tag-sources=, which is now a just a list of functions.
+
 Org-roam calls ~org-roam--extract-tags~ to extract tags from files. The variable
 ~org-roam-tag-sources~, to control how tags are extracted.
 

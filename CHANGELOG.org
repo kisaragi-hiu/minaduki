@@ -26,3 +26,4 @@ I want the version to be bigger than 1.2.4 so that it never looks like a downgra
 - Support plain strings in =ROAM_KEY= like ~#+roam_key: miman2017~
 - Slug styles are defined in =kisaragi-notes/slug-replacements= now
 - Replace =org-protocol://roam-ref= and =org-protocol://roam-file= handlers with =org-protocol://notes=, which supports =file= and =key= arguments
+- Tag sources is now specified as a list of extraction functions and not as symbols.

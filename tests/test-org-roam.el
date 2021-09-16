@@ -216,7 +216,7 @@
                 '("Headline" "roam" "alias" "TITLE PROP"))))))
 
 (describe "Tag extraction"
-  :var (org-roam-tag-sources)
+  :var (kisaragi-notes/tag-sources)
   (before-all
     (test-org-roam--init))
 
@@ -281,15 +281,16 @@
               :to-equal
               '("nested")))
 
-    (describe "uses org-roam-tag-sources correctly"
+    (describe "uses kisaragi-notes/tag-sources correctly"
       (it "'(prop)"
-        (expect (let ((org-roam-tag-sources '(prop)))
+        (expect (let ((kisaragi-notes/tag-sources '(org-roam--extract-tags-prop)))
                   (test #'org-roam--extract-tags
                         "tags/tag.org"))
                 :to-equal
                 '("t1" "t2 with space" "t3" "t4 second-line")))
       (it "'(prop all-directories)"
-        (expect (let ((org-roam-tag-sources '(prop all-directories)))
+        (expect (let ((kisaragi-notes/tag-sources '(org-roam--extract-tags-prop
+                                                    org-roam--extract-tags-all-directories)))
                   (test #'org-roam--extract-tags
                         "tags/tag.org"))
                 :to-equal

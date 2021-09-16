@@ -47,6 +47,8 @@
 (require 'seq)
 (eval-when-compile (require 'subr-x))
 
+(require 'kisaragi-notes-vars)
+
 ;;;; Features
 (require 'org-roam-macs)
 ;; These features should be able to be loaded order independently.
@@ -169,58 +171,9 @@ method symbol as a cons cell. For example: '(find (rg . \"/path/to/rg\"))."
   :group 'org-roam)
 
 (defcustom org-roam-tag-separator ","
-  "String to use to separate tags when `org-roam-tag-sources' is non-nil."
+  "String to use to separate tags when `kisaragi-notes/tag-sources' is non-nil."
   :type 'string
   :group 'org-roam)
-
-(defcustom org-roam-tag-sort nil
-  "When non-nil, sort the tags in the completions.
-When t, sort the tags alphabetically, regardless of case.
-`org-roam-tag-sort' can also be a list of arguments to be applied
-to `cl-sort'.  For example, these are the arguments used when
-`org-roam-tag-sort' is set to t:
-    \('string-lessp :key 'downcase)
-Only relevant when `org-roam-tag-sources' is non-nil."
-  :type '(choice
-          (boolean)
-          (list :tag "Arguments to cl-loop"))
-  :group 'org-roam)
-
-(defcustom org-roam-tag-sources '(prop)
-  "Sources to obtain tags from.
-
-It should be a list of symbols representing any of the following
-extraction methods:
-
-  `prop'
-    Extract tags from the #+roam_tags property.
-    Tags are space delimited.
-    Tags may contain spaces if they are double-quoted.
-    e.g. #+roam_tags: TAG \"tag with spaces\"
-
-  `vanilla'
-    Extract vanilla `org-mode' tags, including #+FILETAGS and
-    inherited tags.
-
-  `all-directories'
-    Extract sub-directories relative to `org-roam-directory'.
-    That is, if a file is located at relative path foo/bar/file.org,
-    the file will have tags \"foo\" and \"bar\".
-
-  `last-directory'
-    Extract the last directory relative to `org-roam-directory'.
-    That is, if a file is located at relative path foo/bar/file.org,
-    the file will have tag \"bar\".
-
-  `first-directory'
-    Extract the first directory relative to `org-roam-directory'.
-    That is, if a file is located at relative path foo/bar/file.org,
-    the file will have tag \"foo\"."
-  :type '(set (const :tag "#+roam_tags" prop)
-              (const :tag "buffer org tags" vanilla)
-              (const :tag "sub-directories" all-directories)
-              (const :tag "parent directory" last-directory)
-              (const :tag "first sub-directory" first-directory)))
 
 (defcustom kisaragi-notes/slug-replacements
   '(("[^[:alnum:][:digit:]]" . "_") ; convert anything not alphanumeric
