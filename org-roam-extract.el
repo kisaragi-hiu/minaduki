@@ -117,17 +117,23 @@ Assume links come from FILE-PATH."
                     (push (vector file-path name type properties) links))))))))
       links)))
 
+;; Modified from md-roam's `md-roam--extract-wiki-links'
+;;
+;; This now depends on the title cache having been established, which
+;; is problematic. db.el has be adapted to make sure titles are
+;; available before this is run.
 (defun org-roam--extract-links-wiki (file-path)
-  "Extract links in current buffer in this format: [[file]].
+  "Extract links in current buffer in this format: [[foo]].
 
-The target is assumed to be file.md in the above example.
+This link will point to a page titled \"foo\".
 
 Assume links come from FILE-PATH."
   (save-excursion
     (goto-char (point-min))
     (cl-loop while (re-search-forward "\\[\\[\\([^]]+\\)\\]\\]" nil t)
              collect
-             (let* ((to-file (concat (match-string-no-properties 1) ".md"))
+             (let* ((target (car (kisaragi-notes//get-files
+                                  (match-string-no-properties 1))))
                     (begin-of-block (match-beginning 0))
                     (end-of-block (save-excursion
                                     (unless (eobp)
@@ -138,9 +144,7 @@ Assume links come from FILE-PATH."
                      (buffer-substring-no-properties
                       begin-of-block end-of-block)))
                (vector file-path ; file-from
-                       (file-truename
-                        (expand-file-name
-                         to-file (file-name-directory file-path))) ; file-to
+                       target ; file-to
                        "file" ; link-type
                        (list :content content :point begin-of-block))))))
 
@@ -222,9 +226,16 @@ it as FILE-PATH."
    ((derived-mode-p 'org-mode)
     (org-roam--extract-links-org file-path))
    ((derived-mode-p 'markdown-mode)
-    (append (org-roam--extract-links-wiki file-path)
-            (org-roam--extract-links-markdown file-path)
-            (org-roam--extract-links-pandoc-cite file-path)))))
+    (append
+     ;; This one depends on the titles cache having been built.
+     ;;
+     ;; This comes from how org-roam expects links to contain file
+     ;; path information, as that is how it is in Org. When working
+     ;; with wiki links, however, that's simply not the case.
+     ;;
+     ;; (org-roam--extract-links-wiki file-path)
+     (org-roam--extract-links-markdown file-path)
+     (org-roam--extract-links-pandoc-cite file-path)))))
 
 (defun org-roam--extract-ids (&optional file-path)
   "Extract all IDs within the current buffer.
