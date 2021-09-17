@@ -31,3 +31,4 @@ I want the version to be bigger than 1.2.4 so that it never looks like a downgra
 - Markdown support, effectively including the functionalities of md-roam
   - Links are expected to be ordinary inline links
   - Wiki links (=[[path]]=) are not yet supported
+  - Aliases are specified in JSON style arrays
