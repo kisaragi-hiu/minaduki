@@ -273,7 +273,7 @@
                (with-current-buffer buf
                  (funcall fn fname)))))
     (it "extracts from #+tags[]"
-      (expect (test #'kisaragi-notes-extract/tags-zettlr-frontmatter
+      (expect (test #'org-roam--extract-tags-prop
                     "tags/hugo-style.org")
               :to-equal
               '("hello" "tag2" "tag3")))
