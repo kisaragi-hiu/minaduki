@@ -280,8 +280,21 @@ Reads from the \"roam_alias\" property."
                   (buffer-file-name)))
        nil))))
 
-(defun org-roam--extract-titles-headline ()
-  "Return the first headline of the current buffer."
+(cl-defgeneric org-roam--extract-titles-headline ()
+  "Extract the first headline as the document title."
+  nil)
+
+;; Function body from md-roam's `org-roam--extract-titles-mdheadline'
+(cl-defmethod org-roam--extract-titles-headline (&context (major-mode markdown-mode))
+  "Extract the first headline as a title in Markdown mode."
+  (save-excursion
+    (goto-char (point-min))
+    (when (re-search-forward md-roam-regex-headline nil t 1)
+      (list (or (match-string-no-properties 1)
+                (match-string-no-properties 4))))))
+
+(cl-defmethod org-roam--extract-titles-headline (&context (major-mode org-mode))
+  "Extract the first headline as a title in Org mode."
   (let ((headline (save-excursion
                     (goto-char (point-min))
                     ;; "What happens if a heading star was quoted

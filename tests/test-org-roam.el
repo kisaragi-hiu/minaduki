@@ -192,6 +192,10 @@
               :to-equal
               '("Headline"))
       (expect (test #'org-roam--extract-titles-headline
+                    "titles/headline.md")
+              :to-equal
+              '("Headline"))
+      (expect (test #'org-roam--extract-titles-headline
                     "titles/combination.org")
               :to-equal
               '("Headline")))
