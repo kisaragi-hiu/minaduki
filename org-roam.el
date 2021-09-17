@@ -458,7 +458,7 @@ In Markdown, TYPE has no effect."
      (if (functionp org-roam-link-title-format)
          (funcall org-roam-link-title-format description type)
        (format org-roam-link-title-format description))))
-   ((derived-mode 'markdown-mode)
+   ((derived-mode-p 'markdown-mode)
     (cond ((and (not description) target)
            (format "<%s>" target))
           ((not description)
