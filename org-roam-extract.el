@@ -289,7 +289,25 @@ Reads from the \"roam_alias\" property."
   "Extract the first headline as a title in Markdown mode."
   (save-excursion
     (goto-char (point-min))
-    (when (re-search-forward md-roam-regex-headline nil t 1)
+    (when (re-search-forward
+           ;; Converted from md-roam's `md-roam-regex-headline'
+           (rx (or
+                ;; Case 1:
+                ;;
+                ;; foo-bar    or    foo-bar
+                ;; =======          -------
+                ;;
+                ;; Ensure the line before the heading text consists of
+                ;; only whitespaces to exclude front matter openers
+                ;; (md-roam uses "\s" which actually stands for a
+                ;; space; I'm guessing that's a mistake)
+                (seq bol (zero-or-more whitespace) "\n"
+                     (group (zero-or-more nonl) eol) "\n"
+                     (group bol (one-or-more (any "=-")) eol))
+                ;; Case 2: "# Heading" style
+                (seq (group bol (one-or-more "#") " ")
+                     (group (zero-or-more nonl) eol))))
+           nil t)
       (list (or (match-string-no-properties 1)
                 (match-string-no-properties 4))))))
 
