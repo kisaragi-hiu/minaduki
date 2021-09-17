@@ -152,6 +152,10 @@
               :to-equal
               '("Title"))
       (expect (test #'org-roam--extract-titles-title
+                    "titles/title.md")
+              :to-equal
+              '("Title in Markdown"))
+      (expect (test #'org-roam--extract-titles-title
                     "titles/aliases.org")
               :to-equal
               nil)

@@ -17,6 +17,28 @@
 
 (defvar markdown-regex-link-inline)
 
+(defun kisaragi-notes-extract//markdown-props (prop)
+  "Extract PROP in the Markdown front matter."
+  (save-excursion
+    (goto-char (point-min))
+    ;; FIXME: extract this into a `with-front-matter' macro
+    (-when-let* ((start
+                  ;; The beginning of the frontmatter, which has to be at the
+                  ;; beginning of the buffer (before char position 4).
+                  (re-search-forward "^---$" 4 t))
+                 (end
+                  ;; The end of the frontmatter
+                  (re-search-forward "^---$" nil t)))
+      (save-restriction
+        (narrow-to-region start end)
+        (goto-char (point-min))
+        (let ((case-fold-search t))
+          (when (re-search-forward
+                 (format (rx bol "%s:" space (group (0+ any)))
+                         prop)
+                 nil t)
+            (match-string-no-properties 1)))))))
+
 (defun org-roam--extract-global-props (props)
   "Extract PROPS from the current Org buffer.
 Props are extracted from both the file-level property drawer (if
@@ -260,16 +282,30 @@ If FILE-PATH is nil, use the current file."
      (point-min) (point-max))
     result))
 
-(defun org-roam--extract-titles-title ()
+(cl-defgeneric org-roam--extract-titles-title ()
   "Return title from \"#+title\" of the current buffer."
+  nil)
+
+(cl-defmethod org-roam--extract-titles-title (&context (major-mode org-mode))
+  "Return title from \"#+title\" in Org mode."
   (let* ((prop (org-roam--extract-global-props '("TITLE")))
          (title (cdr (assoc "TITLE" prop))))
     (when title
       (list title))))
 
-(defun org-roam--extract-titles-alias ()
-  "Return the aliases from the current buffer.
-Reads from the \"roam_alias\" property."
+(cl-defmethod org-roam--extract-titles-title (&context (major-mode markdown-mode))
+  "Return title from the title front matter property in Markdown."
+  (-some--> (kisaragi-notes-extract//markdown-props "title")
+    (list it)))
+
+(cl-defgeneric org-roam--extract-titles-alias ()
+  "Return the aliases from the current buffer."
+  nil)
+
+(cl-defmethod org-roam--extract-titles-alias (&context (major-mode org-mode))
+  "Return the aliases in Org mode.
+
+Reads from the #+roam_alias keyword."
   (condition-case nil
       (org-roam--extract-prop-as-list "ROAM_ALIAS")
     (error
@@ -279,6 +315,22 @@ Reads from the \"roam_alias\" property."
               (or org-roam-file-name
                   (buffer-file-name)))
        nil))))
+
+(cl-defmethod org-roam--extract-titles-alias (&context (major-mode markdown-mode))
+  "Return the aliases in Markdown.
+
+Reads from the roam_alias prop in the front matter.
+
+roam_alias: [\"alias 1\", \"alias 2\"]"
+  (condition-case nil
+      (-some-> (kisaragi-notes-extract//markdown-props "roam_alias")
+        json-parse-string)
+    (json-parse-error
+     (progn
+       (lwarn '(org-roam) :error
+              "Failed to parse aliases for buffer: %s. Skipping"
+              (or org-roam-file-name
+                  (buffer-file-name)))))))
 
 (cl-defgeneric org-roam--extract-titles-headline ()
   "Extract the first headline as the document title."
@@ -502,22 +554,8 @@ Return value: ((TYPE . KEY) (TYPE . KEY) ...)"
 
 Refs are specified in the roam_key: prop in the front matter and
 is always assumed to be a cite key. URL keys are not yet supported."
-  (save-excursion
-    (goto-char (point-min))
-    ;; FIXME: extract this into a `with-front-matter' macro
-    (-when-let* ((start
-                  ;; The beginning of the frontmatter, which has to be at the
-                  ;; beginning of the buffer (before char position 4).
-                  (re-search-forward "^---$" 4 t))
-                 (end
-                  ;; The end of the frontmatter
-                  (re-search-forward "^---$" nil t)))
-      (save-restriction
-        (narrow-to-region start end)
-        (goto-char (point-min))
-        (let ((case-fold-search t))
-          (when (re-search-forward "^roam_key:[[:space:]]\\(.*\\)" nil t)
-            (list (cons "cite" (match-string-no-properties 1)))))))))
+  (-some--> (kisaragi-notes-extract//markdown-props "roam_key")
+    (list (cons "cite" it))))
 
 (provide 'org-roam-extract)
 ;;; org-roam-extract.el ends here
