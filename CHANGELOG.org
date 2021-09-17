@@ -27,3 +27,7 @@ I want the version to be bigger than 1.2.4 so that it never looks like a downgra
 - Slug styles are defined in =kisaragi-notes/slug-replacements= now
 - Replace =org-protocol://roam-ref= and =org-protocol://roam-file= handlers with =org-protocol://notes=, which supports =file= and =key= arguments
 - Tag sources is now specified as a list of extraction functions and not as symbols.
+- Hugo's =#+tags[]= property is also used as a tag source.
+- Markdown support, effectively including the functionalities of md-roam
+  - Links are expected to be ordinary inline links
+  - Wiki links (=[[path]]=) are not yet supported

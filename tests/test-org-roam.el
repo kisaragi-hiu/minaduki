@@ -272,6 +272,11 @@
                     (buf (find-file-noselect fname)))
                (with-current-buffer buf
                  (funcall fn fname)))))
+    (it "extracts from #+tags[]"
+      (expect (test #'kisaragi-notes-extract/tags-zettlr-frontmatter
+                    "tags/hugo-style.org")
+              :to-equal
+              '("hello" "tag2" "tag3")))
     (it "extracts Zettlr style tags, but only from frontmatter"
       (expect (test #'kisaragi-notes-extract/tags-zettlr-frontmatter
                     "tags/tag.md")

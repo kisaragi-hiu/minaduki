@@ -334,9 +334,15 @@ tag."
     (list (car (f-split dir-relative)))))
 
 (defun org-roam--extract-tags-prop (_file)
-  "Extract tags from the current buffer's \"#roam_tags\" global property."
+  "Extract tags from the current buffer's \"#+roam_tags\" global property.
+
+This also extracts from the #+tags[] property, which is what Hugo expects."
   (condition-case nil
-      (org-roam--extract-prop-as-list "ROAM_TAGS")
+      (append (org-roam--extract-prop-as-list "ROAM_TAGS")
+              ;; Extracting hugo style #+tags[].
+              ;; Concept from http://www.sidpatil.com/posts/org-roam-and-hugo-tags/
+              ;; (The fact that you simply need to change the prop it uses.)
+              (org-roam--extract-prop-as-list "TAGS[]"))
     (error
      (progn
        (lwarn '(org-roam) :error
