@@ -111,17 +111,21 @@
     ;; Enable "cite:" link parsing
     (org-link-set-parameters "cite")
     (it "extracts web keys"
-      (expect (test #'org-roam--extract-refs
+      (expect (test #'kisaragi-notes-extract/refs
                     "web_ref.org")
               :to-equal
               '(("website" . "//google.com/"))))
     (it "extracts cite keys"
-      (expect (test #'org-roam--extract-refs
+      (expect (test #'kisaragi-notes-extract/refs
                     "cite_ref.org")
               :to-equal
-              '(("cite" . "mitsuha2007"))))
+              '(("cite" . "mitsuha2007")))
+      (expect (test #'kisaragi-notes-extract/refs
+                    "cite-ref.md")
+              :to-equal
+              '(("cite" . "sumire2019"))))
     (it "extracts all keys"
-      (expect (test #'org-roam--extract-refs
+      (expect (test #'kisaragi-notes-extract/refs
                     "multiple-refs.org")
               :to-have-same-items-as
               '(("cite" . "orgroam2020")

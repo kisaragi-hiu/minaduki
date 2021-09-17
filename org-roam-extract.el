@@ -438,6 +438,7 @@ Tags are specified like this at the beginning of the buffer:
     ---"
   (save-excursion
     (goto-char (point-min))
+    ;; FIXME: extract this into a `with-front-matter' macro
     (-when-let* ((start
                   ;; The beginning of the frontmatter, which has to be at the
                   ;; beginning of the buffer (before char position 4).
@@ -475,10 +476,14 @@ protocol is treated as the TYPE (after processing through
               (match-string 2 ref))
       (cons "cite" ref))))
 
-(defun org-roam--extract-refs ()
-  "Extract all refs (ROAM_KEY statements) from the current buffer.
+(cl-defgeneric kisaragi-notes-extract/refs ()
+  "Extract all refs statements from the current buffer.
 
-Each ref is returned as a cons of its type and its key."
+Return value: ((TYPE . KEY) (TYPE . KEY) ...)"
+  nil)
+
+(cl-defmethod kisaragi-notes-extract/refs (&context (major-mode org-mode))
+  "Extract all refs statements in Org mode."
   (let (refs)
     (pcase-dolist
         (`(,_ . ,roam-key)
@@ -491,6 +496,28 @@ Each ref is returned as a cons of its type and its key."
          (when-let ((r (kisaragi-notes-extract//process-ref ref)))
            (push r refs)))))
     refs))
+
+(cl-defmethod kisaragi-notes-extract/refs (&context (major-mode markdown-mode))
+  "Extract all refs statements in Markdown.
+
+Refs are specified in the roam_key: prop in the front matter and
+is always assumed to be a cite key. URL keys are not yet supported."
+  (save-excursion
+    (goto-char (point-min))
+    ;; FIXME: extract this into a `with-front-matter' macro
+    (-when-let* ((start
+                  ;; The beginning of the frontmatter, which has to be at the
+                  ;; beginning of the buffer (before char position 4).
+                  (re-search-forward "^---$" 4 t))
+                 (end
+                  ;; The end of the frontmatter
+                  (re-search-forward "^---$" nil t)))
+      (save-restriction
+        (narrow-to-region start end)
+        (goto-char (point-min))
+        (let ((case-fold-search t))
+          (when (re-search-forward "^roam_key:[[:space:]]\\(.*\\)" nil t)
+            (list (cons "cite" (match-string-no-properties 1)))))))))
 
 (provide 'org-roam-extract)
 ;;; org-roam-extract.el ends here

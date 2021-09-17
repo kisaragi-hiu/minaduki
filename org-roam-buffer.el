@@ -194,7 +194,7 @@ or to this file's ROAM_KEY.
                 (titles-and-refs
                  (with-current-buffer org-roam-buffer--current
                    (cons (org-roam--extract-titles)
-                         (org-roam--extract-refs))))
+                         (kisaragi-notes-extract/refs))))
                 (backlinks
                  (if cite?
                      (mapcan #'org-roam--get-backlinks

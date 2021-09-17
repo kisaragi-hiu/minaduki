@@ -48,7 +48,7 @@
 
 (defvar org-agenda-files)
 (declare-function org-roam--extract-titles                 "org-roam-extract")
-(declare-function org-roam--extract-refs                   "org-roam-extract")
+(declare-function kisaragi-notes-extract/refs              "org-roam-extract")
 (declare-function org-roam--extract-tags                   "org-roam-extract")
 (declare-function org-roam--extract-ids                    "org-roam-extract")
 (declare-function org-roam--extract-links                  "org-roam-extract")
@@ -310,7 +310,7 @@ If UPDATE-P is non-nil, first remove the ref for the file in the database."
       (org-roam-db-query [:delete :from refs
                           :where (= file $s1)]
                          file))
-    (when-let ((refs (org-roam--extract-refs)))
+    (when-let ((refs (kisaragi-notes-extract/refs)))
       (dolist (ref refs)
         (let ((key (cdr ref))
               (type (car ref)))
