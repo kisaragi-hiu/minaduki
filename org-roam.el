@@ -432,27 +432,41 @@ Use external shell commands if defined in `org-roam-list-files-commands'."
     (file-name-sans-extension)))
 
 (defun org-roam-format-link (target &optional description type)
-  "Formats an org link for a given file TARGET, link DESCRIPTION and link TYPE.
+  "Format a link for TARGET and DESCRIPTION.
+
 TYPE defaults to \"file\".
 
-If the file has an ID and `org-roam-prefer-id-links' is non-nil,
-we will return an ID link."
+In Org mode, if the file has an ID and `org-roam-prefer-id-links'
+is non-nil, return an ID link.
+
+In Markdown, TYPE has no effect."
   (setq type (or type "file"))
-  (when-let ((id (and org-roam-prefer-id-links
-                      (string-equal type "file")
-                      (caar (org-roam-db-query [:select [id] :from ids
-                                                :where (= file $s1)
-                                                :and (= level 0)
-                                                :limit 1]
-                                               target)))))
-    (setq type "id" target id))
-  (org-link-make-string
-   (if (string-equal type "file")
-       (kisaragi-notes-link/apply-link-abbrev target)
-     (concat type ":" target))
-   (if (functionp org-roam-link-title-format)
-       (funcall org-roam-link-title-format description type)
-     (format org-roam-link-title-format description))))
+  (cond
+   ((derived-mode-p 'org-mode)
+    (when (and org-roam-prefer-id-links (string-equal type "file"))
+      (-when-let (id (caar (org-roam-db-query [:select [id] :from ids
+                                               :where (= file $s1)
+                                               :and (= level 0)
+                                               :limit 1]
+                                              target)))
+        (setq type "id"
+              target id)))
+    (org-link-make-string
+     (if (string-equal type "file")
+         (kisaragi-notes-link/apply-link-abbrev target)
+       (concat type ":" target))
+     (if (functionp org-roam-link-title-format)
+         (funcall org-roam-link-title-format description type)
+       (format org-roam-link-title-format description))))
+   ((derived-mode 'markdown-mode)
+    (cond ((and (not description) target)
+           (format "<%s>" target))
+          ((not description)
+           (format "[%s](%s)"
+                   (f-filename target)
+                   (f-relative target)))
+          (t
+           (format "[%s](%s)" description target))))))
 
 (defun org-roam--add-tag-string (str tags)
   "Add TAGS to STR.
