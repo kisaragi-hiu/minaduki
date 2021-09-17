@@ -48,7 +48,7 @@ jobs:
 
     - name: Create Sandbox Directory
       run: |
-        SANDBOX_DIR=$(mktemp -d) || exit 1
+        SANDBOX_DIR=$(mktemp -d --dry-run) || exit 1
         echo "SANDBOX_DIR=$SANDBOX_DIR" >> $GITHUB_ENV
 
     - name: Initialize Sandbox
