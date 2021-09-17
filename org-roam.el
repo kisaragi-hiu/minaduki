@@ -193,20 +193,21 @@ which will then be replaced with a single underscore (\"_\")."
 
 (defcustom org-roam-title-sources '((title headline) alias)
   "The list of sources from which to retrieve a note title.
-Each element in the list is either:
 
-1. a symbol -- this symbol corresponds to a title retrieval
-function, which returns the list of titles for the current buffer
-2. a list of symbols -- symbols in the list are treated as
-with (1).  The return value of this list is the first symbol in
-the list returning a non-nil value.
+Return values from each source, which are symbols corresponding
+to a title retrieval function, are concatenated into the final
+list of titles. A source can also be a list of sources --- in
+which case the first non-nil return value is used.
 
-The return results of the root list are concatenated.
+For example, the default setting ((title headline) alias)
+effectively stands for this:
 
-For example the setting: '((title headline) alias) means the following:
+    (append (or title headline)
+            alias)
 
-1. Return the 'title + 'alias, if the title of current buffer is non-empty;
-2. Or return 'headline + 'alias otherwise.
+So, when the title is not empty, 'title + 'alias will be
+returned; otherwise, 'headline + 'alias is the resulting list of
+titles.
 
 The currently supported symbols are:
 
