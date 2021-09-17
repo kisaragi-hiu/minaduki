@@ -3,7 +3,6 @@
 ;; Copyright (C) 2020 Jethro Kuan
 
 ;; Author: Jethro Kuan <jethrokuan95@gmail.com>
-;; Package-Requires: ((buttercup))
 
 ;; This program is free software; you can redistribute it and/or modify
 ;; it under the terms of the GNU General Public License as published by
@@ -23,6 +22,7 @@
 
 (require 'buttercup)
 (require 'org-roam)
+(require 'seq)
 (require 'dash)
 
 (defun test-org-roam--abs-path (file-path)
@@ -41,7 +41,8 @@
 (defun test-org-roam--init ()
   "."
   (let ((original-dir test-org-roam-directory)
-        (new-dir (expand-file-name (make-temp-name "org-roam") temporary-file-directory)))
+        (new-dir (expand-file-name (make-temp-name "org-roam") temporary-file-directory))
+        (org-roam-verbose nil))
     (copy-directory original-dir new-dir)
     (setq org-roam-directory new-dir)
     (org-roam-mode +1)
@@ -110,17 +111,21 @@
     ;; Enable "cite:" link parsing
     (org-link-set-parameters "cite")
     (it "extracts web keys"
-      (expect (test #'org-roam--extract-refs
+      (expect (test #'kisaragi-notes-extract/refs
                     "web_ref.org")
               :to-equal
               '(("website" . "//google.com/"))))
     (it "extracts cite keys"
-      (expect (test #'org-roam--extract-refs
+      (expect (test #'kisaragi-notes-extract/refs
                     "cite_ref.org")
               :to-equal
-              '(("cite" . "mitsuha2007"))))
+              '(("cite" . "mitsuha2007")))
+      (expect (test #'kisaragi-notes-extract/refs
+                    "cite-ref.md")
+              :to-equal
+              '(("cite" . "sumire2019"))))
     (it "extracts all keys"
-      (expect (test #'org-roam--extract-refs
+      (expect (test #'kisaragi-notes-extract/refs
                     "multiple-refs.org")
               :to-have-same-items-as
               '(("cite" . "orgroam2020")
@@ -146,6 +151,10 @@
                     "titles/title.org")
               :to-equal
               '("Title"))
+      (expect (test #'org-roam--extract-titles-title
+                    "titles/title.md")
+              :to-equal
+              '("Title in Markdown"))
       (expect (test #'org-roam--extract-titles-title
                     "titles/aliases.org")
               :to-equal
@@ -191,6 +200,10 @@
               :to-equal
               '("Headline"))
       (expect (test #'org-roam--extract-titles-headline
+                    "titles/headline.md")
+              :to-equal
+              '("Headline"))
+      (expect (test #'org-roam--extract-titles-headline
                     "titles/combination.org")
               :to-equal
               '("Headline")))
@@ -215,8 +228,50 @@
                 :to-equal
                 '("Headline" "roam" "alias" "TITLE PROP"))))))
 
+(describe "Link extraction"
+  (before-all
+    (test-org-roam--init))
+
+  (after-all
+    (test-org-roam--teardown))
+
+  (cl-flet
+      ((test (fn file)
+             (let ((buf (find-file-noselect
+                         (test-org-roam--abs-path file))))
+               (with-current-buffer buf
+                 (funcall fn)))))
+    (it "extracts links from Markdown files"
+      (expect (->> (test #'org-roam--extract-links
+                         "baz.md")
+                (--map (seq-take it 3)))
+              :to-have-same-items-as
+              `([,(test-org-roam--abs-path "baz.md")
+                 ,(test-org-roam--abs-path "nested/bar.org")
+                 "file"]
+                [,(test-org-roam--abs-path "baz.md")
+                 "乙野四方字20180920"
+                 "cite"]
+                [,(test-org-roam--abs-path "baz.md")
+                 "quro2017"
+                 "cite"])))
+    (it "extracts links from Org files"
+      (expect (->> (test #'org-roam--extract-links
+                         "foo.org")
+                ;; Drop the link type and properties
+                (--map (seq-take it 2)))
+              :to-have-same-items-as
+              `([,(test-org-roam--abs-path "foo.org")
+                 ,(test-org-roam--abs-path "baz.md")]
+                [,(test-org-roam--abs-path "foo.org")
+                 "foo@john.com"]
+                [,(test-org-roam--abs-path "foo.org")
+                 "google.com"]
+                [,(test-org-roam--abs-path "foo.org")
+                 ,(test-org-roam--abs-path "bar.org")])))))
+
 (describe "Tag extraction"
-  :var (org-roam-tag-sources)
+  :var (kisaragi-notes/tag-sources)
   (before-all
     (test-org-roam--init))
 
@@ -229,6 +284,23 @@
                     (buf (find-file-noselect fname)))
                (with-current-buffer buf
                  (funcall fn fname)))))
+    (it "extracts from #+tags[]"
+      (expect (test #'org-roam--extract-tags-prop
+                    "tags/hugo-style.org")
+              :to-equal
+              '("hello" "tag2" "tag3")))
+    (it "extracts Zettlr style tags, but only from frontmatter"
+      (expect (test #'kisaragi-notes-extract/tags-zettlr-frontmatter
+                    "tags/tag.md")
+              :to-equal
+              '("#abc" "#def" "#ghi")))
+
+    (it "extracts Zettlr style tags"
+      (expect (test #'kisaragi-notes-extract/tags-zettlr
+                    "tags/tag.md")
+              :to-equal
+              '("#abc" "#def" "#ghi" "#not-frontmatter-a" "#not-front-matter-b")))
+
     (it "extracts from prop"
       (expect (test #'org-roam--extract-tags-prop
                     "tags/tag.org")
@@ -281,15 +353,16 @@
               :to-equal
               '("nested")))
 
-    (describe "uses org-roam-tag-sources correctly"
+    (describe "uses kisaragi-notes/tag-sources correctly"
       (it "'(prop)"
-        (expect (let ((org-roam-tag-sources '(prop)))
+        (expect (let ((kisaragi-notes/tag-sources '(org-roam--extract-tags-prop)))
                   (test #'org-roam--extract-tags
                         "tags/tag.org"))
                 :to-equal
                 '("t1" "t2 with space" "t3" "t4 second-line")))
       (it "'(prop all-directories)"
-        (expect (let ((org-roam-tag-sources '(prop all-directories)))
+        (expect (let ((kisaragi-notes/tag-sources '(org-roam--extract-tags-prop
+                                                    org-roam--extract-tags-all-directories)))
                   (test #'org-roam--extract-tags
                         "tags/tag.org"))
                 :to-equal
@@ -336,6 +409,21 @@
     (expect (org-roam-link--split-path "*headline")
             :to-equal
             '(headline "" "headline" 0))))
+
+(describe "Accessing the DB"
+  (before-all
+    (test-org-roam--init))
+
+  (after-all
+    (test-org-roam--teardown))
+
+  (it "Returns a file from its title"
+    (expect (kisaragi-notes//get-files "Foo")
+            :to-equal
+            (list (test-org-roam--abs-path "foo.org")))
+    (expect (kisaragi-notes//get-files "Deeply Nested File")
+            :to-equal
+            (list (test-org-roam--abs-path "nested/deeply/deeply_nested_file.org")))))
 
 ;;; Tests
 (xdescribe "org-roam-db-build-cache"

@@ -13,7 +13,31 @@
 (require 'org-roam-id)
 (require 'org-roam-macs)
 
+(require 'kisaragi-notes-vars)
+
 (defvar markdown-regex-link-inline)
+
+(defun kisaragi-notes-extract//markdown-props (prop)
+  "Extract PROP in the Markdown front matter."
+  (save-excursion
+    (goto-char (point-min))
+    ;; FIXME: extract this into a `with-front-matter' macro
+    (-when-let* ((start
+                  ;; The beginning of the frontmatter, which has to be at the
+                  ;; beginning of the buffer (before char position 4).
+                  (re-search-forward "^---$" 4 t))
+                 (end
+                  ;; The end of the frontmatter
+                  (re-search-forward "^---$" nil t)))
+      (save-restriction
+        (narrow-to-region start end)
+        (goto-char (point-min))
+        (let ((case-fold-search t))
+          (when (re-search-forward
+                 (format (rx bol "%s:" space (group (0+ any)))
+                         prop)
+                 nil t)
+            (match-string-no-properties 1)))))))
 
 (defun org-roam--extract-global-props (props)
   "Extract PROPS from the current Org buffer.
@@ -70,7 +94,7 @@ roam_alias."
       (format "#+begin_quote\n%s\n#+end_quote"
               (s-trim content)))
      (t
-      content))))
+      (s-trim content)))))
 
 (defun org-roam--extract-links-org (file-path)
   "Extract links in current buffer in Org mode format ([[target][desc]]).
@@ -115,17 +139,23 @@ Assume links come from FILE-PATH."
                     (push (vector file-path name type properties) links))))))))
       links)))
 
+;; Modified from md-roam's `md-roam--extract-wiki-links'
+;;
+;; This now depends on the title cache having been established, which
+;; is problematic. db.el has be adapted to make sure titles are
+;; available before this is run.
 (defun org-roam--extract-links-wiki (file-path)
-  "Extract links in current buffer in this format: [[file]].
+  "Extract links in current buffer in this format: [[foo]].
 
-The target is assumed to be file.md in the above example.
+This link will point to a page titled \"foo\".
 
 Assume links come from FILE-PATH."
   (save-excursion
     (goto-char (point-min))
     (cl-loop while (re-search-forward "\\[\\[\\([^]]+\\)\\]\\]" nil t)
              collect
-             (let* ((to-file (concat (match-string-no-properties 1) ".md"))
+             (let* ((target (car (kisaragi-notes//get-files
+                                  (match-string-no-properties 1))))
                     (begin-of-block (match-beginning 0))
                     (end-of-block (save-excursion
                                     (unless (eobp)
@@ -136,12 +166,11 @@ Assume links come from FILE-PATH."
                      (buffer-substring-no-properties
                       begin-of-block end-of-block)))
                (vector file-path ; file-from
-                       (file-truename
-                        (expand-file-name
-                         to-file (file-name-directory file-path))) ; file-to
+                       target ; file-to
                        "file" ; link-type
                        (list :content content :point begin-of-block))))))
 
+;; Modified from md-roam's `md-roam--extract-file-links'
 (defun org-roam--extract-links-markdown (file-path)
   "Extract Markdown links from current buffer.
 
@@ -175,6 +204,7 @@ Links are assumed to originate from FILE-PATH."
                  link-type
                  (list :content content :point begin-of-block)))))))
 
+;; Modified from md-roam's `md-roam--extract-cite-links'
 (defun org-roam--extract-links-pandoc-cite (file-path)
   "Extract cite links defined like this: @bibkey.
 
@@ -182,10 +212,12 @@ Assume links come from FILE-PATH."
   (save-excursion
     (goto-char (point-min))
     (cl-loop while (re-search-forward
-                    "\\(?:[^[:alnum:]]\\|^\\)\\(-?@\\)\\([-a-zA-Z0-9_+:]+\\)"
+                    (rx (or (not alnum) bol)
+                        (group (opt "-") "@")
+                        (group (one-or-more (any alnum "+:_-"))))
                     nil t)
              collect
-             (let* ((to-file (match-string-no-properties 2))
+             (let* ((target (match-string-no-properties 2))
                     begin-of-block
                     end-of-block
                     content
@@ -197,7 +229,7 @@ Assume links come from FILE-PATH."
                  (setq begin-of-block (point))
                  (setq content (buffer-substring-no-properties begin-of-block end-of-block)))
                (vector file-path ; file-from
-                       to-file
+                       target
                        link-type
                        (list :content content :point begin-of-block))))))
 
@@ -220,37 +252,60 @@ it as FILE-PATH."
    ((derived-mode-p 'org-mode)
     (org-roam--extract-links-org file-path))
    ((derived-mode-p 'markdown-mode)
-    (append (org-roam--extract-links-wiki file-path)
-            (org-roam--extract-links-markdown file-path)
-            (org-roam--extract-links-pandoc-cite file-path)))))
+    (append
+     ;; This one depends on the titles cache having been built.
+     ;;
+     ;; This comes from how org-roam expects links to contain file
+     ;; path information, as that is how it is in Org. When working
+     ;; with wiki links, however, that's simply not the case.
+     ;;
+     ;; (org-roam--extract-links-wiki file-path)
+
+     ;; I won't bother to support Org links in Markdown.
+     (org-roam--extract-links-markdown file-path)
+     (org-roam--extract-links-pandoc-cite file-path)))))
 
 (defun org-roam--extract-ids (&optional file-path)
   "Extract all IDs within the current buffer.
 If FILE-PATH is nil, use the current file."
   (setq file-path (or file-path org-roam-file-name (buffer-file-name)))
   (let (result)
-      ;; We need to handle the special case of the file property drawer (at outline level 0)
-      (org-with-point-at (point-min)
-        (when-let ((before-first-heading (= 0 (org-outline-level)))
-                   (id (org-entry-get nil "ID")))
-           (push (vector id file-path 0) result)))
-      (org-map-region
-       (lambda ()
-         (when-let ((id (org-entry-get nil "ID")))
-           (push (vector id file-path (org-outline-level)) result)))
-       (point-min) (point-max))
-      result))
+    ;; We need to handle the special case of the file property drawer (at outline level 0)
+    (org-with-point-at (point-min)
+      (when-let ((before-first-heading (= 0 (org-outline-level)))
+                 (id (org-entry-get nil "ID")))
+        (push (vector id file-path 0) result)))
+    (org-map-region
+     (lambda ()
+       (when-let ((id (org-entry-get nil "ID")))
+         (push (vector id file-path (org-outline-level)) result)))
+     (point-min) (point-max))
+    result))
 
-(defun org-roam--extract-titles-title ()
+(cl-defgeneric org-roam--extract-titles-title ()
   "Return title from \"#+title\" of the current buffer."
+  nil)
+
+(cl-defmethod org-roam--extract-titles-title (&context (major-mode org-mode))
+  "Return title from \"#+title\" in Org mode."
   (let* ((prop (org-roam--extract-global-props '("TITLE")))
          (title (cdr (assoc "TITLE" prop))))
     (when title
       (list title))))
 
-(defun org-roam--extract-titles-alias ()
-  "Return the aliases from the current buffer.
-Reads from the \"roam_alias\" property."
+(cl-defmethod org-roam--extract-titles-title (&context (major-mode markdown-mode))
+  "Return title from the title front matter property in Markdown."
+  (-some--> (kisaragi-notes-extract//markdown-props "title")
+    (list it)))
+
+(cl-defgeneric org-roam--extract-titles-alias ()
+  "Return the aliases from the current buffer."
+  nil)
+
+(cl-defmethod org-roam--extract-titles-alias (&context (major-mode org-mode))
+  "Return the aliases in Org mode.
+
+Reads from the #+roam_alias keyword."
   (condition-case nil
       (org-roam--extract-prop-as-list "ROAM_ALIAS")
     (error
@@ -261,8 +316,55 @@ Reads from the \"roam_alias\" property."
                   (buffer-file-name)))
        nil))))
 
-(defun org-roam--extract-titles-headline ()
-  "Return the first headline of the current buffer."
+(cl-defmethod org-roam--extract-titles-alias (&context (major-mode markdown-mode))
+  "Return the aliases in Markdown.
+
+Reads from the roam_alias prop in the front matter.
+
+roam_alias: [\"alias 1\", \"alias 2\"]"
+  (condition-case nil
+      (-some-> (kisaragi-notes-extract//markdown-props "roam_alias")
+        json-parse-string)
+    (json-parse-error
+     (progn
+       (lwarn '(org-roam) :error
+              "Failed to parse aliases for buffer: %s. Skipping"
+              (or org-roam-file-name
+                  (buffer-file-name)))))))
+
+(cl-defgeneric org-roam--extract-titles-headline ()
+  "Extract the first headline as the document title."
+  nil)
+
+;; Function body from md-roam's `org-roam--extract-titles-mdheadline'
+(cl-defmethod org-roam--extract-titles-headline (&context (major-mode markdown-mode))
+  "Extract the first headline as a title in Markdown mode."
+  (save-excursion
+    (goto-char (point-min))
+    (when (re-search-forward
+           ;; Converted from md-roam's `md-roam-regex-headline'
+           (rx (or
+                ;; Case 1:
+                ;;
+                ;; foo-bar    or    foo-bar
+                ;; =======          -------
+                ;;
+                ;; Ensure the line before the heading text consists of
+                ;; only whitespaces to exclude front matter openers
+                ;; (md-roam uses "\s" which actually stands for a
+                ;; space; I'm guessing that's a mistake)
+                (seq bol (zero-or-more whitespace) "\n"
+                     (group (zero-or-more nonl) eol) "\n"
+                     (group bol (one-or-more (any "=-")) eol))
+                ;; Case 2: "# Heading" style
+                (seq (group bol (one-or-more "#") " ")
+                     (group (zero-or-more nonl) eol))))
+           nil t)
+      (list (or (match-string-no-properties 1)
+                (match-string-no-properties 4))))))
+
+(cl-defmethod org-roam--extract-titles-headline (&context (major-mode org-mode))
+  "Extract the first headline as a title in Org mode."
   (let ((headline (save-excursion
                     (goto-char (point-min))
                     ;; "What happens if a heading star was quoted
@@ -315,9 +417,15 @@ tag."
     (list (car (f-split dir-relative)))))
 
 (defun org-roam--extract-tags-prop (_file)
-  "Extract tags from the current buffer's \"#roam_tags\" global property."
+  "Extract tags from the current buffer's \"#+roam_tags\" global property.
+
+This also extracts from the #+tags[] property, which is what Hugo expects."
   (condition-case nil
-      (org-roam--extract-prop-as-list "ROAM_TAGS")
+      (append (org-roam--extract-prop-as-list "ROAM_TAGS")
+              ;; Extracting hugo style #+tags[].
+              ;; Concept from http://www.sidpatil.com/posts/org-roam-and-hugo-tags/
+              ;; (The fact that you simply need to change the prop it uses.)
+              (org-roam--extract-prop-as-list "TAGS[]"))
     (error
      (progn
        (lwarn '(org-roam) :error
@@ -334,27 +442,65 @@ This includes all tags used in the buffer."
 
 (defun org-roam--extract-tags (&optional file)
   "Extract tags from the current buffer.
-If file-path FILE, use it to determine the directory tags.
+
+If file-path FILE is non-nil, use it to determine the directory tags.
+
 Tags are obtained via:
 
 1. Directory tags: Relative to `org-roam-directory': each folder
    path is considered a tag.
 2. The key #+roam_tags."
   (let* ((file (or file (buffer-file-name (buffer-base-buffer))))
-         (tags (-uniq
-                (mapcan (lambda (source)
-                          (funcall (intern (concat "org-roam--extract-tags-"
-                                                   (symbol-name source)))
-                                   file))
-                        org-roam-tag-sources))))
-    (pcase org-roam-tag-sort
-      ('nil tags)
-      ((pred booleanp) (cl-sort tags 'string-lessp :key 'downcase))
-      (`(,(pred symbolp) . ,_)
-       (apply #'cl-sort (push tags org-roam-tag-sort)))
-      (wrong-type (signal 'wrong-type-argument
-                          `((booleanp (list symbolp))
-                            ,wrong-type))))))
+         (tags (->> kisaragi-notes/tag-sources
+                 (mapcan (lambda (it) (funcall it file)))
+                 -uniq)))
+    (cond
+     ((not org-roam-tag-sort)
+      tags)
+     ((listp org-roam-tag-sort)
+      (apply #'cl-sort tags org-roam-tag-sort))
+     (t
+      (cl-sort tags #'string-lessp :key #'downcase)))))
+
+;; Modified from md-roam's `org-roam--extract-tags-md-buffer'
+(defun kisaragi-notes-extract/tags-zettlr (&optional _file)
+  "Extracts tags written in Zettlr style.
+
+Tags are specified in Zettlr style like this:
+
+    #tag1 #tag-with-hyphen #tag_with_underscore"
+  (save-excursion
+    (goto-char (point-min))
+    (cl-loop while (re-search-forward "\\([^/s]\\)\\([#@][[:alnum:]_-]+\\)" nil t)
+             when (match-string-no-properties 2)
+             collect it)))
+
+;; Modified from md-roam's `org-roam--extract-tags-md-frontmatter'
+;;
+;; Right now this doesn't actually read YAML because there is no YAML
+;; parser in Emacs Lisp, apart from maybe
+;; https://github.com/syohex/emacs-libyaml.
+(defun kisaragi-notes-extract/tags-zettlr-frontmatter (&optional _file)
+  "Extract Zettlr style tags in a YAML frontmatter.
+
+Tags are specified like this at the beginning of the buffer:
+
+    ---
+    tags: #tag1 #tag-with-hyphen #tag_with_underscore
+    ---"
+  (save-excursion
+    (goto-char (point-min))
+    ;; FIXME: extract this into a `with-front-matter' macro
+    (-when-let* ((start
+                  ;; The beginning of the frontmatter, which has to be at the
+                  ;; beginning of the buffer (before char position 4).
+                  (re-search-forward "^---$" 4 t))
+                 (end
+                  ;; The end of the frontmatter
+                  (re-search-forward "^---$" nil t)))
+      (save-restriction
+        (narrow-to-region start end)
+        (kisaragi-notes-extract/tags-zettlr)))))
 
 (defun org-roam--collate-types (type)
   "Collate TYPE into a parent type.
@@ -382,22 +528,34 @@ protocol is treated as the TYPE (after processing through
               (match-string 2 ref))
       (cons "cite" ref))))
 
-(defun org-roam--extract-refs ()
-  "Extract all refs (ROAM_KEY statements) from the current buffer.
+(cl-defgeneric kisaragi-notes-extract/refs ()
+  "Extract all refs statements from the current buffer.
 
-Each ref is returned as a cons of its type and its key."
+Return value: ((TYPE . KEY) (TYPE . KEY) ...)"
+  nil)
+
+(cl-defmethod kisaragi-notes-extract/refs (&context (major-mode org-mode))
+  "Extract all refs statements in Org mode."
   (let (refs)
     (pcase-dolist
         (`(,_ . ,roam-key)
          (org-roam--extract-global-props '("ROAM_KEY")))
       (pcase roam-key
-          ('nil nil)
-          ((pred string-empty-p)
-           (user-error "Org property #+roam_key cannot be empty"))
-          (ref
-           (when-let ((r (kisaragi-notes-extract//process-ref ref)))
-             (push r refs)))))
+        ('nil nil)
+        ((pred string-empty-p)
+         (user-error "Org property #+roam_key cannot be empty"))
+        (ref
+         (when-let ((r (kisaragi-notes-extract//process-ref ref)))
+           (push r refs)))))
     refs))
+
+(cl-defmethod kisaragi-notes-extract/refs (&context (major-mode markdown-mode))
+  "Extract all refs statements in Markdown.
+
+Refs are specified in the roam_key: prop in the front matter and
+is always assumed to be a cite key. URL keys are not yet supported."
+  (-some--> (kisaragi-notes-extract//markdown-props "roam_key")
+    (list (cons "cite" it))))
 
 (provide 'org-roam-extract)
 ;;; org-roam-extract.el ends here

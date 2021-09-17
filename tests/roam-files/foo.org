@@ -6,3 +6,5 @@ To make the tests more robust, here are some arbitrary links:
 
 - [[https:google.com][Google]]
 - [[mailto:foo@john.com][mail to foo]]
+
+Here's another link to [[file:baz.md][Baz]], which is a Markdown file.

@@ -6,7 +6,7 @@
 ;; URL: https://github.com/org-roam/org-roam
 ;; Keywords: org-mode, roam, convenience
 ;; Version: 1.2.3
-;; Package-Requires: ((emacs "27.1") (dash "2.13") (f "0.17.2") (s "1.12.0") (org "9.3") (emacsql "3.0.0") (emacsql-sqlite3 "1.0.2") (bibtex-completion "2.0.0"))
+;; Package-Requires: ((emacs "27.1") (dash "2.13") (f "0.17.2") (s "1.12.0") (org "9.3") (emacsql "3.0.0") (emacsql-sqlite3 "1.0.2") (bibtex-completion "2.0.0") (markdown-mode "2.4"))
 
 ;; This file is NOT part of GNU Emacs.
 
@@ -46,6 +46,8 @@
 (require 's)
 (require 'seq)
 (eval-when-compile (require 'subr-x))
+
+(require 'kisaragi-notes-vars)
 
 ;;;; Features
 (require 'org-roam-macs)
@@ -91,12 +93,13 @@ All Org files, at any level of nesting, are considered part of the Org-roam."
   :type 'boolean
   :group 'org-roam)
 
-(defcustom org-roam-file-extensions '("org")
-  "Detected file extensions to include in the Org-roam ecosystem.
+(defcustom org-roam-file-extensions '("org" "md")
+  "Only files with these extensions are indexed.
+
 The first item in the list is used as the default file extension.
-While the file extensions may be different, the file format needs
-to be an `org-mode' file, and it is the user's responsibility to
-ensure that."
+
+While the file extensions may be different, the only supported
+file formats are Org-mode and Markdown (partially)."
   :type '(repeat string)
   :group 'org-roam)
 
@@ -169,58 +172,9 @@ method symbol as a cons cell. For example: '(find (rg . \"/path/to/rg\"))."
   :group 'org-roam)
 
 (defcustom org-roam-tag-separator ","
-  "String to use to separate tags when `org-roam-tag-sources' is non-nil."
+  "String to use to separate tags when `kisaragi-notes/tag-sources' is non-nil."
   :type 'string
   :group 'org-roam)
-
-(defcustom org-roam-tag-sort nil
-  "When non-nil, sort the tags in the completions.
-When t, sort the tags alphabetically, regardless of case.
-`org-roam-tag-sort' can also be a list of arguments to be applied
-to `cl-sort'.  For example, these are the arguments used when
-`org-roam-tag-sort' is set to t:
-    \('string-lessp :key 'downcase)
-Only relevant when `org-roam-tag-sources' is non-nil."
-  :type '(choice
-          (boolean)
-          (list :tag "Arguments to cl-loop"))
-  :group 'org-roam)
-
-(defcustom org-roam-tag-sources '(prop)
-  "Sources to obtain tags from.
-
-It should be a list of symbols representing any of the following
-extraction methods:
-
-  `prop'
-    Extract tags from the #+roam_tags property.
-    Tags are space delimited.
-    Tags may contain spaces if they are double-quoted.
-    e.g. #+roam_tags: TAG \"tag with spaces\"
-
-  `vanilla'
-    Extract vanilla `org-mode' tags, including #+FILETAGS and
-    inherited tags.
-
-  `all-directories'
-    Extract sub-directories relative to `org-roam-directory'.
-    That is, if a file is located at relative path foo/bar/file.org,
-    the file will have tags \"foo\" and \"bar\".
-
-  `last-directory'
-    Extract the last directory relative to `org-roam-directory'.
-    That is, if a file is located at relative path foo/bar/file.org,
-    the file will have tag \"bar\".
-
-  `first-directory'
-    Extract the first directory relative to `org-roam-directory'.
-    That is, if a file is located at relative path foo/bar/file.org,
-    the file will have tag \"foo\"."
-  :type '(set (const :tag "#+roam_tags" prop)
-              (const :tag "buffer org tags" vanilla)
-              (const :tag "sub-directories" all-directories)
-              (const :tag "parent directory" last-directory)
-              (const :tag "first sub-directory" first-directory)))
 
 (defcustom kisaragi-notes/slug-replacements
   '(("[^[:alnum:][:digit:]]" . "_") ; convert anything not alphanumeric
@@ -239,20 +193,21 @@ which will then be replaced with a single underscore (\"_\")."
 
 (defcustom org-roam-title-sources '((title headline) alias)
   "The list of sources from which to retrieve a note title.
-Each element in the list is either:
 
-1. a symbol -- this symbol corresponds to a title retrieval
-function, which returns the list of titles for the current buffer
-2. a list of symbols -- symbols in the list are treated as
-with (1).  The return value of this list is the first symbol in
-the list returning a non-nil value.
+Return values from each source, which are symbols corresponding
+to a title retrieval function, are concatenated into the final
+list of titles. A source can also be a list of sources --- in
+which case the first non-nil return value is used.
 
-The return results of the root list are concatenated.
+For example, the default setting ((title headline) alias)
+effectively stands for this:
 
-For example the setting: '((title headline) alias) means the following:
+    (append (or title headline)
+            alias)
 
-1. Return the 'title + 'alias, if the title of current buffer is non-empty;
-2. Or return 'headline + 'alias otherwise.
+So, when the title is not empty, 'title + 'alias will be
+returned; otherwise, 'headline + 'alias is the resulting list of
+titles.
 
 The currently supported symbols are:
 
@@ -478,27 +433,41 @@ Use external shell commands if defined in `org-roam-list-files-commands'."
     (file-name-sans-extension)))
 
 (defun org-roam-format-link (target &optional description type)
-  "Formats an org link for a given file TARGET, link DESCRIPTION and link TYPE.
+  "Format a link for TARGET and DESCRIPTION.
+
 TYPE defaults to \"file\".
 
-If the file has an ID and `org-roam-prefer-id-links' is non-nil,
-we will return an ID link."
+In Org mode, if the file has an ID and `org-roam-prefer-id-links'
+is non-nil, return an ID link.
+
+In Markdown, TYPE has no effect."
   (setq type (or type "file"))
-  (when-let ((id (and org-roam-prefer-id-links
-                      (string-equal type "file")
-                      (caar (org-roam-db-query [:select [id] :from ids
-                                                :where (= file $s1)
-                                                :and (= level 0)
-                                                :limit 1]
-                                               target)))))
-    (setq type "id" target id))
-  (org-link-make-string
-   (if (string-equal type "file")
-       (kisaragi-notes-link/apply-link-abbrev target)
-     (concat type ":" target))
-   (if (functionp org-roam-link-title-format)
-       (funcall org-roam-link-title-format description type)
-     (format org-roam-link-title-format description))))
+  (cond
+   ((derived-mode-p 'org-mode)
+    (when (and org-roam-prefer-id-links (string-equal type "file"))
+      (-when-let (id (caar (org-roam-db-query [:select [id] :from ids
+                                               :where (= file $s1)
+                                               :and (= level 0)
+                                               :limit 1]
+                                              target)))
+        (setq type "id"
+              target id)))
+    (org-link-make-string
+     (if (string-equal type "file")
+         (kisaragi-notes-link/apply-link-abbrev target)
+       (concat type ":" target))
+     (if (functionp org-roam-link-title-format)
+         (funcall org-roam-link-title-format description type)
+       (format org-roam-link-title-format description))))
+   ((derived-mode-p 'markdown-mode)
+    (cond ((and (not description) target)
+           (format "<%s>" target))
+          ((not description)
+           (format "[%s](%s)"
+                   (f-filename target)
+                   (f-relative target)))
+          (t
+           (format "[%s](%s)" description target))))))
 
 (defun org-roam--add-tag-string (str tags)
   "Add TAGS to STR.
@@ -536,6 +505,20 @@ plist containing the path and title for the file."
         (let ((k (org-roam--add-tag-string title tags))
               (v (list :path file-path :title title)))
           (push (cons k v) completions))))))
+
+(defun kisaragi-notes//get-files (title)
+  "Return files matching TITLE in the DB."
+  (->> (org-roam-db-query
+        ;; Leaving the join syntax here so that it's easier to modify
+        ;; later to support retrieving filepaths with tags, ids, and refs
+        [:select [files:file] :from files
+         :left-join titles
+         :on (= titles:file files:file)
+         :where (= title $s0)]
+        title)
+    ;; The above returns ((path1) (path2) ...).
+    ;; Turn it into (path1 path2 ...).
+    (apply #'nconc)))
 
 (defun org-roam--get-index-path ()
   "Return the path to the index in `org-roam-directory'.
@@ -641,8 +624,7 @@ If BUFFER is not specified, use the current buffer."
   (let ((buffer (or buffer (current-buffer)))
         path)
     (with-current-buffer buffer
-      (and (derived-mode-p 'org-mode)
-           (setq path (buffer-file-name (buffer-base-buffer)))
+      (and (setq path (buffer-file-name (buffer-base-buffer)))
            (org-roam--org-roam-file-p path)))))
 
 (defun org-roam--get-roam-buffers ()

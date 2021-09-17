@@ -1,0 +1,2 @@
+#+title: Hugo style prop tags
+#+tags[]: hello tag2 tag3

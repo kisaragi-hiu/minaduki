@@ -1,70 +1,12 @@
-# * makem.sh/Makefile --- Script to aid building and testing Emacs Lisp packages
+SANDBOX_DIR ?= .sandbox
 
-# This Makefile is from the makem.sh repo: <https://github.com/alphapapa/makem.sh>.
+$(SANDBOX_DIR):
+	mkdir $(SANDBOX_DIR)
+	./makem.sh -vv --sandbox=$(SANDBOX_DIR) --install-deps --install-linters
 
-# * Arguments
+sandbox: $(SANDBOX_DIR)
 
-# For consistency, we use only var=val options, not hyphen-prefixed options.
+test: $(SANDBOX_DIR)
+	./makem.sh -vv --sandbox=$(SANDBOX_DIR) --exclude orb-helm.el --exclude orb-ivy.el test
 
-# NOTE: I don't like duplicating the arguments here and in makem.sh,
-# but I haven't been able to find a way to pass arguments which
-# conflict with Make's own arguments through Make to the script.
-# Using -- doesn't seem to do it.
-
-ifdef install-deps
-	INSTALL_DEPS = "--install-deps"
-endif
-ifdef install-linters
-	INSTALL_LINTERS = "--install-linters"
-endif
-
-ifdef sandbox
-	ifeq ($(sandbox), t)
-		SANDBOX = --sandbox
-	else
-		SANDBOX = --sandbox $(sandbox)
-	endif
-endif
-
-ifdef debug
-	DEBUG = "--debug"
-endif
-
-# ** Verbosity
-
-# Since the "-v" in "make -v" gets intercepted by Make itself, we have
-# to use a variable.
-
-verbose = $(v)
-
-ifneq (,$(findstring vv,$(verbose)))
-	VERBOSE = "-vv"
-else ifneq (,$(findstring v,$(verbose)))
-	VERBOSE = "-v"
-endif
-
-# * Rules
-
-# TODO: Handle cases in which "test" or "tests" are called and a
-# directory by that name exists, which can confuse Make.
-
-%:
-	@./makem.sh $(DEBUG) $(VERBOSE) $(SANDBOX) $(INSTALL_DEPS) $(INSTALL_LINTERS) $(@)
-
-.DEFAULT: init
-init:
-	@./makem.sh $(DEBUG) $(VERBOSE) $(SANDBOX) $(INSTALL_DEPS) $(INSTALL_LINTERS)
-
-docs:
-	@$(MAKE) -C doc all
-
-html:
-	@$(MAKE) -C doc html-dir
-
-install: install-docs
-
-install-docs: docs
-	@$(MAKE) -C doc install-docs
-
-install-info: info
-	@$(MAKE) -C doc install-info
+.PHONY: test sandbox

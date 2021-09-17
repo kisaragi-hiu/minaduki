@@ -514,10 +514,10 @@ symbols is implied."
   (let* ((targets (--> (if (and targets (not (listp targets)))
                            (listp targets)
                          targets)
-                       ;; filter irrelevant symbols,
-                       ;; or if targets were nil, make all targets
-                       (or (-intersection it '(prepare before after))
-                           '(prepare before after)))))
+                    ;; filter irrelevant symbols,
+                    ;; or if targets were nil, make all targets
+                    (or (-intersection it '(prepare before after))
+                        '(prepare before after)))))
     (dolist (target targets)
       (let ((functions (sort (orb-plist-get
                               (intern (format ":%s-functions" target)))
@@ -787,8 +787,8 @@ before calling any Org-roam functions."
   (when orb-switch-persp
     (orb--switch-perspective))
   (let ((note-data (orb-note-exists-p citekey)))
-      ;; Find org-roam reference with the CITEKEY and collect data into
-      ;; `orb-plist'
+    ;; Find org-roam reference with the CITEKEY and collect data into
+    ;; `orb-plist'
     (orb-plist-put :note-existed (and note-data t))
     (cond
      (note-data
@@ -922,8 +922,8 @@ If ARG is non-nil, rebuild `bibtex-completion-cache'."
          (citekey (if (eq orb-insert-generic-candidates-format 'key)
                       selection
                     (--> (alist-get selection candidates nil nil #'equal)
-                         (cdr it)
-                         (alist-get "=key=" it  nil nil #'equal)))))
+                      (cdr it)
+                      (alist-get "=key=" it  nil nil #'equal)))))
     (orb-insert-edit-notes (list citekey))))
 
 (defun orb-insert-edit-notes (citekey)
@@ -1150,7 +1150,7 @@ modified, there is a number of prefined extra actions
 user actions can be set in `orb-note-actions-user'."
   (interactive)
   (let ((non-default-interfaces (list 'hydra 'ido 'ivy 'helm))
-        (citekey (cdar (org-roam--extract-refs))))
+        (citekey (cdar (kisaragi-notes-extract/refs))))
     (if citekey
         (cond ((member orb-note-actions-interface non-default-interfaces)
                (orb-note-actions--run orb-note-actions-interface citekey))
