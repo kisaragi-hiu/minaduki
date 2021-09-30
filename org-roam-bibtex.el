@@ -369,7 +369,8 @@ is executed upon selecting it."
   '(("Open PDF file(s)" . bibtex-completion-open-pdf)
     ("Add PDF to library" . bibtex-completion-add-pdf-to-library)
     ("Open URL or DOI in browser" . bibtex-completion-open-url-or-doi)
-    ("Show record in the bibtex file" . bibtex-completion-show-entry))
+    ("Show record in the bibtex file" . bibtex-completion-show-entry)
+    ("Edit notes" . orb-edit-notes))
   "Default actions for `orb-note-actions'.
 Each action is a cons cell DESCRIPTION . FUNCTION."
   :risky t
@@ -734,6 +735,11 @@ or `title' should be used for slug: %s not supported" orb-slug-source))))
 (defun orb-edit-notes (citekey)
   "Open an Org-roam note associated with the CITEKEY or create a new one.
 
+CITEKEY is normally a string. When it's a list, the first entry
+is used as the key. This allows us to receive the same arguments
+as `bibtex-completion' commands such as
+`bibtex-completion-show-entry'.
+
 This function allows to use Org-roam as a backend for managing
 bibliography notes.  It relies on `bibtex-completion' to get
 retrieve bibliographic information from a BibTeX file.
@@ -781,6 +787,8 @@ you may want to set the perspective name and project path in
 `orb-persp-project' and `orb-switch-persp' to t.  In this case,
 the perspective will be switched to the Org-roam notes project
 before calling any Org-roam functions."
+  (when (consp citekey)
+    (setq citekey (car citekey)))
   (unless org-roam-mode
     (org-roam-mode +1))
   ;; Optionally switch to the notes perspective
@@ -1141,8 +1149,11 @@ details."
       (orb-warning "Note actions interface %s not available" interface))))
 
 ;;;###autoload
-(defun orb-note-actions ()
-  "Run an interactive prompt to offer note-related actions.
+(defun orb-note-actions (&optional citekey)
+  "Prompt for note-related actions on CITEKEY.
+
+CITEKEY is, by default, the first ROAM_KEY in the buffer.
+
 The prompt interface can be set in `orb-note-actions-interface'.
 In addition to default actions, which are not supposed to be
 modified, there is a number of prefined extra actions
@@ -1150,7 +1161,8 @@ modified, there is a number of prefined extra actions
 user actions can be set in `orb-note-actions-user'."
   (interactive)
   (let ((non-default-interfaces (list 'hydra 'ido 'ivy 'helm))
-        (citekey (cdar (kisaragi-notes-extract/refs))))
+        (citekey (or citekey
+                     (cdar (kisaragi-notes-extract/refs)))))
     (if citekey
         (cond ((member orb-note-actions-interface non-default-interfaces)
                (orb-note-actions--run orb-note-actions-interface citekey))

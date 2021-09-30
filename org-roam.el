@@ -56,6 +56,8 @@
 ;; selectively loading different sets of features.
 ;; ~NV [2020-05-22 Fri]
 
+(require 'kisaragi-notes-cite)
+
 (require 'org-roam-faces)
 (require 'org-roam-buffer)
 (require 'org-roam-completion)
