@@ -38,7 +38,6 @@
 ;; ============================================================================
 
 (require 'orb-utils)
-(require 'orb-compat)
 
 (eval-when-compile
   (require 'cl-macs)
