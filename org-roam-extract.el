@@ -473,7 +473,7 @@ Tags are specified like this:
     #tag1 #tag-with-hyphen #tag_with_underscore"
   (save-excursion
     (goto-char (point-min))
-    (cl-loop while (re-search-forward "\\([^/s]\\)\\([#@][[:alnum:]_-]+\\)" nil t)
+    (cl-loop while (re-search-forward "\\([^/s]\\)\\([#][[:alnum:]_-]+\\)" nil t)
              when (match-string-no-properties 2)
              collect it)))
 
