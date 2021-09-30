@@ -289,14 +289,14 @@
                     "tags/hugo-style.org")
               :to-equal
               '("hello" "tag2" "tag3")))
-    (it "extracts Zettlr style tags, but only from frontmatter"
-      (expect (test #'kisaragi-notes-extract/tags-zettlr-frontmatter
+    (it "extracts hashtag style tags, but only from frontmatter"
+      (expect (test #'kisaragi-notes-extract/tags-hashtag-frontmatter
                     "tags/tag.md")
               :to-equal
               '("#abc" "#def" "#ghi")))
 
-    (it "extracts Zettlr style tags"
-      (expect (test #'kisaragi-notes-extract/tags-zettlr
+    (it "extracts hashtag style tags"
+      (expect (test #'kisaragi-notes-extract/tags-hashtag
                     "tags/tag.md")
               :to-equal
               '("#abc" "#def" "#ghi" "#not-frontmatter-a" "#not-front-matter-b")))

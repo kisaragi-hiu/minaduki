@@ -463,10 +463,12 @@ Tags are obtained via:
       (cl-sort tags #'string-lessp :key #'downcase)))))
 
 ;; Modified from md-roam's `org-roam--extract-tags-md-buffer'
-(defun kisaragi-notes-extract/tags-zettlr (&optional _file)
-  "Extracts tags written in Zettlr style.
+(defun kisaragi-notes-extract/tags-hashtag (&optional _file)
+  ;; This is referred to "Zettlr style" in `md-roam'; as I've never
+  ;; used Zettlr, I should probably not claim that this is like Zettlr.
+  "Extracts tags written with hashtags.
 
-Tags are specified in Zettlr style like this:
+Tags are specified like this:
 
     #tag1 #tag-with-hyphen #tag_with_underscore"
   (save-excursion
@@ -480,8 +482,8 @@ Tags are specified in Zettlr style like this:
 ;; Right now this doesn't actually read YAML because there is no YAML
 ;; parser in Emacs Lisp, apart from maybe
 ;; https://github.com/syohex/emacs-libyaml.
-(defun kisaragi-notes-extract/tags-zettlr-frontmatter (&optional _file)
-  "Extract Zettlr style tags in a YAML frontmatter.
+(defun kisaragi-notes-extract/tags-hashtag-frontmatter (&optional _file)
+  "Extract hashtags in a YAML frontmatter.
 
 Tags are specified like this at the beginning of the buffer:
 
@@ -500,7 +502,7 @@ Tags are specified like this at the beginning of the buffer:
                   (re-search-forward "^---$" nil t)))
       (save-restriction
         (narrow-to-region start end)
-        (kisaragi-notes-extract/tags-zettlr)))))
+        (kisaragi-notes-extract/tags-hashtag)))))
 
 (defun org-roam--collate-types (type)
   "Collate TYPE into a parent type.
