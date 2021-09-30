@@ -268,7 +268,22 @@
                 [,(test-org-roam--abs-path "foo.org")
                  "google.com"]
                 [,(test-org-roam--abs-path "foo.org")
-                 ,(test-org-roam--abs-path "bar.org")])))))
+                 ,(test-org-roam--abs-path "bar.org")])))
+    (it "extracts Org citations"
+      (expect (->> (test #'kisaragi-notes-extract/citation
+                         "org-cite.org")
+                ;; Drop the link properties
+                (--map (seq-take it 3)))
+              :to-have-same-items-as
+              `([,(test-org-roam--abs-path "org-cite.org")
+                 "赤坂アカand横槍メンゴ-oshinoko"
+                 "cite"]
+                [,(test-org-roam--abs-path "org-cite.org")
+                 "フライand森永みるくand伊藤ハチand玄鉄絢and天野しゅにんたand雪子andもちオーレandコダマナオコand吉田丸悠andよしむらかなand黄井ぴかちand郷本andしおやてるこand松崎夏未and川浪いずみ20190511"
+                 "cite"]
+                [,(test-org-roam--abs-path "org-cite.org")
+                 "takeshisu20191228"
+                 "cite"])))))
 
 (describe "Tag extraction"
   :var (kisaragi-notes/tag-sources)

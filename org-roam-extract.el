@@ -78,6 +78,25 @@ roam_alias."
     ;; We have a list of lists at this point. Join them.
     (apply #'append it)))
 
+(defun kisaragi-notes-extract/citation (file-from)
+  "Extract Org 9.5+ citations.
+
+Currently citations are treated as links of the `cite' type, from
+FILE-FROM to the key."
+  (save-excursion
+    (goto-char (point-min))
+    (cl-loop while (re-search-forward org-element-citation-prefix-re nil t)
+             nconc
+             (cl-loop when (org-element-citation-reference-parser)
+                      collect
+                      (vector
+                       file-from
+                       (org-element-property :key it)
+                       "cite"
+                       (list :outline (org-roam--get-outline-path)
+                             :point (point)))
+                      while (search-forward ";" (line-end-position) t)))))
+
 (defun kisaragi-notes-extract//org-links-context ()
   "Return the context around point."
   (let* ((elem-at-point (org-element-at-point))
@@ -250,7 +269,11 @@ it as FILE-PATH."
    ;; cache build when there are a million links. At that point 3
    ;; seconds is probably not that much of a deal.
    ((derived-mode-p 'org-mode)
-    (org-roam--extract-links-org file-path))
+    (append
+     (org-roam--extract-links-org file-path)
+     ;; Tracking this as links, as always; we should probably look at
+     ;; Org-roam v2 and how it handles Org 9.5 citations.
+     (kisaragi-notes-extract/citation file-path)))
    ((derived-mode-p 'markdown-mode)
     (append
      ;; This one depends on the titles cache having been built.

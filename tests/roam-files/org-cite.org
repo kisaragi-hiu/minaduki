@@ -1,0 +1,5 @@
+#+title: Org-cite citations
+
+* test
+
+[cite:@赤坂アカand横槍メンゴ-oshinoko;@フライand森永みるくand伊藤ハチand玄鉄絢and天野しゅにんたand雪子andもちオーレandコダマナオコand吉田丸悠andよしむらかなand黄井ぴかちand郷本andしおやてるこand松崎夏未and川浪いずみ20190511;@takeshisu20191228]
