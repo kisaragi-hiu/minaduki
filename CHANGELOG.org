@@ -10,9 +10,11 @@ I want the version to be bigger than 1.2.4 so that it never looks like a downgra
   - Links are expected to be ordinary inline links
   - Wiki links (=[[path]]=) are not yet supported
   - Aliases are specified in JSON style arrays
+- Org 9.5 citation support (extraction, following)
 - Merge org-roam-bibtex 0.4 ([[https://github.com/org-roam/org-roam-bibtex/commit/5236917e1d8a4f88daadacc690248854f53facb4][5236917]]) in here
   - Don't format field values in APA style
   - Inject the =url= key in the capture template
+  - Remove =orb-anystyle= and =orb-pdf-scrapper=
 - Remove =org-roam-compat= and =orb-compat= as I shouldn't pretend to be compatible
 - Consult org-link-abbrev-alist when creating links ([[https://github.com/kisaragi-hiu/org-roam/commit/15fecc6da54edc4d0f58458b81d0ef7132033f8c][15fecc6]])
 - Replace org-roam-dailies with kisaragi-diary (originally living in my config, now with some changes) ([[https://github.com/kisaragi-hiu/org-roam/commit/a6021db958f4a3c449a7fd1564e0b0c2b78cfda4][a6021db]], [[https://github.com/kisaragi-hiu/org-roam/commit/011b6087626471b0b4e46dfd3e5b7305166e0b3b][011b608]], [[https://github.com/kisaragi-hiu/org-roam/commit/9b744249ba292e9b8b1ad696e96c471859231681][9b74424]])
@@ -32,4 +34,3 @@ I want the version to be bigger than 1.2.4 so that it never looks like a downgra
 - Replace =org-protocol://roam-ref= and =org-protocol://roam-file= handlers with =org-protocol://notes=, which supports =file= and =key= arguments
 - Tag sources is now specified as a list of extraction functions and not as symbols.
 - Hugo's =#+tags[]= property is also used as a tag source.
-- Org 9.5 citation support (extraction, following)

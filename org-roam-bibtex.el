@@ -110,8 +110,6 @@
 (declare-function defhydra "ext:hydra")
 (declare-function org-ref-format-entry "ext:org-ref-bibtex" (key))
 
-(declare-function orb-pdf-scrapper-run "orb-pdf-scrapper" (key))
-
 ;; ============================================================================
 ;;;; Customize definitions
 ;; ============================================================================
@@ -381,8 +379,7 @@ Each action is a cons cell DESCRIPTION . FUNCTION."
   :group 'orb-note-actions)
 
 (defcustom orb-note-actions-extra
-  '(("Save citekey to kill-ring and clipboard" . orb-note-actions-copy-citekey)
-    ("Run Orb PDF Scrapper" . orb-note-actions-scrap-pdf))
+  '(("Save citekey to kill-ring and clipboard" . orb-note-actions-copy-citekey))
   "Extra actions for `orb-note-actions'.
 Each action is a cons cell DESCRIPTION . FUNCTION."
   :risky t
@@ -1181,12 +1178,6 @@ CITEKEY is a list whose car is a citation key."
   (with-temp-buffer
     (insert (car citekey))
     (copy-region-as-kill (point-min) (point-max))))
-
-(defun orb-note-actions-scrap-pdf (citekey)
-  "Wrapper around `orb-pdf-scrapper-insert'.
-CITEKEY is a list whose car is a citation key."
-  (require 'orb-pdf-scrapper)
-  (orb-pdf-scrapper-run (car citekey)))
 
 ;; ============================================================================
 ;;;; Org-roam-bibtex minor mode

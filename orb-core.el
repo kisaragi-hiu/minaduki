@@ -69,16 +69,6 @@
   :group 'org-roam-bibtex
   :prefix "orb-note-actions-")
 
-(defgroup orb-pdf-scrapper nil
-  "Orb PDF Scrapper - retrieve references from PDF."
-  :group 'org-roam-bibtex
-  :prefix "orb-pdf-scrapper-")
-
-(defgroup orb-anystyle nil
-  "Elisp interface to `anystyle-cli`."
-  :group 'org-roam-bibtex
-  :prefix "orb-anystyle-")
-
 (defgroup orb-autokey nil
   "Automatic generation of BibTeX citation keys."
   :group 'org-roam-bibtex
