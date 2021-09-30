@@ -14,4 +14,4 @@ The vast majority of the work comes from [Org-roam](https://github.com/org-roam/
 
 I also merged Org-roam-bibtex ([5236917](https://github.com/org-roam/org-roam-bibtex/commit/5236917e1d8a4f88daadacc690248854f53facb4)) into this repository.
 
-I'll eventually merge the functionalities of md-roam into this repository as well.
+Markdown support was added largely by adapting md-roam logic into extraction functions.
