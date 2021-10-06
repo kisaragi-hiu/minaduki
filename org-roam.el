@@ -425,10 +425,7 @@ Use external shell commands if defined in `org-roam-list-files-commands'."
 
 (defun org-roam--list-all-files ()
   "Return a list of all Org-roam files within `org-roam-directory'."
-  (prog2
-      (org-roam-message "Listing files...")
-      (org-roam--list-files (expand-file-name org-roam-directory))
-    (org-roam-message "Listing files...done")))
+  (org-roam--list-files (expand-file-name org-roam-directory)))
 
 ;;;; Title/Path/Slug conversion
 (defun org-roam--path-to-slug (path)

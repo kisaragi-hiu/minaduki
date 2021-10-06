@@ -528,20 +528,24 @@ If FORCE, force a rebuild of the cache from scratch."
   (org-roam-db) ;; To initialize the database, no-op if already initialized
   (let* ((gc-cons-threshold org-roam-db-gc-threshold)
          (org-agenda-files nil)
-         (org-roam-files (org-roam--list-all-files))
+         (org-roam-files
+          (prog2
+              (org-roam-message "Finding files...")
+              (org-roam--list-all-files)
+            (org-roam-message "Finding files...done")))
          (current-files (org-roam-db--get-current-files))
          (count-plist nil)
          (deleted-count 0)
          (modified-files nil))
     (dolist-with-progress-reporter (file org-roam-files)
-        "Finding modified files"
+        "(org-roam) Finding modified files"
       (let ((contents-hash (org-roam-db--file-hash file)))
         (unless (string= (gethash file current-files)
                          contents-hash)
           (push (cons file contents-hash) modified-files)))
       (remhash file current-files))
     (dolist-with-progress-reporter (file (hash-table-keys current-files))
-        "Removing deleted files"
+        "(org-roam) Removing deleted files from cache"
       ;; These files are no longer around, remove from cache...
       (org-roam-db--clear-file file)
       (setq deleted-count (1+ deleted-count)))
@@ -585,9 +589,13 @@ FILES is a list of (file . hash) pairs."
          (title-count 0)
          (ref-count 0)
          (modified-count 0))
-    (pcase-dolist (`(,file . _) modified-files)
-      (org-roam-message "Clearing file: %s" file)
-      (org-roam-db--clear-file file))
+    (cl-loop
+     for (file . _) being the elements of modified-files
+     using (index i)
+     with length = (length modified-files)
+     do
+     (org-roam-message "Clearing file (%s/%s)" i length)
+     (org-roam-db--clear-file file))
     ;; Process all the files for IDs first
     ;;
     ;; We do this so that link extraction is cheaper: this eliminates the need
