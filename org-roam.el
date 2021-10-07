@@ -1116,22 +1116,6 @@ M-x info for more information at Org-roam > Installation > Post-Installation Tas
 (defalias 'org-roam 'org-roam-buffer-toggle-display)
 
 ;;;###autoload
-(defun org-roam-diagnostics ()
-  "Collect and print info for `org-roam' issues."
-  (interactive)
-  (with-current-buffer (switch-to-buffer-other-window (get-buffer-create "*org-roam diagnostics*"))
-    (erase-buffer)
-    (insert (propertize "Copy info below this line into issue:\n" 'face '(:weight bold)))
-    (insert (format "- Emacs: %s\n" (emacs-version)))
-    (insert (format "- Framework: %s\n"
-                    (condition-case _
-                        (completing-read "I'm using the following Emacs framework:"
-                                         '("Doom" "Spacemacs" "N/A" "I don't know"))
-                      (quit "N/A"))))
-    (insert (format "- Org: %s\n" (org-version nil 'full)))
-    (insert (format "- Org-roam: %s" (org-roam-version)))))
-
-;;;###autoload
 (defun org-roam-find-file (&optional initial-prompt completions filter-fn no-confirm)
   "Find and open an Org-roam file.
 INITIAL-PROMPT is the initial title prompt.
