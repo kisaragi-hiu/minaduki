@@ -269,7 +269,7 @@
                  "google.com"]
                 [,(test-org-roam--abs-path "foo.org")
                  ,(test-org-roam--abs-path "bar.org")])))
-    (it "extracts Org citations"
+    (xit "extracts Org citations"
       (expect (->> (test #'kisaragi-notes-extract/citation
                          "org-cite.org")
                 ;; Drop the link properties
