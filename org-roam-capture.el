@@ -30,26 +30,24 @@
 ;; This library provides capture functionality for org-roam
 ;;; Code:
 ;;;; Library Requires
-(require 'org-capture)
-(require 'org-roam-macs)
-(require 'org-roam-db)
-(require 'org-roam-extract)
 (require 'dash)
 (require 's)
 (require 'cl-lib)
+(require 'org-capture)
+
+(require 'org-roam-macs)
+(require 'org-roam-db)
+(require 'org-roam-extract)
+(require 'kisaragi-notes-completion)
+(require 'kisaragi-notes-vars)
 
 ;; Declarations
-(defvar org-roam-encrypt-files)
-(defvar org-roam-directory)
 (defvar org-roam-mode)
-(defvar org-roam-file-extensions)
 
-(declare-function  org-roam--get-title-path-completions "org-roam")
 (declare-function  org-roam--get-ref-path-completions   "org-roam")
 (declare-function  org-roam--find-file                  "org-roam")
-(declare-function  org-roam-format-link                "org-roam")
+(declare-function  org-roam-format-link                 "org-roam")
 (declare-function  org-roam-mode                        "org-roam")
-(declare-function  org-roam-completion--completing-read "org-roam-completion")
 
 (defvar org-roam-capture--file-path nil
   "The file path for the Org-roam capture.
@@ -621,8 +619,7 @@ Arguments GOTO and KEYS see `org-capture'."
   (interactive "P")
   (unless org-roam-mode (org-roam-mode))
   (let* ((completions (org-roam--get-title-path-completions))
-         (title-with-keys (org-roam-completion--completing-read "File: "
-                                                                completions))
+         (title-with-keys (completing-read "File: " completions))
          (res (cdr (assoc title-with-keys completions)))
          (title (or (plist-get res :title) title-with-keys))
          (file-path (plist-get res :path)))

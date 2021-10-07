@@ -32,17 +32,55 @@
 ;;
 ;;
 ;;; Code:
-;;;; Library Requires
+
 (require 'dash)
 (require 's)
 
-(defvar org-roam-verbose)
-(defvar kisaragi-notes/slug-replacements)
+(require 'kisaragi-notes-vars)
 
 ;; This is necessary to ensure all dependents on this module see
 ;; `org-mode-hook' and `org-inhibit-startup' as dynamic variables,
 ;; regardless of whether Org is loaded before their compilation.
 (require 'org)
+
+(defun kisaragi-notes//compute-content-hash (&optional file)
+  "Compute the hash of the contents of FILE or the current buffer."
+  (if file
+      (with-temp-buffer
+        (set-buffer-multibyte nil)
+        (insert-file-contents-literally file)
+        (secure-hash 'sha1 (current-buffer)))
+    (org-with-wide-buffer
+     (secure-hash 'sha1 (current-buffer)))))
+
+
+;; From `orb--with-message!'
+(defmacro kisaragi-notes//with-message (message &rest body)
+  "Put MESSAGE before and after BODY.
+
+Echo \"MESSAGE...\", run BODY, then echo \"MESSAGE...done\"
+afterwards. The value of BODY is returned."
+  (declare (indent 1) (debug (stringp &rest form)))
+  `(prog2
+       (message "%s..." ,message)
+       (progn ,@body)
+     (message "%s...done" ,message)))
+
+(defun org-roam--add-tag-string (str tags)
+  "Add TAGS to STR.
+
+Depending on the value of `org-roam-file-completion-tag-position', this function
+prepends TAGS to STR, appends TAGS to STR or omits TAGS from STR."
+  (pcase org-roam-file-completion-tag-position
+    ('prepend (concat
+               (when tags (propertize (format "(%s) " (s-join org-roam-tag-separator tags))
+                                      'face 'org-roam-tag))
+               str))
+    ('append (concat
+              str
+              (when tags (propertize (format " (%s)" (s-join org-roam-tag-separator tags))
+                                     'face 'org-roam-tag))))
+    ('omit str)))
 
 (defun kisaragi-notes//remove-org-links (str)
   "Remove Org bracket links from STR."
@@ -139,14 +177,6 @@ Assume the protocol is not present in PATH; e.g. URL `https://google.com' is
 passed as `//google.com'."
   (string-prefix-p "//" path))
 
-(defun org-roam--list-interleave (lst separator)
-  "Interleaves elements in LST with SEPARATOR."
-  (when lst
-    (let ((new-lst (list (pop lst))))
-      (dolist (it lst)
-        (nconc new-lst (list separator it)))
-      new-lst)))
-
 (defmacro org-roam-with-file (file keep-buf-p &rest body)
   "Execute BODY within FILE.
 If FILE is nil, execute BODY in the current buffer.
@@ -183,7 +213,7 @@ If FILE, set `org-roam-temp-file-name' to file and insert its contents."
            (org-mode)
            (when ,file
              (insert-file-contents ,file)
-             (setq-local org-roam-file-name ,file)
+             (setq-local kisaragi-notes//file-name ,file)
              (setq-local default-directory (file-name-directory ,file)))
            ,@body)))))
 

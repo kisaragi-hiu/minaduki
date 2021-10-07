@@ -269,7 +269,7 @@
                  "google.com"]
                 [,(test-org-roam--abs-path "foo.org")
                  ,(test-org-roam--abs-path "bar.org")])))
-    (it "extracts Org citations"
+    (xit "extracts Org citations"
       (expect (->> (test #'kisaragi-notes-extract/citation
                          "org-cite.org")
                 ;; Drop the link properties
@@ -433,10 +433,10 @@
     (test-org-roam--teardown))
 
   (it "Returns a file from its title"
-    (expect (kisaragi-notes//get-files "Foo")
+    (expect (kisaragi-notes-db//fetch-files-by-title "Foo")
             :to-equal
             (list (test-org-roam--abs-path "foo.org")))
-    (expect (kisaragi-notes//get-files "Deeply Nested File")
+    (expect (kisaragi-notes-db//fetch-files-by-title "Deeply Nested File")
             :to-equal
             (list (test-org-roam--abs-path "nested/deeply/deeply_nested_file.org")))))
 

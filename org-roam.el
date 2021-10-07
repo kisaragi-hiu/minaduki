@@ -48,6 +48,10 @@
 (eval-when-compile (require 'subr-x))
 
 (require 'kisaragi-notes-vars)
+(require 'kisaragi-notes-completion)
+
+(when (featurep 'marginalia)
+  (require 'kisaragi-notes-marginalia))
 
 ;;;; Features
 (require 'org-roam-macs)
@@ -56,11 +60,10 @@
 ;; selectively loading different sets of features.
 ;; ~NV [2020-05-22 Fri]
 
-(require 'kisaragi-notes-cite)
+(when (featurep 'oc)
+  (require 'kisaragi-notes-cite))
 
-(require 'org-roam-faces)
 (require 'org-roam-buffer)
-(require 'org-roam-completion)
 (require 'org-roam-capture)
 (require 'org-roam-extract)
 (require 'org-roam-db)
@@ -77,201 +80,9 @@
 (declare-function org-id-find-id-in-file "ext:org-id" (id file &optional markerp))
 
 ;;;; Customizable variables
-(defgroup org-roam nil
-  "Roam Research replica in Org-mode."
-  :group 'org
-  :prefix "org-roam-"
-  :link '(url-link :tag "Github" "https://github.com/org-roam/org-roam")
-  :link '(url-link :tag "Online Manual" "https://www.orgroam.com/manual.html"))
-
-(defcustom org-roam-directory (expand-file-name "~/org-roam/")
-  "Default path to Org-roam files.
-All Org files, at any level of nesting, are considered part of the Org-roam."
-  :type 'directory
-  :group 'org-roam)
-
-(defcustom org-roam-encrypt-files nil
-  "Whether to encrypt new files.  If true, create files with .gpg extension."
-  :type 'boolean
-  :group 'org-roam)
-
-(defcustom org-roam-file-extensions '("org" "md")
-  "Only files with these extensions are indexed.
-
-The first item in the list is used as the default file extension.
-
-While the file extensions may be different, the only supported
-file formats are Org-mode and Markdown (partially)."
-  :type '(repeat string)
-  :group 'org-roam)
-
-(defcustom org-roam-file-exclude-regexp nil
-  "Files matching this regular expression are excluded from the Org-roam."
-  :type '(choice
-          (string :tag "Regular expression matching files to ignore")
-          (const :tag "Include everything" nil))
-  :group 'org-roam)
-
-(defcustom org-roam-find-file-function nil
-  "Function called when visiting files in Org-roam commands.
-If nil, `find-file' is used."
-  :type 'function
-  :group 'org-roam)
-
-(defcustom org-roam-include-type-in-ref-path-completions nil
-  "When t, include the type in ref-path completions.
-Note that this only affects interactive calls.
-See `org-roam--get-ref-path-completions' for details."
-  :type 'boolean
-  :group 'org-roam)
-
-(defcustom org-roam-index-file "index.org"
-  "Path to the Org-roam index file.
-The path can be a string or a function.  If it is a string, it
-should be the path (absolute or relative to `org-roam-directory')
-to the index file.  If it is is a function, the function should
-return the path to the index file.  Otherwise, the index is
-assumed to be a note in `org-roam-directory' whose title is
-'Index'."
-  :type '(choice
-          (string :tag "Path to index" "%s")
-          (function :tag "Function to generate the path"))
-  :group 'org-roam)
-
-(defcustom org-roam-link-title-format "%s"
-  "The formatter used when inserting Org-roam links that use their title.
-Formatter may be a function that takes title as its only argument."
-  :type '(choice
-          (string :tag "String Format" "%s")
-          (function :tag "Custom function"))
-  :group 'org-roam)
-
-(defcustom org-roam-prefer-id-links t
-  "If non-nil, use ID for linking instead where available."
-  :type 'boolean
-  :group 'org-roam)
-
-(defcustom org-roam-list-files-commands
-  (if (member system-type '(windows-nt ms-dos cygwin))
-      nil
-    '(rg))
-  "Commands that will be used to find Org-roam files.
-
-It should be a list of symbols or cons cells representing any of the following
- supported file search methods.
-
-The commands will be tried in order until an executable for a command is found.
-The Elisp implementation is used if no command in the list is found.
-
-  `rg'
-    Use ripgrep as the file search method.
-    Example command: rg /path/to/dir/ --files -g \"*.org\" -g \"*.org.gpg\"
-
-By default, `executable-find' will be used to look up the path to the
-executable. If a custom path is required, it can be specified together with the
-method symbol as a cons cell. For example: '(find (rg . \"/path/to/rg\"))."
-  :type '(set (const :tag "rg" rg))
-  :group 'org-roam)
-
-(defcustom org-roam-tag-separator ","
-  "String to use to separate tags when `kisaragi-notes/tag-sources' is non-nil."
-  :type 'string
-  :group 'org-roam)
-
-(defcustom kisaragi-notes/slug-replacements
-  '(("[^[:alnum:][:digit:]]" . "_") ; convert anything not alphanumeric
-    ("__*" . "_") ; remove sequential underscores (perhaps from above)
-    ("^_" . "") ; remove starting underscore
-    ("_$" . "")) ; remove trailing underscore
-  "Extra replacements used to convert a title to a filename-suitable slug.
-
-Replacements are applied in order. For example, by default, two
-spaces (\" \") will be replaced with two underscores (\"__\"),
-which will then be replaced with a single underscore (\"_\")."
-  :type '(alist
-          :key-type (string :tag "From (regexp)")
-          :value-type (string :tag "To"))
-  :group 'org-roam)
-
-(defcustom org-roam-title-sources '((title headline) alias)
-  "The list of sources from which to retrieve a note title.
-
-Return values from each source, which are symbols corresponding
-to a title retrieval function, are concatenated into the final
-list of titles. A source can also be a list of sources --- in
-which case the first non-nil return value is used.
-
-For example, the default setting ((title headline) alias)
-effectively stands for this:
-
-    (append (or title headline)
-            alias)
-
-So, when the title is not empty, 'title + 'alias will be
-returned; otherwise, 'headline + 'alias is the resulting list of
-titles.
-
-The currently supported symbols are:
-
-  `title'
-   The \"#+title\" property of org file.
-
-  `alias'
-   The \"#+roam_alias\" property of the org file, using
-   space-delimited strings.
-
-   `headline'
-   The first headline in the org file."
-  :type '(repeat
-          (choice
-           (repeat symbol)
-           (symbol)))
-  :group 'org-roam)
-
-(defcustom org-roam-file-completion-tag-position 'prepend
-  "Prepend, append, or omit tags from the file titles during completion."
-  :type '(choice (const :tag "Prepend" prepend)
-                 (const :tag "Append" append)
-                 (const :tag "Omit" omit))
-  :group 'org-roam)
-
-(defcustom org-roam-enable-headline-linking t
-  "Enable linking to headlines.
-This includes automatic :ID: creation and scanning of :ID:s for
-org-roam database."
-  :type 'boolean
-  :group 'org-roam)
-
-(defcustom org-roam-verbose t
-  "Echo messages that are not errors."
-  :type 'boolean
-  :group 'org-roam)
 
 (defvar org-roam-completion-functions nil
   "List of functions to be used with `completion-at-point' for Org-roam.")
-
-;;;; Dynamic variables
-(defvar org-roam-last-window nil
-  "Last window `org-roam' was called from.")
-
-(defvar-local org-roam-file-name nil
-  "The corresponding file for a temp buffer.
-This is set by `org-roam--with-temp-buffer', to allow throwing of
-descriptive warnings when certain operations fail (e.g. parsing).")
-
-(defvar org-roam--org-link-bracket-typed-re
-  (rx (seq "[["
-           (group (+? anything))
-           ":"
-           (group
-            (one-or-more
-             (or (not (any "[]\\"))
-                 (and "\\" (zero-or-more "\\\\") (any "[]"))
-                 (and (one-or-more "\\") (not (any "[]"))))))
-           "]"
-           (opt "[" (group (+? anything)) "]")
-           "]"))
-  "Matches a typed link in double brackets.")
 
 ;;;; Utilities
 ;;;; File functions and predicates
@@ -295,7 +106,7 @@ Like `file-name-extension', but does not strip version number."
   "Return t if FILE is part of Org-roam system, nil otherwise.
 If FILE is not specified, use the current buffer's file-path."
   (when-let ((path (or file
-                       org-roam-file-name
+                       kisaragi-notes//file-name
                        (-> (buffer-base-buffer)
                          (buffer-file-name)))))
     (save-match-data
@@ -471,57 +282,6 @@ In Markdown, TYPE has no effect."
           (t
            (format "[%s](%s)" description target))))))
 
-(defun org-roam--add-tag-string (str tags)
-  "Add TAGS to STR.
-
-Depending on the value of `org-roam-file-completion-tag-position', this function
-prepends TAGS to STR, appends TAGS to STR or omits TAGS from STR."
-  (pcase org-roam-file-completion-tag-position
-    ('prepend (concat
-               (when tags (propertize (format "(%s) " (s-join org-roam-tag-separator tags))
-                                      'face 'org-roam-tag))
-               str))
-    ('append (concat
-              str
-              (when tags (propertize (format " (%s)" (s-join org-roam-tag-separator tags))
-                                     'face 'org-roam-tag))))
-    ('omit str)))
-
-
-(defun org-roam--get-title-path-completions ()
-  "Return an alist for completion.
-The car is the displayed title for completion, and the cdr is a
-plist containing the path and title for the file."
-  (let* ((rows (org-roam-db-query [:select [files:file titles:title tags:tags files:meta] :from titles
-                                   :left :join tags
-                                   :on (= titles:file tags:file)
-                                   :left :join files
-                                   :on (= titles:file files:file)]))
-         completions)
-    (setq rows (seq-sort-by (lambda (x)
-                              (plist-get (nth 3 x) :mtime))
-                            #'time-less-p
-                            rows))
-    (dolist (row rows completions)
-      (pcase-let ((`(,file-path ,title ,tags) row))
-        (let ((k (org-roam--add-tag-string title tags))
-              (v (list :path file-path :title title)))
-          (push (cons k v) completions))))))
-
-(defun kisaragi-notes//get-files (title)
-  "Return files matching TITLE in the DB."
-  (->> (org-roam-db-query
-        ;; Leaving the join syntax here so that it's easier to modify
-        ;; later to support retrieving filepaths with tags, ids, and refs
-        [:select [files:file] :from files
-         :left-join titles
-         :on (= titles:file files:file)
-         :where (= title $s0)]
-        title)
-    ;; The above returns ((path1) (path2) ...).
-    ;; Turn it into (path1 path2 ...).
-    (apply #'nconc)))
-
 (defun org-roam--get-index-path ()
   "Return the path to the index in `org-roam-directory'.
 The path to the index can be defined in `org-roam-index-file'.
@@ -554,58 +314,6 @@ If the property is already set, it's value is replaced."
             (forward-line)
             (beginning-of-line)))
         (insert "#+" name ": " value "\n")))))
-
-;;;; org-roam-find-ref
-(defun org-roam--get-ref-path-completions (&optional arg filter)
-  "Return an alist of refs to absolute path of Org-roam files.
-
-When called interactively (i.e. when ARG is 1), formats the car
-of the completion-candidates with extra information: title, tags,
-and type \(when `org-roam-include-type-in-ref-path-completions'
-is non-nil).
-
-When called with a `C-u' prefix (i.e. when ARG is 4), forces the
-default format without the formatting.
-
-FILTER can either be a string or a function:
-
-- If it is a string, it should be the type of refs to include as
-  candidates \(e.g. \"cite\", \"website\", etc.)
-
-- If it is a function, it should be the name of a function that
-  takes three arguments: the type, the ref, and the file of the
-  current candidate. It should return t if that candidate is to
-  be included as a candidate."
-  (let ((rows (org-roam-db-query
-               [:select [refs:type refs:ref refs:file titles:title tags:tags]
-                :from titles
-                :left :join tags
-                :on (= titles:file tags:file)
-                :left :join refs :on (= titles:file refs:file)
-                :where refs:file :is :not :null]))
-        completions)
-    (setq rows (seq-sort-by (lambda (x)
-                              (plist-get (nth 3 x) :mtime))
-                            #'time-less-p
-                            rows))
-    (dolist (row rows completions)
-      (pcase-let ((`(,type ,ref ,file-path ,title ,tags) row))
-        (when (pcase filter
-                ('nil t)
-                ((pred stringp) (string= type filter))
-                ((pred functionp) (funcall filter type ref file-path))
-                (wrong-type (signal 'wrong-type-argument
-                                    `((stringp functionp)
-                                      ,wrong-type))))
-          (let ((k (if (eq arg 1)
-                       (concat
-                        (when org-roam-include-type-in-ref-path-completions
-                          (format "{%s} " type))
-                        (org-roam--add-tag-string (format "%s (%s)" title ref)
-                                                  tags))
-                     ref))
-                (v (list :path file-path :type type :ref ref)))
-            (push (cons k v) completions)))))))
 
 (defun org-roam--find-file (file)
   "Open FILE using `org-roam-find-file-function' or `find-file'."
@@ -700,20 +408,6 @@ This function hooks into `org-open-at-point' via `org-open-at-point-functions'."
    ;; If called via `org-open-at-point', fall back to default behavior.
    (t nil)))
 
-(defun org-roam--get-backlinks (targets)
-  "Return the backlinks for TARGETS.
-TARGETS is a list of strings corresponding to the TO value in the
-Org-roam cache. It may be a file, for Org-roam file links, or a
-citation key, for Org-ref cite links."
-  (unless (listp targets)
-    (setq targets (list targets)))
-  (let ((conditions (--> targets
-                      (mapcar (lambda (i) (list '= 'dest i)) it)
-                      (org-roam--list-interleave it :or))))
-    (org-roam-db-query `[:select [source dest properties] :from links
-                         :where ,@conditions
-                         :order-by (asc source)])))
-
 ;;; Completion at point
 (defcustom org-roam-completion-everywhere nil
   "If non-nil, provide completions from the current word at point."
@@ -732,7 +426,7 @@ citation key, for Org-ref cite links."
         (setq start (save-excursion (skip-syntax-backward "w")
                                     (point))
               end (point)))
-      (setq collection #'org-roam-db--get-tags
+      (setq collection #'kisaragi-notes-db//fetch-all-tags
             exit-fn (lambda (str _status)
                       (delete-char (- (length str)))
                       (insert "\"" str "\""))))
@@ -1117,48 +811,38 @@ M-x info for more information at Org-roam > Installation > Post-Installation Tas
 (defalias 'org-roam 'org-roam-buffer-toggle-display)
 
 ;;;###autoload
-(defun org-roam-diagnostics ()
-  "Collect and print info for `org-roam' issues."
-  (interactive)
-  (with-current-buffer (switch-to-buffer-other-window (get-buffer-create "*org-roam diagnostics*"))
-    (erase-buffer)
-    (insert (propertize "Copy info below this line into issue:\n" 'face '(:weight bold)))
-    (insert (format "- Emacs: %s\n" (emacs-version)))
-    (insert (format "- Framework: %s\n"
-                    (condition-case _
-                        (completing-read "I'm using the following Emacs framework:"
-                                         '("Doom" "Spacemacs" "N/A" "I don't know"))
-                      (quit "N/A"))))
-    (insert (format "- Org: %s\n" (org-version nil 'full)))
-    (insert (format "- Org-roam: %s" (org-roam-version)))))
+(defun kisaragi-notes/open (&optional entry)
+  ;; Some usages:
+  ;; (kisaragi-notes/open title)
+  ;; (kisaragi-notes/open
+  ;;   (kisaragi-notes-completion//read-note initial-input))
+  "Find and open the note ENTRY.
 
-;;;###autoload
-(defun org-roam-find-file (&optional initial-prompt completions filter-fn no-confirm)
-  "Find and open an Org-roam file.
-INITIAL-PROMPT is the initial title prompt.
-COMPLETIONS is a list of completions to be used instead of
-`org-roam--get-title-path-completions`.
-FILTER-FN is the name of a function to apply on the candidates
-which takes as its argument an alist of path-completions.  See
-`org-roam--get-title-path-completions' for details.
-If NO-CONFIRM, assume that the user does not want to modify the initial prompt."
-  (interactive)
+ENTRY is a plist (:path PATH :title TITLE). It can also be a
+string, in which case it refers to a (maybe non-existent) note
+with it as the title.
+
+Interactively, provide a list of notes to search and select from.
+If a note with the entered title does not exist, create a new
+one."
+  (interactive
+   (list (kisaragi-notes-completion//read-note)))
   (unless org-roam-mode (org-roam-mode))
-  (let* ((completions (funcall (or filter-fn #'identity)
-                               (or completions (org-roam--get-title-path-completions))))
-         (title-with-tags (if no-confirm
-                              initial-prompt
-                            (org-roam-completion--completing-read "File: " completions
-                                                                  :initial-input initial-prompt)))
-         (res (cdr (assoc title-with-tags completions)))
-         (file-path (plist-get res :path)))
+  (when (stringp entry)
+    (setq entry
+          (list :path (car (kisaragi-notes-db//fetch-files-by-title entry))
+                :title entry)))
+  (let ((file-path (plist-get entry :path))
+        (title (plist-get entry :title)))
     (if file-path
         (org-roam--find-file file-path)
-      (let ((org-roam-capture--info `((title . ,title-with-tags)
-                                      (slug  . ,(kisaragi-notes//title-to-slug title-with-tags))))
-            (org-roam-capture--context 'title))
-        (setq org-roam-capture-additional-template-props (list :finalize 'find-file))
-        (org-roam-capture--capture)))))
+      ;; FIXME: Hardcodes choice of Org
+      (with-current-buffer (find-file-noselect
+                            (-> (kisaragi-notes//title-to-slug title)
+                              (f-expand org-roam-directory)
+                              (concat ".org")))
+        (insert "#+TITLE: " title "\n")
+        (pop-to-buffer-same-window (current-buffer))))))
 
 (defun kisaragi-notes/search (term)
   "Return a list of notes matching TERM."
@@ -1179,8 +863,8 @@ If NO-CONFIRM, assume that the user does not want to modify the initial prompt."
                    (line (match-string 2))
                    (column (match-string 3))
                    (context (match-string 4)))
-               (list :title (org-roam-db--get-title (expand-file-name file))
-                     :tags (kisaragi-notes-db//get-file-tags (expand-file-name file))
+               (list :title (kisaragi-notes-db//fetch-title (expand-file-name file))
+                     :tags (kisaragi-notes-db//fetch-file-tags (expand-file-name file))
                      :file file :line line :column column :context context)))))
 
 ;;;###autoload
@@ -1204,9 +888,7 @@ included as a candidate."
   (interactive "p")
   (unless org-roam-mode (org-roam-mode))
   (let* ((completions (org-roam--get-ref-path-completions arg filter))
-         (ref (org-roam-completion--completing-read "Ref: "
-                                                    completions
-                                                    :require-match t))
+         (ref (completing-read "Ref: " completions nil t))
          (file (-> (cdr (assoc ref completions))
                  (plist-get :path))))
     (org-roam--find-file file)))
@@ -1246,8 +928,8 @@ If DESCRIPTION is provided, use this as the link label.  See
                               (if filter-fn
                                   (funcall filter-fn it)
                                 it)))
-               (title-with-tags (org-roam-completion--completing-read "File: " completions
-                                                                      :initial-input region-text))
+               (title-with-tags (completing-read "File: " completions
+                                                 nil nil region-text))
                (res (cdr (assoc title-with-tags completions)))
                (title (or (plist-get res :title)
                           title-with-tags))
@@ -1289,18 +971,6 @@ See `org-roam-insert' for details."
     (apply #'org-roam-insert args)))
 
 ;;;###autoload
-(defun org-roam-find-file-immediate (arg &rest args)
-  "Find and open an Org-roam file.
-This variant of `org-roam-find-file' uses the template in
-`org-roam-capture-immediate-template', avoiding the capture
-process. The interactive ARG and ARGS are passed to
-`org-roam-find-file'. See `org-roam-find-file' for details."
-  (interactive "P")
-  (let ((args (push arg args))
-        (org-roam-capture-templates (list org-roam-capture-immediate-template)))
-    (apply #'org-roam-find-file args)))
-
-;;;###autoload
 (defun org-roam-jump-to-index ()
   "Find the index file in `org-roam-directory'.
 The path to the index can be defined in `org-roam-index-file'.
@@ -1314,7 +984,7 @@ command will offer you to create one."
              (file-exists-p index))
         (org-roam--find-file index)
       (when (y-or-n-p "Index file does not exist.  Would you like to create it? ")
-        (org-roam-find-file "Index")))))
+        (kisaragi-notes/open "Index")))))
 
 ;;;###autoload
 (defun org-roam-alias-add ()
@@ -1353,7 +1023,7 @@ Return added alias."
 Return added tag."
   (interactive)
   (unless org-roam-mode (org-roam-mode))
-  (let* ((all-tags (org-roam-db--get-tags))
+  (let* ((all-tags (kisaragi-notes-db//fetch-all-tags))
          (tag (completing-read "Tag: " all-tags))
          (file (buffer-file-name (buffer-base-buffer)))
          (existing-tags (org-roam--extract-tags-prop file)))
@@ -1384,15 +1054,15 @@ Return added tag."
   (interactive)
   (let* ((roam-buffers (org-roam--get-roam-buffers))
          (names-and-buffers (mapcar (lambda (buffer)
-                                      (cons (or (org-roam-db--get-title
+                                      (cons (or (kisaragi-notes-db//fetch-title
                                                  (buffer-file-name buffer))
                                                 (buffer-name buffer))
                                             buffer))
                                     roam-buffers)))
     (unless roam-buffers
       (user-error "No roam buffers"))
-    (when-let ((name (org-roam-completion--completing-read "Buffer: " names-and-buffers
-                                                           :require-match t)))
+    (when-let ((name (completing-read "Buffer: " names-and-buffers
+                                      nil t)))
       (switch-to-buffer (cdr (assoc name names-and-buffers))))))
 
 (defun org-roam--execute-file-row-col (s)
@@ -1467,7 +1137,7 @@ the executable 'rg' in variable `exec-path'."
                   (let ((rowcol (concat row ":" col)))
                     (insert "- "
                             (org-link-make-string (concat "file:" file "::" rowcol)
-                                                  (format "[%s] %s" rowcol (or (org-roam-db--get-title file)
+                                                  (format "[%s] %s" rowcol (or (kisaragi-notes-db//fetch-title file)
                                                                                file))))
                     (when (executable-find "sed") ; insert line contents when sed is available
                       (insert " :: "

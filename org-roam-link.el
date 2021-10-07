@@ -4,28 +4,7 @@
 ;;                  Alan Carroll
 
 ;; Author: Jethro Kuan <jethrokuan95@gmail.com>
-;; URL: https://github.com/org-roam/org-roam
-;; Keywords: org-mode, roam, convenience
-;; Version: 1.2.3
-;; Package-Requires: ((emacs "26.1") (dash "2.13") (f "0.17.2") (s "1.12.0") (org "9.3") (emacsql "3.0.0") (emacsql-sqlite3 "1.0.2"))
-
-;; This file is NOT part of GNU Emacs.
-
-;; This program is free software; you can redistribute it and/or modify
-;; it under the terms of the GNU General Public License as published by
-;; the Free Software Foundation; either version 3, or (at your option)
-;; any later version.
 ;;
-;; This program is distributed in the hope that it will be useful,
-;; but WITHOUT ANY WARRANTY; without even the implied warranty of
-;; MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-;; GNU General Public License for more details.
-;;
-;; You should have received a copy of the GNU General Public License
-;; along with GNU Emacs; see the file COPYING.  If not, write to the
-;; Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor,
-;; Boston, MA 02110-1301, USA.
-
 ;;; Commentary:
 ;;
 ;; This adds the custom `roam:' link to Org-roam. `roam:' links allow linking to
@@ -34,37 +13,20 @@
 ;;; Code:
 ;;;; Dependencies
 
+(require 'f)
 (require 'ol)
+
 (require 'org-roam-macs)
 (require 'org-roam-db)
 
+(require 'kisaragi-notes-vars)
+(require 'kisaragi-notes-completion)
+
 (require 'org-element)
 
-(defvar org-roam-completion-ignore-case)
-(defvar org-roam-directory)
 (declare-function  org-roam--find-file                  "org-roam")
-(declare-function  org-roam-find-file                   "org-roam")
+(declare-function  kisaragi-notes/open                  "org-roam")
 (declare-function org-roam-format-link                  "org-roam")
-
-(defcustom org-roam-link-auto-replace t
-  "When non-nil, replace Org-roam's roam links with file/id equivalents."
-  :group 'org-roam
-  :type 'boolean)
-
-(defcustom org-roam-link-file-path-type 'relative
-  "How the path name in file links should be stored.
-Valid values are:
-
-relative  Relative to the current directory, i.e. the directory of the file
-          into which the link is being inserted.
-absolute  Absolute path, if possible with ~ for home directory.
-noabbrev  Absolute path, no abbreviation of home directory."
-  :group 'org-roam
-  :type '(choice
-          (const relative)
-          (const absolute)
-          (const noabbrev))
-  :safe #'symbolp)
 
 ;;; org-link-abbrev
 
@@ -107,7 +69,7 @@ the link."
       ("file"
        (if loc
            (org-roam--find-file loc)
-         (org-roam-find-file desc nil nil t)))
+         (kisaragi-notes/open desc)))
       ("id"
        (org-goto-marker-or-bmk mkr)))))
 
@@ -164,7 +126,8 @@ When NO-INTERACTIVE, return nil if there are multiple options."
       (`(,file) file)
       (_
        (unless no-interactive
-         (completing-read "Select file: " files))))))
+         (completing-read "Select file: "
+                          (kisaragi-notes-completion//mark-category files 'file)))))))
 
 (defun org-roam-link--get-id-from-headline (headline &optional file)
   "Return (marker . id) correspondng to HEADLINE in FILE.

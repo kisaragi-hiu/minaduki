@@ -25,10 +25,10 @@
 
 (require 'parse-time)
 
-(require 'org-roam-db) ; for org-roam-db--get-title
-(require 'org-roam-macs) ; for kisaragi-notes//today
+(require 'org-roam-db)
+(require 'org-roam-macs)
 
-(defvar org-roam-directory)
+(require 'kisaragi-notes-vars)
 
 (defcustom kisaragi-diary/directory "diary/"
   "A path under `org-roam-directory' to store new diary entries."
@@ -100,7 +100,7 @@ whether an entry is from DAY or not."
                (--map
                 ;; try to use an org-roam internal function to get the title
                 ;; otherwise just use f-base
-                `(,(or (org-roam-db--get-title it)
+                `(,(or (kisaragi-notes-db//fetch-title it)
                        (f-base it))
                   .
                   ,it)

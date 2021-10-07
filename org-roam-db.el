@@ -27,7 +27,12 @@
 
 ;;; Commentary:
 ;;
-;; This library is provides the underlying database api to org-roam
+;; This library is provides the underlying database api to org-roam.
+;;
+;; - Low level DB interface
+;; - org-roam-db-build-cache
+;; - org-roam-db--get-* (except get-collection)
+;;   kisaragi-notes-db//fetch-*
 ;;
 ;;; Code:
 ;;;; Library Requires
@@ -37,14 +42,14 @@
 (require 'seq)
 
 (eval-and-compile
-  (require 'org-roam-macs)
   ;; For `org-with-wide-buffer'
   (require 'org-macs))
 
+(require 'org-roam-macs)
+(require 'kisaragi-notes-vars)
+
 (defvar org-roam-directory)
 (defvar org-roam-enable-headline-linking)
-(defvar org-roam-verbose)
-(defvar org-roam-file-name)
 
 (defvar org-agenda-files)
 (declare-function org-roam--extract-titles                 "org-roam-extract")
@@ -56,7 +61,6 @@
 (declare-function org-roam--list-all-files                 "org-roam")
 (declare-function org-roam--path-to-slug                   "org-roam")
 (declare-function org-roam--file-name-extension            "org-roam")
-(declare-function org-roam-buffer--update-maybe            "org-roam-buffer")
 
 ;;;; Options
 (defcustom org-roam-db-location (expand-file-name "org-roam.db" user-emacs-directory)
@@ -151,7 +155,7 @@ Performs a database upgrade when required."
 (defun org-roam-db-query (sql &rest args)
   "Run SQL query on Org-roam database with ARGS.
 SQL can be either the emacsql vector representation, or a string."
-  (if  (stringp sql)
+  (if (stringp sql)
       (emacsql (org-roam-db) (apply #'format sql args))
     (apply #'emacsql (org-roam-db) sql args)))
 
@@ -268,11 +272,11 @@ This is equivalent to removing the node from the graph."
 (defun org-roam-db--insert-meta (&optional update-p)
   "Update the metadata of the current buffer into the cache.
 If UPDATE-P is non-nil, first remove the meta for the file in the database."
-  (let* ((file (or org-roam-file-name (buffer-file-name)))
+  (let* ((file (or kisaragi-notes//file-name (buffer-file-name)))
          (attr (file-attributes file))
          (atime (file-attribute-access-time attr))
          (mtime (file-attribute-modification-time attr))
-         (hash (org-roam-db--file-hash)))
+         (hash (kisaragi-notes//compute-content-hash)))
     (when update-p
       (org-roam-db-query [:delete :from files
                           :where (= file $s1)]
@@ -286,7 +290,7 @@ If UPDATE-P is non-nil, first remove the meta for the file in the database."
   "Update the titles of the current buffer into the cache.
 If UPDATE-P is non-nil, first remove titles for the file in the database.
 Returns the number of rows inserted."
-  (let* ((file (or org-roam-file-name (buffer-file-name)))
+  (let* ((file (or kisaragi-notes//file-name (buffer-file-name)))
          (titles (or (org-roam--extract-titles)
                      (list (org-roam--path-to-slug file))))
          (rows (mapcar (lambda (title)
@@ -304,7 +308,7 @@ Returns the number of rows inserted."
 (defun org-roam-db--insert-refs (&optional update-p)
   "Update the refs of the current buffer into the cache.
 If UPDATE-P is non-nil, first remove the ref for the file in the database."
-  (let ((file (or org-roam-file-name (buffer-file-name)))
+  (let ((file (or kisaragi-notes//file-name (buffer-file-name)))
         (count 0))
     (when update-p
       (org-roam-db-query [:delete :from refs
@@ -335,7 +339,7 @@ If UPDATE-P is non-nil, first remove the ref for the file in the database."
   "Update the file links of the current buffer in the cache.
 If UPDATE-P is non-nil, first remove the links for the file in the database.
 Return the number of rows inserted."
-  (let ((file (or org-roam-file-name (buffer-file-name))))
+  (let ((file (or kisaragi-notes//file-name (buffer-file-name))))
     (when update-p
       (org-roam-db-query [:delete :from links
                           :where (= source $s1)]
@@ -353,7 +357,7 @@ Return the number of rows inserted."
   "Update the ids of the current buffer into the cache.
 If UPDATE-P is non-nil, first remove ids for the file in the database.
 Returns the number of rows inserted."
-  (let ((file (or org-roam-file-name (buffer-file-name))))
+  (let ((file (or kisaragi-notes//file-name (buffer-file-name))))
     (when update-p
       (org-roam-db-query [:delete :from ids
                           :where (= file $s1)]
@@ -379,7 +383,7 @@ Returns the number of rows inserted."
   "Insert tags for the current buffer into the Org-roam cache.
 If UPDATE-P is non-nil, first remove tags for the file in the database.
 Return the number of rows inserted."
-  (let* ((file (or org-roam-file-name (buffer-file-name)))
+  (let* ((file (or kisaragi-notes//file-name (buffer-file-name)))
          (tags (org-roam--extract-tags file)))
     (when update-p
       (org-roam-db-query [:delete :from tags
@@ -394,35 +398,49 @@ Return the number of rows inserted."
       0)))
 
 ;;;;; Fetching
-(defun org-roam-db-has-file-p (file)
-  "Return t if FILE is in the database, nil otherwise."
+(defun kisaragi-notes-db//file-present? (file)
+  "Does FILE exist in the cache DB?"
   (> (caar (org-roam-db-query [:select (funcall count) :from files
                                :where (= file $s1)]
                               file))
      0))
 
-(defun org-roam-db--get-current-files ()
-  "Return a hash-table of file to the hash of its file contents."
-  (let* ((current-files (org-roam-db-query [:select * :from files]))
+(defun kisaragi-notes-db//fetch-files-by-title (title)
+  "Return files matching TITLE in the DB."
+  (->> (org-roam-db-query
+        ;; Leaving the join syntax here so that it's easier to modify
+        ;; later to support retrieving filepaths with tags, ids, and refs
+        [:select [files:file] :from files
+         :left-join titles
+         :on (= titles:file files:file)
+         :where (= title $s0)]
+        title)
+    ;; The above returns ((path1) (path2) ...).
+    ;; Turn it into (path1 path2 ...).
+    (apply #'nconc)))
+
+(defun kisaragi-notes-db//fetch-all-files-hash ()
+  "Return ((path . content-hash) ...) for all cached files as a hash-table."
+  (let* ((current-files (org-roam-db-query [:select [file hash] :from files]))
          (ht (make-hash-table :test #'equal)))
     (dolist (row current-files)
       (puthash (car row) (cadr row) ht))
     ht))
 
-(defun org-roam-db--get-title (file)
+(defun kisaragi-notes-db//fetch-title (file)
   "Return the main title of FILE from the cache."
   (caar (org-roam-db-query [:select [title] :from titles
                             :where (= file $s1)
                             :limit 1]
                            file)))
 
-(defun kisaragi-notes-db//get-file-tags (file)
+(defun kisaragi-notes-db//fetch-file-tags (file)
   "Return tags of FILE from the cache."
   (caar (org-roam-db-query [:select [tags] :from tags
                             :where (= file $s1)]
                            file)))
 
-(defun org-roam-db--get-tags ()
+(defun kisaragi-notes-db//fetch-all-tags ()
   "Return all distinct tags from the cache."
   (let ((rows (org-roam-db-query [:select :distinct [tags] :from tags]))
         acc)
@@ -431,6 +449,20 @@ Return the number of rows inserted."
         (unless (member tag acc)
           (push tag acc))))
     acc))
+
+(defun kisaragi-notes-db//fetch-backlinks (targets)
+  "Fetch backlinks to TARGETS from the cache.
+
+TARGETS are strings that are either file paths or ref keys. They
+correspond to the TO field in the cache DB."
+  (unless (listp targets)
+    (setq targets (list targets)))
+  (let ((conditions (--> targets
+                      (--map `(= dest ,it) it)
+                      (-interpose :or it))))
+    (org-roam-db-query `[:select [source dest properties] :from links
+                         :where ,@conditions
+                         :order-by (asc source)])))
 
 (defun org-roam-db--connected-component (file)
   "Return all files reachable from/connected to FILE, including the file itself.
@@ -486,15 +518,12 @@ connections, nil is returned."
          (files (mapcar 'car-safe (emacsql (org-roam-db) query file max-distance))))
     files))
 
-(defun org-roam-db--file-hash (&optional file-path)
-  "Compute the hash of FILE-PATH, a file or current buffer."
-  (if file-path
-      (with-temp-buffer
-        (set-buffer-multibyte nil)
-        (insert-file-contents-literally file-path)
-        (secure-hash 'sha1 (current-buffer)))
-    (org-with-wide-buffer
-     (secure-hash 'sha1 (current-buffer)))))
+(defun kisaragi-notes-db//fetch-file-hash (&optional file)
+  "Fetch the hash of FILE as stored in the cache."
+  (setq file (or file (buffer-file-name (buffer-base-buffer))))
+  (caar (org-roam-db-query [:select hash :from files
+                            :where (= file $s1)]
+                           file)))
 
 ;;;;; Updating
 (defun org-roam-db--update-file (&optional file-path)
@@ -529,20 +558,18 @@ If FORCE, force a rebuild of the cache from scratch."
   (let* ((gc-cons-threshold org-roam-db-gc-threshold)
          (org-agenda-files nil)
          (org-roam-files
-          (prog2
-              (org-roam-message "Finding files...")
-              (org-roam--list-all-files)
-            (org-roam-message "Finding files...done")))
-         (current-files (org-roam-db--get-current-files))
+          (kisaragi-notes//with-message "Finding files..."
+            (org-roam--list-all-files)))
+         (current-files (kisaragi-notes-db//fetch-all-files-hash))
          (count-plist nil)
          (deleted-count 0)
          (modified-files nil))
     (dolist-with-progress-reporter (file org-roam-files)
         "(org-roam) Finding modified files"
-      (let ((contents-hash (org-roam-db--file-hash file)))
+      (let ((content-hash (kisaragi-notes//compute-content-hash file)))
         (unless (string= (gethash file current-files)
-                         contents-hash)
-          (push (cons file contents-hash) modified-files)))
+                         content-hash)
+          (push (cons file content-hash) modified-files)))
       (remhash file current-files))
     (dolist-with-progress-reporter (file (hash-table-keys current-files))
         "(org-roam) Removing deleted files from cache"
@@ -560,19 +587,12 @@ If FORCE, force a rebuild of the cache from scratch."
                       (plist-get count-plist :ref-count)
                       deleted-count)))
 
-(defun org-roam-db--get-file-hash-from-db (&optional file-path)
-  "Get hash from Org-roam database for FILE-PATH."
-  (setq file-path (or file-path
-                      (buffer-file-name (buffer-base-buffer))))
-  (caar (org-roam-db-query [:select hash :from files
-                            :where (= file $s1)] file-path)))
-
 (defun org-roam-db-update-file (file-path)
   "Update Org-roam cache for FILE-PATH.
 If the file does not exist anymore, remove it from the cache.
 If the file exists, update the cache with information."
-  (let ((content-hash (org-roam-db--file-hash file-path))
-        (db-hash  (org-roam-db--get-file-hash-from-db file-path)))
+  (let ((content-hash (kisaragi-notes//compute-content-hash file-path))
+        (db-hash (kisaragi-notes-db//fetch-file-hash file-path)))
     (unless (string= content-hash db-hash)
       (org-roam-db--update-files (list (cons file-path content-hash)))
       (org-roam-message "Updated: %s" file-path))))

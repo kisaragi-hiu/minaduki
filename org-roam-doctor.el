@@ -55,7 +55,8 @@
 (declare-function org-roam--org-roam-file-p "org-roam")
 (declare-function org-roam-mode "org-roam")
 
-(defvar org-roam-verbose)
+(require 'kisaragi-notes-vars)
+
 (defvar org-roam-mode)
 
 (defcustom org-roam-doctor-inhibit-startup t

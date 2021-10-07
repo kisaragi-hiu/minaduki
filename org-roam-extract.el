@@ -12,10 +12,16 @@
 
 (require 'org-roam-id)
 (require 'org-roam-macs)
-
 (require 'kisaragi-notes-vars)
 
 (defvar markdown-regex-link-inline)
+
+;; Silence byte compiler on Org < 9.5. These are not present there and
+;; aren't used.
+(declare-function org-element-citation-reference-parser "org-element")
+(defvar org-element-citation-prefix-re)
+
+(declare-function kisaragi-notes-db//fetch-files-by-title "org-roam-db")
 
 (defun kisaragi-notes-extract//markdown-props (prop)
   "Extract PROP in the Markdown front matter."
@@ -173,7 +179,7 @@ Assume links come from FILE-PATH."
     (goto-char (point-min))
     (cl-loop while (re-search-forward "\\[\\[\\([^]]+\\)\\]\\]" nil t)
              collect
-             (let* ((target (car (kisaragi-notes//get-files
+             (let* ((target (car (kisaragi-notes-db//fetch-files-by-title
                                   (match-string-no-properties 1))))
                     (begin-of-block (match-beginning 0))
                     (end-of-block (save-excursion
@@ -263,7 +269,7 @@ FILE-FROM is typically the buffer file path, but this may not exist, for example
 in temp buffers.  In cases where this occurs, we do know the file path, and pass
 it as FILE-PATH."
   (require 'org-ref nil t)
-  (setq file-path (or file-path org-roam-file-name (buffer-file-name)))
+  (setq file-path (or file-path kisaragi-notes//file-name (buffer-file-name)))
   (cond
    ;; Using `derived-mode-p' maybe adds 3 seconds per call to the
    ;; cache build when there are a million links. At that point 3
@@ -273,7 +279,8 @@ it as FILE-PATH."
      (org-roam--extract-links-org file-path)
      ;; Tracking this as links, as always; we should probably look at
      ;; Org-roam v2 and how it handles Org 9.5 citations.
-     (kisaragi-notes-extract/citation file-path)))
+     (when (featurep 'oc)
+       (kisaragi-notes-extract/citation file-path))))
    ((derived-mode-p 'markdown-mode)
     (append
      ;; This one depends on the titles cache having been built.
@@ -291,7 +298,7 @@ it as FILE-PATH."
 (defun org-roam--extract-ids (&optional file-path)
   "Extract all IDs within the current buffer.
 If FILE-PATH is nil, use the current file."
-  (setq file-path (or file-path org-roam-file-name (buffer-file-name)))
+  (setq file-path (or file-path kisaragi-notes//file-name (buffer-file-name)))
   (let (result)
     ;; We need to handle the special case of the file property drawer (at outline level 0)
     (org-with-point-at (point-min)
@@ -335,7 +342,7 @@ Reads from the #+roam_alias keyword."
      (progn
        (lwarn '(org-roam) :error
               "Failed to parse aliases for buffer: %s. Skipping"
-              (or org-roam-file-name
+              (or kisaragi-notes//file-name
                   (buffer-file-name)))
        nil))))
 
@@ -352,7 +359,7 @@ roam_alias: [\"alias 1\", \"alias 2\"]"
      (progn
        (lwarn '(org-roam) :error
               "Failed to parse aliases for buffer: %s. Skipping"
-              (or org-roam-file-name
+              (or kisaragi-notes//file-name
                   (buffer-file-name)))))))
 
 (cl-defgeneric org-roam--extract-titles-headline ()
@@ -453,7 +460,7 @@ This also extracts from the #+tags[] property, which is what Hugo expects."
      (progn
        (lwarn '(org-roam) :error
               "Failed to parse tags for buffer: %s. Skipping"
-              (or org-roam-file-name
+              (or kisaragi-notes//file-name
                   (buffer-file-name)))
        nil))))
 
