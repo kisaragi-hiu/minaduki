@@ -529,10 +529,8 @@ If FORCE, force a rebuild of the cache from scratch."
   (let* ((gc-cons-threshold org-roam-db-gc-threshold)
          (org-agenda-files nil)
          (org-roam-files
-          (prog2
-              (org-roam-message "Finding files...")
-              (org-roam--list-all-files)
-            (org-roam-message "Finding files...done")))
+          (kisaragi-notes//with-message "Finding files..."
+            (org-roam--list-all-files)))
          (current-files (org-roam-db--get-current-files))
          (count-plist nil)
          (deleted-count 0)

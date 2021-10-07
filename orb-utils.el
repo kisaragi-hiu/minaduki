@@ -53,16 +53,6 @@
 ;;;; Macros
 ;; ============================================================================
 
-(defmacro orb--with-message! (message &rest body)
-  "Put MESSAGE before and after BODY.
-Append \"...\" to the first message and \"...done\" to the second.
-Return result of evaluating the BODY."
-  (declare (indent 1) (debug (stringp &rest form)))
-  `(prog2
-       (message "%s..." ,message)
-       (progn ,@body)
-     (message "%s...done" ,message)))
-
 (defmacro orb-note-actions-defun (interface &rest body)
   "Return a function definition for INTERFACE.
 Function name takes a form of orb-note-actions--INTERFACE.
@@ -85,7 +75,7 @@ CITEKEY is the citekey." (capitalize interface-name))
                            orb-note-actions-extra
                            orb-note-actions-user))))
          ,@body))))
- 
+
 ;; ============================================================================
 ;;;; General utilities
 ;; ============================================================================

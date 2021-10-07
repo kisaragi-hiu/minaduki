@@ -43,6 +43,18 @@
 ;; regardless of whether Org is loaded before their compilation.
 (require 'org)
 
+;; From `orb--with-message!'
+(defmacro kisaragi-notes//with-message (message &rest body)
+  "Put MESSAGE before and after BODY.
+
+Echo \"MESSAGE...\", run BODY, then echo \"MESSAGE...done\"
+afterwards. The value of BODY is returned."
+  (declare (indent 1) (debug (stringp &rest form)))
+  `(prog2
+       (message "%s..." ,message)
+       (progn ,@body)
+     (message "%s...done" ,message)))
+
 (defun org-roam--add-tag-string (str tags)
   "Add TAGS to STR.
 
