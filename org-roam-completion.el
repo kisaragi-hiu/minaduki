@@ -28,89 +28,11 @@
 ;;; Commentary:
 ;;
 ;; This library provides completion for org-roam.
+
 ;;; Code:
 ;;;; Library Requires
 (require 'cl-lib)
 (require 's)
-
-(defvar helm-pattern)
-(declare-function helm "ext:helm")
-(declare-function helm-make-source "ext:helm-source" (name class &rest args) t)
-
-(defcustom org-roam-completion-system 'default
-  "The completion system to be used by `org-roam'."
-  :type '(radio
-          (const :tag "Default" default)
-          (const :tag "Ido" ido)
-          (const :tag "Ivy" ivy)
-          (const :tag "Helm" helm)
-          (function :tag "Custom function"))
-  :group 'org-roam)
-
-(defcustom org-roam-completion-ignore-case t
-  "Whether to ignore case in Org-roam `completion-at-point' completions."
-  :group 'org-roam
-  :type 'boolean)
-
-(defun org-roam-completion--helm-candidate-transformer (candidates _source)
-  "Transforms CANDIDATES for Helm-based completing read.
-SOURCE is not used."
-  (let ((prefix (propertize "[?] "
-                            'face 'helm-ff-prefix)))
-    (cons (propertize helm-pattern
-                      'display (concat prefix helm-pattern))
-          candidates)))
-
-(cl-defun org-roam-completion--completing-read (prompt choices &key
-                                                       require-match initial-input
-                                                       action)
-  "Present a PROMPT with CHOICES and optional INITIAL-INPUT.
-If REQUIRE-MATCH is t, the user must select one of the CHOICES.
-Return user choice."
-  (let (res)
-    (setq res
-          (cond
-           ((eq org-roam-completion-system 'ido)
-            (let ((candidates (mapcar #'car choices)))
-              (ido-completing-read prompt candidates nil require-match initial-input)))
-           ((eq org-roam-completion-system 'default)
-            (completing-read prompt choices nil require-match initial-input))
-           ((eq org-roam-completion-system 'ivy)
-            (if (fboundp 'ivy-read)
-                (ivy-read prompt choices
-                          :initial-input initial-input
-                          :preselect initial-input
-                          :require-match require-match
-                          :action (prog1 action
-                                    (setq action nil))
-                          :caller 'org-roam--completing-read)
-              (user-error "Please install ivy from \
-https://github.com/abo-abo/swiper")))
-           ((eq org-roam-completion-system 'helm)
-            (unless (and (fboundp 'helm)
-                         (fboundp 'helm-make-source))
-              (user-error "Please install helm from \
-https://github.com/emacs-helm/helm"))
-            (let ((source (helm-make-source prompt 'helm-source-sync
-                            :candidates (mapcar #'car choices)
-                            :filtered-candidate-transformer
-                            (and (not require-match)
-                                 #'org-roam-completion--helm-candidate-transformer)))
-                  (buf (concat "*org-roam "
-                               (s-downcase (s-chop-suffix ":" (s-trim prompt)))
-                               "*")))
-              (or (helm :sources source
-                        :action (if action
-                                    (prog1 action
-                                      (setq action nil))
-                                  #'identity)
-                        :prompt prompt
-                        :input initial-input
-                        :buffer buf)
-                  (keyboard-quit))))))
-    (if action
-        (funcall action res)
-      res)))
 
 (provide 'org-roam-completion)
 

@@ -49,7 +49,6 @@
 (declare-function  org-roam--find-file                  "org-roam")
 (declare-function  org-roam-format-link                "org-roam")
 (declare-function  org-roam-mode                        "org-roam")
-(declare-function  org-roam-completion--completing-read "org-roam-completion")
 
 (defvar org-roam-capture--file-path nil
   "The file path for the Org-roam capture.
@@ -621,8 +620,7 @@ Arguments GOTO and KEYS see `org-capture'."
   (interactive "P")
   (unless org-roam-mode (org-roam-mode))
   (let* ((completions (org-roam--get-title-path-completions))
-         (title-with-keys (org-roam-completion--completing-read "File: "
-                                                                completions))
+         (title-with-keys (completing-read "File: " completions))
          (res (cdr (assoc title-with-keys completions)))
          (title (or (plist-get res :title) title-with-keys))
          (file-path (plist-get res :path)))

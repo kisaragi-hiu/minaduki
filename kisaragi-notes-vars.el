@@ -62,6 +62,11 @@ which case the list is passed to `cl-sort' as arguments."
           (list :tag "Arguments to cl-loop"))
   :group 'org-roam)
 
+(defcustom org-roam-completion-ignore-case t
+  "Whether to ignore case in Org-roam `completion-at-point' completions."
+  :group 'org-roam
+  :type 'boolean)
+
 (provide 'kisaragi-notes-vars)
 
 ;;; kisaragi-notes-vars.el ends here

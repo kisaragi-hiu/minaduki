@@ -1148,8 +1148,7 @@ If NO-CONFIRM, assume that the user does not want to modify the initial prompt."
                                (or completions (org-roam--get-title-path-completions))))
          (title-with-tags (if no-confirm
                               initial-prompt
-                            (org-roam-completion--completing-read "File: " completions
-                                                                  :initial-input initial-prompt)))
+                            (completing-read "File: " completions nil nil initial-prompt)))
          (res (cdr (assoc title-with-tags completions)))
          (file-path (plist-get res :path)))
     (if file-path
@@ -1204,9 +1203,7 @@ included as a candidate."
   (interactive "p")
   (unless org-roam-mode (org-roam-mode))
   (let* ((completions (org-roam--get-ref-path-completions arg filter))
-         (ref (org-roam-completion--completing-read "Ref: "
-                                                    completions
-                                                    :require-match t))
+         (ref (completing-read "Ref: " completions nil t))
          (file (-> (cdr (assoc ref completions))
                  (plist-get :path))))
     (org-roam--find-file file)))
@@ -1246,8 +1243,8 @@ If DESCRIPTION is provided, use this as the link label.  See
                               (if filter-fn
                                   (funcall filter-fn it)
                                 it)))
-               (title-with-tags (org-roam-completion--completing-read "File: " completions
-                                                                      :initial-input region-text))
+               (title-with-tags (completing-read "File: " completions
+                                                 nil nil region-text))
                (res (cdr (assoc title-with-tags completions)))
                (title (or (plist-get res :title)
                           title-with-tags))
@@ -1391,8 +1388,8 @@ Return added tag."
                                     roam-buffers)))
     (unless roam-buffers
       (user-error "No roam buffers"))
-    (when-let ((name (org-roam-completion--completing-read "Buffer: " names-and-buffers
-                                                           :require-match t)))
+    (when-let ((name (completing-read "Buffer: " names-and-buffers
+                                      nil t)))
       (switch-to-buffer (cdr (assoc name names-and-buffers))))))
 
 (defun org-roam--execute-file-row-col (s)

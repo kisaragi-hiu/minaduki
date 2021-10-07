@@ -38,9 +38,10 @@
 (require 'org-roam-macs)
 (require 'org-roam-db)
 
+(require 'kisaragi-notes-vars)
+
 (require 'org-element)
 
-(defvar org-roam-completion-ignore-case)
 (defvar org-roam-directory)
 (declare-function  org-roam--find-file                  "org-roam")
 (declare-function  org-roam-find-file                   "org-roam")
