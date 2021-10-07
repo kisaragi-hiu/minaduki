@@ -406,20 +406,6 @@ This function hooks into `org-open-at-point' via `org-open-at-point-functions'."
    ;; If called via `org-open-at-point', fall back to default behavior.
    (t nil)))
 
-(defun org-roam--get-backlinks (targets)
-  "Return the backlinks for TARGETS.
-TARGETS is a list of strings corresponding to the TO value in the
-Org-roam cache. It may be a file, for Org-roam file links, or a
-citation key, for Org-ref cite links."
-  (unless (listp targets)
-    (setq targets (list targets)))
-  (let ((conditions (--> targets
-                      (mapcar (lambda (i) (list '= 'dest i)) it)
-                      (org-roam--list-interleave it :or))))
-    (org-roam-db-query `[:select [source dest properties] :from links
-                         :where ,@conditions
-                         :order-by (asc source)])))
-
 ;;; Completion at point
 (defcustom org-roam-completion-everywhere nil
   "If non-nil, provide completions from the current word at point."
@@ -438,7 +424,7 @@ citation key, for Org-ref cite links."
         (setq start (save-excursion (skip-syntax-backward "w")
                                     (point))
               end (point)))
-      (setq collection #'org-roam-db--get-tags
+      (setq collection #'kisaragi-notes-db//fetch-all-tags
             exit-fn (lambda (str _status)
                       (delete-char (- (length str)))
                       (insert "\"" str "\""))))
@@ -875,7 +861,7 @@ one."
                    (line (match-string 2))
                    (column (match-string 3))
                    (context (match-string 4)))
-               (list :title (org-roam-db--get-title (expand-file-name file))
+               (list :title (kisaragi-notes-db//fetch-title (expand-file-name file))
                      :tags (kisaragi-notes-db//get-file-tags (expand-file-name file))
                      :file file :line line :column column :context context)))))
 
@@ -1035,7 +1021,7 @@ Return added alias."
 Return added tag."
   (interactive)
   (unless org-roam-mode (org-roam-mode))
-  (let* ((all-tags (org-roam-db--get-tags))
+  (let* ((all-tags (kisaragi-notes-db//fetch-all-tags))
          (tag (completing-read "Tag: " all-tags))
          (file (buffer-file-name (buffer-base-buffer)))
          (existing-tags (org-roam--extract-tags-prop file)))
@@ -1066,7 +1052,7 @@ Return added tag."
   (interactive)
   (let* ((roam-buffers (org-roam--get-roam-buffers))
          (names-and-buffers (mapcar (lambda (buffer)
-                                      (cons (or (org-roam-db--get-title
+                                      (cons (or (kisaragi-notes-db//fetch-title
                                                  (buffer-file-name buffer))
                                                 (buffer-name buffer))
                                             buffer))
@@ -1149,7 +1135,7 @@ the executable 'rg' in variable `exec-path'."
                   (let ((rowcol (concat row ":" col)))
                     (insert "- "
                             (org-link-make-string (concat "file:" file "::" rowcol)
-                                                  (format "[%s] %s" rowcol (or (org-roam-db--get-title file)
+                                                  (format "[%s] %s" rowcol (or (kisaragi-notes-db//fetch-title file)
                                                                                file))))
                     (when (executable-find "sed") ; insert line contents when sed is available
                       (insert " :: "

@@ -166,14 +166,6 @@ Assume the protocol is not present in PATH; e.g. URL `https://google.com' is
 passed as `//google.com'."
   (string-prefix-p "//" path))
 
-(defun org-roam--list-interleave (lst separator)
-  "Interleaves elements in LST with SEPARATOR."
-  (when lst
-    (let ((new-lst (list (pop lst))))
-      (dolist (it lst)
-        (nconc new-lst (list separator it)))
-      new-lst)))
-
 (defmacro org-roam-with-file (file keep-buf-p &rest body)
   "Execute BODY within FILE.
 If FILE is nil, execute BODY in the current buffer.

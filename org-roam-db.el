@@ -27,7 +27,12 @@
 
 ;;; Commentary:
 ;;
-;; This library is provides the underlying database api to org-roam
+;; This library is provides the underlying database api to org-roam.
+;;
+;; - Low level DB interface
+;; - org-roam-db-build-cache
+;; - org-roam-db--get-* (except get-collection)
+;;   kisaragi-notes-db//fetch-*
 ;;
 ;;; Code:
 ;;;; Library Requires
@@ -56,7 +61,6 @@
 (declare-function org-roam--list-all-files                 "org-roam")
 (declare-function org-roam--path-to-slug                   "org-roam")
 (declare-function org-roam--file-name-extension            "org-roam")
-(declare-function org-roam-buffer--update-maybe            "org-roam-buffer")
 
 ;;;; Options
 (defcustom org-roam-db-location (expand-file-name "org-roam.db" user-emacs-directory)
@@ -423,7 +427,7 @@ Return the number of rows inserted."
       (puthash (car row) (cadr row) ht))
     ht))
 
-(defun org-roam-db--get-title (file)
+(defun kisaragi-notes-db//fetch-title (file)
   "Return the main title of FILE from the cache."
   (caar (org-roam-db-query [:select [title] :from titles
                             :where (= file $s1)
@@ -436,7 +440,7 @@ Return the number of rows inserted."
                             :where (= file $s1)]
                            file)))
 
-(defun org-roam-db--get-tags ()
+(defun kisaragi-notes-db//fetch-all-tags ()
   "Return all distinct tags from the cache."
   (let ((rows (org-roam-db-query [:select :distinct [tags] :from tags]))
         acc)
@@ -445,6 +449,20 @@ Return the number of rows inserted."
         (unless (member tag acc)
           (push tag acc))))
     acc))
+
+(defun kisaragi-notes-db//fetch-backlinks (targets)
+  "Fetch backlinks to TARGETS from the cache.
+
+TARGETS are strings that are either file paths or ref keys. They
+correspond to the TO field in the cache DB."
+  (unless (listp targets)
+    (setq targets (list targets)))
+  (let ((conditions (--> targets
+                      (--map `(= dest ,it) it)
+                      (-interpose :or it))))
+    (org-roam-db-query `[:select [source dest properties] :from links
+                         :where ,@conditions
+                         :order-by (asc source)])))
 
 (defun org-roam-db--connected-component (file)
   "Return all files reachable from/connected to FILE, including the file itself.

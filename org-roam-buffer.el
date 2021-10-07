@@ -37,6 +37,8 @@
 (require 'f)
 (require 'ol)
 (require 'org-element)
+
+(require 'org-roam-db)
 (require 'org-roam-macs)
 (require 'org-roam-extract)
 
@@ -48,10 +50,6 @@
 (defvar org-roam-mode)
 (defvar org-roam--org-link-bracket-typed-re)
 
-(declare-function org-roam-db--ensure-built   "org-roam-db")
-(declare-function org-roam-db--get-title      "org-roam-db")
-(declare-function org-roam-db-has-file-p      "org-roam-db")
-(declare-function org-roam--get-backlinks     "org-roam")
 (declare-function org-roam-backlinks-mode     "org-roam")
 (declare-function org-roam-mode               "org-roam")
 (declare-function org-roam--find-file         "org-roam")
@@ -134,7 +132,7 @@ For example: (setq org-roam-buffer-window-parameters '((no-other-window . t)))"
 
 (defun org-roam-buffer--insert-title ()
   "Insert the org-roam-buffer title."
-  (insert (propertize (org-roam-db--get-title
+  (insert (propertize (kisaragi-notes-db//fetch-title
                        (buffer-file-name org-roam-buffer--current))
                       'font-lock-face
                       'org-document-title)))
@@ -197,9 +195,10 @@ or to this file's ROAM_KEY.
                          (kisaragi-notes-extract/refs))))
                 (backlinks
                  (if cite?
-                     (mapcan #'org-roam--get-backlinks
+                     (mapcan #'kisaragi-notes-db//fetch-backlinks
                              (-map #'cdr (cdr titles-and-refs)))
-                   (org-roam--get-backlinks (push file-path (car titles-and-refs)))))
+                   (kisaragi-notes-db//fetch-backlinks
+                    (push file-path (car titles-and-refs)))))
                 (backlinks (if filter (-filter filter backlinks) backlinks))
                 (backlink-groups (--group-by (nth 0 it) backlinks)))
       ;; The heading
@@ -218,7 +217,8 @@ or to this file's ROAM_KEY.
         (insert "\n\n** "
                 ;; title link
                 (org-roam-format-link file-from
-                                      (kisaragi-notes//remove-org-links (org-roam-db--get-title file-from)))
+                                      (kisaragi-notes//remove-org-links
+                                       (kisaragi-notes-db//fetch-title file-from)))
                 ;; tags
                 (or (-some->> (org-roam-db-query [:select tags :from tags
                                                   :where (= file $s1)]
