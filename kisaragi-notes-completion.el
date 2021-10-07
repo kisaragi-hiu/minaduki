@@ -45,7 +45,10 @@ plist containing the path and title for the file."
                             rows))
     (dolist (row rows completions)
       (pcase-let ((`(,file-path ,title ,tags) row))
-        (let ((k (org-roam--add-tag-string title tags))
+        (let ((k (-> (org-roam--add-tag-string title tags)
+                   (propertize :metadata `((path . ,file-path)
+                                           (title . ,title)
+                                           (tags . ,tags)))))
               (v (list :path file-path :title title)))
           (push (cons k v) completions))))))
 
@@ -137,7 +140,9 @@ before being prompted for selection."
                         (if filter-fn
                             (funcall filter-fn it)
                           it)))
-         (selection (completing-read "Note: " completions
+         (selection (completing-read "Note: "
+                                     (kisaragi-notes-completion//mark-category
+                                      completions 'note)
                                      nil nil initial-input)))
     (or (cdr (assoc selection completions))
         ;; When there is no match, return the title in an entry object

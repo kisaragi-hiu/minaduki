@@ -50,6 +50,9 @@
 (require 'kisaragi-notes-vars)
 (require 'kisaragi-notes-completion)
 
+(when (featurep 'marginalia)
+  (require 'kisaragi-notes-marginalia))
+
 ;;;; Features
 (require 'org-roam-macs)
 ;; These features should be able to be loaded order independently.
