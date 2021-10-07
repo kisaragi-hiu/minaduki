@@ -60,7 +60,6 @@
 
 (require 'org-roam-faces)
 (require 'org-roam-buffer)
-(require 'org-roam-completion)
 (require 'org-roam-capture)
 (require 'org-roam-extract)
 (require 'org-roam-db)

@@ -39,6 +39,8 @@
 
 (require 'orb-utils)
 
+(require 'kisaragi-notes-completion)
+
 (eval-when-compile
   (require 'cl-macs)
   (require 'subr-x)
@@ -123,24 +125,25 @@ the file paths with the respective extensions.
 \(Mendeley, Zotero, normal paths) are all supported.  If there
 are multiple files found the user is prompted to select which one
 to enter."
-  (condition-case nil
-      (when-let* ((entry (bibtex-completion-get-entry citekey))
-                  (paths (bibtex-completion-find-pdf entry)))
-        (when-let ((extensions orb-file-field-extensions))
-          (unless (listp extensions)
-            (setq extensions (list extensions)))
-          (setq paths (--filter
-                       (lambda ()
-                         (when-let ((extension (file-name-extension it)))
-                           (member-ignore-case extension extensions)))
-                       paths)))
-        (when paths
-          (if (= (length paths) 1)
-              (car paths)
-            (completing-read "File to use: " paths))))
-    ;; ignore any errors that may be thrown by `bibtex-completion-find-pdf'
-    ;; don't stop the capture process
-    (error nil)))
+  ;; ignore any errors that may be thrown by `bibtex-completion-find-pdf'
+  ;; don't stop the capture process
+  (ignore-errors
+    (when-let* ((entry (bibtex-completion-get-entry citekey))
+                (paths (bibtex-completion-find-pdf entry)))
+      (when-let ((extensions orb-file-field-extensions))
+        (unless (listp extensions)
+          (setq extensions (list extensions)))
+        (setq paths (--filter
+                     (lambda ()
+                       (when-let ((extension (file-name-extension it)))
+                         (member-ignore-case extension extensions)))
+                     paths)))
+      (when paths
+        (if (= (length paths) 1)
+            (car paths)
+          (completing-read "File to use: "
+                           (kisaragi-notes-completion//mark-category
+                            paths 'file)))))))
 
 ;; ============================================================================
 ;;;; Orb autokey

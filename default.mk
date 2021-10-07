@@ -46,7 +46,7 @@ EPUBFILES = $(addsuffix .epub,$(PACKAGES))
 
 ELS = org-roam-buffer.el
 ELS += org-roam-capture.el
-ELS += org-roam-completion.el
+ELS += kisaragi-notes-completion.el
 ELS += org-roam-db.el
 ELS += org-roam.el
 ELS += org-roam-graph.el

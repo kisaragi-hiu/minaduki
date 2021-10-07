@@ -165,7 +165,8 @@ When NO-INTERACTIVE, return nil if there are multiple options."
       (`(,file) file)
       (_
        (unless no-interactive
-         (completing-read "Select file: " files))))))
+         (completing-read "Select file: "
+                          (kisaragi-notes-completion//mark-category files 'file)))))))
 
 (defun org-roam-link--get-id-from-headline (headline &optional file)
   "Return (marker . id) correspondng to HEADLINE in FILE.
