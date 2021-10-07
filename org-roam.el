@@ -56,7 +56,8 @@
 ;; selectively loading different sets of features.
 ;; ~NV [2020-05-22 Fri]
 
-(require 'kisaragi-notes-cite)
+(when (featurep 'oc)
+  (require 'kisaragi-notes-cite))
 
 (require 'org-roam-faces)
 (require 'org-roam-buffer)
