@@ -43,6 +43,17 @@
 ;; regardless of whether Org is loaded before their compilation.
 (require 'org)
 
+(defun kisaragi-notes//compute-content-hash (&optional file)
+  "Compute the hash of the contents of FILE or the current buffer."
+  (if file
+      (with-temp-buffer
+        (set-buffer-multibyte nil)
+        (insert-file-contents-literally file)
+        (secure-hash 'sha1 (current-buffer)))
+    (org-with-wide-buffer
+     (secure-hash 'sha1 (current-buffer)))))
+
+
 ;; From `orb--with-message!'
 (defmacro kisaragi-notes//with-message (message &rest body)
   "Put MESSAGE before and after BODY.

@@ -356,7 +356,7 @@ This needs to be quick or infrequent, because this is run at
                    (not (eq org-roam-buffer--current buffer)))
                (eq 'visible (org-roam-buffer--visibility))
                (buffer-file-name buffer)
-               (org-roam-db-has-file-p (buffer-file-name buffer)))
+               (kisaragi-notes-db//file-present? (buffer-file-name buffer)))
       (setq org-roam-buffer--current buffer)
       (org-roam-buffer-update))))
 

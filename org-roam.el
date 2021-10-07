@@ -862,7 +862,7 @@ one."
                    (column (match-string 3))
                    (context (match-string 4)))
                (list :title (kisaragi-notes-db//fetch-title (expand-file-name file))
-                     :tags (kisaragi-notes-db//get-file-tags (expand-file-name file))
+                     :tags (kisaragi-notes-db//fetch-file-tags (expand-file-name file))
                      :file file :line line :column column :context context)))))
 
 ;;;###autoload
