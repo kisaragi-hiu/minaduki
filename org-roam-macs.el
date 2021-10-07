@@ -32,17 +32,32 @@
 ;;
 ;;
 ;;; Code:
-;;;; Library Requires
+
 (require 'dash)
 (require 's)
 
-(defvar org-roam-verbose)
-(defvar kisaragi-notes/slug-replacements)
+(require 'kisaragi-notes-vars)
 
 ;; This is necessary to ensure all dependents on this module see
 ;; `org-mode-hook' and `org-inhibit-startup' as dynamic variables,
 ;; regardless of whether Org is loaded before their compilation.
 (require 'org)
+
+(defun org-roam--add-tag-string (str tags)
+  "Add TAGS to STR.
+
+Depending on the value of `org-roam-file-completion-tag-position', this function
+prepends TAGS to STR, appends TAGS to STR or omits TAGS from STR."
+  (pcase org-roam-file-completion-tag-position
+    ('prepend (concat
+               (when tags (propertize (format "(%s) " (s-join org-roam-tag-separator tags))
+                                      'face 'org-roam-tag))
+               str))
+    ('append (concat
+              str
+              (when tags (propertize (format " (%s)" (s-join org-roam-tag-separator tags))
+                                     'face 'org-roam-tag))))
+    ('omit str)))
 
 (defun kisaragi-notes//remove-org-links (str)
   "Remove Org bracket links from STR."
@@ -183,7 +198,7 @@ If FILE, set `org-roam-temp-file-name' to file and insert its contents."
            (org-mode)
            (when ,file
              (insert-file-contents ,file)
-             (setq-local org-roam-file-name ,file)
+             (setq-local kisaragi-notes//file-name ,file)
              (setq-local default-directory (file-name-directory ,file)))
            ,@body)))))
 

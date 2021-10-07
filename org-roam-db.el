@@ -41,10 +41,10 @@
   ;; For `org-with-wide-buffer'
   (require 'org-macs))
 
+(require 'kisaragi-notes-vars)
+
 (defvar org-roam-directory)
 (defvar org-roam-enable-headline-linking)
-(defvar org-roam-verbose)
-(defvar org-roam-file-name)
 
 (defvar org-agenda-files)
 (declare-function org-roam--extract-titles                 "org-roam-extract")
@@ -268,7 +268,7 @@ This is equivalent to removing the node from the graph."
 (defun org-roam-db--insert-meta (&optional update-p)
   "Update the metadata of the current buffer into the cache.
 If UPDATE-P is non-nil, first remove the meta for the file in the database."
-  (let* ((file (or org-roam-file-name (buffer-file-name)))
+  (let* ((file (or kisaragi-notes//file-name (buffer-file-name)))
          (attr (file-attributes file))
          (atime (file-attribute-access-time attr))
          (mtime (file-attribute-modification-time attr))
@@ -286,7 +286,7 @@ If UPDATE-P is non-nil, first remove the meta for the file in the database."
   "Update the titles of the current buffer into the cache.
 If UPDATE-P is non-nil, first remove titles for the file in the database.
 Returns the number of rows inserted."
-  (let* ((file (or org-roam-file-name (buffer-file-name)))
+  (let* ((file (or kisaragi-notes//file-name (buffer-file-name)))
          (titles (or (org-roam--extract-titles)
                      (list (org-roam--path-to-slug file))))
          (rows (mapcar (lambda (title)
@@ -304,7 +304,7 @@ Returns the number of rows inserted."
 (defun org-roam-db--insert-refs (&optional update-p)
   "Update the refs of the current buffer into the cache.
 If UPDATE-P is non-nil, first remove the ref for the file in the database."
-  (let ((file (or org-roam-file-name (buffer-file-name)))
+  (let ((file (or kisaragi-notes//file-name (buffer-file-name)))
         (count 0))
     (when update-p
       (org-roam-db-query [:delete :from refs
@@ -335,7 +335,7 @@ If UPDATE-P is non-nil, first remove the ref for the file in the database."
   "Update the file links of the current buffer in the cache.
 If UPDATE-P is non-nil, first remove the links for the file in the database.
 Return the number of rows inserted."
-  (let ((file (or org-roam-file-name (buffer-file-name))))
+  (let ((file (or kisaragi-notes//file-name (buffer-file-name))))
     (when update-p
       (org-roam-db-query [:delete :from links
                           :where (= source $s1)]
@@ -353,7 +353,7 @@ Return the number of rows inserted."
   "Update the ids of the current buffer into the cache.
 If UPDATE-P is non-nil, first remove ids for the file in the database.
 Returns the number of rows inserted."
-  (let ((file (or org-roam-file-name (buffer-file-name))))
+  (let ((file (or kisaragi-notes//file-name (buffer-file-name))))
     (when update-p
       (org-roam-db-query [:delete :from ids
                           :where (= file $s1)]
@@ -379,7 +379,7 @@ Returns the number of rows inserted."
   "Insert tags for the current buffer into the Org-roam cache.
 If UPDATE-P is non-nil, first remove tags for the file in the database.
 Return the number of rows inserted."
-  (let* ((file (or org-roam-file-name (buffer-file-name)))
+  (let* ((file (or kisaragi-notes//file-name (buffer-file-name)))
          (tags (org-roam--extract-tags file)))
     (when update-p
       (org-roam-db-query [:delete :from tags

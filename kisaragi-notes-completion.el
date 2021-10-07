@@ -25,6 +25,81 @@
 
 (require 'dash)
 
+(require 'kisaragi-notes-vars)
+(require 'org-roam-macs)
+(require 'org-roam-db)
+
+(defun org-roam--get-title-path-completions ()
+  "Return an alist for completion.
+The car is the displayed title for completion, and the cdr is a
+plist containing the path and title for the file."
+  (let* ((rows (org-roam-db-query [:select [files:file titles:title tags:tags files:meta] :from titles
+                                   :left :join tags
+                                   :on (= titles:file tags:file)
+                                   :left :join files
+                                   :on (= titles:file files:file)]))
+         completions)
+    (setq rows (seq-sort-by (lambda (x)
+                              (plist-get (nth 3 x) :mtime))
+                            #'time-less-p
+                            rows))
+    (dolist (row rows completions)
+      (pcase-let ((`(,file-path ,title ,tags) row))
+        (let ((k (org-roam--add-tag-string title tags))
+              (v (list :path file-path :title title)))
+          (push (cons k v) completions))))))
+
+(defun org-roam--get-ref-path-completions (&optional arg filter)
+  "Return an alist of refs to absolute path of Org-roam files.
+
+When called interactively (i.e. when ARG is 1), formats the car
+of the completion-candidates with extra information: title, tags,
+and type \(when `org-roam-include-type-in-ref-path-completions'
+is non-nil).
+
+When called with a `C-u' prefix (i.e. when ARG is 4), forces the
+default format without the formatting.
+
+FILTER can either be a string or a function:
+
+- If it is a string, it should be the type of refs to include as
+  candidates \(e.g. \"cite\", \"website\", etc.)
+
+- If it is a function, it should be the name of a function that
+  takes three arguments: the type, the ref, and the file of the
+  current candidate. It should return t if that candidate is to
+  be included as a candidate."
+  (let ((rows (org-roam-db-query
+               [:select [refs:type refs:ref refs:file titles:title tags:tags]
+                :from titles
+                :left :join tags
+                :on (= titles:file tags:file)
+                :left :join refs :on (= titles:file refs:file)
+                :where refs:file :is :not :null]))
+        completions)
+    (setq rows (seq-sort-by (lambda (x)
+                              (plist-get (nth 3 x) :mtime))
+                            #'time-less-p
+                            rows))
+    (dolist (row rows completions)
+      (pcase-let ((`(,type ,ref ,file-path ,title ,tags) row))
+        (when (pcase filter
+                ('nil t)
+                ((pred stringp) (string= type filter))
+                ((pred functionp) (funcall filter type ref file-path))
+                (wrong-type (signal 'wrong-type-argument
+                                    `((stringp functionp)
+                                      ,wrong-type))))
+          (let ((k (if (eq arg 1)
+                       (concat
+                        (when org-roam-include-type-in-ref-path-completions
+                          (format "{%s} " type))
+                        (org-roam--add-tag-string (format "%s (%s)" title ref)
+                                                  tags))
+                     ref))
+                (v (list :path file-path :type type :ref ref)))
+            (push (cons k v) completions)))))))
+
 (defun kisaragi-notes-completion//mark-category (seq category)
   "Mark SEQ as being in CATEGORY.
 
