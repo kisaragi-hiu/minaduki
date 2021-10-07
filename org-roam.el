@@ -280,20 +280,6 @@ In Markdown, TYPE has no effect."
           (t
            (format "[%s](%s)" description target))))))
 
-(defun kisaragi-notes//get-files (title)
-  "Return files matching TITLE in the DB."
-  (->> (org-roam-db-query
-        ;; Leaving the join syntax here so that it's easier to modify
-        ;; later to support retrieving filepaths with tags, ids, and refs
-        [:select [files:file] :from files
-         :left-join titles
-         :on (= titles:file files:file)
-         :where (= title $s0)]
-        title)
-    ;; The above returns ((path1) (path2) ...).
-    ;; Turn it into (path1 path2 ...).
-    (apply #'nconc)))
-
 (defun org-roam--get-index-path ()
   "Return the path to the index in `org-roam-directory'.
 The path to the index can be defined in `org-roam-index-file'.
@@ -856,7 +842,7 @@ one."
   (unless org-roam-mode (org-roam-mode))
   (when (stringp entry)
     (setq entry
-          (list :path (car (kisaragi-notes//get-files entry))
+          (list :path (car (kisaragi-notes-db//fetch-files-by-title entry))
                 :title entry)))
   (let ((file-path (plist-get entry :path))
         (title (plist-get entry :title)))

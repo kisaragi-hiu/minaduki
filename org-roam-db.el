@@ -401,6 +401,20 @@ Return the number of rows inserted."
                               file))
      0))
 
+(defun kisaragi-notes-db//fetch-files-by-title (title)
+  "Return files matching TITLE in the DB."
+  (->> (org-roam-db-query
+        ;; Leaving the join syntax here so that it's easier to modify
+        ;; later to support retrieving filepaths with tags, ids, and refs
+        [:select [files:file] :from files
+         :left-join titles
+         :on (= titles:file files:file)
+         :where (= title $s0)]
+        title)
+    ;; The above returns ((path1) (path2) ...).
+    ;; Turn it into (path1 path2 ...).
+    (apply #'nconc)))
+
 (defun org-roam-db--get-current-files ()
   "Return a hash-table of file to the hash of its file contents."
   (let* ((current-files (org-roam-db-query [:select * :from files]))
