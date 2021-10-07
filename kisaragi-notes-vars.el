@@ -14,6 +14,11 @@
   :link '(url-link :tag "Github" "https://github.com/org-roam/org-roam")
   :link '(url-link :tag "Online Manual" "https://www.orgroam.com/manual.html"))
 
+(defgroup org-roam-faces nil
+  "Faces used by Org-roam."
+  :group 'org-roam
+  :group 'faces)
+
 (defcustom org-roam-directory (expand-file-name "~/org-roam/")
   "Default path to Org-roam files.
 All Org files, at any level of nesting, are considered part of the Org-roam."
@@ -281,6 +286,35 @@ descriptive warnings when certain operations fail (e.g. parsing).")
            (opt "[" (group (+? anything)) "]")
            "]"))
   "Matches a typed link in double brackets.")
+
+;;;; Faces
+(defface org-roam-link
+  '((t :inherit org-link))
+  "Face for Org-roam links."
+  :group 'org-roam-faces)
+
+(defface org-roam-tag
+  '((t :weight bold))
+  "Face for Org-roam tags in minibuffer commands."
+  :group 'org-roam-faces)
+
+(defface org-roam-link-current
+  '((t :inherit org-link))
+  "Face for Org-roam links pointing to the current buffer."
+  :group 'org-roam-faces)
+
+(defface org-roam-link-invalid
+  '((t :inherit (error org-link)))
+  "Face for Org-roam links that are not valid.
+This face is used for links without a destination."
+  :group 'org-roam-faces)
+
+(defface org-roam-link-shielded
+  '((t :inherit (warning org-link)))
+  "Face for Org-roam links that are shielded.
+This face is used on the region target by `org-roam-insertion'
+during an `org-roam-capture'."
+  :group 'org-roam-faces)
 
 (provide 'kisaragi-notes-vars)
 

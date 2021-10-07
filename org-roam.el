@@ -60,7 +60,6 @@
 (when (featurep 'oc)
   (require 'kisaragi-notes-cite))
 
-(require 'org-roam-faces)
 (require 'org-roam-buffer)
 (require 'org-roam-capture)
 (require 'org-roam-extract)
