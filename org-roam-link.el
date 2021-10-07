@@ -44,7 +44,7 @@
 
 (defvar org-roam-directory)
 (declare-function  org-roam--find-file                  "org-roam")
-(declare-function  org-roam-find-file                   "org-roam")
+(declare-function  kisaragi-notes/open                   "org-roam")
 (declare-function org-roam-format-link                  "org-roam")
 
 (defcustom org-roam-link-auto-replace t
@@ -108,7 +108,7 @@ the link."
       ("file"
        (if loc
            (org-roam--find-file loc)
-         (org-roam-find-file desc nil nil t)))
+         (kisaragi-notes/open desc)))
       ("id"
        (org-goto-marker-or-bmk mkr)))))
 

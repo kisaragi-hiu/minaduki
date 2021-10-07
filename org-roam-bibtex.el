@@ -724,7 +724,7 @@ or `title' should be used for slug: %s not supported" orb-slug-source))))
                     (setq org-roam-capture-additional-template-props
                           (list :finalize 'find-file))
                     (org-roam-capture--capture))
-                (org-roam-find-file title)))
+                (kisaragi-notes/open title)))
           (orb--store-link-functions-advice 'remove)))
     (message "ORB: Something went wrong. Check the *Warnings* buffer")))
 
@@ -1078,8 +1078,9 @@ INITIAL-PROMPT is the initial title prompt.
 See `org-roam-find-files' and
 `orb--get-non-ref-path-completions' for details."
   (interactive)
-  (org-roam-find-file initial-prompt
-                      (orb--get-non-ref-path-completions)))
+  (kisaragi-notes/open
+   (kisaragi-notes-completion//read-note initial-prompt
+                                         (orb--get-non-ref-path-completions)))
 
 ;;;###autoload
 (defun orb-insert-non-ref (prefix)

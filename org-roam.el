@@ -486,7 +486,6 @@ prepends TAGS to STR, appends TAGS to STR or omits TAGS from STR."
                                      'face 'org-roam-tag))))
     ('omit str)))
 
-
 (defun org-roam--get-title-path-completions ()
   "Return an alist for completion.
 The car is the displayed title for completion, and the cdr is a
@@ -1116,31 +1115,44 @@ M-x info for more information at Org-roam > Installation > Post-Installation Tas
 (defalias 'org-roam 'org-roam-buffer-toggle-display)
 
 ;;;###autoload
-(defun org-roam-find-file (&optional initial-prompt completions filter-fn no-confirm)
-  "Find and open an Org-roam file.
-INITIAL-PROMPT is the initial title prompt.
+(defun kisaragi-notes/open (&optional entry completions filter-fn)
+  ;; Some usages:
+  ;; (kisaragi-notes/open title)
+  ;; (kisaragi-notes/open
+  ;;   (kisaragi-notes-completion//read-note initial-input))
+  "Find and open the note ENTRY.
+
+ENTRY is a plist (:path PATH :title TITLE). It can also be a
+string, in which case it refers to a (maybe non-existent) note
+with it as the title.
+
+Interactively, provide a list of notes to search and select from.
+If a note with the entered title does not exist, create a new
+one.
+
 COMPLETIONS is a list of completions to be used instead of
 `org-roam--get-title-path-completions`.
 FILTER-FN is the name of a function to apply on the candidates
 which takes as its argument an alist of path-completions.  See
-`org-roam--get-title-path-completions' for details.
-If NO-CONFIRM, assume that the user does not want to modify the initial prompt."
-  (interactive)
+`org-roam--get-title-path-completions' for details."
+  (interactive
+   (list (kisaragi-notes-completion//read-note)))
   (unless org-roam-mode (org-roam-mode))
-  (let* ((completions (funcall (or filter-fn #'identity)
-                               (or completions (org-roam--get-title-path-completions))))
-         (title-with-tags (if no-confirm
-                              initial-prompt
-                            (completing-read "File: " completions nil nil initial-prompt)))
-         (res (cdr (assoc title-with-tags completions)))
-         (file-path (plist-get res :path)))
+  (when (stringp entry)
+    (setq entry
+          (list :path (car (kisaragi-notes//get-files entry))
+                :title entry)))
+  (let ((file-path (plist-get entry :path))
+        (title (plist-get entry :title)))
     (if file-path
         (org-roam--find-file file-path)
-      (let ((org-roam-capture--info `((title . ,title-with-tags)
-                                      (slug  . ,(kisaragi-notes//title-to-slug title-with-tags))))
-            (org-roam-capture--context 'title))
-        (setq org-roam-capture-additional-template-props (list :finalize 'find-file))
-        (org-roam-capture--capture)))))
+      ;; FIXME: Hardcodes choice of Org
+      (with-current-buffer (find-file-noselect
+                            (-> (kisaragi-notes//title-to-slug title)
+                              (f-expand org-roam-directory)
+                              (concat ".org")))
+        (insert "#+TITLE: " title "\n")
+        (pop-to-buffer-same-window (current-buffer))))))
 
 (defun kisaragi-notes/search (term)
   "Return a list of notes matching TERM."
@@ -1267,18 +1279,6 @@ See `org-roam-insert' for details."
   (let ((args (push arg args))
         (org-roam-capture-templates (list org-roam-capture-immediate-template)))
     (apply #'org-roam-insert args)))
-
-;;;###autoload
-(defun org-roam-find-file-immediate (arg &rest args)
-  "Find and open an Org-roam file.
-This variant of `org-roam-find-file' uses the template in
-`org-roam-capture-immediate-template', avoiding the capture
-process. The interactive ARG and ARGS are passed to
-`org-roam-find-file'. See `org-roam-find-file' for details."
-  (interactive "P")
-  (let ((args (push arg args))
-        (org-roam-capture-templates (list org-roam-capture-immediate-template)))
-    (apply #'org-roam-find-file args)))
 
 ;;;###autoload
 (defun org-roam-jump-to-index ()

@@ -23,6 +23,8 @@
 ;;
 ;;; Code:
 
+(require 'dash)
+
 (defun kisaragi-notes-completion//mark-category (seq category)
   "Mark SEQ as being in CATEGORY.
 
@@ -44,6 +46,27 @@ Embark to create what are in effect context menus."
        `(metadata (category . ,category)))
       (_
        (all-completions str seq pred)))))
+
+(defun kisaragi-notes-completion//read-note (&optional initial-input completions filter-fn)
+  "Read a note from the repository.
+
+INITIAL-INPUT: passed to `completing-read'.
+
+COMPLETIONS: if non-nil a list of note entries in the format
+returned by `org-roam--get-title-path-completions'. When nil,
+`org-roam--get-title-path-completions' will be queried.
+
+FILTER-FN: completions will pass through this function first
+before being prompted for selection."
+  (let* ((completions (--> (or completions (org-roam--get-title-path-completions))
+                        (if filter-fn
+                            (funcall filter-fn it)
+                          it)))
+         (selection (completing-read "Note: " completions
+                                     nil nil initial-input)))
+    (or (cdr (assoc selection completions))
+        ;; When there is no match, return the title in an entry object
+        `(:title ,selection))))
 
 (provide 'kisaragi-notes-completion)
 
