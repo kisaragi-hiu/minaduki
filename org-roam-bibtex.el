@@ -1080,7 +1080,7 @@ See `org-roam-find-files' and
   (interactive)
   (kisaragi-notes/open
    (kisaragi-notes-completion//read-note initial-prompt
-                                         (orb--get-non-ref-path-completions)))
+                                         (orb--get-non-ref-path-completions))))
 
 ;;;###autoload
 (defun orb-insert-non-ref (prefix)
