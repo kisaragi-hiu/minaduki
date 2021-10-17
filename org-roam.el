@@ -102,6 +102,11 @@ Like `file-name-extension', but does not strip version number."
       (setq ext (org-roam--file-name-extension (file-name-sans-extension path))))
     (member ext org-roam-file-extensions)))
 
+(defsubst kisaragi-notes//excluded? (file)
+  "Should FILE be excluded from indexing?"
+  (and org-roam-file-exclude-regexp
+       (string-match-p org-roam-file-exclude-regexp file)))
+
 (defun org-roam--org-roam-file-p (&optional file)
   "Return t if FILE is part of Org-roam system, nil otherwise.
 If FILE is not specified, use the current buffer's file-path."
@@ -112,31 +117,26 @@ If FILE is not specified, use the current buffer's file-path."
     (save-match-data
       (and
        (org-roam--org-file-p path)
-       (not (and org-roam-file-exclude-regexp
-                 (string-match-p org-roam-file-exclude-regexp path)))
+       (not (kisaragi-notes//excluded? path))
        (f-descendant-of-p path (expand-file-name org-roam-directory))))))
-
-(defun org-roam--shell-command-files (cmd)
-  "Run CMD, a command list like in `make-process', to search for files.
-
-Return a list of files."
-  (with-temp-buffer
-    (apply #'call-process (car cmd) nil '(t nil) nil "-L" org-roam-directory (cdr cmd))
-    (s-split "\n" (buffer-string) :omit-nulls)))
 
 (defun org-roam--list-files-search-globs (exts)
   "Given EXTS, return a list of search globs.
 E.g. (\".org\") => (\"*.org\" \"*.org.gpg\")"
   (append
-   (mapcar (lambda (ext) (s-wrap (concat "*." ext) "\"")) exts)
-   (mapcar (lambda (ext) (s-wrap (concat "*." ext ".gpg") "\"")) exts)))
+   (mapcar (lambda (ext) (concat "*." ext)) exts)
+   (mapcar (lambda (ext) (concat "*." ext ".gpg")) exts)))
 
 (defun org-roam--list-files-rg (executable dir)
   "Return all Org-roam files located recursively within DIR, using ripgrep, provided as EXECUTABLE."
   (let* ((globs (org-roam--list-files-search-globs org-roam-file-extensions))
-         (command `(,executable "-L" ,dir "--files"
-                                ,@(cons "-g" (-interpose "-g" globs)))))
-    (org-roam--shell-command-files command)))
+         (arguments `("-L" ,dir "--files"
+                      ,@(cons "-g" (-interpose "-g" globs)))))
+    (with-temp-buffer
+      (apply #'call-process executable
+             nil '(t nil) nil
+             arguments)
+      (s-split "\n" (buffer-string) :omit-nulls))))
 
 ;; Emacs 26 does not have FOLLOW-SYMLINKS in `directory-files-recursively'
 (defun org-roam--directory-files-recursively (dir regexp
@@ -210,29 +210,12 @@ recursion."
 
 (defun org-roam--list-files (dir)
   "Return all Org-roam files located recursively within DIR.
-Use external shell commands if defined in `org-roam-list-files-commands'."
-  (let (path exe)
-    (cl-dolist (cmd org-roam-list-files-commands)
-      (pcase cmd
-        (`(,e . ,path)
-         (setq path (executable-find path)
-               exe  (symbol-name e)))
-        ((pred symbolp)
-         (setq path (executable-find (symbol-name cmd))
-               exe (symbol-name cmd)))
-        (wrong-type
-         (signal 'wrong-type-argument
-                 `((consp symbolp)
-                   ,wrong-type))))
-      (when path (cl-return)))
-    (if-let* ((files (when path
-                       (let ((fn (intern (concat "org-roam--list-files-" exe))))
-                         (unless (fboundp fn) (user-error "%s is not an implemented search method" fn))
-                         (funcall fn path (format "\"%s\"" dir)))))
-              (files (seq-filter #'org-roam--org-roam-file-p files))
-              (files (mapcar #'expand-file-name files))) ; canonicalize names
-        files
-      (org-roam--list-files-elisp dir))))
+Use Ripgrep if we can find it."
+  (if-let ((rg (executable-find "rg")))
+      (-some->> (org-roam--list-files-rg rg dir)
+        (-remove #'kisaragi-notes//excluded?)
+        (-map #'f-expand))
+    (org-roam--list-files-elisp dir)))
 
 (defun org-roam--list-all-files ()
   "Return a list of all Org-roam files within `org-roam-directory'."
@@ -1100,8 +1083,11 @@ the executable 'rg' in variable `exec-path'."
       (error "\"rg\" must be compiled with PCRE2 support"))
     (let* ((titles (org-roam--extract-titles))
            (rg-command (concat "rg -o --vimgrep -P -i "
-                               (string-join (mapcar (lambda (glob) (concat "-g " glob))
-                                                    (org-roam--list-files-search-globs org-roam-file-extensions)) " ")
+                               (s-join
+                                " "
+                                (--map (concat "-g " (s-wrap a "\""))
+                                       (org-roam--list-files-search-globs
+                                        org-roam-file-extensions)))
                                (format " '\\[([^[]]++|(?R))*\\]%s' "
                                        (mapconcat (lambda (title)
                                                     (format "|(\\b%s\\b)" (shell-quote-argument title)))
