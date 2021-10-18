@@ -49,6 +49,7 @@
 
 (require 'kisaragi-notes-vars)
 (require 'kisaragi-notes-completion)
+(require 'kisaragi-notes-commands)
 
 (when (featurep 'marginalia)
   (require 'kisaragi-notes-marginalia))
