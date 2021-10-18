@@ -12,7 +12,7 @@
 ;; Verstion 0.4.0
 ;; Package-Requires: ((emacs "27.1") (bibtex-completion "2.0.0"))
 
-;; Soft dependencies: projectile, persp-mode, helm, ivy, hydra
+;; Soft dependencies: projectile, persp-mode
 
 ;; This file is NOT part of GNU Emacs.
 
@@ -73,19 +73,9 @@
 (require 'orb-core)
 (require 'kisaragi-notes-utils)
 
-(when (featurep 'ivy-bibtex)
-  (require 'orb-ivy))
-
-(when (featurep 'helm-bibtex)
-  (require 'orb-helm))
-
 (eval-when-compile
   (require 'subr-x)
   (require 'cl-lib))
-
-;; declare own functions and variables
-(declare-function orb-helm-insert "orb-helm")
-(declare-function orb-ivy-insert "orb-ivy")
 
 ;; declare external functions and variables
 
@@ -107,7 +97,6 @@
 (defvar org-ref-notes-function)
 (declare-function org-ref-find-bibliography "org-ref-core")
 
-(declare-function defhydra "ext:hydra")
 (declare-function org-ref-format-entry "ext:org-ref-bibtex" (key))
 
 ;; ============================================================================
@@ -287,18 +276,6 @@ used to store a link to the BibTeX buffer.  See
   :risky t
   :group 'org-roam-bibtex)
 
-(defcustom orb-insert-interface 'generic
-  "Interface frontend to use with `orb-insert'.
-Possible values are the symbols `helm-bibtex', `ivy-bibtex' and
-`generic'.  In the first two cases the respective commands will
-be used, while in the latter case the command
-`orb-insert-generic' will be used."
-  :group 'org-roam-bibtex
-  :type '(choice
-          (const helm-bibtex)
-          (const ivy-bibtex)
-          (const generic)))
-
 (defcustom orb-insert-link-description 'title
   "What should be used as link description for links created with `orb-insert'.
 Possible values are the symbols `title', `citekey' and
@@ -339,29 +316,6 @@ Possible values are `key' and `entry'."
   :type '(choice
           (const key)
           (const entry)))
-
-(defcustom orb-note-actions-interface 'default
-  "Interface frontend for `orb-note-actions'.
-Supported values (interfaces) are 'default, 'ido, 'hydra, 'ivy and 'helm.
-
-Alternatively, it can be set to a function, in which case the
-function should expect one argument CITEKEY, which is a list
-whose car is the citation key associated with the org-roam note
-the current buffer is visiting.  Also, it should ideally make use
-of `orb-note-actions-default', `orb-note-actions-extra' and
-`orb-note-actions-user' for providing an interactive interface,
-through which the combined set of note actions is presented as a
-list of candidates and the function associated with the candidate
-is executed upon selecting it."
-  :risky t
-  :type '(radio
-          (const :tag "Default" default)
-          (const :tag "Ido" ido)
-          (const :tag "Hydra" hydra)
-          (const :tag "Ivy" ivy)
-          (const :tag "Helm" helm)
-          (function :tag "Custom function"))
-  :group 'orb-note-actions)
 
 (defcustom orb-note-actions-default
   '(("Open PDF file(s)" . bibtex-completion-open-pdf)
@@ -909,8 +863,8 @@ made by `bibtex-completion-candidates'.
 The appearance of selection candidates is determined by
 `orb-insert-generic-candidates-format'.
 
-This function is not interactive, set `orb-insert-interface' to
-`generic' and call `orb-insert' interactively instead.
+This function is not interactive, call `orb-insert' interactively
+instead.
 
 If ARG is non-nil, rebuild `bibtex-completion-cache'."
   (when arg
@@ -978,25 +932,12 @@ newly created note."
 ;;;###autoload
 (defun orb-insert (&optional arg)
   "Insert a link to an Org-roam bibliography note.
-If the note does not exist, create it.
-Use candidate selection interface specified in
-`orb-insert-interface'.  Available interfaces are `helm-bibtex',
-`ivy-bibtex' and `orb-insert-generic'.
 
-When using `helm-bibtex' or `ivy-bibtex', the action \"Edit note
-& insert a link\" should be chosen to insert the desired link.
-For convenience, this action is made default for the duration of
-an `orb-insert' session.  It will not persist when `helm-bibtex'
-or `ivy-bibtex' proper are run.  It is absolutely possible to run
-other `helm-bibtex' or `ivy-bibtex' actions.  When action another
-than \"Edit note & insert a link\" is run, no link will be
-inserted, although the session can be resumed later with
-`helm-resulme' or `ivy-resume', respectively, to select the
-\"Edit note & insert a link\" action.
+If the note does not exist, create it using `orb-insert-generic'.
 
-When using `orb-insert-generic' as interface, a simple list of
-available citation keys is presented using `completion-read' and
-after choosing a candidate the appropriate link will be inserted.
+A simple list of available citation keys will be presented using
+`completion-read' and after choosing a candidate the appropriate
+link will be inserted.
 
 If the note does not exist yet, it will be created using
 `orb-edit-notes' function.
@@ -1048,24 +989,7 @@ two or three universal arguments `\\[universal-argument]' are supplied."
     ;; 4. orb-insert--link-h
     ;; if the note exists or a new note was created and capture not cancelled
     ;; 5. orb-insert--link
-    (cl-case orb-insert-interface
-      (helm-bibtex
-       (cond
-        ((featurep 'helm-bibtex)
-         (orb-helm-insert clear-cache))
-        (t
-         (orb-warning "helm-bibtex not available; using generic completion")
-         (orb-insert-generic clear-cache))))
-      (ivy-bibtex
-       (cond
-        ((featurep 'ivy-bibtex)
-         (require 'orb-ivy)
-         (orb-ivy-insert clear-cache))
-        (t
-         (orb-warning "ivy-bibtex not available; using generic completion")
-         (orb-insert-generic clear-cache))))
-      (t
-       (orb-insert-generic clear-cache)))))
+    (orb-insert-generic clear-cache)))
 
 ;; ============================================================================
 ;;;; Non-ref functions
@@ -1104,41 +1028,6 @@ details."
          (f (cdr (assoc (ido-completing-read name c) candidates))))
     (funcall f (list citekey))))
 
-(declare-function orb-note-actions-hydra/body "org-roam-bibtex" nil t)
-(when (featurep 'hydra)
-  (require 'hydra)
-  (orb-note-actions-defun hydra
-    ;; we don't use candidates here because for a nice hydra we need each
-    ;; group of completions separately (default, extra, user), so just
-    ;; silence the compiler
-    (ignore candidates)
-    (let ((k ?a)
-          actions)
-      (dolist (type (list "Default" "Extra" "User"))
-        (let ((actions-var
-               (intern (concat "orb-note-actions-" (downcase type)))))
-          (dolist (action (symbol-value actions-var))
-            ;; this makes defhydra HEADS list of the form:
-            ;; ("a" (some-action citekey-value) "Some-action description"
-            ;;     :column "Type")
-            (cl-pushnew
-             `(,(format "%c" k) (,(cdr action) (list ,citekey))
-               ,(car action) :column ,(concat type " actions"))
-             actions)
-            ;; increment key a->b->c...
-            (setq k (1+ k)))))    ; TODO: figure out a way to supply
-                                        ; mnemonic keys
-      (setq actions (nreverse actions))
-      ;; yes, we redefine hydra on every call
-      (eval
-       `(defhydra orb-note-actions-hydra (:color blue :hint nil)
-          ;; defhydra docstring
-          ,(format  "^\n  %s \n\n^"
-                    (s-word-wrap (- (window-body-width) 2) name))
-          ;; defhydra HEADS
-          ,@actions)))
-    (orb-note-actions-hydra/body)))
-
 (defun orb-note-actions--run (interface citekey)
   "Run note actions on CITEKEY with INTERFACE."
   (let ((fun (intern (concat "orb-note-actions-" (symbol-name interface)))))
@@ -1152,22 +1041,15 @@ details."
 
 CITEKEY is, by default, the first ROAM_KEY in the buffer.
 
-The prompt interface can be set in `orb-note-actions-interface'.
 In addition to default actions, which are not supposed to be
 modified, there is a number of prefined extra actions
 `orb-note-actions-extra' that can be customized.  Additionally,
 user actions can be set in `orb-note-actions-user'."
   (interactive)
-  (let ((non-default-interfaces (list 'hydra 'ido 'ivy 'helm))
-        (citekey (or citekey
+  (let ((citekey (or citekey
                      (cdar (kisaragi-notes-extract/refs)))))
     (if citekey
-        (cond ((member orb-note-actions-interface non-default-interfaces)
-               (orb-note-actions--run orb-note-actions-interface citekey))
-              ((functionp orb-note-actions-interface)
-               (funcall orb-note-actions-interface citekey))
-              (t
-               (orb-note-actions--run 'default citekey)))
+        (orb-note-actions--run 'default citekey)
       (user-error "Could not retrieve the citekey.  Probably no #+ROAM_KEY: in\
 the buffer or package Org Ref not installed"))))
 

@@ -70,10 +70,9 @@ constructed from `orb-note-actions-default',
 CITEKEY is the citekey." (capitalize interface-name))
        (let ((name (org-ref-format-entry citekey)) ;; TODO: make a native format function
              (candidates
-              ,(unless (eq interface 'hydra)
-                 '(append  orb-note-actions-default
-                           orb-note-actions-extra
-                           orb-note-actions-user))))
+              (append orb-note-actions-default
+                      orb-note-actions-extra
+                      orb-note-actions-user)))
          ,@body))))
 
 ;; ============================================================================
