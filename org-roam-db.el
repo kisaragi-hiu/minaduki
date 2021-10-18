@@ -557,28 +557,24 @@ If FORCE, force a rebuild of the cache from scratch."
   (org-roam-db) ;; To initialize the database, no-op if already initialized
   (let* ((gc-cons-threshold org-roam-db-gc-threshold)
          (org-agenda-files nil)
-         (org-roam-files
-          (kisaragi-notes//with-message "Finding files..."
-            (org-roam--list-all-files)))
-         (current-files (kisaragi-notes-db//fetch-all-files-hash))
-         (count-plist nil)
          (deleted-count 0)
-         (modified-files nil))
-    (dolist-with-progress-reporter (file org-roam-files)
+         dir-files db-files count-plist modified-files)
+    (setq dir-files (org-roam--list-all-files)
+          db-files (kisaragi-notes-db//fetch-all-files-hash))
+    (dolist-with-progress-reporter (file dir-files)
         "(org-roam) Finding modified files"
       (let ((content-hash (kisaragi-notes//compute-content-hash file)))
-        (unless (string= (gethash file current-files)
-                         content-hash)
+        (unless (string= content-hash (gethash file db-files))
           (push (cons file content-hash) modified-files)))
-      (remhash file current-files))
-    (dolist-with-progress-reporter (file (hash-table-keys current-files))
+      (remhash file db-files))
+    (dolist-with-progress-reporter (file (hash-table-keys db-files))
         "(org-roam) Removing deleted files from cache"
       ;; These files are no longer around, remove from cache...
       (org-roam-db--clear-file file)
       (setq deleted-count (1+ deleted-count)))
     (setq count-plist (org-roam-db--update-files modified-files))
     (org-roam-message "total: Δ%s, files-modified: Δ%s, ids: Δ%s, links: Δ%s, tags: Δ%s, titles: Δ%s, refs: Δ%s, deleted: Δ%s"
-                      (- (length org-roam-files) (plist-get count-plist :error-count))
+                      (- (length dir-files) (plist-get count-plist :error-count))
                       (plist-get count-plist :modified-count)
                       (plist-get count-plist :id-count)
                       (plist-get count-plist :link-count)
