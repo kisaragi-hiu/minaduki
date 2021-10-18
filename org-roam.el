@@ -201,12 +201,15 @@ recursion."
 
 (defun org-roam--list-files-elisp (dir)
   "Return all Org-roam files located recursively within DIR, using elisp."
-  (let ((regex (concat "\\.\\(?:"(mapconcat #'regexp-quote org-roam-file-extensions "\\|" )"\\)\\(?:\\.gpg\\)?\\'"))
+  (let ((regexp (concat "\\.\\(?:"
+                        (mapconcat #'regexp-quote org-roam-file-extensions "\\|")
+                        "\\)\\(?:\\.gpg\\)?\\'"))
         result)
-    (dolist (file (org-roam--directory-files-recursively dir regex nil nil t) result)
+    (dolist (file (org-roam--directory-files-recursively dir regexp nil nil t))
       (when (and (file-readable-p file)
-                 (org-roam--org-roam-file-p file))
-        (push file result)))))
+                 (not (kisaragi-notes//excluded? file)))
+        (push file result)))
+    result))
 
 (defun org-roam--list-files (dir)
   "Return all Org-roam files located recursively within DIR.
