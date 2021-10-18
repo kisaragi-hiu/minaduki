@@ -40,17 +40,13 @@
 
 (require 'org-roam-db)
 (require 'kisaragi-notes-utils)
+(require 'kisaragi-notes-vars)
 (require 'org-roam-extract)
 
-(defvar org-roam-directory)
 (defvar org-link-frame-setup)
 (defvar org-return-follows-link)
-(defvar org-roam-backlinks-mode)
-(defvar org-roam-last-window)
 (defvar org-roam-mode)
-(defvar org-roam--org-link-bracket-typed-re)
 
-(declare-function org-roam-backlinks-mode     "org-roam")
 (declare-function org-roam-mode               "org-roam")
 (declare-function org-roam--find-file         "org-roam")
 (declare-function org-roam-format-link        "org-roam")
@@ -136,6 +132,48 @@ For example: (setq org-roam-buffer-window-parameters '((no-other-window . t)))"
                        (buffer-file-name org-roam-buffer--current))
                       'font-lock-face
                       'org-document-title)))
+
+(defun kisaragi-notes-buffer//open-at-point ()
+  "Open an Org-roam link or visit the text previewed at point.
+
+When point is on an Org-roam link, open the link in the Org-roam window.
+When point is on the Org-roam preview text, open the link in the Org-roam
+window, and navigate to the point.
+This function hooks into `org-open-at-point' via `org-open-at-point-functions'."
+  (cond
+   ;; Org-roam link
+   ((let* ((context (org-element-context))
+           (path (org-element-property :path context)))
+      (when (and (eq (org-element-type context) 'link)
+                 (org-roam--org-roam-file-p path))
+        (org-roam-buffer--find-file path)
+        (org-show-context)
+        t)))
+   ;; Org-roam preview text
+   ((when-let ((file-from (get-text-property (point) 'file-from))
+               (p (get-text-property (point) 'file-from-point)))
+      (org-roam-buffer--find-file file-from)
+      (goto-char p)
+      (org-show-context)
+      t))
+   ;; If called via `org-open-at-point', fall back to default behavior.
+   (t nil)))
+
+;;; org-roam-backlinks-mode
+(define-minor-mode org-roam-backlinks-mode
+  "Minor mode for the `org-roam-buffer'.
+\\{org-roam-backlinks-mode-map}"
+  :lighter " Backlinks"
+  :keymap  (let ((map (make-sparse-keymap)))
+             (define-key map [mouse-1] 'org-open-at-point)
+             (define-key map (kbd "RET") 'org-open-at-point)
+             map)
+  (cond (org-roam-backlinks-mode
+         (add-hook 'post-command-hook #'kisaragi-notes-buffer//save-point nil :local)
+         (add-hook 'org-open-at-point-functions #'kisaragi-notes-buffer//open-at-point nil :local))
+        (t
+         (remove-hook 'post-command-hook #'kisaragi-notes-buffer//save-point :local)
+         (remove-hook 'org-open-at-point-functions #'kisaragi-notes-buffer//open-at-poin :local))))
 
 ;;;; Saving cursor position
 
