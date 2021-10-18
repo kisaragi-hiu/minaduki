@@ -16,7 +16,7 @@
 (require 'f)
 (require 'ol)
 
-(require 'org-roam-macs)
+(require 'kisaragi-notes-utils)
 (require 'org-roam-db)
 
 (require 'kisaragi-notes-vars)

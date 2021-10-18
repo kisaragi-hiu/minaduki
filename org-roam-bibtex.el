@@ -71,7 +71,7 @@
 ;; ============================================================================
 
 (require 'orb-core)
-(require 'org-roam-macs)
+(require 'kisaragi-notes-utils)
 
 (when (featurep 'ivy-bibtex)
   (require 'orb-ivy))

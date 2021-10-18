@@ -26,7 +26,7 @@
 (require 'dash)
 
 (require 'kisaragi-notes-vars)
-(require 'org-roam-macs)
+(require 'kisaragi-notes-utils)
 (require 'org-roam-db)
 
 (defun org-roam--get-title-path-completions ()

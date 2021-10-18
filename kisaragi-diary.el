@@ -26,7 +26,7 @@
 (require 'parse-time)
 
 (require 'org-roam-db)
-(require 'org-roam-macs)
+(require 'kisaragi-notes-utils)
 
 (require 'kisaragi-notes-vars)
 

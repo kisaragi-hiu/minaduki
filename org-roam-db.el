@@ -45,7 +45,7 @@
   ;; For `org-with-wide-buffer'
   (require 'org-macs))
 
-(require 'org-roam-macs)
+(require 'kisaragi-notes-utils)
 (require 'kisaragi-notes-vars)
 
 (defvar org-roam-directory)

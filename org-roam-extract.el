@@ -11,7 +11,7 @@
 (require 'org)
 
 (require 'org-roam-id)
-(require 'org-roam-macs)
+(require 'kisaragi-notes-utils)
 (require 'kisaragi-notes-vars)
 
 (defvar markdown-regex-link-inline)

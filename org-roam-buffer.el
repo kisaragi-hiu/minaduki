@@ -39,7 +39,7 @@
 (require 'org-element)
 
 (require 'org-roam-db)
-(require 'org-roam-macs)
+(require 'kisaragi-notes-utils)
 (require 'org-roam-extract)
 
 (defvar org-roam-directory)

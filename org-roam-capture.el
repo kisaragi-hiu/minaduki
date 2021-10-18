@@ -35,7 +35,7 @@
 (require 'cl-lib)
 (require 'org-capture)
 
-(require 'org-roam-macs)
+(require 'kisaragi-notes-utils)
 (require 'org-roam-db)
 (require 'org-roam-extract)
 (require 'kisaragi-notes-completion)

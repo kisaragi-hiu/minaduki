@@ -50,12 +50,12 @@
 (require 'kisaragi-notes-vars)
 (require 'kisaragi-notes-completion)
 (require 'kisaragi-notes-commands)
+(require 'kisaragi-notes-utils)
 
 (when (featurep 'marginalia)
   (require 'kisaragi-notes-marginalia))
 
 ;;;; Features
-(require 'org-roam-macs)
 ;; These features should be able to be loaded order independently.
 ;; @TODO: implement something akin to `org-modules' that allows
 ;; selectively loading different sets of features.

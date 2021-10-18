@@ -33,7 +33,7 @@
 (require 'xml) ;xml-escape-string
 (require 's)   ;s-truncate, s-replace
 (eval-and-compile
-  (require 'org-roam-macs))
+  (require 'kisaragi-notes-utils))
 (require 'org-roam-db)
 
 ;;;; Declarations
