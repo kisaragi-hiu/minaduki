@@ -1085,7 +1085,7 @@ the executable 'rg' in variable `exec-path'."
            (rg-command (concat "rg -o --vimgrep -P -i "
                                (s-join
                                 " "
-                                (--map (concat "-g " (s-wrap a "\""))
+                                (--map (concat "-g " (s-wrap it "\""))
                                        (org-roam--list-files-search-globs
                                         org-roam-file-extensions)))
                                (format " '\\[([^[]]++|(?R))*\\]%s' "
