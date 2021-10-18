@@ -1059,7 +1059,7 @@ Return added tag."
       (move-to-column (- col 1))
       t)))
 
-;;###autoload
+;;;###autoload
 (defun org-roam-unlinked-references ()
   "Check for unlinked references in the current buffer.
 
