@@ -55,6 +55,9 @@
 (when (featurep 'marginalia)
   (require 'kisaragi-notes-marginalia))
 
+(when (featurep 'embark)
+  (require 'kisaragi-notes-embark))
+
 ;;;; Features
 ;; These features should be able to be loaded order independently.
 ;; @TODO: implement something akin to `org-modules' that allows
@@ -814,7 +817,9 @@ command will offer you to create one."
                       ((pred functionp) (funcall org-roam-index-file))
                       ((pred stringp) org-roam-index-file)
                       ('nil (user-error "You need to set `org-roam-index-file' before you can jump to it"))
-                      (wrong-type (user-error "`org-roam-index-file' must be a string or a function")))
+                      (wrong-type (user-error
+                                   "`org-roam-index-file' must be a string or a function, not %s"
+                                   wrong-type)))
                  (expand-file-name it org-roam-directory))))
     (if (and index
              (f-exists? index))
