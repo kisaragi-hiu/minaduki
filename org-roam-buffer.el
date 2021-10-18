@@ -84,8 +84,8 @@ Has an effect if and only if `org-roam-buffer-position' is `top' or `bottom'."
   :type '(repeat string)
   :group 'org-roam)
 
-(defcustom org-roam-buffer "*org-roam*"
-  "Org-roam buffer name."
+(defcustom kisaragi-notes-buffer/name "*kisaragi-notes backlinks*"
+  "Name of the backlinks buffer."
   :type 'string
   :group 'org-roam)
 
@@ -173,7 +173,7 @@ This function hooks into `org-open-at-point' via `org-open-at-point-functions'."
          (add-hook 'org-open-at-point-functions #'kisaragi-notes-buffer//open-at-point nil :local))
         (t
          (remove-hook 'post-command-hook #'kisaragi-notes-buffer//save-point :local)
-         (remove-hook 'org-open-at-point-functions #'kisaragi-notes-buffer//open-at-poin :local))))
+         (remove-hook 'org-open-at-point-functions #'kisaragi-notes-buffer//open-at-point :local))))
 
 ;;;; Saving cursor position
 
@@ -181,15 +181,15 @@ This function hooks into `org-open-at-point' via `org-open-at-point-functions'."
   "A hash table storing cursor position in the backlinks buffer.")
 
 (defun kisaragi-notes-buffer//save-point ()
-  "Save cursor position in org-roam-buffer for the current file."
-  (with-current-buffer org-roam-buffer
+  "Save cursor position in backlinks buffer for the current file."
+  (with-current-buffer kisaragi-notes-buffer/name
     (puthash (buffer-file-name org-roam-buffer--current)
              (point)
              kisaragi-notes-buffer//point-map)))
 
 (defun kisaragi-notes-buffer//restore-point ()
-  "Restore last visited point in org-roam-buffer for this file."
-  (with-selected-window (get-buffer-window org-roam-buffer)
+  "Restore last visited point in backlinks buffer for this file."
+  (with-selected-window (get-buffer-window kisaragi-notes-buffer/name)
     (let ((saved-point (gethash (buffer-file-name org-roam-buffer--current)
                                 kisaragi-notes-buffer//point-map)))
       (when (and (integerp saved-point)
@@ -362,7 +362,7 @@ ORIG-PATH is the path where the CONTENT originated."
   (interactive)
   (org-roam-db--ensure-built)
   (let* ((source-org-roam-directory org-roam-directory))
-    (with-current-buffer org-roam-buffer
+    (with-current-buffer kisaragi-notes-buffer/name
       ;; When dir-locals.el is used to override org-roam-directory,
       ;; org-roam-buffer should have a different local org-roam-directory and
       ;; default-directory, as relative links are relative from the overridden
@@ -385,10 +385,11 @@ ORIG-PATH is the path where the CONTENT originated."
         (read-only-mode 1)))))
 
 (cl-defun org-roam-buffer--update-maybe (&key redisplay)
-  "Reconstructs `org-roam-buffer'.
+  "Reconstruct the backlinks buffer.
+
 This needs to be quick or infrequent, because this is run at
-`post-command-hook'.  If REDISPLAY, force an update of
-`org-roam-buffer'."
+`post-command-hook'. If REDISPLAY, force an update no matter
+what."
   (let ((buffer (window-buffer)))
     (when (and (or redisplay
                    (not (eq org-roam-buffer--current buffer)))
@@ -405,12 +406,12 @@ Valid states are 'visible, 'exists and 'none."
   (declare (side-effect-free t))
   (inline-quote
    (cond
-    ((get-buffer-window org-roam-buffer) 'visible)
-    ((get-buffer org-roam-buffer) 'exists)
+    ((get-buffer-window kisaragi-notes-buffer/name) 'visible)
+    ((get-buffer kisaragi-notes-buffer/name) 'exists)
     (t 'none))))
 
 (defun org-roam-buffer--set-width (width)
-  "Set the width of `org-roam-buffer' to `WIDTH'."
+  "Set the width of the current window to WIDTH."
   (unless (one-window-p)
     (let ((window-size-fixed)
           (w (max width window-min-width)))
@@ -421,7 +422,7 @@ Valid states are 'visible, 'exists and 'none."
         (enlarge-window-horizontally (- w (window-width))))))))
 
 (defun org-roam-buffer--set-height (height)
-  "Set the height of `org-roam-buffer' to `HEIGHT'."
+  "Set the height of the current window to HEIGHT."
   (unless (one-window-p)
     (let ((window-size-fixed)
           (h (max height window-min-height)))
@@ -437,7 +438,7 @@ Valid states are 'visible, 'exists and 'none."
                       (funcall org-roam-buffer-position)
                     org-roam-buffer-position)))
     (save-selected-window
-      (-> (get-buffer-create org-roam-buffer)
+      (-> (get-buffer-create kisaragi-notes-buffer/name)
         (display-buffer-in-side-window
          `((side . ,position)
            (window-parameters . ,org-roam-buffer-window-parameters)))
@@ -461,7 +462,7 @@ Valid states are 'visible, 'exists and 'none."
   "Deactivate display of the `org-roam-buffer'."
   (interactive)
   (setq org-roam-last-window (get-buffer-window))
-  (delete-window (get-buffer-window org-roam-buffer)))
+  (delete-window (get-buffer-window kisaragi-notes-buffer/name)))
 
 (defun org-roam-buffer-toggle-display ()
   "Toggle display of the `org-roam-buffer'."

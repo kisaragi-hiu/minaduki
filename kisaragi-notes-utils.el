@@ -8,6 +8,7 @@
 
 (require 'dash)
 (require 's)
+(require 'f)
 
 (require 'kisaragi-notes-vars)
 
@@ -102,6 +103,33 @@ means tomorrow, and N = -1 means yesterday."
               (* 3600 org-extend-today-until))
          ;; otherwise just return (now - 0) = now.
          0)))))
+
+;;;; File predicates
+
+(defun org-roam--org-file-p (path)
+  "Check if PATH is pointing to an org file."
+  (let ((ext (org-roam--file-name-extension path)))
+    (when (string= ext "gpg")           ; Handle encrypted files
+      (setq ext (org-roam--file-name-extension (file-name-sans-extension path))))
+    (member ext org-roam-file-extensions)))
+
+(defsubst kisaragi-notes//excluded? (file)
+  "Should FILE be excluded from indexing?"
+  (and org-roam-file-exclude-regexp
+       (string-match-p org-roam-file-exclude-regexp file)))
+
+(defun org-roam--org-roam-file-p (&optional file)
+  "Return t if FILE is part of Org-roam system, nil otherwise.
+If FILE is not specified, use the current buffer's file-path."
+  (when-let ((path (or file
+                       kisaragi-notes//file-name
+                       (-> (buffer-base-buffer)
+                         (buffer-file-name)))))
+    (save-match-data
+      (and
+       (org-roam--org-file-p path)
+       (not (kisaragi-notes//excluded? path))
+       (f-descendant-of-p path (expand-file-name org-roam-directory))))))
 
 ;;;; Title/Path/Slug conversion
 
