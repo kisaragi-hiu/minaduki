@@ -39,7 +39,6 @@
 ;;;; Declarations
 (defvar org-roam-directory)
 (defvar org-roam-mode)
-(declare-function org-roam--org-roam-file-p  "org-roam")
 (declare-function org-roam-mode              "org-roam")
 
 ;;;; Options

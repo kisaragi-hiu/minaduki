@@ -52,7 +52,6 @@
 (declare-function org-roam-insert "org-roam")
 (declare-function org-roam--get-roam-buffers "org-roam")
 (declare-function org-roam--list-all-files "org-roam")
-(declare-function org-roam--org-roam-file-p "org-roam")
 (declare-function org-roam-mode "org-roam")
 
 (require 'kisaragi-notes-vars)
@@ -142,7 +141,7 @@ AST is the org-element parse tree."
         (when (string-collate-equalp (org-element-property :key kw) "roam_alias" nil t)
           (let ((aliases (org-element-property :value kw)))
             (condition-case nil
-              (split-string-and-unquote aliases)
+                (split-string-and-unquote aliases)
               (error
                (push
                 `(,(org-element-property :begin kw)
@@ -294,10 +293,10 @@ If CHECKALL, run the check for all Org-roam files."
   (interactive "P")
   (unless org-roam-mode (org-roam-mode))
   (let ((files (if checkall
-                  (org-roam--list-all-files)
-                (unless (org-roam--org-roam-file-p)
-                  (user-error "Not in an org-roam file"))
-                `(,(buffer-file-name)))))
+                   (org-roam--list-all-files)
+                 (unless (org-roam--org-roam-file-p)
+                   (user-error "Not in an org-roam file"))
+                 `(,(buffer-file-name)))))
     (org-roam-doctor-start files org-roam-doctor--checkers)))
 
 (defun org-roam-doctor-start (files checkers)

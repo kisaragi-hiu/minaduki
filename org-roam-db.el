@@ -57,7 +57,6 @@
 (declare-function org-roam--extract-tags                   "org-roam-extract")
 (declare-function org-roam--extract-ids                    "org-roam-extract")
 (declare-function org-roam--extract-links                  "org-roam-extract")
-(declare-function org-roam--org-roam-file-p                "org-roam")
 (declare-function org-roam--list-all-files                 "org-roam")
 
 ;;;; Options
