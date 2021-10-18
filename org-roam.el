@@ -195,20 +195,6 @@ In Markdown, TYPE has no effect."
           (t
            (format "[%s](%s)" description target))))))
 
-(defun org-roam--get-index-path ()
-  "Return the path to the index in `org-roam-directory'.
-The path to the index can be defined in `org-roam-index-file'.
-Otherwise, it is assumed to be a note in `org-roam-directory'
-whose title is 'Index'."
-  (let ((path (pcase org-roam-index-file
-                ((pred functionp) (funcall org-roam-index-file))
-                ((pred stringp) org-roam-index-file)
-                ('nil (user-error "You need to set `org-roam-index-file' before you can jump to it"))
-                (wrong-type (signal 'wrong-type-argument
-                                    `((functionp stringp)
-                                      ,wrong-type))))))
-    (expand-file-name path org-roam-directory)))
-
 ;;;; dealing with file-wide properties
 (defun org-roam--set-global-prop (name value)
   "Set a file property called NAME to VALUE.
@@ -892,9 +878,14 @@ for a note whose title is 'Index'.  If it does not exist, the
 command will offer you to create one."
   (interactive)
   (unless org-roam-mode (org-roam-mode))
-  (let ((index (org-roam--get-index-path)))
+  (let ((index (--> (pcase org-roam-index-file
+                      ((pred functionp) (funcall org-roam-index-file))
+                      ((pred stringp) org-roam-index-file)
+                      ('nil (user-error "You need to set `org-roam-index-file' before you can jump to it"))
+                      (wrong-type (user-error "`org-roam-index-file' must be a string or a function")))
+                 (expand-file-name it org-roam-directory))))
     (if (and index
-             (file-exists-p index))
+             (f-exists? index))
         (org-roam--find-file index)
       (when (y-or-n-p "Index file does not exist.  Would you like to create it? ")
         (kisaragi-notes/open "Index")))))
