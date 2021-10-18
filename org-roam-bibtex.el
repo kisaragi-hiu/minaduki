@@ -822,7 +822,7 @@ CANDIDATES is a an alist of candidates to consider.  Defaults to
     (dolist (row rows completions)
       (pcase-let ((`(,file-path ,title ,tags) row))
         (let ((title (or title
-                         (list (org-roam--path-to-slug file-path)))))
+                         (list (kisaragi-notes//path-to-title file-path)))))
           (let ((k (concat
                     (when tags
                       (format "(%s) " (s-join org-roam-tag-separator tags)))

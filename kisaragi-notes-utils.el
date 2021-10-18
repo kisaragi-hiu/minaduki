@@ -105,6 +105,12 @@ means tomorrow, and N = -1 means yesterday."
 
 ;;;; Title/Path/Slug conversion
 
+(defun kisaragi-notes//path-to-title (path)
+  "Convert PATH to a string that's suitable as a title."
+  (-> path
+    (f-relative (f-expand org-roam-directory))
+    f-no-ext))
+
 (defun kisaragi-notes//title-to-slug (title)
   "Convert TITLE to a filename-suitable slug."
   (let ((slug

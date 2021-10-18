@@ -59,7 +59,6 @@
 (declare-function org-roam--extract-links                  "org-roam-extract")
 (declare-function org-roam--org-roam-file-p                "org-roam")
 (declare-function org-roam--list-all-files                 "org-roam")
-(declare-function org-roam--path-to-slug                   "org-roam")
 
 ;;;; Options
 (defcustom org-roam-db-location (expand-file-name "org-roam.db" user-emacs-directory)
@@ -291,9 +290,10 @@ If UPDATE-P is non-nil, first remove titles for the file in the database.
 Returns the number of rows inserted."
   (let* ((file (or kisaragi-notes//file-name (buffer-file-name)))
          (titles (or (org-roam--extract-titles)
-                     (list (org-roam--path-to-slug file))))
+                     (list (kisaragi-notes//path-to-title file))))
          (rows (mapcar (lambda (title)
-                         (vector file title)) titles)))
+                         (vector file title))
+                       titles)))
     (when update-p
       (org-roam-db-query [:delete :from titles
                           :where (= file $s1)]

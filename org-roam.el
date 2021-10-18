@@ -157,11 +157,6 @@ Use Ripgrep if we can find it."
   (org-roam--list-files (expand-file-name org-roam-directory)))
 
 ;;;; Title/Path/Slug conversion
-(defun org-roam--path-to-slug (path)
-  "Return a slug from PATH."
-  (-> path
-    (file-relative-name (expand-file-name org-roam-directory))
-    (file-name-sans-extension)))
 
 (defun org-roam-format-link (target &optional description type)
   "Format a link for TARGET and DESCRIPTION.

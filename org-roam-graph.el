@@ -40,7 +40,6 @@
 (defvar org-roam-directory)
 (defvar org-roam-mode)
 (declare-function org-roam--org-roam-file-p  "org-roam")
-(declare-function org-roam--path-to-slug     "org-roam")
 (declare-function org-roam-mode              "org-roam")
 
 ;;;; Options
@@ -200,7 +199,7 @@ into a digraph."
       (dolist (node nodes)
         (let* ((file (xml-escape-string (car node)))
                (title (or (cadr node)
-                          (org-roam--path-to-slug file)))
+                          (kisaragi-notes//path-to-title file)))
                (shortened-title (pcase org-roam-graph-shorten-titles
                                   (`truncate (s-truncate org-roam-graph-max-title-length title))
                                   (`wrap (s-word-wrap org-roam-graph-max-title-length title))
