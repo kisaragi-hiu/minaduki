@@ -86,28 +86,6 @@ Formatter may be a function that takes title as its only argument."
   :type 'boolean
   :group 'org-roam)
 
-(defcustom org-roam-list-files-commands
-  (if (member system-type '(windows-nt ms-dos cygwin))
-      nil
-    '(rg))
-  "Commands that will be used to find Org-roam files.
-
-It should be a list of symbols or cons cells representing any of the following
- supported file search methods.
-
-The commands will be tried in order until an executable for a command is found.
-The Elisp implementation is used if no command in the list is found.
-
-  `rg'
-    Use ripgrep as the file search method.
-    Example command: rg /path/to/dir/ --files -g \"*.org\" -g \"*.org.gpg\"
-
-By default, `executable-find' will be used to look up the path to the
-executable. If a custom path is required, it can be specified together with the
-method symbol as a cons cell. For example: '(find (rg . \"/path/to/rg\"))."
-  :type '(set (const :tag "rg" rg))
-  :group 'org-roam)
-
 (defcustom org-roam-tag-separator ","
   "String to use to separate tags when `kisaragi-notes/tag-sources' is non-nil."
   :type 'string

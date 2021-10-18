@@ -6,6 +6,7 @@ This fork starts off from Org-roam 1.2.4 and Org-roam-bibtex 0.4 ([[https://gith
 
 I want the version to be bigger than 1.2.4 so that it never looks like a downgrade. So an arbitrary number it is then.
 
+- Remove =org-roam-list-files-commands=; when listing existing files internally, Ripgrep will be always used if it's present
 - Markdown support, effectively including the functionalities of md-roam
   - Links are expected to be ordinary inline links
   - Wiki links (=[[path]]=) are not yet supported
