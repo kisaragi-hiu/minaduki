@@ -24,6 +24,8 @@
 (require 'buttercup)
 (require 'org-roam)
 
+(setq org-roam-verbose nil)
+
 (defconst test-org-roam-perf-zip-url "https://github.com/org-roam/test-org-files/archive/master.zip"
   "Path to zip for test org-roam files.")
 
