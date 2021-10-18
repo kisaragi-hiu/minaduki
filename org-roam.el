@@ -87,14 +87,6 @@
 
 ;;;; Utilities
 ;;;; File functions and predicates
-(defun org-roam--file-name-extension (filename)
-  "Return file name extension for FILENAME.
-Like `file-name-extension', but does not strip version number."
-  (save-match-data
-    (let ((file (file-name-nondirectory filename)))
-      (if (and (string-match "\\.[^.]*\\'" file)
-               (not (eq 0 (match-beginning 0))))
-          (substring file (+ (match-beginning 0) 1))))))
 
 (defun org-roam--org-file-p (path)
   "Check if PATH is pointing to an org file."

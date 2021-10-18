@@ -119,7 +119,19 @@ means tomorrow, and N = -1 means yesterday."
             kisaragi-notes/slug-replacements))))
     (downcase slug)))
 
+;;;; File utilities
+
+(defun org-roam--file-name-extension (filename)
+  "Return file name extension for FILENAME.
+Like `file-name-extension', but does not strip version number."
+  (save-match-data
+    (let ((file (file-name-nondirectory filename)))
+      (if (and (string-match "\\.[^.]*\\'" file)
+               (not (eq 0 (match-beginning 0))))
+          (substring file (+ (match-beginning 0) 1))))))
+
 ;;;; Utility Functions
+
 ;; Alternative to `org-get-outline-path' that doesn't break
 (defun org-roam--get-outline-path ()
   "Return the outline path to the current entry.
