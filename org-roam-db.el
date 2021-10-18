@@ -593,9 +593,9 @@ If the file exists, update the cache with information."
       (org-roam-db--update-files (list (cons file-path content-hash)))
       (org-roam-message "Updated: %s" file-path))))
 
-(defun org-roam-db--update-files (modified-files)
-  "Update Org-roam cache for a list of MODIFIED-FILES.
-FILES is a list of (file . hash) pairs."
+(defun org-roam-db--update-files (file-hash-pairs)
+  "Update Org-roam cache for FILE-HASH-PAIRS.
+FILE-HASH-PAIRS is a list of (file . hash) pairs."
   (let* ((gc-cons-threshold org-roam-db-gc-threshold)
          (org-agenda-files nil)
          (error-count 0)
@@ -605,60 +605,64 @@ FILES is a list of (file . hash) pairs."
          (title-count 0)
          (ref-count 0)
          (modified-count 0))
-    (cl-loop
-     for (file . _) being the elements of modified-files
-     using (index i)
-     with length = (length modified-files)
-     do
-     (org-roam-message "Clearing file (%s/%s)" i length)
-     (org-roam-db--clear-file file))
-    ;; Process all the files for IDs first
-    ;;
-    ;; We do this so that link extraction is cheaper: this eliminates the need
-    ;; to read the file to check if the ID really exists
-    (cl-loop
-     for (file . contents-hash) being the elements of modified-files
-     using (index i)
-     with length = (length modified-files)
-     do
-     (let* ((attr (file-attributes file))
-            (atime (file-attribute-access-time attr))
-            (mtime (file-attribute-modification-time attr)))
-       (org-roam-message "Processing IDs (%s/%s)..." i length)
-       (condition-case nil
-           (org-roam--with-temp-buffer file
-             (org-roam-db-query
-              [:insert :into files
-               :values $v1]
-              (vector file contents-hash (list :atime atime :mtime mtime)))
-             (when org-roam-enable-headline-linking
-               (setq id-count (+ id-count (org-roam-db--insert-ids)))))
-         (file-error
-          (setq error-count (1+ error-count))
-          (org-roam-db--clear-file file)
-          (lwarn '(org-roam) :warning
-                 "Skipping unreadable file while building cache: %s" file)))))
+    ;; Clear existing cache entries so that we can put in new versions
+    (kisaragi-notes//for "Clearing files (%s/%s)..."
+        (file . _) file-hash-pairs
+      (org-roam-db--clear-file file))
+    ;; Process IDs first to eliminate the need to read the file to
+    ;; check if the ID really exists, making link extraction cheaper
+    (kisaragi-notes//for "Processing IDs (%s/%s)..."
+        (file . contents-hash) file-hash-pairs
+      (let* ((attr (file-attributes file))
+             (atime (file-attribute-access-time attr))
+             (mtime (file-attribute-modification-time attr)))
+        (condition-case nil
+            (org-roam--with-temp-buffer file
+              (org-roam-db-query
+               [:insert :into files
+                :values $v1]
+               (vector file contents-hash (list :atime atime :mtime mtime)))
+              (when org-roam-enable-headline-linking
+                (setq id-count (+ id-count (org-roam-db--insert-ids)))))
+          (file-error
+           (setq error-count (1+ error-count))
+           (org-roam-db--clear-file file)
+           (lwarn '(org-roam) :warning
+                  "Skipping unreadable file while building cache: %s" file)))))
+    ;; Process titles and tags first to allow links to depend on
+    ;; titles later
+    (kisaragi-notes//for "Processing titles and tags (%s/%s)..."
+        (file . _) file-hash-pairs
+      (condition-case nil
+          (org-roam--with-temp-buffer file
+            (setq tag-count (+ tag-count (org-roam-db--insert-tags)))
+            (setq title-count (+ title-count (org-roam-db--insert-titles))))
+        (file-error
+         (setq error-count (1+ error-count))
+         (org-roam-db--clear-file file)
+         (lwarn '(org-roam) :warning
+                "Skipping unreadable file while building cache: %s" file))))
+    ;; Process links and ref / cite links
+    (kisaragi-notes//for "Processing links (%s/%s)..."
+        (file . _) file-hash-pairs
+      (condition-case nil
+          (org-roam--with-temp-buffer file
+            (setq modified-count (1+ modified-count))
+            (setq ref-count (+ ref-count (org-roam-db--insert-refs)))
+            (setq link-count (+ link-count (org-roam-db--insert-links))))
+        (file-error
+         (setq error-count (1+ error-count))
+         (org-roam-db--clear-file file)
+         (lwarn '(org-roam) :warning
+                "Skipping unreadable file while building cache: %s" file))))
 
-    ;; Process titles, tags, links and ref links of file
-    (cl-loop
-     for (file . _) being the elements of modified-files
-     using (index i)
-     with length = (length modified-files)
-     do
-     (org-roam-message "Processing %s/%s modified files..." i length)
-     (condition-case nil
-         (org-roam--with-temp-buffer file
-           (setq modified-count (1+ modified-count))
-           (setq link-count (+ link-count (org-roam-db--insert-links)))
-           (setq tag-count (+ tag-count (org-roam-db--insert-tags)))
-           (setq title-count (+ title-count (org-roam-db--insert-titles)))
-           (setq ref-count (+ ref-count (org-roam-db--insert-refs))))
-       (file-error
-        (setq error-count (1+ error-count))
-        (org-roam-db--clear-file file)
-        (lwarn '(org-roam) :warning
-               "Skipping unreadable file while building cache: %s" file))))
-    (list :error-count error-count :modified-count modified-count :id-count id-count :title-count title-count :tag-count tag-count :link-count link-count :ref-count ref-count)))
+    (list :error-count error-count
+          :modified-count modified-count
+          :id-count id-count
+          :title-count title-count
+          :tag-count tag-count
+          :link-count link-count
+          :ref-count ref-count)))
 
 (defun org-roam-db-update ()
   "Update the database."

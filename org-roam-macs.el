@@ -53,6 +53,23 @@
     (org-with-wide-buffer
      (secure-hash 'sha1 (current-buffer)))))
 
+(defmacro kisaragi-notes//for (message var sequence &rest body)
+  "Iterate BODY over SEQUENCE.
+
+VAR is the variable bound for each element in SEQUENCE. This is
+the X in (cl-loop for X in sequence).
+
+MESSAGE is a format string which must have two slots: the first
+is the 1-based index, the second is the total length of
+SEQUENCE."
+  (declare (indent 3))
+  `(cl-loop for ,var being the elements of ,sequence
+            using (index i)
+            with length = (length ,sequence)
+            do
+            (progn
+              (org-roam-message ,message (1+ i) length)
+              ,@body)))
 
 ;; From `orb--with-message!'
 (defmacro kisaragi-notes//with-message (message &rest body)
