@@ -45,23 +45,36 @@ PROMPT is passed to `org-read-date'."
       (remove-hook 'calendar-initial-window-hook #'kisaragi-diary//mark-calendar))))
 
 ;;;###autoload
-(defun kisaragi-diary/new-entry (&optional time)
+(defun kisaragi-diary/new-entry (&optional day? time)
   "Create a new diary entry in `kisaragi-diary/directory'.
 
-The entry will be stored as a file named after the current time.
+The entry will be stored as a file named after the current time
+under `kisaragi-diary/directory'. Example:
 
-To create an entry for a different time, pass the time in as the
-TIME argument. Interactively, a \\[universal-argument] will
-prompt for an ISO 8601 timestamp (YYYY-MM-DDThh:mm:ssZ)."
-  (interactive
-   (list (when current-prefix-arg
-           (parse-iso8601-time-string
-            (read-string "Timestamp: " (format-time-string "%FT%T%z"))))))
-  (let ((now (or time (current-time))))
+    diary/20211019T233513+0900.org
+
+When DAY? is non-nil (with a \\[universal-argument]), the file
+will be named as the current day instead. Example:
+
+    diary/20211019.org
+
+When TIME is non-nil, create an entry for TIME instead of
+`current-time'."
+  (interactive "P")
+  (let* ((now (or time (current-time)))
+         (filename (if day?
+                       (format-time-string "%Y%m%d" now)
+                     (format-time-string "%Y%m%dT%H%M%S%z" now)))
+         (title (if day?
+                    (format-time-string "%F" now)
+                  (format-time-string "%FT%T%z" now)))
+         ;; Put this here so if we allow different templates later
+         ;; it's easier to change
+         (ext "org"))
     (find-file (f-join org-roam-directory
                        kisaragi-diary/directory
-                       (format-time-string "%Y%m%dT%H%M%S%z.org" now)))
-    (insert "#+title: " (format-time-string "%FT%T%z" now) "\n")))
+                       (concat filename "." ext)))
+    (insert "#+title: " title "\n")))
 
 ;;;###autoload
 (defun kisaragi-diary/visit-entry-date (day)
@@ -93,7 +106,10 @@ whether an entry is from DAY or not."
                     day)
             :nosort))))
     (pcase (length file-list)
-      (0 (message "No entry from %s" day))
+      (0 (when (y-or-n-p
+                (format "No entry from %s. Create one?" day))
+           (kisaragi-diary/new-entry t (parse-iso8601-time-string
+                                        (concat day "T00:00:00")))))
       (1 (find-file (car file-list)))
       (_
        (let* ((title-file-alist
