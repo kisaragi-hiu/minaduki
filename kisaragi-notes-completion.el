@@ -29,6 +29,7 @@
 (require 'kisaragi-notes-utils)
 (require 'org-roam-db)
 
+;;;; Completion utils
 (defun org-roam--get-title-path-completions ()
   "Return an alist for completion.
 The car is the displayed title for completion, and the cdr is a
@@ -103,6 +104,7 @@ FILTER can either be a string or a function:
                 (v (list :path file-path :type type :ref ref)))
             (push (cons k v) completions)))))))
 
+;;;; `completing-read' completions
 (defun kisaragi-notes-completion//mark-category (seq category)
   "Mark SEQ as being in CATEGORY.
 
@@ -147,6 +149,69 @@ before being prompted for selection."
     (or (cdr (assoc selection completions))
         ;; When there is no match, return the title in an entry object
         `(:title ,selection))))
+
+;;;; `completion-at-point' completions
+
+(defun org-roam--get-titles ()
+  "Return all titles within Org-roam."
+  (mapcar #'car (org-roam-db-query [:select [titles:title] :from titles])))
+
+(defun org-roam-complete-everywhere ()
+  "`completion-at-point' function for word at point.
+This is active when `org-roam-completion-everywhere' is non-nil."
+  (let ((end (point))
+        (start (point))
+        (exit-fn (lambda (&rest _) nil))
+        collection)
+    (when (and org-roam-completion-everywhere
+               (thing-at-point 'word))
+      (let ((bounds (bounds-of-thing-at-point 'word)))
+        (setq start (car bounds)
+              end (cdr bounds)
+              collection #'org-roam--get-titles
+              exit-fn (lambda (str _status)
+                        (delete-char (- (length str)))
+                        (insert "[[roam:" str "]]")))))
+    (when collection
+      (let ((prefix (buffer-substring-no-properties start end)))
+        (list start end
+              (if (functionp collection)
+                  (completion-table-case-fold
+                   (completion-table-dynamic
+                    (lambda (_)
+                      (cl-remove-if (apply-partially #'string= prefix)
+                                    (funcall collection))))
+                   (not org-roam-completion-ignore-case))
+                collection)
+              :exit-function exit-fn)))))
+
+(defun org-roam-complete-tags-at-point ()
+  "`completion-at-point' function for Org-roam tags."
+  (let ((end (point))
+        (start (point))
+        (exit-fn (lambda (&rest _) nil))
+        collection)
+    (when (looking-back "^#\\+roam_tags:.*" (line-beginning-position))
+      (when (looking-at "\\>")
+        (setq start (save-excursion (skip-syntax-backward "w")
+                                    (point))
+              end (point)))
+      (setq collection #'kisaragi-notes-db//fetch-all-tags
+            exit-fn (lambda (str _status)
+                      (delete-char (- (length str)))
+                      (insert "\"" str "\""))))
+    (when collection
+      (let ((prefix (buffer-substring-no-properties start end)))
+        (list start end
+              (if (functionp collection)
+                  (completion-table-case-fold
+                   (completion-table-dynamic
+                    (lambda (_)
+                      (cl-remove-if (apply-partially #'string= prefix)
+                                    (funcall collection))))
+                   (not org-roam-completion-ignore-case))
+                collection)
+              :exit-function exit-fn)))))
 
 (provide 'kisaragi-notes-completion)
 

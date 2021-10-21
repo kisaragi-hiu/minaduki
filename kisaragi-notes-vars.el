@@ -81,6 +81,11 @@ Formatter may be a function that takes title as its only argument."
           (function :tag "Custom function"))
   :group 'org-roam)
 
+(defcustom org-roam-completion-everywhere nil
+  "If non-nil, provide completions from the current word at point."
+  :group 'org-roam
+  :type 'boolean)
+
 (defcustom org-roam-prefer-id-links t
   "If non-nil, use ID for linking instead where available."
   :type 'boolean
