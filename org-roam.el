@@ -75,14 +75,6 @@
 (require 'org-roam-graph)
 (require 'org-roam-link)
 
-;;;; Declarations
-;; From org-ref-core.el
-(defvar org-ref-cite-types)
-(declare-function org-ref-split-and-strip-string "ext:org-ref-utils" (string))
-;; From org-id.el
-(defvar org-id-link-to-org-use-id)
-(declare-function org-id-find-id-in-file "ext:org-id" (id file &optional markerp))
-
 ;;;; Customizable variables
 
 (defvar org-roam-completion-functions nil
