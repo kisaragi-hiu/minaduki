@@ -601,8 +601,7 @@ M-x info for more information at Org-roam > Installation > Post-Installation Tas
       (with-current-buffer buf
         (add-hook 'post-command-hook #'org-roam-buffer--update-maybe nil t)
         (add-hook 'before-save-hook #'org-roam-link--replace-link-on-save nil t)
-        (add-hook 'after-save-hook #'org-roam-db-update nil t)))
-    (org-roam-db-build-cache))
+        (add-hook 'after-save-hook #'org-roam-db-update nil t))))
    (t
     (setq org-execute-file-search-functions (delete 'org-roam--execute-file-row-col org-execute-file-search-functions))
     (remove-hook 'find-file-hook #'org-roam--find-file-hook-function)
@@ -623,6 +622,8 @@ M-x info for more information at Org-roam > Installation > Post-Installation Tas
         (remove-hook 'post-command-hook #'org-roam-buffer--update-maybe t)
         (remove-hook 'before-save-hook #'org-roam-link--replace-link-on-save t)
         (remove-hook 'after-save-hook #'org-roam-db-update t))))))
+
+(add-hook 'org-roam-mode-hook #'org-roam-db-build-cache)
 
 ;;; Interactive Commands
 ;;;###autoload
