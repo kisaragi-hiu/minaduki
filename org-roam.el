@@ -296,8 +296,8 @@ file."
     (add-hook 'post-command-hook #'org-roam-buffer--update-maybe nil t)
     (add-hook 'before-save-hook #'org-roam-link--replace-link-on-save nil t)
     (add-hook 'after-save-hook #'org-roam-db-update nil t)
-    (dolist (fn '(org-roam-complete-tags-at-point
-                  org-roam-complete-everywhere
+    (dolist (fn '(kisaragi-notes-completion/tags-at-point
+                  kisaragi-notes-completion/everywhere
                   org-roam-link-complete-at-point))
       (add-hook 'completion-at-point-functions fn nil t))
     (org-roam-buffer--update-maybe :redisplay t)))

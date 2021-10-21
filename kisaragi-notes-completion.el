@@ -152,66 +152,47 @@ before being prompted for selection."
 
 ;;;; `completion-at-point' completions
 
-(defun org-roam--get-titles ()
-  "Return all titles within Org-roam."
-  (mapcar #'car (org-roam-db-query [:select [titles:title] :from titles])))
-
-(defun org-roam-complete-everywhere ()
+(defun kisaragi-notes-completion/everywhere ()
   "`completion-at-point' function for word at point.
 This is active when `org-roam-completion-everywhere' is non-nil."
-  (let ((end (point))
-        (start (point))
-        (exit-fn (lambda (&rest _) nil))
-        collection)
-    (when (and org-roam-completion-everywhere
-               (thing-at-point 'word))
-      (let ((bounds (bounds-of-thing-at-point 'word)))
-        (setq start (car bounds)
-              end (cdr bounds)
-              collection #'org-roam--get-titles
-              exit-fn (lambda (str _status)
-                        (delete-char (- (length str)))
-                        (insert "[[roam:" str "]]")))))
-    (when collection
-      (let ((prefix (buffer-substring-no-properties start end)))
-        (list start end
-              (if (functionp collection)
-                  (completion-table-case-fold
-                   (completion-table-dynamic
-                    (lambda (_)
-                      (cl-remove-if (apply-partially #'string= prefix)
-                                    (funcall collection))))
-                   (not org-roam-completion-ignore-case))
-                collection)
-              :exit-function exit-fn)))))
+  (when (and org-roam-completion-everywhere
+             (thing-at-point 'word))
+    (let* ((bounds (bounds-of-thing-at-point 'word))
+           (start (car bounds))
+           (end (cdr bounds))
+           (prefix (buffer-substring-no-properties start end)))
+      (list start end
+            (--> (completion-table-dynamic
+                  ;; Get our own completion request string
+                  (lambda (_)
+                    (->> (-map #'car (org-roam-db-query [:select [title] :from titles]))
+                      (--remove (string= prefix it)))))
+              (completion-table-case-fold it (not org-roam-completion-ignore-case)))
+            :exit-function (lambda (str _status)
+                             (delete-char (- (length str)))
+                             (insert "[[roam:" str "]]"))))))
 
-(defun org-roam-complete-tags-at-point ()
+(defun kisaragi-notes-completion/tags-at-point ()
   "`completion-at-point' function for Org-roam tags."
   (let ((end (point))
-        (start (point))
-        (exit-fn (lambda (&rest _) nil))
-        collection)
+        (start (point)))
     (when (looking-back "^#\\+roam_tags:.*" (line-beginning-position))
       (when (looking-at "\\>")
-        (setq start (save-excursion (skip-syntax-backward "w")
-                                    (point))
+        (setq start (save-excursion
+                      (skip-syntax-backward "w")
+                      (point))
               end (point)))
-      (setq collection #'kisaragi-notes-db//fetch-all-tags
-            exit-fn (lambda (str _status)
-                      (delete-char (- (length str)))
-                      (insert "\"" str "\""))))
-    (when collection
       (let ((prefix (buffer-substring-no-properties start end)))
         (list start end
-              (if (functionp collection)
-                  (completion-table-case-fold
-                   (completion-table-dynamic
+              (--> (completion-table-dynamic
+                    ;; Get our own completion request string
                     (lambda (_)
-                      (cl-remove-if (apply-partially #'string= prefix)
-                                    (funcall collection))))
-                   (not org-roam-completion-ignore-case))
-                collection)
-              :exit-function exit-fn)))))
+                      (->> (kisaragi-notes-db//fetch-all-tags)
+                        (--remove (string= prefix it)))))
+                (completion-table-case-fold it (not org-roam-completion-ignore-case)))
+              :exit-function (lambda (str _status)
+                               (delete-char (- (length str)))
+                               (insert "\"" str "\"")))))))
 
 (provide 'kisaragi-notes-completion)
 
