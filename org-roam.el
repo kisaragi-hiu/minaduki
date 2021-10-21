@@ -73,7 +73,7 @@
 (require 'org-roam-db)
 (require 'org-roam-doctor)
 (require 'org-roam-graph)
-(require 'org-roam-link)
+(require 'kisaragi-notes-wikilink)
 
 ;;;; Utilities
 ;;;; File functions and predicates

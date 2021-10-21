@@ -1,4 +1,4 @@
-;;; org-roam-link.el --- Custom links for Org-roam -*- coding: utf-8; lexical-binding: t; -*-
+;;; kisaragi-notes-wikilink.el --- Titles and headlines as links -*- coding: utf-8; lexical-binding: t; -*-
 
 ;; Copyright © 2020 Jethro Kuan <jethrokuan95@gmail.com>
 ;;                  Alan Carroll
@@ -7,8 +7,27 @@
 ;;
 ;;; Commentary:
 ;;
-;; This adds the custom `roam:' link to Org-roam. `roam:' links allow linking to
-;; Org-roam files via their titles and headlines.
+;; Links that refer to titles of files instead of filepaths.
+;;
+;; Currently this is a copy of org-roam-link.el.
+;;
+;; In Org mode, these links are written as
+;;
+;;     [[roam:Title of my file]]
+;;
+;; which will be replaced with a normal link on save or when visited.
+;;
+;; With a headline:
+;;
+;;     [[roam:Title of my file*A headline]]
+;;
+;; it will be replaced with an ID link.
+;;
+;; Current plans:
+;;
+;; - rename roam: prefix to note:
+;; - support [[Title#Headline]] in Markdown
+;; - maybe support not replacing the links
 ;;
 ;;; Code:
 ;;;; Dependencies
@@ -307,5 +326,5 @@ DESC is the link description."
                                 (when headline-only-p "*")
                                 (org-link-escape str)))))))))
 
-(provide 'org-roam-link)
-;;; org-roam-link.el ends here
+(provide 'kisaragi-notes-wikilink)
+;;; kisaragi-notes-wikilink.el ends here

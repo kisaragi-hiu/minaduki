@@ -50,7 +50,7 @@
 (declare-function org-roam-mode               "org-roam")
 (declare-function org-roam--find-file         "org-roam")
 (declare-function org-roam-format-link        "org-roam")
-(declare-function org-roam-link-get-path      "org-roam-link")
+(declare-function org-roam-link-get-path      "kisaragi-notes-wikilink")
 
 (defcustom org-roam-buffer-position 'right
   "Position of `org-roam' buffer.
