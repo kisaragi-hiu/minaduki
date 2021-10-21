@@ -318,22 +318,6 @@ This is active when `org-roam-completion-everywhere' is non-nil."
 ;;;; Function Faces
 ;; These faces are used by `org-link-set-parameters', which take one argument,
 ;; which is the path.
-(defcustom org-roam-link-use-custom-faces t
-  "Define where to apply custom faces to Org-roam links.
-
-Valide values are:
-
-t            Use custom faces inside Org-roam notes (i.e. files in
-             `org-roam-directory'.)
-
-everywhere   Apply custom faces everywhere.
-
-Otherwise, do not apply custom faces to Org-roam links."
-  :type '(choice
-          (const :tag "Use custom faces inside Org-roam notes" t)
-          (const :tag "Apply custom faces everywhere" everywhere)
-          (const :tag "Do not apply custom faces" nil))
-  :group 'org-roam)
 
 (defun org-roam--file-link-face (path)
   "Conditional face for file: links.
