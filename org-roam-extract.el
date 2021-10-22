@@ -268,7 +268,6 @@ This is the format that emacsql expects when inserting into the database.
 FILE-FROM is typically the buffer file path, but this may not exist, for example
 in temp buffers.  In cases where this occurs, we do know the file path, and pass
 it as FILE-PATH."
-  (require 'org-ref nil t)
   (setq file-path (or file-path kisaragi-notes//file-name (buffer-file-name)))
   (cond
    ;; Using `derived-mode-p' maybe adds 3 seconds per call to the

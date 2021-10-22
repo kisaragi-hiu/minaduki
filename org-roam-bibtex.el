@@ -134,7 +134,7 @@ See `orb-edit-notes' for details."
 (defcustom orb-preformat-keywords
   '("citekey" "entry-type" "date" "pdf?" "note?" "file"
     "author" "editor" "author-abbrev" "editor-abbrev"
-    "author-or-editor-abbrev")
+    "author-or-editor-abbrev" "url")
   "A list of template prompt wildcards for preformatting.
 Any BibTeX field can be set for preformatting including
 `bibtex-completion` \"virtual\" fields such as '=key=' and
@@ -198,8 +198,9 @@ based on their extension."
           (const :tag "No" nil)
           (string :tag "Custom wildcard keyword")))
 
-(defcustom orb-citekey-format "cite:%s"
+(defcustom orb-citekey-format "%s"
   "Format string for the citekey.
+
 The citekey obtained from Helm-bibtex/Ivy-bibtex/Org-ref
 will be formatted as specified here."
   :type 'string
@@ -1019,22 +1020,6 @@ details."
 ;;;; Orb note actions
 ;; ============================================================================
 
-(orb-note-actions-defun default
-  (let ((f (cdr (assoc (completing-read name candidates) candidates))))
-    (funcall f (list citekey))))
-
-(orb-note-actions-defun ido
-  (let* ((c (cl-map 'list 'car candidates))
-         (f (cdr (assoc (ido-completing-read name c) candidates))))
-    (funcall f (list citekey))))
-
-(defun orb-note-actions--run (interface citekey)
-  "Run note actions on CITEKEY with INTERFACE."
-  (let ((fun (intern (concat "orb-note-actions-" (symbol-name interface)))))
-    (if (fboundp fun)
-        (funcall fun citekey)
-      (orb-warning "Note actions interface %s not available" interface))))
-
 ;;;###autoload
 (defun orb-note-actions (&optional citekey)
   "Prompt for note-related actions on CITEKEY.
@@ -1046,12 +1031,15 @@ modified, there is a number of prefined extra actions
 `orb-note-actions-extra' that can be customized.  Additionally,
 user actions can be set in `orb-note-actions-user'."
   (interactive)
-  (let ((citekey (or citekey
-                     (cdar (kisaragi-notes-extract/refs)))))
-    (if citekey
-        (orb-note-actions--run 'default citekey)
-      (user-error "Could not retrieve the citekey.  Probably no #+ROAM_KEY: in\
-the buffer or package Org Ref not installed"))))
+  (-if-let* ((citekey (or citekey (cdar (kisaragi-notes-extract/refs)))))
+      (let* ((prompt (org-ref-format-entry citekey))
+             (candidates (append orb-note-actions-default
+                                 orb-note-actions-extra
+                                 orb-note-actions-user))
+             (selection (completing-read prompt candidates))
+             (func (cdr (assoc selection candidates))))
+        (funcall func (list citekey)))
+    (user-error "Could not retrieve the citekey, is ROAM_KEY specified?")))
 
 ;;;;;; Note actions
 
@@ -1128,6 +1116,8 @@ Otherwise, behave as if called interactively."
                         #'orb-edit-notes-ad)
          (advice-remove 'bibtex-completion-parse-bibliography
                         #'orb-bibtex-completion-parse-bibliography-ad))))
+
+(org-link-set-parameters "cite" :follow #'orb-note-actions)
 
 (define-key org-roam-bibtex-mode-map (kbd "C-c ) a") #'orb-note-actions)
 (define-key org-roam-bibtex-mode-map (kbd "C-c ) i") #'orb-insert)

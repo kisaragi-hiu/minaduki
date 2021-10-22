@@ -50,32 +50,6 @@
 (defvar orb-citekey-format)
 
 ;; ============================================================================
-;;;; Macros
-;; ============================================================================
-
-(defmacro orb-note-actions-defun (interface &rest body)
-  "Return a function definition for INTERFACE.
-Function name takes a form of orb-note-actions--INTERFACE.
-A simple docstring is constructed and BODY is injected into a
-`let' form, which has two variables bound, NAME and
-CANDIDATES.  NAME is a string formatted with
-`org-ref-format-entry' and CANDIDATES is a cons cell alist
-constructed from `orb-note-actions-default',
-`orb-note-actions-extra', and `orb-note-actions-user'."
-  (declare (indent 1) (debug (symbolp &rest form)))
-  (let* ((interface-name (symbol-name interface))
-         (fun-name (intern (concat "orb-note-actions-" interface-name))))
-    `(defun ,fun-name (citekey)
-       ,(format "Provide note actions using %s interface.
-CITEKEY is the citekey." (capitalize interface-name))
-       (let ((name (org-ref-format-entry citekey)) ;; TODO: make a native format function
-             (candidates
-              (append orb-note-actions-default
-                      orb-note-actions-extra
-                      orb-note-actions-user)))
-         ,@body))))
-
-;; ============================================================================
 ;;;; General utilities
 ;; ============================================================================
 
