@@ -30,6 +30,8 @@
 
 (require 'kisaragi-notes-vars)
 
+(require 'kisaragi-notes-templates)
+
 (defcustom kisaragi-diary/directory "diary/"
   "A path under `org-roam-directory' to store new diary entries."
   :group 'org-roam
@@ -54,7 +56,9 @@ under `kisaragi-diary/directory'. Example:
     diary/20211019T233513+0900.org
 
 When DAY? is non-nil (with a \\[universal-argument]), the file
-will be named as the current day instead. Example:
+will be named as the current day instead. In addition, the
+\"daily\" template under `kisaragi-notes/templates-directory'
+will be used. Example:
 
     diary/20211019.org
 
@@ -74,7 +78,10 @@ When TIME is non-nil, create an entry for TIME instead of
     (find-file (f-join org-roam-directory
                        kisaragi-diary/directory
                        (concat filename "." ext)))
-    (insert "#+title: " title "\n")))
+    ;; TODO: Markdown templates -> Markdown files
+    (insert
+     (or (and day? (kisaragi-notes-templates//make-note "daily"))
+         (concat "#+title: " title "\n")))))
 
 ;;;###autoload
 (defun kisaragi-diary/visit-entry-date (day)

@@ -25,6 +25,13 @@ All Org files, at any level of nesting, are considered part of the Org-roam."
   :type 'directory
   :group 'org-roam)
 
+(defcustom kisaragi-notes/templates-directory (f-slash
+                                               (f-join
+                                                org-roam-directory "templates"))
+  "Where to look for templates."
+  :group 'org-roam
+  :type 'string)
+
 (defcustom org-roam-encrypt-files nil
   "Whether to encrypt new files.  If true, create files with .gpg extension."
   :type 'boolean
