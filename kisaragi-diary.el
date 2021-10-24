@@ -80,7 +80,15 @@ When TIME is non-nil, create an entry for TIME instead of
                        (concat filename "." ext)))
     ;; TODO: Markdown templates -> Markdown files
     (insert
-     (or (and day? (kisaragi-notes-templates//make-note "daily"))
+     (or (and day?
+              (let (;; This is how you pass arguments to org-capture-fill-templates
+                    ;; It's either this or `org-capture-put'; this is
+                    ;; less ugly.
+                    (org-capture-plist (list :default-time now))
+                    ;; Since we're creating a daily note, this
+                    ;; variable isn't expected.
+                    (org-extend-today-until 0))
+                (kisaragi-notes-templates//make-note "daily")))
          (concat "#+title: " title "\n")))))
 
 ;;;###autoload
