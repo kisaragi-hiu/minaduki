@@ -93,7 +93,7 @@ The Org-roam capture-templates  builds on the default behaviours of
 
 2. The `:file-name' key is added, which defines the naming format
    to use when creating new notes. This file-name is relative to
-   `org-roam-directory', and is without the file-extension.
+   `org-directory', and is without the file-extension.
 
 3. The `:head' key is added, which contains the template that is
    inserted upon the creation of a new file. This is where you
@@ -397,7 +397,7 @@ The file is saved if the original value of :no-save is not t and
      (if org-roam-encrypt-files
          (concat file ".gpg")
        file)
-     org-roam-directory)))
+     org-directory)))
 
 (defun org-roam-capture--new-file (&optional allow-existing-file-p)
   "Return the path to file during an Org-roam capture.

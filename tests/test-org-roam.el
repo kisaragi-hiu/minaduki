@@ -26,8 +26,8 @@
 (require 'dash)
 
 (defun test-org-roam--abs-path (file-path)
-  "Get absolute FILE-PATH from `org-roam-directory'."
-  (expand-file-name file-path org-roam-directory))
+  "Get absolute FILE-PATH from `org-directory'."
+  (expand-file-name file-path org-directory))
 
 (defun test-org-roam--find-file (path)
   "PATH."
@@ -35,16 +35,16 @@
     (make-directory (file-name-directory path) t)
     (find-file path)))
 
-(defvar test-org-roam-directory (expand-file-name "tests/roam-files")
+(defvar test-repository (expand-file-name "tests/roam-files")
   "Directory containing org-roam test org files.")
 
 (defun test-org-roam--init ()
   "."
-  (let ((original-dir test-org-roam-directory)
+  (let ((original-dir test-repository)
         (new-dir (expand-file-name (make-temp-name "org-roam") temporary-file-directory))
         (org-roam-verbose nil))
     (copy-directory original-dir new-dir)
-    (setq org-roam-directory new-dir)
+    (setq org-directory new-dir)
     (org-roam-mode +1)
     (sleep-for 2)))
 

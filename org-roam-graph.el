@@ -37,7 +37,6 @@
 (require 'org-roam-db)
 
 ;;;; Declarations
-(defvar org-roam-directory)
 (defvar org-roam-mode)
 (declare-function org-roam-mode              "org-roam")
 

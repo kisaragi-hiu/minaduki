@@ -30,8 +30,8 @@
   "Path to zip for test org-roam files.")
 
 (defun test-org-roam-perf--abs-path (file-path)
-  "Get absolute FILE-PATH from `org-roam-directory'."
-  (expand-file-name file-path org-roam-directory))
+  "Get absolute FILE-PATH from `org-directory'."
+  (expand-file-name file-path org-directory))
 
 (defun test-org-roam-perf--init ()
   "."
@@ -39,7 +39,7 @@
          (zip-file-loc (concat temp-loc ".zip"))
          (_ (url-copy-file test-org-roam-perf-zip-url zip-file-loc))
          (_ (shell-command (format "mkdir -p %s && unzip -j -qq %s -d %s" temp-loc zip-file-loc temp-loc))))
-    (setq org-roam-directory temp-loc)))
+    (setq org-directory temp-loc)))
 
 (describe "Cache Build"
   (it "cache build from scratch time to be acceptable"

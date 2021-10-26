@@ -117,8 +117,8 @@ Use Ripgrep if we can find it."
     (org-roam--list-files-elisp dir)))
 
 (defun org-roam--list-all-files ()
-  "Return a list of all Org-roam files within `org-roam-directory'."
-  (org-roam--list-files (expand-file-name org-roam-directory)))
+  "Return a list of all Org-roam files within `org-directory'."
+  (org-roam--list-files (expand-file-name org-directory)))
 
 ;;;; Title/Path/Slug conversion
 
@@ -575,7 +575,7 @@ one."
       ;; FIXME: Hardcodes choice of Org
       (with-current-buffer (find-file-noselect
                             (-> (kisaragi-notes//title-to-slug title)
-                              (f-expand org-roam-directory)
+                              (f-expand org-directory)
                               (concat ".org")))
         (insert "#+TITLE: " title "\n")
         (pop-to-buffer-same-window (current-buffer))))))
@@ -605,9 +605,9 @@ one."
 
 ;;;###autoload
 (defun org-roam-find-directory ()
-  "Find and open `org-roam-directory'."
+  "Find and open `org-directory'."
   (interactive)
-  (org-roam--find-file org-roam-directory))
+  (org-roam--find-file org-directory))
 
 ;;;###autoload
 (defun org-roam-find-ref (arg &optional filter)
@@ -708,9 +708,9 @@ See `org-roam-insert' for details."
 
 ;;;###autoload
 (defun org-roam-jump-to-index ()
-  "Find the index file in `org-roam-directory'.
+  "Find the index file in `org-directory'.
 The path to the index can be defined in `org-roam-index-file'.
-Otherwise, the function will look in your `org-roam-directory'
+Otherwise, the function will look in your `org-directory'
 for a note whose title is 'Index'.  If it does not exist, the
 command will offer you to create one."
   (interactive)
@@ -722,7 +722,7 @@ command will offer you to create one."
                       (wrong-type (user-error
                                    "`org-roam-index-file' must be a string or a function, not %s"
                                    wrong-type)))
-                 (expand-file-name it org-roam-directory))))
+                 (expand-file-name it org-directory))))
     (if (and index
              (f-exists? index))
         (org-roam--find-file index)
@@ -852,7 +852,7 @@ the executable 'rg' in variable `exec-path'."
                                        (mapconcat (lambda (title)
                                                     (format "|(\\b%s\\b)" (shell-quote-argument title)))
                                                   titles ""))
-                               org-roam-directory))
+                               org-directory))
            (file-loc (buffer-file-name))
            (buf (get-buffer-create "*org-roam unlinked references*"))
            (results (split-string (shell-command-to-string rg-command) "\n"))
@@ -878,7 +878,7 @@ the executable 'rg' in variable `exec-path'."
                     (match (match-string 4 line)))
                 (when (and match
                            (member (downcase match) (mapcar #'downcase titles))
-                           (not (f-equal-p (expand-file-name file org-roam-directory)
+                           (not (f-equal-p (expand-file-name file org-directory)
                                            file-loc)))
                   (let ((rowcol (concat row ":" col)))
                     (insert "- "

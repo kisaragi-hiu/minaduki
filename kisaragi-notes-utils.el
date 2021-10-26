@@ -129,14 +129,14 @@ If FILE is not specified, use the current buffer's file-path."
       (and
        (org-roam--org-file-p path)
        (not (kisaragi-notes//excluded? path))
-       (f-descendant-of-p path (expand-file-name org-roam-directory))))))
+       (f-descendant-of-p path (expand-file-name org-directory))))))
 
 ;;;; Title/Path/Slug conversion
 
 (defun kisaragi-notes//path-to-title (path)
   "Convert PATH to a string that's suitable as a title."
   (-> path
-    (f-relative (f-expand org-roam-directory))
+    (f-relative (f-expand org-directory))
     f-no-ext))
 
 (defun kisaragi-notes//title-to-slug (title)

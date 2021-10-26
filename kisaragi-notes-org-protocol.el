@@ -38,7 +38,7 @@
 ;;
 ;;    emacsclient 'org-protocol://notes?file=blender.org'
 ;;
-;; will open /path/to/org-roam-directory/blender.org.
+;; will open /path/to/org-directory/blender.org.
 ;;
 ;; One way to set up org-protocol:// links on Linux, assuming you
 ;; always want to use `emacsclient -c':
@@ -74,7 +74,7 @@ Arguments are passed in as a plist like (:file FILE :key KEY).
 This corresponds to the org-protocol URL
 \"org-protocol://notes?file=FILE&key=KEY\".
 
-FILE: a path relative to `org-roam-directory'.
+FILE: a path relative to `org-directory'.
 KEY: a cite key corresponding to the ROAM_KEY keyword
 
 FILE takes precedence over KEY.
@@ -84,7 +84,7 @@ Example:
 emacsclient 'org-protocol://notes?file=characters/闇音レンリ.org'
 emacsclient 'org-protocol://notes?key=banjoazusa2020'"
   (cond (file
-         (find-file (f-join org-roam-directory file)))
+         (find-file (f-join org-directory file)))
         (key
          (orb-edit-notes key))))
 
