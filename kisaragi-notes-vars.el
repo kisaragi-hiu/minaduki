@@ -6,6 +6,7 @@
 
 ;;; Code:
 
+(require 'f)
 (require 'org)
 
 ;;;; User Options

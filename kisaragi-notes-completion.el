@@ -24,6 +24,7 @@
 ;;; Code:
 
 (require 'dash)
+(require 'f)
 
 (require 'kisaragi-notes-vars)
 (require 'kisaragi-notes-utils)
