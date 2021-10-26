@@ -50,8 +50,8 @@
 
 (defun test-org-roam--teardown ()
   (org-roam-mode -1)
-  (delete-file org-roam-db-location)
-  (org-roam-db--close))
+  (delete-file kisaragi-notes/db-location)
+  (kisaragi-notes-db//close))
 
 (describe "Utils"
   (it "converts a title to a slug"

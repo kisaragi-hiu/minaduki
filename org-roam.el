@@ -503,7 +503,7 @@ Ensure it is installed and can be found within `exec-path'. \
 M-x info for more information at Org-roam > Installation > Post-Installation Tasks."))
     (add-to-list 'org-execute-file-search-functions 'org-roam--execute-file-row-col)
     (add-hook 'find-file-hook #'org-roam--find-file-hook-function)
-    (add-hook 'kill-emacs-hook #'org-roam-db--close-all)
+    (add-hook 'kill-emacs-hook #'kisaragi-notes-db//close)
     (add-hook 'org-open-at-point-functions #'org-roam-open-id-at-point)
     (when (and (not org-roam-db-file-update-timer)
                (eq org-roam-db-update-method 'idle-timer))
@@ -522,7 +522,7 @@ M-x info for more information at Org-roam > Installation > Post-Installation Tas
    (t
     (setq org-execute-file-search-functions (delete 'org-roam--execute-file-row-col org-execute-file-search-functions))
     (remove-hook 'find-file-hook #'org-roam--find-file-hook-function)
-    (remove-hook 'kill-emacs-hook #'org-roam-db--close-all)
+    (remove-hook 'kill-emacs-hook #'kisaragi-notes-db//close)
     (remove-hook 'org-open-at-point-functions #'org-roam-open-id-at-point)
     (when org-roam-db-file-update-timer
       (cancel-timer org-roam-db-file-update-timer))
@@ -532,7 +532,7 @@ M-x info for more information at Org-roam > Installation > Post-Installation Tas
     (when (fboundp 'org-link-set-parameters)
       (dolist (face '("file" "id"))
         (org-link-set-parameters face :face 'org-link)))
-    (org-roam-db--close-all)
+    (kisaragi-notes-db//close)
     ;; Disable local hooks for all org-roam buffers
     (dolist (buf (org-roam--get-roam-buffers))
       (with-current-buffer buf

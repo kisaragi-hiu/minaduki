@@ -48,7 +48,6 @@
 (require 'kisaragi-notes-utils)
 (require 'kisaragi-notes-vars)
 
-(defvar org-roam-directory)
 (defvar org-roam-enable-headline-linking)
 
 (defvar org-agenda-files)
@@ -60,12 +59,12 @@
 (declare-function org-roam--list-all-files                 "org-roam")
 
 ;;;; Options
-(defcustom org-roam-db-location (expand-file-name "org-roam.db" user-emacs-directory)
-  "The full path to file where the Org-roam database is stored.
-If this is non-nil, the Org-roam sqlite database is saved here.
+(defcustom kisaragi-notes/db-location (expand-file-name "org-roam.db" user-emacs-directory)
+  "Full path to the cache database.
 
-It is the user's responsibility to set this correctly, especially
-when used with multiple Org-roam instances."
+All cache will be saved here regardless of which project a note
+file might belong to, and there is no need to change this
+per-project."
   :type 'string
   :group 'org-roam)
 
@@ -86,13 +85,11 @@ value like `most-positive-fixnum'."
 
 (defconst org-roam-db--version 10)
 
-(defvar org-roam-db--connection (make-hash-table :test #'equal)
-  "Database connection to Org-roam database.")
+(defvar kisaragi-notes-db//connection nil
+  "Database connection to the cache.")
 
-(defvar org-roam-db-dirty nil
-  "Whether the org-roam database is dirty and requires an update.
-Contains pairs of `org-roam-directory' and `org-roam-db-location'
-so that multi-directories are updated.")
+(defvar kisaragi-notes-db//dirty nil
+  "Whether the cache needs to be updated.")
 
 (defcustom org-roam-db-update-method 'idle-timer
   "Method to update the Org-roam database.
@@ -114,25 +111,18 @@ so that multi-directories are updated.")
 
 ;;;; Core Functions
 
-(defun org-roam-db--get-connection ()
-  "Return the database connection, if any."
-  (gethash (expand-file-name org-roam-directory)
-           org-roam-db--connection))
-
 (defun org-roam-db ()
   "Entrypoint to the Org-roam sqlite database.
 Initializes and stores the database, and the database connection.
 Performs a database upgrade when required."
-  (unless (and (org-roam-db--get-connection)
-               (emacsql-live-p (org-roam-db--get-connection)))
-    (let ((init-db (not (file-exists-p org-roam-db-location))))
-      (make-directory (file-name-directory org-roam-db-location) t)
-      (let ((conn (emacsql-sqlite3 org-roam-db-location)))
+  (unless (and kisaragi-notes-db//connection
+               (emacsql-live-p kisaragi-notes-db//connection))
+    (let ((initialize? (not (file-exists-p kisaragi-notes/db-location))))
+      (make-directory (file-name-directory kisaragi-notes/db-location) t)
+      (let ((conn (emacsql-sqlite3 kisaragi-notes/db-location)))
         (set-process-query-on-exit-flag (emacsql-process conn) nil)
-        (puthash (expand-file-name org-roam-directory)
-                 conn
-                 org-roam-db--connection)
-        (when init-db
+        (setq kisaragi-notes-db//connection conn)
+        (when initialize?
           (org-roam-db--init conn))
         (let* ((version (caar (emacsql conn "PRAGMA user_version")))
                (version (org-roam-db--upgrade-maybe conn version)))
@@ -146,7 +136,7 @@ Performs a database upgrade when required."
             (emacsql-close conn)
             (error "BUG: The Org-roam database scheme changed %s"
                    "and there is no upgrade path")))))))
-  (org-roam-db--get-connection))
+  kisaragi-notes-db//connection)
 
 ;;;; Entrypoint: (org-roam-db-query)
 (defun org-roam-db-query (sql &rest args)
@@ -187,12 +177,12 @@ SQL can be either the emacsql vector representation, or a string."
       (file :not-null)
       (type :not-null)])))
 
-(defun org-roam-db--init (db)
-  "Initialize database DB with the correct schema and user version."
-  (emacsql-with-transaction db
+(defun org-roam-db--init (conn)
+  "Initialize database connection CONN with the correct schema and user version."
+  (emacsql-with-transaction conn
     (pcase-dolist (`(,table . ,schema) org-roam-db--table-schemata)
-      (emacsql db [:create-table $i1 $S2] table schema))
-    (emacsql db (format "PRAGMA user_version = %s" org-roam-db--version))))
+      (emacsql conn [:create-table $i1 $S2] table schema))
+    (emacsql conn (format "PRAGMA user_version = %s" org-roam-db--version))))
 
 (defun org-roam-db--upgrade-maybe (db version)
   "Upgrades the database schema for DB, if VERSION is old."
@@ -205,19 +195,11 @@ SQL can be either the emacsql vector representation, or a string."
           (org-roam-db-build-cache t))))
   version)
 
-(defun org-roam-db--close (&optional db)
-  "Closes the database connection for database DB.
-If DB is nil, closes the database connection for the database in
-the current `org-roam-directory'."
-  (unless db
-    (setq db (org-roam-db--get-connection)))
-  (when (and db (emacsql-live-p db))
-    (emacsql-close db)))
-
-(defun org-roam-db--close-all ()
-  "Closes all database connections made by Org-roam."
-  (dolist (conn (hash-table-values org-roam-db--connection))
-    (org-roam-db--close conn)))
+(defun kisaragi-notes-db//close ()
+  "Close the connection with the cache database."
+  (let ((conn kisaragi-notes-db//connection))
+    (when (and conn (emacsql-live-p conn))
+      (emacsql-close conn))))
 
 ;;;; Timer-based updating
 (defvar org-roam-db-file-update-timer nil
@@ -225,21 +207,20 @@ the current `org-roam-directory'."
 
 (defun org-roam-db-mark-dirty ()
   "Mark the Org-roam database as dirty."
-  (add-to-list 'org-roam-db-dirty (list org-roam-directory org-roam-db-location)
-               nil #'equal))
+  (setq kisaragi-notes-db//dirty t))
 
 (defun org-roam-db-update-cache-on-timer ()
   "Update the cache if the database is dirty.
 This function is called on `org-roam-db-file-update-timer'."
-  (pcase-dolist (`(,org-roam-directory ,org-roam-db-location) org-roam-db-dirty)
+  (when kisaragi-notes-db//dirty
     (org-roam-db-build-cache))
-  (setq org-roam-db-dirty nil))
+  (setq kisaragi-notes-db//dirty nil))
 
 ;;;; Database API
 ;;;;; Initialization
 (defun org-roam-db--initialized-p ()
   "Whether the Org-roam cache has been initialized."
-  (and (file-exists-p org-roam-db-location)
+  (and (file-exists-p kisaragi-notes/db-location)
        (> (caar (org-roam-db-query [:select (funcall count) :from titles]))
           0)))
 
@@ -252,7 +233,7 @@ This function is called on `org-roam-db-file-update-timer'."
 (defun org-roam-db-clear ()
   "Clears all entries in the Org-roam cache."
   (interactive)
-  (when (file-exists-p org-roam-db-location)
+  (when (file-exists-p kisaragi-notes/db-location)
     (dolist (table (mapcar #'car org-roam-db--table-schemata))
       (org-roam-db-query `[:delete :from ,table]))))
 
@@ -547,11 +528,11 @@ If the file exists, update the cache with information."
         (org-roam-db--insert-links 'update)))))
 
 (defun org-roam-db-build-cache (&optional force)
-  "Build the cache for `org-roam-directory'.
+  "Build the cache for `org-directory'.
 If FORCE, force a rebuild of the cache from scratch."
   (interactive "P")
-  (when force (delete-file org-roam-db-location))
-  (org-roam-db--close) ;; Force a reconnect
+  (when force (delete-file kisaragi-notes/db-location))
+  (kisaragi-notes-db//close) ;; Force a reconnect
   (org-roam-db) ;; To initialize the database, no-op if already initialized
   (let* ((gc-cons-threshold org-roam-db-gc-threshold)
          (org-agenda-files nil)
