@@ -33,7 +33,7 @@
 (require 'kisaragi-notes-templates)
 
 (defcustom kisaragi-diary/directory "diary/"
-  "A path under `org-roam-directory' to store new diary entries."
+  "A path under `org-directory' to store new diary entries."
   :group 'org-roam
   :type 'string)
 
@@ -75,7 +75,7 @@ When TIME is non-nil, create an entry for TIME instead of
          ;; Put this here so if we allow different templates later
          ;; it's easier to change
          (ext "org"))
-    (find-file (f-join org-roam-directory
+    (find-file (f-join org-directory
                        kisaragi-diary/directory
                        (concat filename "." ext)))
     ;; TODO: Markdown templates -> Markdown files
@@ -113,7 +113,7 @@ whether an entry is from DAY or not."
       (kisaragi-notes//today))))
   (setq day (s-replace "-" "" day))
   (let ((file-list
-         (-some--> org-roam-directory
+         (-some--> org-directory
            (f-join it kisaragi-diary/directory)
            (directory-files
             it :full
@@ -122,7 +122,7 @@ whether an entry is from DAY or not."
             :nosort))))
     (pcase (length file-list)
       (0 (when (y-or-n-p
-                (format "No entry from %s. Create one?" day))
+                (format "No entry from %s. Create one? " day))
            (kisaragi-diary/new-entry t (parse-iso8601-time-string
                                         (concat day "T00:00:00")))))
       (1 (find-file (car file-list)))
@@ -156,7 +156,7 @@ Implementation of `diary-mark-entries'."
   (interactive)
   (calendar-redraw)
   (cl-loop for file in (directory-files
-                        (f-join org-roam-directory kisaragi-diary/directory))
+                        (f-join org-directory kisaragi-diary/directory))
            when (>= (length file) 8)
            when (s-match (rx bos
                              (group digit digit digit digit)

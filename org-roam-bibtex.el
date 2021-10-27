@@ -223,7 +223,8 @@ possibly other things."
           (const title))
   :group 'org-roam-bibtex)
 
-(defcustom orb-persp-project `("notes" . ,org-roam-directory)
+;; TODO: define a `kisaragi-notes/literature-note-directory'
+(defcustom orb-persp-project `("notes" . ,org-directory)
   "Perspective name and path to the project with bibliography notes.
 A cons cell (PERSP-NAME . PROJECT-PATH).  Only relevant when
 `orb-switch-persp' is set to t.

@@ -67,7 +67,7 @@ This function hooks into `org-open-at-point' via
       (cond ((org-roam-id-open id)
              t)
             ;; Ask whether to parse `org-id-files'
-            ((not (y-or-n-p (concat "ID was not found in `org-roam-directory' nor in `org-id-locations'.\n"
+            ((not (y-or-n-p (concat "ID was not found in `org-directory' nor in `org-id-locations'.\n"
                                     "Search in `org-id-files'? ")))
              t)
             ;; Conditionally fall back to default behaviour

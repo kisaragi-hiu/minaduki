@@ -129,14 +129,14 @@ If FILE is not specified, use the current buffer's file-path."
       (and
        (org-roam--org-file-p path)
        (not (kisaragi-notes//excluded? path))
-       (f-descendant-of-p path (expand-file-name org-roam-directory))))))
+       (f-descendant-of-p path (expand-file-name org-directory))))))
 
 ;;;; Title/Path/Slug conversion
 
 (defun kisaragi-notes//path-to-title (path)
   "Convert PATH to a string that's suitable as a title."
   (-> path
-    (f-relative (f-expand org-roam-directory))
+    (f-relative (f-expand org-directory))
     f-no-ext))
 
 (defun kisaragi-notes//title-to-slug (title)
@@ -237,13 +237,13 @@ Kills the buffer if KEEP-BUF-P is nil, and FILE is not yet visited."
 
 (defmacro org-roam--with-temp-buffer (file &rest body)
   "Execute BODY within a temp buffer.
-Like `with-temp-buffer', but propagates `org-roam-directory'.
+Like `with-temp-buffer', but propagates `org-directory'.
 If FILE, set `org-roam-temp-file-name' to file and insert its contents."
   (declare (indent 1) (debug t))
-  (let ((current-org-roam-directory (make-symbol "current-org-roam-directory")))
-    `(let ((,current-org-roam-directory org-roam-directory))
+  (let ((current-org-directory (make-symbol "current-org-directory")))
+    `(let ((,current-org-directory org-directory))
        (with-temp-buffer
-         (let ((org-roam-directory ,current-org-roam-directory)
+         (let ((org-directory ,current-org-directory)
                (org-mode-hook nil)
                (org-inhibit-startup t))
            (org-mode)

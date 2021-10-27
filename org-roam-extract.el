@@ -423,26 +423,27 @@ If NESTED, return the first successful result from SOURCES."
            (cl-return))))
      (-uniq coll))))
 
+;; TODO: use project root
 (defun org-roam--extract-tags-all-directories (file)
   "Extract tags from using the directory path FILE.
-All sub-directories relative to `org-roam-directory' are used as tags."
+All sub-directories relative to `org-directory' are used as tags."
   (when-let ((dir-relative (file-name-directory
-                            (file-relative-name file (expand-file-name org-roam-directory)))))
+                            (f-relative file (f-expand org-directory)))))
     (f-split dir-relative)))
 
 (defun org-roam--extract-tags-last-directory (file)
   "Extract tags from using the directory path FILE.
 The final directory component is used as a tag."
   (when-let ((dir-relative (file-name-directory
-                            (file-relative-name file (expand-file-name org-roam-directory)))))
+                            (f-relative file (f-expand org-directory)))))
     (last (f-split dir-relative))))
 
 (defun org-roam--extract-tags-first-directory (file)
   "Extract tags from path FILE.
-The first directory component after `org-roam-directory' is used as a
+The first directory component after `org-directory' is used as a
 tag."
   (when-let ((dir-relative (file-name-directory
-                            (file-relative-name file (expand-file-name org-roam-directory)))))
+                            (f-relative file (f-expand org-directory)))))
     (list (car (f-split dir-relative)))))
 
 (defun org-roam--extract-tags-prop (_file)
@@ -476,7 +477,7 @@ If file-path FILE is non-nil, use it to determine the directory tags.
 
 Tags are obtained via:
 
-1. Directory tags: Relative to `org-roam-directory': each folder
+1. Directory tags: Relative to `org-directory': each folder
    path is considered a tag.
 2. The key #+roam_tags."
   (let* ((file (or file (buffer-file-name (buffer-base-buffer))))

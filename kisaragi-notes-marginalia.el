@@ -26,7 +26,7 @@ title."
        ((when .tags
           (format "(%s)" (s-join "," .tags)))
         :width 30 :face 'marginalia-list)
-       ((f-relative .path org-roam-directory)
+       ((f-relative .path org-directory)
         :truncate 40 :face 'marginalia-file-name)))))
 
 (add-to-list 'marginalia-annotator-registry

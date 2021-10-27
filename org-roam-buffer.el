@@ -357,18 +357,20 @@ ORIG-PATH is the path where the CONTENT originated."
                          nil t nil 2))))
     (buffer-string)))
 
+;; TODO: resolve by project root
+;; source project root & target project root can still be different
 (defun org-roam-buffer-update ()
   "Render the backlinks buffer."
   (interactive)
   (org-roam-db--ensure-built)
-  (let* ((source-org-roam-directory org-roam-directory))
+  (let* ((source-org-directory org-directory))
     (with-current-buffer kisaragi-notes-buffer/name
-      ;; When dir-locals.el is used to override org-roam-directory,
-      ;; org-roam-buffer should have a different local org-roam-directory and
+      ;; When dir-locals.el is used to override org-directory,
+      ;; org-roam-buffer should have a different local org-directory and
       ;; default-directory, as relative links are relative from the overridden
-      ;; org-roam-directory.
-      (setq-local org-roam-directory source-org-roam-directory)
-      (setq-local default-directory source-org-roam-directory)
+      ;; org-directory.
+      (setq-local org-directory source-org-directory)
+      (setq-local default-directory source-org-directory)
       ;; Locally overwrite the file opening function to re-use the
       ;; last window org-roam was called from
       (setq-local org-link-frame-setup

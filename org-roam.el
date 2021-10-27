@@ -117,8 +117,8 @@ Use Ripgrep if we can find it."
     (org-roam--list-files-elisp dir)))
 
 (defun org-roam--list-all-files ()
-  "Return a list of all Org-roam files within `org-roam-directory'."
-  (org-roam--list-files (expand-file-name org-roam-directory)))
+  "Return a list of all Org-roam files within `org-directory'."
+  (org-roam--list-files (expand-file-name org-directory)))
 
 ;;;; Title/Path/Slug conversion
 
@@ -503,7 +503,7 @@ Ensure it is installed and can be found within `exec-path'. \
 M-x info for more information at Org-roam > Installation > Post-Installation Tasks."))
     (add-to-list 'org-execute-file-search-functions 'org-roam--execute-file-row-col)
     (add-hook 'find-file-hook #'org-roam--find-file-hook-function)
-    (add-hook 'kill-emacs-hook #'org-roam-db--close-all)
+    (add-hook 'kill-emacs-hook #'kisaragi-notes-db//close)
     (add-hook 'org-open-at-point-functions #'org-roam-open-id-at-point)
     (when (and (not org-roam-db-file-update-timer)
                (eq org-roam-db-update-method 'idle-timer))
@@ -522,7 +522,7 @@ M-x info for more information at Org-roam > Installation > Post-Installation Tas
    (t
     (setq org-execute-file-search-functions (delete 'org-roam--execute-file-row-col org-execute-file-search-functions))
     (remove-hook 'find-file-hook #'org-roam--find-file-hook-function)
-    (remove-hook 'kill-emacs-hook #'org-roam-db--close-all)
+    (remove-hook 'kill-emacs-hook #'kisaragi-notes-db//close)
     (remove-hook 'org-open-at-point-functions #'org-roam-open-id-at-point)
     (when org-roam-db-file-update-timer
       (cancel-timer org-roam-db-file-update-timer))
@@ -532,7 +532,7 @@ M-x info for more information at Org-roam > Installation > Post-Installation Tas
     (when (fboundp 'org-link-set-parameters)
       (dolist (face '("file" "id"))
         (org-link-set-parameters face :face 'org-link)))
-    (org-roam-db--close-all)
+    (kisaragi-notes-db//close)
     ;; Disable local hooks for all org-roam buffers
     (dolist (buf (org-roam--get-roam-buffers))
       (with-current-buffer buf
@@ -575,7 +575,7 @@ one."
       ;; FIXME: Hardcodes choice of Org
       (with-current-buffer (find-file-noselect
                             (-> (kisaragi-notes//title-to-slug title)
-                              (f-expand org-roam-directory)
+                              (f-expand org-directory)
                               (concat ".org")))
         (insert "#+TITLE: " title "\n")
         (pop-to-buffer-same-window (current-buffer))))))
@@ -605,9 +605,9 @@ one."
 
 ;;;###autoload
 (defun org-roam-find-directory ()
-  "Find and open `org-roam-directory'."
+  "Find and open `org-directory'."
   (interactive)
-  (org-roam--find-file org-roam-directory))
+  (org-roam--find-file org-directory))
 
 ;;;###autoload
 (defun org-roam-find-ref (arg &optional filter)
@@ -708,9 +708,9 @@ See `org-roam-insert' for details."
 
 ;;;###autoload
 (defun org-roam-jump-to-index ()
-  "Find the index file in `org-roam-directory'.
+  "Find the index file in `org-directory'.
 The path to the index can be defined in `org-roam-index-file'.
-Otherwise, the function will look in your `org-roam-directory'
+Otherwise, the function will look in your `org-directory'
 for a note whose title is 'Index'.  If it does not exist, the
 command will offer you to create one."
   (interactive)
@@ -722,7 +722,7 @@ command will offer you to create one."
                       (wrong-type (user-error
                                    "`org-roam-index-file' must be a string or a function, not %s"
                                    wrong-type)))
-                 (expand-file-name it org-roam-directory))))
+                 (expand-file-name it org-directory))))
     (if (and index
              (f-exists? index))
         (org-roam--find-file index)
@@ -852,7 +852,7 @@ the executable 'rg' in variable `exec-path'."
                                        (mapconcat (lambda (title)
                                                     (format "|(\\b%s\\b)" (shell-quote-argument title)))
                                                   titles ""))
-                               org-roam-directory))
+                               org-directory))
            (file-loc (buffer-file-name))
            (buf (get-buffer-create "*org-roam unlinked references*"))
            (results (split-string (shell-command-to-string rg-command) "\n"))
@@ -878,7 +878,7 @@ the executable 'rg' in variable `exec-path'."
                     (match (match-string 4 line)))
                 (when (and match
                            (member (downcase match) (mapcar #'downcase titles))
-                           (not (f-equal-p (expand-file-name file org-roam-directory)
+                           (not (f-equal-p (expand-file-name file org-directory)
                                            file-loc)))
                   (let ((rowcol (concat row ":" col)))
                     (insert "- "

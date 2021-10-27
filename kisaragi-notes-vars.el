@@ -6,6 +6,9 @@
 
 ;;; Code:
 
+(require 'f)
+(require 'org)
+
 ;;;; User Options
 (defgroup org-roam nil
   "Roam Research replica in Org-mode."
@@ -19,15 +22,9 @@
   :group 'org-roam
   :group 'faces)
 
-(defcustom org-roam-directory (expand-file-name "~/org-roam/")
-  "Default path to Org-roam files.
-All Org files, at any level of nesting, are considered part of the Org-roam."
-  :type 'directory
-  :group 'org-roam)
-
 (defcustom kisaragi-notes/templates-directory (f-slash
                                                (f-join
-                                                org-roam-directory "templates"))
+                                                org-directory "templates"))
   "Where to look for templates."
   :group 'org-roam
   :type 'string)
@@ -69,12 +66,16 @@ See `org-roam--get-ref-path-completions' for details."
 
 (defcustom org-roam-index-file "index.org"
   "Path to the Org-roam index file.
-The path can be a string or a function.  If it is a string, it
-should be the path (absolute or relative to `org-roam-directory')
-to the index file.  If it is is a function, the function should
-return the path to the index file.  Otherwise, the index is
-assumed to be a note in `org-roam-directory' whose title is
-'Index'."
+The path can be a string or a function.
+
+If it is a string, it should be the path (absolute, or relative
+to `org-directory') to the index file.
+
+If it is is a function, the function should return the path to
+the index file.
+
+Otherwise, the index is assumed to be a note in `org-directory'
+whose title is 'Index'."
   :type '(choice
           (string :tag "Path to index" "%s")
           (function :tag "Function to generate the path"))
@@ -173,7 +174,7 @@ org-roam database."
 Valide values are:
 
 t            Use custom faces inside Org-roam notes (i.e. files in
-             `org-roam-directory'.)
+             `org-directory'.)
 
 everywhere   Apply custom faces everywhere.
 
@@ -203,17 +204,17 @@ Currently available sources:
     inherited tags.
 
   `org-roam--extract-tags-all-directories'
-    Extract sub-directories relative to `org-roam-directory'.
+    Extract sub-directories relative to `org-directory'.
     That is, if a file is located at relative path foo/bar/file.org,
     the file will have tags \"foo\" and \"bar\".
 
   `org-roam--extract-tags-last-directory'
-    Extract the last directory relative to `org-roam-directory'.
+    Extract the last directory relative to `org-directory'.
     That is, if a file is located at relative path foo/bar/file.org,
     the file will have tag \"bar\".
 
   `org-roam--extract-tags-first-directory'
-    Extract the first directory relative to `org-roam-directory'.
+    Extract the first directory relative to `org-directory'.
     That is, if a file is located at relative path foo/bar/file.org,
     the file will have tag \"foo\"."
   :group 'org-roam
