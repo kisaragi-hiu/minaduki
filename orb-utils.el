@@ -44,7 +44,9 @@
 ;; org-roam requires org,org-element, dash, f, s, emacsql, emacsql-sqlite,
 ;; so all these libraries are always at our disposal
 
-(require 'org-roam)
+(require 'kisaragi-notes-completion)
+(require 'org-roam-db)
+
 (require 'warnings)
 
 (defvar orb-citekey-format)
@@ -247,7 +249,3 @@ nil otherwise."
 
 (provide 'orb-utils)
 ;;; orb-utils.el ends here
-;; Local Variables:
-;; coding: utf-8
-;; fill-column: 79
-;; End:

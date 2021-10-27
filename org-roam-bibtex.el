@@ -319,42 +319,6 @@ Possible values are `key' and `entry'."
           (const key)
           (const entry)))
 
-(defcustom orb-note-actions-default
-  '(("Open PDF file(s)" . bibtex-completion-open-pdf)
-    ("Add PDF to library" . bibtex-completion-add-pdf-to-library)
-    ("Open URL or DOI in browser" . bibtex-completion-open-url-or-doi)
-    ("Show record in the bibtex file" . bibtex-completion-show-entry)
-    ("Edit notes" . orb-edit-notes))
-  "Default actions for `orb-note-actions'.
-Each action is a cons cell DESCRIPTION . FUNCTION."
-  :risky t
-  :type '(alist
-          :tag "Default actions for `orb-note-actions'"
-          :key-type (string :tag "Description")
-          :value-type (function :tag "Function"))
-  :group 'orb-note-actions)
-
-(defcustom orb-note-actions-extra
-  '(("Save citekey to kill-ring and clipboard" . orb-note-actions-copy-citekey))
-  "Extra actions for `orb-note-actions'.
-Each action is a cons cell DESCRIPTION . FUNCTION."
-  :risky t
-  :type '(alist
-          :tag "Extra actions for `orb-note-actions'"
-          :key-type (string :tag "Description")
-          :value-type (function :tag "Function"))
-  :group 'orb-note-actions)
-
-(defcustom orb-note-actions-user nil
-  "User actions for `orb-note-actions'.
-Each action is a cons cell DESCRIPTION . FUNCTION."
-  :risky t
-  :type '(alist
-          :tag "User actions for `orb-note-actions'"
-          :key-type (string :tag "Description")
-          :value-type (function :tag "Function"))
-  :group 'orb-note-actions)
-
 ;; ============================================================================
 ;;;; Orb plist
 ;; ============================================================================
@@ -1020,41 +984,9 @@ details."
 ;; ============================================================================
 ;;;; Orb note actions
 ;; ============================================================================
-
-;;;###autoload
-(defun orb-note-actions (&optional citekey)
-  "Prompt for note-related actions on CITEKEY.
-
-CITEKEY is, by default, the first ROAM_KEY in the buffer.
-
-In addition to default actions, which are not supposed to be
-modified, there is a number of prefined extra actions
-`orb-note-actions-extra' that can be customized.  Additionally,
-user actions can be set in `orb-note-actions-user'."
-  (interactive)
-  (-if-let* ((citekey (or citekey (cdar (kisaragi-notes-extract/refs)))))
-      (let* ((prompt (org-ref-format-entry citekey))
-             (candidates (append orb-note-actions-default
-                                 orb-note-actions-extra
-                                 orb-note-actions-user))
-             (selection (completing-read prompt candidates))
-             (func (cdr (assoc selection candidates))))
-        (funcall func (list citekey)))
-    (user-error "Could not retrieve the citekey, is ROAM_KEY specified?")))
-
-;;;;;; Note actions
-
-(defun orb-note-actions-copy-citekey (citekey)
-  "Save note's citation key to `kill-ring' and copy it to clipboard.
-CITEKEY is a list whose car is a citation key."
-  (with-temp-buffer
-    (insert (car citekey))
-    (copy-region-as-kill (point-min) (point-max))))
-
 ;; ============================================================================
 ;;;; Org-roam-bibtex minor mode
 ;; ============================================================================
-;;
 
 (defun orb-notes-fn (citekey)
   "Open an Org-roam note associated with the CITEKEY or create a new one.
@@ -1077,53 +1009,6 @@ first key from KEYS will actually be used."
 (defun orb-bibtex-completion-parse-bibliography-ad (&optional _ht-strings)
   "Update `orb-notes-cache' before `bibtex-completion-parse-bibliography'."
   (orb-make-notes-cache))
-
-(defvar org-roam-bibtex-mode-map
-  (make-sparse-keymap)
-  "Keymap for `org-roam-bibtex-mode'.")
-
-;;;###autoload
-(define-minor-mode org-roam-bibtex-mode
-  "Sets `orb-edit-notes' as a function for editing bibliography notes.
-Affects Org-ref and Helm-bibtex/Ivy-bibtex.
-
-When called interactively, toggle `org-roam-bibtex-mode'. with
-prefix ARG, enable `org-roam-bibtex-mode' if ARG is positive,
-otherwise disable it.
-
-When called from Lisp, enable `org-roam-mode' if ARG is omitted,
-nil, or positive.  If ARG is `toggle', toggle `org-roam-mode'.
-Otherwise, behave as if called interactively."
-  :lighter " orb"
-  :keymap  org-roam-bibtex-mode-map
-  :group 'org-roam-bibtex
-  :require 'orb
-  :global t
-  (require 'bibtex-completion)
-  (cond (org-roam-bibtex-mode
-         (setq org-ref-notes-function 'orb-notes-fn)
-         (add-to-list 'bibtex-completion-find-note-functions
-                      #'orb-find-note-file)
-         (advice-add 'bibtex-completion-edit-notes
-                     :override #'orb-edit-notes-ad)
-         (advice-add 'bibtex-completion-parse-bibliography
-                     :before #'orb-bibtex-completion-parse-bibliography-ad))
-        (t
-         (setq org-ref-notes-function 'org-ref-notes-function-one-file)
-         (setq bibtex-completion-find-note-functions
-               (delq #'orb-find-note-file
-                     bibtex-completion-find-note-functions))
-         (advice-remove 'bibtex-completion-edit-notes
-                        #'orb-edit-notes-ad)
-         (advice-remove 'bibtex-completion-parse-bibliography
-                        #'orb-bibtex-completion-parse-bibliography-ad))))
-
-(org-link-set-parameters "cite" :follow #'orb-note-actions)
-
-(define-key org-roam-bibtex-mode-map (kbd "C-c ) a") #'orb-note-actions)
-(define-key org-roam-bibtex-mode-map (kbd "C-c ) i") #'orb-insert)
-(define-key org-roam-bibtex-mode-map (kbd "C-c ) C-f") #'orb-find-non-ref-file)
-(define-key org-roam-bibtex-mode-map (kbd "C-c ) C-i") #'orb-insert-non-ref)
 
 (provide 'org-roam-bibtex)
 

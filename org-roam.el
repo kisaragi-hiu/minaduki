@@ -45,6 +45,7 @@
 (require 'rx)
 (require 's)
 (require 'seq)
+(require 'bibtex-completion)
 (eval-when-compile (require 'subr-x))
 
 (require 'kisaragi-notes-vars)
@@ -58,6 +59,8 @@
 (when (featurep 'embark)
   (require 'kisaragi-notes-embark))
 
+(defvar org-ref-notes-function)
+
 ;;;; Features
 ;; These features should be able to be loaded order independently.
 ;; @TODO: implement something akin to `org-modules' that allows
@@ -68,6 +71,7 @@
   (require 'kisaragi-notes-cite))
 
 (require 'org-roam-buffer)
+(require 'org-roam-bibtex)
 (require 'org-roam-capture)
 (require 'org-roam-extract)
 (require 'org-roam-db)
@@ -351,6 +355,8 @@ When NEW-FILE-OR-DIR is a directory, we use it to compute the new file path."
              (not (org-roam-capture-p)))
     (org-roam-db-update)))
 
+;;;; org-roam-mode
+
 ;;;###autoload
 (define-minor-mode org-roam-mode
   "Minor mode for Org-roam.
@@ -367,8 +373,8 @@ When called from Lisp, enable `org-roam-mode' if ARG is omitted,
 nil, or positive. If ARG is `toggle', toggle `org-roam-mode'.
 Otherwise, behave as if called interactively."
   :lighter " Org-roam"
-  :keymap  (let ((map (make-sparse-keymap)))
-             map)
+  :keymap (let ((map (make-sparse-keymap)))
+            map)
   :group 'org-roam
   :require 'org-roam
   :global t
@@ -420,6 +426,53 @@ M-x info for more information at Org-roam > Installation > Post-Installation Tas
         (remove-hook 'after-save-hook #'org-roam-db-update t))))))
 
 (add-hook 'org-roam-mode-hook #'org-roam-db-build-cache)
+
+;;;; org-roam-bibtex-mode
+
+;;;###autoload
+(define-minor-mode org-roam-bibtex-mode
+  "Sets `orb-edit-notes' as a function for editing bibliography notes.
+Affects Org-ref and Helm-bibtex/Ivy-bibtex.
+
+When called interactively, toggle `org-roam-bibtex-mode'. with
+prefix ARG, enable `org-roam-bibtex-mode' if ARG is positive,
+otherwise disable it.
+
+When called from Lisp, enable `org-roam-mode' if ARG is omitted,
+nil, or positive.  If ARG is `toggle', toggle `org-roam-mode'.
+Otherwise, behave as if called interactively."
+  :lighter " orb"
+  :keymap (let ((map (make-sparse-keymap)))
+            (define-key map (kbd "C-c ) a") #'kisaragi-notes/literature-note-actions)
+            (define-key map (kbd "C-c ) i") #'orb-insert)
+            (define-key map (kbd "C-c ) C-f") #'orb-find-non-ref-file)
+            (define-key map (kbd "C-c ) C-i") #'orb-insert-non-ref)
+            map)
+  :group 'org-roam-bibtex
+  :require 'orb
+  :global t
+  (require 'bibtex-completion)
+  (cond (org-roam-bibtex-mode
+         (when (featurep 'org-ref)
+           (setq org-ref-notes-function 'orb-notes-fn))
+         (add-to-list 'bibtex-completion-find-note-functions
+                      #'orb-find-note-file)
+         (advice-add 'bibtex-completion-edit-notes
+                     :override #'orb-edit-notes-ad)
+         (advice-add 'bibtex-completion-parse-bibliography
+                     :before #'orb-bibtex-completion-parse-bibliography-ad))
+        (t
+         (when (featurep 'org-ref)
+           (setq org-ref-notes-function 'org-ref-notes-function-one-file))
+         (setq bibtex-completion-find-note-functions
+               (delq #'orb-find-note-file
+                     bibtex-completion-find-note-functions))
+         (advice-remove 'bibtex-completion-edit-notes
+                        #'orb-edit-notes-ad)
+         (advice-remove 'bibtex-completion-parse-bibliography
+                        #'orb-bibtex-completion-parse-bibliography-ad))))
+
+(org-link-set-parameters "cite" :follow #'kisaragi-notes/literature-note-actions)
 
 ;;; Interactive Commands
 ;;;###autoload

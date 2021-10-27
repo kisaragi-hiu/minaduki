@@ -12,6 +12,8 @@
 (require 'dash)
 (require 's)
 
+(require 'bibtex-completion)
+
 (require 'kisaragi-notes-completion)
 (require 'kisaragi-notes-utils)
 
@@ -368,26 +370,74 @@ one."
         (insert "#+TITLE: " title "\n")
         (pop-to-buffer-same-window (current-buffer))))))
 
+;;;; Literature note actions
+
+(defun orb-note-actions-copy-citekey (citekey)
+  "Save note's citation key to `kill-ring' and copy it to clipboard.
+CITEKEY is a list whose car is a citation key."
+  (with-temp-buffer
+    (insert (car citekey))
+    (copy-region-as-kill (point-min) (point-max))))
+
 ;;;; Actions
 
-(defvar kisaragi-notes-global-commands
+(defvar kisaragi-notes/global-commands
   '(("Open a note"                        . kisaragi-notes/open)
     ("Open notes directory"               . kisaragi-notes/open-directory)
     ("Open the index file"                . kisaragi-notes/open-index)
     ("Open a literature note"             . kisaragi-notes/open-literature-note)
     ("Open a random note"                 . kisaragi-notes/open-random-note)
-    ("Switch to a buffer visiting a note" . org-roam-switch-to-buffer)))
+    ("Switch to a buffer visiting a note" . org-roam-switch-to-buffer))
+  "Global commands shown in `kisaragi-notes/command-palette'.
+
+List of (DISPLAY-NAME . COMMAND) pairs.")
 
 (defun kisaragi-notes/command-palette ()
   "Command palette."
   (declare (interactive-only command-execute))
   (interactive)
-  (let* ((candidates kisaragi-notes-global-commands)
-         (selection (completing-read "Kisaragi-Notes Global Command: "
-                                     kisaragi-notes-global-commands))
+  (let* ((candidates kisaragi-notes/global-commands)
+         (selection (completing-read "Kisaragi-Notes Global Command: " candidates))
          (func (cdr (assoc selection candidates)))
          (prefix-arg current-prefix-arg))
     (command-execute func)))
+
+(defvar kisaragi-notes/literature-note-actions
+  '(("Open PDF file(s)" . bibtex-completion-open-pdf)
+    ("Add PDF to library" . bibtex-completion-add-pdf-to-library)
+    ("Open URL or DOI in browser" . bibtex-completion-open-url-or-doi)
+    ("Show record in the bibtex file" . bibtex-completion-show-entry)
+    ("Edit notes" . orb-edit-notes)
+    ("Save citekey to kill-ring and clipboard" . orb-note-actions-copy-citekey))
+  "Commands useful inside a literature note.
+
+List of (DISPLAY-NAME . FUNCTION) pairs. Each function receives
+one argument, a list of cite keys.
+
+Equivalent to `orb-note-actions-default'.")
+
+(defun kisaragi-notes/literature-note-actions (&optional citekey)
+  ;; `orb-note-actions'
+  "Prompt for note-related actions on CITEKEY.
+
+CITEKEY is, by default, the first ROAM_KEY in the buffer.
+
+Actions are defined in `kisaragi-notes/literature-note-actions'."
+  (interactive)
+  (-if-let* ((citekey (or citekey (cdar (kisaragi-notes-extract/refs)))))
+      (let* ((prompt (let ((bibtex-completion-display-formats
+                            '((t . "Act on ${author} - ${title} (${year}): ")))
+                           ;; This should be local to the `let'.
+                           bibtex-completion-display-formats-internal)
+                       (bibtex-completion-init)
+                       (bibtex-completion-format-entry
+                        (bibtex-completion-get-entry citekey)
+                        0)))
+             (candidates kisaragi-notes/literature-note-actions)
+             (selection (completing-read prompt candidates))
+             (func (cdr (assoc selection candidates))))
+        (funcall func (list citekey)))
+    (user-error "Could not retrieve the citekey, is ROAM_KEY specified?")))
 
 (provide 'kisaragi-notes-commands)
 
