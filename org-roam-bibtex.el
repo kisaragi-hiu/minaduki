@@ -73,6 +73,8 @@
 (require 'orb-core)
 (require 'kisaragi-notes-utils)
 
+(require 'org-roam-capture)
+
 (eval-when-compile
   (require 'subr-x)
   (require 'cl-lib))
@@ -706,8 +708,7 @@ the perspective will be switched to the Org-roam notes project
 before calling any Org-roam functions."
   (when (consp citekey)
     (setq citekey (car citekey)))
-  (unless org-roam-mode
-    (org-roam-mode +1))
+  (unless org-roam-mode (org-roam-mode))
   ;; Optionally switch to the notes perspective
   (when orb-switch-persp
     (orb--switch-perspective))
@@ -947,7 +948,7 @@ two or three universal arguments `\\[universal-argument]' are supplied."
                    (or description orb-insert-link-description)
                    :link-lowercase
                    (or lowercase orb-insert-lowercase))
-    (unless org-roam-mode (org-roam-mode +1))
+    (unless org-roam-mode (org-roam-mode))
     ;; execution chain:
     ;; 1. interface function
     ;; 2. orb-insert-edit-notes
