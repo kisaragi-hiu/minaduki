@@ -358,12 +358,15 @@ If FILE, set `org-roam-temp-file-name' to file and insert its contents."
          (let ((org-directory ,current-org-directory)
                (org-mode-hook nil)
                (org-inhibit-startup t))
-           (org-mode)
-           (when ,file
-             (insert-file-contents ,file)
-             (setq-local kisaragi-notes//file-name ,file)
-             (setq-local default-directory (file-name-directory ,file)))
-           ,@body)))))
+           ,(if file
+                `(progn
+                   (let ((buffer-file-name ,file))
+                     (insert-file-contents ,file)
+                     (set-auto-mode))
+                   (setq-local kisaragi-notes//file-name ,file)
+                   (setq-local default-directory (file-name-directory ,file))
+                   ,@body)
+              `(progn ,@body)))))))
 
 (defun org-roam-message (format-string &rest args)
   "Pass FORMAT-STRING and ARGS to `message' when `org-roam-verbose' is t."
