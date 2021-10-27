@@ -445,7 +445,7 @@ Otherwise, behave as if called interactively."
   :keymap (let ((map (make-sparse-keymap)))
             (define-key map (kbd "C-c ) a") #'kisaragi-notes/literature-note-actions)
             (define-key map (kbd "C-c ) i") #'orb-insert)
-            (define-key map (kbd "C-c ) C-f") #'orb-find-non-ref-file)
+            (define-key map (kbd "C-c ) C-f") #'kisaragi-notes/open-non-literature-note)
             (define-key map (kbd "C-c ) C-i") #'orb-insert-non-ref)
             map)
   :group 'org-roam-bibtex

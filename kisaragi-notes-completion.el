@@ -105,6 +105,31 @@ FILTER can either be a string or a function:
                 (v (list :path file-path :type type :ref ref)))
             (push (cons k v) completions)))))))
 
+;; `orb--get-non-ref-path-completions'
+(defun kisaragi-notes-completion//get-non-literature ()
+  "Return a list of non-literature notes for completion.
+
+Each note is a list (STR :path PATH :title TITLE), where STR is
+displayed in `completing-read'."
+  (let* ((rows (org-roam-db-query
+                [:select [titles:file titles:title tags:tags]
+                 :from titles
+                 :left :join tags
+                 :on (= titles:file tags:file)
+                 :left :join refs :on (= titles:file refs:file)
+                 :where refs:file :is :null]))
+         completions)
+    (dolist (row rows)
+      (pcase-let ((`(,file-path ,title ,tags) row))
+        (let ((title (or title (kisaragi-notes//path-to-title file-path))))
+          (let ((k (concat
+                    (when tags
+                      (format "(%s) " (s-join org-roam-tag-separator tags)))
+                    title))
+                (v (list :path file-path :title title)))
+            (push (cons k v) completions)))))
+    completions))
+
 ;;;; `completing-read' completions
 (defun kisaragi-notes-completion//mark-category (seq category)
   "Mark SEQ as being in CATEGORY.

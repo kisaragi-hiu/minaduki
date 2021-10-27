@@ -728,29 +728,6 @@ before calling any Org-roam functions."
            (with-orb-cleanup (orb-do-hook-functions 'remove))))))))
 
 
-(defun orb--get-non-ref-path-completions ()
-  "Return a list of cons for titles of non-ref notes to absolute path.
-CANDIDATES is a an alist of candidates to consider.  Defaults to
-`org-roam--get-title-path-completions' otherwise."
-  (let* ((rows (org-roam-db-query
-                [:select [titles:file titles:title tags:tags]
-                 :from titles
-                 :left :join tags
-                 :on (= titles:file tags:file)
-                 :left :join refs :on (= titles:file refs:file)
-                 :where refs:file :is :null]))
-         completions)
-    (dolist (row rows completions)
-      (pcase-let ((`(,file-path ,title ,tags) row))
-        (let ((title (or title
-                         (list (kisaragi-notes//path-to-title file-path)))))
-          (let ((k (concat
-                    (when tags
-                      (format "(%s) " (s-join org-roam-tag-separator tags)))
-                    title))
-                (v (list :path file-path :title title)))
-            (push (cons k v) completions)))))))
-
 ;; ============================================================================
 ;;;; Orb insert
 ;; ============================================================================
@@ -963,24 +940,13 @@ two or three universal arguments `\\[universal-argument]' are supplied."
 ;; ============================================================================
 
 ;;;###autoload
-(defun orb-find-non-ref-file (&optional initial-prompt)
-  "Find and open an Org-roam, non-ref file.
-INITIAL-PROMPT is the initial title prompt.
-See `org-roam-find-files' and
-`orb--get-non-ref-path-completions' for details."
-  (interactive)
-  (kisaragi-notes/open
-   (kisaragi-notes-completion//read-note initial-prompt
-                                         (orb--get-non-ref-path-completions))))
-
-;;;###autoload
 (defun orb-insert-non-ref (prefix)
   "Find a non-ref Org-roam file, and insert a relative org link to it at point.
 If PREFIX, downcase the title before insertion.  See
-`org-roam-insert' and `orb--get-non-ref-path-completions' for
+`org-roam-insert' and `kisaragi-notes-completion//get-non-literature' for
 details."
   (interactive "P")
-  (org-roam-insert prefix (orb--get-non-ref-path-completions)))
+  (org-roam-insert prefix (kisaragi-notes-completion//get-non-literature)))
 
 ;; ============================================================================
 ;;;; Orb note actions

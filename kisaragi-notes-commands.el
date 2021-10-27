@@ -279,6 +279,20 @@ Return added tag."
       (switch-to-buffer (cdr (assoc name names-and-buffers))))))
 
 ;;;###autoload
+(defun kisaragi-notes/open-non-literature-note (&optional initial-prompt)
+  ;; `orb-find-non-ref-file'
+  "Open a note that isn't a literature note.
+
+INITIAL-PROMPT is the initial title prompt. See
+`org-roam-find-files' and `kisaragi-notes-completion//get-non-literature' for
+details."
+  (interactive)
+  (kisaragi-notes/open
+   (kisaragi-notes-completion//read-note
+    initial-prompt
+    (car (kisaragi-notes-completion//get-non-literature)))))
+
+;;;###autoload
 (defun kisaragi-notes/open-directory ()
   "Open `org-directory'."
   (interactive)
@@ -386,6 +400,7 @@ CITEKEY is a list whose car is a citation key."
     ("Open notes directory"               . kisaragi-notes/open-directory)
     ("Open the index file"                . kisaragi-notes/open-index)
     ("Open a literature note"             . kisaragi-notes/open-literature-note)
+    ("Open a non-literature note"         . kisaragi-notes/open-non-literature-note)
     ("Open a random note"                 . kisaragi-notes/open-random-note)
     ("Switch to a buffer visiting a note" . org-roam-switch-to-buffer))
   "Global commands shown in `kisaragi-notes/command-palette'.
