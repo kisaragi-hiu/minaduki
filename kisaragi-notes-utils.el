@@ -17,6 +17,70 @@
 ;; regardless of whether Org is loaded before their compilation.
 (require 'org)
 
+(declare-function org-roam-db-query "org-roam-db")
+
+;;; org-link-abbrev
+
+(defun kisaragi-notes//apply-link-abbrev (path)
+  "Apply `org-link-abbrev-alist' to PATH.
+
+For example, if `org-link-abbrev-alist' maps \"x\" to \"/home/\",
+and PATH is \"/home/abc\", this returns \"x:abc\".
+
+Inverse of `org-link-expand-abbrev'."
+  (catch 'ret
+    (setq path (f-canonical path))
+    (pcase-dolist (`(,key . ,abbrev) org-link-abbrev-alist)
+      ;; Get the symbol property if the value is a function / symbol
+      (when (symbolp abbrev)
+        (setq abbrev (get abbrev 'k/file-finders-abbrev-path)))
+      ;; Only do something when we actually have a string
+      (when (stringp abbrev)
+        ;; Resolving symlinks here allows us to treat different ways
+        ;; to reach a path as the same
+        (setq abbrev (f-canonical abbrev))
+        ;; starts-with is more accurate
+        (when (s-starts-with? abbrev path)
+          (throw 'ret (s-replace abbrev (concat key ":") path)))))
+    (throw 'ret path)))
+
+(defun org-roam-format-link (target &optional description type)
+  "Format a link for TARGET and DESCRIPTION.
+
+TYPE defaults to \"file\".
+
+In Org mode, if the file has an ID and `org-roam-prefer-id-links'
+is non-nil, return an ID link.
+
+In Markdown, TYPE has no effect."
+  (setq type (or type "file"))
+  (cond
+   ((derived-mode-p 'org-mode)
+    (when (and org-roam-prefer-id-links (string-equal type "file"))
+      (-when-let (id (caar (org-roam-db-query [:select [id] :from ids
+                                               :where (= file $s1)
+                                               :and (= level 0)
+                                               :limit 1]
+                                              target)))
+        (setq type "id"
+              target id)))
+    (org-link-make-string
+     (if (string-equal type "file")
+         (kisaragi-notes//apply-link-abbrev target)
+       (concat type ":" target))
+     (if (functionp org-roam-link-title-format)
+         (funcall org-roam-link-title-format description type)
+       (format org-roam-link-title-format description))))
+   ((derived-mode-p 'markdown-mode)
+    (cond ((and (not description) target)
+           (format "<%s>" target))
+          ((not description)
+           (format "[%s](%s)"
+                   (f-filename target)
+                   (f-relative target)))
+          (t
+           (format "[%s](%s)" description target))))))
+
 (defun org-roam--find-file (file)
   "Open FILE using `org-roam-find-file-function' or `find-file'."
   (funcall (or org-roam-find-file-function #'find-file) file))
