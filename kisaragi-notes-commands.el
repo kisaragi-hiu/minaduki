@@ -277,7 +277,7 @@ Return added tag."
       (switch-to-buffer (cdr (assoc name names-and-buffers))))))
 
 ;;;###autoload
-(defun kisaragi-notes/find-directory ()
+(defun kisaragi-notes/open-directory ()
   "Open `org-directory'."
   (interactive)
   (find-file org-directory))
