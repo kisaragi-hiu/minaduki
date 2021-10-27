@@ -368,6 +368,27 @@ one."
         (insert "#+TITLE: " title "\n")
         (pop-to-buffer-same-window (current-buffer))))))
 
+;;;; Actions
+
+(defvar kisaragi-notes-global-commands
+  '(("Open a note"                        . kisaragi-notes/open)
+    ("Open notes directory"               . kisaragi-notes/open-directory)
+    ("Open the index file"                . kisaragi-notes/open-index)
+    ("Open a literature note"             . kisaragi-notes/open-literature-note)
+    ("Open a random note"                 . kisaragi-notes/open-random-note)
+    ("Switch to a buffer visiting a note" . org-roam-switch-to-buffer)))
+
+(defun kisaragi-notes/command-palette ()
+  "Command palette."
+  (declare (interactive-only command-execute))
+  (interactive)
+  (let* ((candidates kisaragi-notes-global-commands)
+         (selection (completing-read "Kisaragi-Notes Global Command: "
+                                     kisaragi-notes-global-commands))
+         (func (cdr (assoc selection candidates)))
+         (prefix-arg current-prefix-arg))
+    (command-execute func)))
+
 (provide 'kisaragi-notes-commands)
 
 ;;; kisaragi-notes-commands.el ends here
