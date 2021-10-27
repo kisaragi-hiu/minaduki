@@ -17,6 +17,10 @@
 ;; regardless of whether Org is loaded before their compilation.
 (require 'org)
 
+(defun org-roam--find-file (file)
+  "Open FILE using `org-roam-find-file-function' or `find-file'."
+  (funcall (or org-roam-find-file-function #'find-file) file))
+
 (defun kisaragi-notes//compute-content-hash (&optional file)
   "Compute the hash of the contents of FILE or the current buffer."
   (if file
@@ -130,6 +134,50 @@ If FILE is not specified, use the current buffer's file-path."
        (org-roam--org-file-p path)
        (not (kisaragi-notes//excluded? path))
        (f-descendant-of-p path (expand-file-name org-directory))))))
+
+;;;; File functions and predicates
+(defun org-roam--list-files-search-globs (exts)
+  "Given EXTS, return a list of search globs.
+E.g. (\".org\") => (\"*.org\" \"*.org.gpg\")"
+  (append
+   (mapcar (lambda (ext) (concat "*." ext)) exts)
+   (mapcar (lambda (ext) (concat "*." ext ".gpg")) exts)))
+
+(defun org-roam--list-files-rg (executable dir)
+  "Return all Org-roam files located recursively within DIR, using ripgrep, provided as EXECUTABLE."
+  (let* ((globs (org-roam--list-files-search-globs org-roam-file-extensions))
+         (arguments `("-L" ,dir "--files"
+                      ,@(cons "-g" (-interpose "-g" globs)))))
+    (with-temp-buffer
+      (apply #'call-process executable
+             nil '(t nil) nil
+             arguments)
+      (s-split "\n" (buffer-string) :omit-nulls))))
+
+(defun org-roam--list-files-elisp (dir)
+  "Return all Org-roam files located recursively within DIR, using elisp."
+  (let ((regexp (concat "\\.\\(?:"
+                        (mapconcat #'regexp-quote org-roam-file-extensions "\\|")
+                        "\\)\\(?:\\.gpg\\)?\\'"))
+        result)
+    (dolist (file (directory-files-recursively dir regexp nil nil t))
+      (when (and (file-readable-p file)
+                 (not (kisaragi-notes//excluded? file)))
+        (push file result)))
+    result))
+
+(defun org-roam--list-files (dir)
+  "Return all Org-roam files located recursively within DIR.
+Use Ripgrep if we can find it."
+  (if-let ((rg (executable-find "rg")))
+      (-some->> (org-roam--list-files-rg rg dir)
+        (-remove #'kisaragi-notes//excluded?)
+        (-map #'f-expand))
+    (org-roam--list-files-elisp dir)))
+
+(defun org-roam--list-all-files ()
+  "Return a list of all Org-roam files within `org-directory'."
+  (org-roam--list-files (expand-file-name org-directory)))
 
 ;;;; Title/Path/Slug conversion
 
@@ -266,9 +314,7 @@ If FILE, set `org-roam-temp-file-name' to file and insert its contents."
 
 ;;; Shielding regions
 (defun org-roam-shield-region (beg end)
-  "Shield REGION against modifications.
-REGION must be a cons-cell containing the marker to the region
-beginning and maximum values."
+  "Shield region between BEG and END against modifications."
   (when (and beg end)
     (add-text-properties beg end
                          '(font-lock-face org-roam-link-shielded
@@ -277,7 +323,7 @@ beginning and maximum values."
     (cons beg end)))
 
 (defun org-roam-unshield-region (beg end)
-  "Unshield the shielded REGION."
+  "Unshield the shielded region between BEG and END."
   (when (and beg end)
     (let ((inhibit-read-only t))
       (remove-text-properties beg end
@@ -285,6 +331,43 @@ beginning and maximum values."
                                                read-only t)
                               (marker-buffer beg)))
     (cons beg end)))
+
+;;;; dealing with file-wide properties
+(defun org-roam--set-global-prop (name value)
+  "Set a file property called NAME to VALUE.
+
+If the property is already set, it's value is replaced."
+  (org-with-point-at 1
+    (let ((case-fold-search t))
+      (if (re-search-forward (concat "^#\\+" name ":\\(.*\\)") (point-max) t)
+          (replace-match (concat " " value) 'fixedcase nil nil 1)
+        (while (and (not (eobp))
+                    (looking-at "^[#:]"))
+          (if (save-excursion (end-of-line) (eobp))
+              (progn
+                (end-of-line)
+                (insert "\n"))
+            (forward-line)
+            (beginning-of-line)))
+        (insert "#+" name ": " value "\n")))))
+
+(defun org-roam--org-roam-buffer-p (&optional buffer)
+  "Return t if BUFFER is accessing a part of Org-roam system.
+If BUFFER is not specified, use the current buffer."
+  (let ((buffer (or buffer (current-buffer)))
+        path)
+    (with-current-buffer buffer
+      (and (setq path (buffer-file-name (buffer-base-buffer)))
+           (org-roam--org-roam-file-p path)))))
+
+(defun org-roam--get-roam-buffers ()
+  "Return a list of buffers that are Org-roam files."
+  (--filter (org-roam--org-roam-buffer-p it)
+            (buffer-list)))
+
+(defun org-roam--in-buffer-p ()
+  "Return t if in the Org-roam backlinks buffer."
+  (bound-and-true-p org-roam-backlinks-mode))
 
 (provide 'kisaragi-notes-utils)
 

@@ -76,49 +76,6 @@
 (require 'kisaragi-notes-wikilink)
 
 ;;;; Utilities
-;;;; File functions and predicates
-(defun org-roam--list-files-search-globs (exts)
-  "Given EXTS, return a list of search globs.
-E.g. (\".org\") => (\"*.org\" \"*.org.gpg\")"
-  (append
-   (mapcar (lambda (ext) (concat "*." ext)) exts)
-   (mapcar (lambda (ext) (concat "*." ext ".gpg")) exts)))
-
-(defun org-roam--list-files-rg (executable dir)
-  "Return all Org-roam files located recursively within DIR, using ripgrep, provided as EXECUTABLE."
-  (let* ((globs (org-roam--list-files-search-globs org-roam-file-extensions))
-         (arguments `("-L" ,dir "--files"
-                      ,@(cons "-g" (-interpose "-g" globs)))))
-    (with-temp-buffer
-      (apply #'call-process executable
-             nil '(t nil) nil
-             arguments)
-      (s-split "\n" (buffer-string) :omit-nulls))))
-
-(defun org-roam--list-files-elisp (dir)
-  "Return all Org-roam files located recursively within DIR, using elisp."
-  (let ((regexp (concat "\\.\\(?:"
-                        (mapconcat #'regexp-quote org-roam-file-extensions "\\|")
-                        "\\)\\(?:\\.gpg\\)?\\'"))
-        result)
-    (dolist (file (directory-files-recursively dir regexp nil nil t))
-      (when (and (file-readable-p file)
-                 (not (kisaragi-notes//excluded? file)))
-        (push file result)))
-    result))
-
-(defun org-roam--list-files (dir)
-  "Return all Org-roam files located recursively within DIR.
-Use Ripgrep if we can find it."
-  (if-let ((rg (executable-find "rg")))
-      (-some->> (org-roam--list-files-rg rg dir)
-        (-remove #'kisaragi-notes//excluded?)
-        (-map #'f-expand))
-    (org-roam--list-files-elisp dir)))
-
-(defun org-roam--list-all-files ()
-  "Return a list of all Org-roam files within `org-directory'."
-  (org-roam--list-files (expand-file-name org-directory)))
 
 ;;;; Title/Path/Slug conversion
 
@@ -159,29 +116,6 @@ In Markdown, TYPE has no effect."
           (t
            (format "[%s](%s)" description target))))))
 
-;;;; dealing with file-wide properties
-(defun org-roam--set-global-prop (name value)
-  "Set a file property called NAME to VALUE.
-
-If the property is already set, it's value is replaced."
-  (org-with-point-at 1
-    (let ((case-fold-search t))
-      (if (re-search-forward (concat "^#\\+" name ":\\(.*\\)") (point-max) t)
-          (replace-match (concat " " value) 'fixedcase nil nil 1)
-        (while (and (not (eobp))
-                    (looking-at "^[#:]"))
-          (if (save-excursion (end-of-line) (eobp))
-              (progn
-                (end-of-line)
-                (insert "\n"))
-            (forward-line)
-            (beginning-of-line)))
-        (insert "#+" name ": " value "\n")))))
-
-(defun org-roam--find-file (file)
-  "Open FILE using `org-roam-find-file-function' or `find-file'."
-  (funcall (or org-roam-find-file-function #'find-file) file))
-
 (defun org-roam--find-ref (ref)
   "Find and open and Org-roam file from REF if it exists.
 REF should be the value of '#+roam_key:' without any
@@ -191,30 +125,12 @@ Return nil if the file does not exist."
               (file (plist-get (cdr (assoc ref completions)) :path)))
     (org-roam--find-file file)))
 
-(defun org-roam--org-roam-buffer-p (&optional buffer)
-  "Return t if BUFFER is accessing a part of Org-roam system.
-If BUFFER is not specified, use the current buffer."
-  (let ((buffer (or buffer (current-buffer)))
-        path)
-    (with-current-buffer buffer
-      (and (setq path (buffer-file-name (buffer-base-buffer)))
-           (org-roam--org-roam-file-p path)))))
-
-(defun org-roam--get-roam-buffers ()
-  "Return a list of buffers that are Org-roam files."
-  (--filter (org-roam--org-roam-buffer-p it)
-            (buffer-list)))
-
 (defun org-roam--save-buffers (&optional ask update)
   "Save all Org-roam buffers.
 When ASK is non-nil, ask whether the buffers should be saved.
 When UPDATE is non-nil, update the database after."
   (save-some-buffers (not ask) #'org-roam--org-roam-buffer-p)
   (when update (org-roam-db-update)))
-
-(defun org-roam--in-buffer-p ()
-  "Return t if in the Org-roam backlinks buffer."
-  (bound-and-true-p org-roam-backlinks-mode))
 
 (defun org-roam--backlink-to-current-p ()
   "Return t if the link at point is to the current Org-roam file."
@@ -547,95 +463,6 @@ M-x info for more information at Org-roam > Installation > Post-Installation Tas
 (defalias 'org-roam 'org-roam-buffer-toggle-display)
 
 ;;;###autoload
-(defun kisaragi-notes/open (&optional entry)
-  ;; Some usages:
-  ;; (kisaragi-notes/open title)
-  ;; (kisaragi-notes/open
-  ;;   (kisaragi-notes-completion//read-note initial-input))
-  "Find and open the note ENTRY.
-
-ENTRY is a plist (:path PATH :title TITLE). It can also be a
-string, in which case it refers to a (maybe non-existent) note
-with it as the title.
-
-Interactively, provide a list of notes to search and select from.
-If a note with the entered title does not exist, create a new
-one."
-  (interactive
-   (list (kisaragi-notes-completion//read-note)))
-  (unless org-roam-mode (org-roam-mode))
-  (when (stringp entry)
-    (setq entry
-          (list :path (car (kisaragi-notes-db//fetch-files-by-title entry))
-                :title entry)))
-  (let ((file-path (plist-get entry :path))
-        (title (plist-get entry :title)))
-    (if file-path
-        (org-roam--find-file file-path)
-      ;; FIXME: Hardcodes choice of Org
-      (with-current-buffer (find-file-noselect
-                            (-> (kisaragi-notes//title-to-slug title)
-                              (f-expand org-directory)
-                              (concat ".org")))
-        (insert "#+TITLE: " title "\n")
-        (pop-to-buffer-same-window (current-buffer))))))
-
-(defun kisaragi-notes/search (term)
-  "Return a list of notes matching TERM."
-  (with-temp-buffer
-    (call-process "ag" nil '(t nil) nil
-                  "--vimgrep"
-                  term ".")
-    (setf (point) (point-min))
-    (cl-loop while (re-search-forward
-                    (rx bol
-                        (group (*? any)) ":" ; file name (don't put colons in there)
-                        (group (+? digit)) ":" ; line
-                        (group (+? digit)) ":" ; column
-                        (group (* any)))
-                    nil t)
-             collect
-             (let ((file (match-string 1))
-                   (line (match-string 2))
-                   (column (match-string 3))
-                   (context (match-string 4)))
-               (list :title (kisaragi-notes-db//fetch-title (expand-file-name file))
-                     :tags (kisaragi-notes-db//fetch-file-tags (expand-file-name file))
-                     :file file :line line :column column :context context)))))
-
-;;;###autoload
-(defun org-roam-find-directory ()
-  "Find and open `org-directory'."
-  (interactive)
-  (org-roam--find-file org-directory))
-
-;;;###autoload
-(defun org-roam-find-ref (arg &optional filter)
-  "Find and open an Org-roam file from a ref.
-ARG is used to forward interactive calls to
-`org-roam--get-ref-path-completions'
-FILTER can either be a string or a function:
-- If it is a string, it should be the type of refs to include as
-candidates (e.g. \"cite\" ,\"website\" ,etc.)
-- If it is a function, it should be the name of a function that
-takes three arguments: the type, the ref, and the file of the
-current candidate.  It should return t if that candidate is to be
-included as a candidate."
-  (interactive "p")
-  (unless org-roam-mode (org-roam-mode))
-  (let* ((completions (org-roam--get-ref-path-completions arg filter))
-         (ref (completing-read "Ref: " completions nil t))
-         (file (-> (cdr (assoc ref completions))
-                 (plist-get :path))))
-    (org-roam--find-file file)))
-
-;;;###autoload
-(defun org-roam-random-note ()
-  "Find a random Org-roam file."
-  (interactive)
-  (find-file (seq-random-elt (org-roam--list-all-files))))
-
-;;;###autoload
 (defun org-roam-insert (&optional lowercase completions filter-fn description type)
   "Find an Org-roam file, and insert a relative org link to it at point.
 Return selected file if it exists.
@@ -705,108 +532,6 @@ See `org-roam-insert' for details."
   (let ((args (push arg args))
         (org-roam-capture-templates (list org-roam-capture-immediate-template)))
     (apply #'org-roam-insert args)))
-
-;;;###autoload
-(defun org-roam-jump-to-index ()
-  "Find the index file in `org-directory'.
-The path to the index can be defined in `org-roam-index-file'.
-Otherwise, the function will look in your `org-directory'
-for a note whose title is 'Index'.  If it does not exist, the
-command will offer you to create one."
-  (interactive)
-  (unless org-roam-mode (org-roam-mode))
-  (let ((index (--> (pcase org-roam-index-file
-                      ((pred functionp) (funcall org-roam-index-file))
-                      ((pred stringp) org-roam-index-file)
-                      ('nil (user-error "You need to set `org-roam-index-file' before you can jump to it"))
-                      (wrong-type (user-error
-                                   "`org-roam-index-file' must be a string or a function, not %s"
-                                   wrong-type)))
-                 (expand-file-name it org-directory))))
-    (if (and index
-             (f-exists? index))
-        (org-roam--find-file index)
-      (when (y-or-n-p "Index file does not exist.  Would you like to create it? ")
-        (kisaragi-notes/open "Index")))))
-
-;;;###autoload
-(defun org-roam-alias-add ()
-  "Add an alias to Org-roam file.
-
-Return added alias."
-  (interactive)
-  (unless org-roam-mode (org-roam-mode))
-  (let ((alias (read-string "Alias: ")))
-    (when (string-empty-p alias)
-      (user-error "Alias can't be empty"))
-    (org-roam--set-global-prop
-     "roam_alias"
-     (combine-and-quote-strings
-      (seq-uniq (cons alias
-                      (org-roam--extract-titles-alias)))))
-    (org-roam-db--update-file (buffer-file-name (buffer-base-buffer)))
-    alias))
-
-;;;###autoload
-(defun org-roam-alias-delete ()
-  "Delete an alias from Org-roam file."
-  (interactive)
-  (unless org-roam-mode (org-roam-mode))
-  (if-let ((aliases (org-roam--extract-titles-alias)))
-      (let ((alias (completing-read "Alias: " aliases nil 'require-match)))
-        (org-roam--set-global-prop
-         "roam_alias"
-         (combine-and-quote-strings (delete alias aliases)))
-        (org-roam-db--update-file (buffer-file-name (buffer-base-buffer))))
-    (user-error "No aliases to delete")))
-
-(defun org-roam-tag-add ()
-  "Add a tag to Org-roam file.
-
-Return added tag."
-  (interactive)
-  (unless org-roam-mode (org-roam-mode))
-  (let* ((all-tags (kisaragi-notes-db//fetch-all-tags))
-         (tag (completing-read "Tag: " all-tags))
-         (file (buffer-file-name (buffer-base-buffer)))
-         (existing-tags (org-roam--extract-tags-prop file)))
-    (when (string-empty-p tag)
-      (user-error "Tag can't be empty"))
-    (org-roam--set-global-prop
-     "roam_tags"
-     (combine-and-quote-strings (seq-uniq (cons tag existing-tags))))
-    (org-roam-db--insert-tags 'update)
-    tag))
-
-(defun org-roam-tag-delete ()
-  "Delete a tag from Org-roam file."
-  (interactive)
-  (unless org-roam-mode (org-roam-mode))
-  (if-let* ((file (buffer-file-name (buffer-base-buffer)))
-            (tags (org-roam--extract-tags-prop file)))
-      (let ((tag (completing-read "Tag: " tags nil 'require-match)))
-        (org-roam--set-global-prop
-         "roam_tags"
-         (combine-and-quote-strings (delete tag tags)))
-        (org-roam-db--insert-tags 'update))
-    (user-error "No tag to delete")))
-
-;;;###autoload
-(defun org-roam-switch-to-buffer ()
-  "Switch to an existing Org-roam buffer."
-  (interactive)
-  (let* ((roam-buffers (org-roam--get-roam-buffers))
-         (names-and-buffers (mapcar (lambda (buffer)
-                                      (cons (or (kisaragi-notes-db//fetch-title
-                                                 (buffer-file-name buffer))
-                                                (buffer-name buffer))
-                                            buffer))
-                                    roam-buffers)))
-    (unless roam-buffers
-      (user-error "No roam buffers"))
-    (when-let ((name (completing-read "Buffer: " names-and-buffers
-                                      nil t)))
-      (switch-to-buffer (cdr (assoc name names-and-buffers))))))
 
 (defun org-roam--execute-file-row-col (s)
   "Move to row:col if S match the row:col syntax. To be used with `org-execute-file-search-functions'."
