@@ -103,7 +103,6 @@ FILE-FROM to the key."
                              :point (point)))
                       while (search-forward ";" (line-end-position) t)))))
 
-;; TODO: Markdown link context
 (defun kisaragi-notes-extract//org-links-context ()
   "Return the context around point."
   (let* ((elem-at-point (org-element-at-point))
