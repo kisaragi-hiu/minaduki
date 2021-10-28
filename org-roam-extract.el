@@ -416,7 +416,8 @@ If NESTED, return the first successful result from SOURCES."
                             org-roam-title-sources))
        (setq res (if (symbolp source)
                      (funcall (intern (concat "org-roam--extract-titles-" (symbol-name source))))
-                   (org-roam--extract-titles source t)))
+                   (org-roam--extract-titles source t))
+             res (cl-coerce res 'list))
        (when res
          (if (not nested)
              (setq coll (nconc coll res))
