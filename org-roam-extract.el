@@ -222,13 +222,13 @@ Links are assumed to originate from FILE-PATH."
            (backward-sentence)
            (setq begin-of-block (point))
            (setq content
-                 (buffer-substring-no-properties begin-of-block end-of-block)))
-         (vector file-path ; file-from
-                 (file-truename
-                  (expand-file-name (url-filename (url-generic-parse-url link))
-                                    (file-name-directory file-path))) ; file-to
-                 link-type
-                 (list :content content :point begin-of-block)))))))
+                 (buffer-substring-no-properties begin-of-block end-of-block))))
+       (vector file-path ; file-from
+               (file-truename
+                (expand-file-name (url-filename (url-generic-parse-url link))
+                                  (file-name-directory file-path))) ; file-to
+               link-type
+               (list :content content :point begin-of-block))))))
 
 ;; Modified from md-roam's `md-roam--extract-cite-links'
 (defun org-roam--extract-links-pandoc-cite (file-path)
