@@ -358,7 +358,9 @@ If FILE, set `org-roam-temp-file-name' to file and insert its contents."
          (let ((org-directory ,current-org-directory)
                (org-mode-hook nil)
                (org-inhibit-startup t))
-           (org-mode)
+           (funcall (or (-some-> ,file
+                          (assoc-default auto-mode-alist #'string-match))
+                        org-mode))
            (when ,file
              (insert-file-contents ,file)
              (setq-local kisaragi-notes//file-name ,file)
