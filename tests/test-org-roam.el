@@ -433,10 +433,10 @@
     (test-org-roam--teardown))
 
   (it "Returns a file from its title"
-    (expect (kisaragi-notes-db//fetch-files-by-title "Foo")
+    (expect (kisaragi-notes-db//query-title "Foo")
             :to-equal
             (list (test-org-roam--abs-path "foo.org")))
-    (expect (kisaragi-notes-db//fetch-files-by-title "Deeply Nested File")
+    (expect (kisaragi-notes-db//query-title "Deeply Nested File")
             :to-equal
             (list (test-org-roam--abs-path "nested/deeply/deeply_nested_file.org")))))
 

@@ -79,18 +79,7 @@
 (require 'org-roam-graph)
 (require 'kisaragi-notes-wikilink)
 
-;;;; Utilities
-
-;;;; Title/Path/Slug conversion
-
-(defun org-roam--find-ref (ref)
-  "Find and open and Org-roam file from REF if it exists.
-REF should be the value of '#+roam_key:' without any
-type-information (e.g. 'cite:').
-Return nil if the file does not exist."
-  (when-let* ((completions (org-roam--get-ref-path-completions))
-              (file (plist-get (cdr (assoc ref completions)) :path)))
-    (org-roam--find-file file)))
+;;; Org-roam-mode
 
 (defun org-roam--save-buffers (&optional ask update)
   "Save all Org-roam buffers.
@@ -112,7 +101,6 @@ When UPDATE is non-nil, update the database after."
                                (_ dest))))))
       (string= current-file backlink-dest))))
 
-;;; Org-roam-mode
 ;;;; Function Faces
 ;; These faces are used by `org-link-set-parameters', which take one argument,
 ;; which is the path.
@@ -355,6 +343,17 @@ When NEW-FILE-OR-DIR is a directory, we use it to compute the new file path."
              (not (org-roam-capture-p)))
     (org-roam-db-update)))
 
+(defun org-roam--execute-file-row-col (s)
+  "Move to row:col if S match the row:col syntax. To be used with `org-execute-file-search-functions'."
+  (when (string-match (rx (group (1+ digit))
+                          ":"
+                          (group (1+ digit))) s)
+    (let ((row (string-to-number (match-string 1 s)))
+          (col (string-to-number (match-string 2 s))))
+      (org-goto-line row)
+      (move-to-column (- col 1))
+      t)))
+
 ;;;; org-roam-mode
 
 ;;;###autoload
@@ -477,34 +476,6 @@ Otherwise, behave as if called interactively."
 ;;; Interactive Commands
 ;;;###autoload
 (defalias 'org-roam 'org-roam-buffer-toggle-display)
-
-(defun org-roam--execute-file-row-col (s)
-  "Move to row:col if S match the row:col syntax. To be used with `org-execute-file-search-functions'."
-  (when (string-match (rx (group (1+ digit))
-                          ":"
-                          (group (1+ digit))) s)
-    (let ((row (string-to-number (match-string 1 s)))
-          (col (string-to-number (match-string 2 s))))
-      (org-goto-line row)
-      (move-to-column (- col 1))
-      t)))
-
-;;;###autoload
-(defun org-roam-version (&optional message)
-  "Return `org-roam' version.
-Interactively, or when MESSAGE is non-nil, show in the echo area."
-  (interactive)
-  (let* ((version
-          (with-temp-buffer
-            (insert-file-contents-literally (locate-library "org-roam.el"))
-            (goto-char (point-min))
-            (save-match-data
-              (if (re-search-forward "\\(?:;; Version: \\([^z-a]*?$\\)\\)" nil nil)
-                  (substring-no-properties (match-string 1))
-                "N/A")))))
-    (if (or message (called-interactively-p 'interactive))
-        (message "%s" version)
-      version)))
 
 (provide 'org-roam)
 ;;; org-roam.el ends here

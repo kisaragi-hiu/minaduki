@@ -21,7 +21,7 @@
 (declare-function org-element-citation-reference-parser "org-element")
 (defvar org-element-citation-prefix-re)
 
-(declare-function kisaragi-notes-db//fetch-files-by-title "org-roam-db")
+(declare-function kisaragi-notes-db//query-title "org-roam-db")
 
 (defun kisaragi-notes-extract//markdown-props (prop)
   "Extract PROP in the Markdown front matter."
@@ -179,7 +179,7 @@ Assume links come from FILE-PATH."
     (goto-char (point-min))
     (cl-loop while (re-search-forward "\\[\\[\\([^]]+\\)\\]\\]" nil t)
              collect
-             (let* ((target (car (kisaragi-notes-db//fetch-files-by-title
+             (let* ((target (car (kisaragi-notes-db//query-title
                                   (match-string-no-properties 1))))
                     (begin-of-block (match-beginning 0))
                     (end-of-block (save-excursion

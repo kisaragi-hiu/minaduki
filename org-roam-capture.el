@@ -44,7 +44,6 @@
 ;; Declarations
 (defvar org-roam-mode)
 
-(declare-function  org-roam--get-ref-path-completions   "org-roam")
 (declare-function  org-roam--find-file                  "org-roam")
 (declare-function  org-roam-format-link                 "org-roam")
 (declare-function  org-roam-mode                        "org-roam")

@@ -314,6 +314,7 @@ candidates (e.g. \"cite\" ,\"website\" ,etc.)
 takes three arguments: the type, the ref, and the file of the
 current candidate.  It should return t if that candidate is to be
 included as a candidate."
+  (interactive (list t))
   (let* ((completions (org-roam--get-ref-path-completions interactive? filter))
          (ref (completing-read "Literature note: " completions nil t))
          (file (-> (cdr (assoc ref completions))
@@ -344,7 +345,7 @@ The index file is specified in this order:
                 ((stringp org-roam-index-file)
                  (f-expand org-roam-index-file))
                 (t
-                 (car (kisaragi-notes-db//fetch-files-by-title "Index"))))))
+                 (car (kisaragi-notes-db//query-title "Index"))))))
     (if (and index (f-exists? index))
         (org-roam--find-file index)
       (when (y-or-n-p "Index file does not exist.  Would you like to create it? ")
@@ -370,7 +371,7 @@ one."
   (unless org-roam-mode (org-roam-mode))
   (when (stringp entry)
     (setq entry
-          (list :path (car (kisaragi-notes-db//fetch-files-by-title entry))
+          (list :path (car (kisaragi-notes-db//query-title entry))
                 :title entry)))
   (let ((file-path (plist-get entry :path))
         (title (plist-get entry :title)))
