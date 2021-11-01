@@ -605,7 +605,7 @@ newly created note."
   ;; still exists.  But if the capture process was killed, our before hook
   ;; function did not run and therefore title is nil on `orb-plist'.
   (orb-register-hook-function get-title before nil
-    (orb-plist-put :title (orb-get-buffer-keyword "title")
+    (orb-plist-put :title (cdar (kisaragi-notes//org-props '("title")))
                    :immediate-finish
                    (plist-get org-capture-plist :immediate-finish)))
 
