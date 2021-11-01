@@ -472,12 +472,14 @@ wildcards will be replace with the BibTeX field value."
   (when (consp citekey)
     (setq citekey (car citekey)))
   (unless org-roam-mode (org-roam-mode))
-  (let ((note-data (orb-note-exists-p citekey)))
+  (let ((note-data (kisaragi-notes-db//query-ref citekey)))
     ;; Find org-roam reference with the CITEKEY and collect data into
     ;; `orb-plist'
     (orb-plist-put :note-existed (and note-data t))
     (cond
      (note-data
+      (orb-plist-put :title (elt note-data 0)
+                     :file (elt note-data 1))
       (apply #'orb-plist-put (cdr note-data))
       (ignore-errors (org-roam--find-file (orb-plist-get :file))))
      ;; we need to clean up if the capture process was aborted signaling

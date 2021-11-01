@@ -55,6 +55,31 @@
 ;;;; Document properties
 ;; ============================================================================
 
+;;;; Cache all refs.
+;; This is because `orb-find-note-file' is called on every existing
+;; cite key when `bibtex-completion' is preparing to display entries.
+;;
+;; Rapidly querying the DB is slower than `gethash' on a hash table.
+;; It's about an order of magnitude slower on my device. Try it:
+;;
+;;     ;; Fetch a list of citekeys
+;;     (let ((cite-refs (->> (org-roam--get-ref-path-completions nil "cite")
+;;                        (--map (plist-get (cdr it) :ref)))))
+;;       (list
+;;        (benchmark-run 10
+;;          (progn
+;;            (setq orb-notes-cache nil)
+;;            (mapc #'orb-find-note-file cite-refs)))
+;;        (benchmark-run 10
+;;          (mapc (lambda (key)
+;;                  (org-roam-db-query
+;;                   [:select [file] :from refs
+;;                    :where (= ref $s1)]
+;;                   key))
+;;                cite-refs))))
+;;
+;; -> ((0.24450254200000002 0 0.0) (3.7526077939999998 0 0.0))
+
 (defvar orb-notes-cache nil
   "Cache of ORB notes.")
 
@@ -74,20 +99,6 @@
 Returns the path to the note file, or nil if it doesn’t exist."
   (gethash citekey (or orb-notes-cache
                        (orb-make-notes-cache))))
-
-(defun orb-note-exists-p (citekey)
-  "Check if a note exists whose citekey is CITEKEY.
-Return alist (CITEKEY :title title :file :file) if note exists or
-nil otherwise."
-  ;; NOTE: This function can be made more general.
-  (when-let ((query-data
-              (car
-               (org-roam-db-query
-                [:select [titles:title refs:file]
-                 :from titles
-                 :left :join refs :on (= titles:file refs:file)
-                 :where (like refs:ref $r1)] (format "%%\"%s\"%%" citekey)))))
-    `(,citekey :title ,(car query-data) :file ,(nth 1 query-data))))
 
 (provide 'orb-utils)
 ;;; orb-utils.el ends here

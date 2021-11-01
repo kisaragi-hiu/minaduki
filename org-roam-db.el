@@ -397,12 +397,13 @@ Return the number of rows inserted."
     (apply #'nconc)))
 
 (defun kisaragi-notes-db//query-ref (ref)
-  "Return the file associated with REF."
-  (caar (org-roam-db-query
-         [:select [file]
-          :from refs
-          :where (= ref $s1)]
-         ref)))
+  "Return the file associated with REF as (TITLE FILE)."
+  (car (org-roam-db-query
+        [:select [titles:title refs:file]
+         :from refs
+         :left-join titles :on (= titles:file refs:file)
+         :where (= refs:ref $s1)]
+        ref)))
 
 (defun kisaragi-notes-db//fetch-all-files-hash ()
   "Return ((path . content-hash) ...) for all cached files as a hash-table."
