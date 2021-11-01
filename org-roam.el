@@ -364,6 +364,10 @@ This mode sets up several hooks, to ensure that the cache is updated on file
 changes, renames and deletes. It is also in charge of graceful termination of
 the database connection.
 
+This also sets `orb-edit-notes' as a function for editing
+literature notes, as well as setting up Org-ref and
+Bibtex-completion.
+
 When called interactively, toggle `org-roam-mode'. with prefix
 ARG, enable `org-roam-mode' if ARG is positive, otherwise disable
 it.
@@ -373,6 +377,10 @@ nil, or positive. If ARG is `toggle', toggle `org-roam-mode'.
 Otherwise, behave as if called interactively."
   :lighter " Org-roam"
   :keymap (let ((map (make-sparse-keymap)))
+            (define-key map (kbd "C-c ) a") #'kisaragi-notes/literature-note-actions)
+            (define-key map (kbd "C-c ) i") #'orb-insert)
+            (define-key map (kbd "C-c ) C-f") #'kisaragi-notes/open-non-literature-note)
+            (define-key map (kbd "C-c ) C-i") #'orb-insert-non-ref)
             map)
   :group 'org-roam
   :require 'org-roam
@@ -402,7 +410,15 @@ M-x info for more information at Org-roam > Installation > Post-Installation Tas
       (with-current-buffer buf
         (add-hook 'post-command-hook #'org-roam-buffer--update-maybe nil t)
         (add-hook 'before-save-hook #'org-roam-link--replace-link-on-save nil t)
-        (add-hook 'after-save-hook #'org-roam-db-update nil t))))
+        (add-hook 'after-save-hook #'org-roam-db-update nil t)))
+    (when (featurep 'org-ref)
+      (setq org-ref-notes-function 'orb-notes-fn))
+    (add-to-list 'bibtex-completion-find-note-functions
+                 #'orb-find-note-file)
+    (advice-add 'bibtex-completion-edit-notes
+                :override #'orb-edit-notes-ad)
+    (advice-add 'bibtex-completion-parse-bibliography
+                :before #'orb-bibtex-completion-parse-bibliography-ad))
    (t
     (setq org-execute-file-search-functions (delete 'org-roam--execute-file-row-col org-execute-file-search-functions))
     (remove-hook 'find-file-hook #'org-roam--find-file-hook-function)
@@ -422,56 +438,18 @@ M-x info for more information at Org-roam > Installation > Post-Installation Tas
       (with-current-buffer buf
         (remove-hook 'post-command-hook #'org-roam-buffer--update-maybe t)
         (remove-hook 'before-save-hook #'org-roam-link--replace-link-on-save t)
-        (remove-hook 'after-save-hook #'org-roam-db-update t))))))
+        (remove-hook 'after-save-hook #'org-roam-db-update t)))
+    (when (featurep 'org-ref)
+      (setq org-ref-notes-function 'org-ref-notes-function-one-file))
+    (setq bibtex-completion-find-note-functions
+          (delq #'orb-find-note-file
+                bibtex-completion-find-note-functions))
+    (advice-remove 'bibtex-completion-edit-notes
+                   #'orb-edit-notes-ad)
+    (advice-remove 'bibtex-completion-parse-bibliography
+                   #'orb-bibtex-completion-parse-bibliography-ad))))
 
 (add-hook 'org-roam-mode-hook #'org-roam-db-build-cache)
-
-;;;; org-roam-bibtex-mode
-
-;;;###autoload
-(define-minor-mode org-roam-bibtex-mode
-  "Sets `orb-edit-notes' as a function for editing bibliography notes.
-Affects Org-ref and Helm-bibtex/Ivy-bibtex.
-
-When called interactively, toggle `org-roam-bibtex-mode'. with
-prefix ARG, enable `org-roam-bibtex-mode' if ARG is positive,
-otherwise disable it.
-
-When called from Lisp, enable `org-roam-mode' if ARG is omitted,
-nil, or positive.  If ARG is `toggle', toggle `org-roam-mode'.
-Otherwise, behave as if called interactively."
-  :lighter " orb"
-  :keymap (let ((map (make-sparse-keymap)))
-            (define-key map (kbd "C-c ) a") #'kisaragi-notes/literature-note-actions)
-            (define-key map (kbd "C-c ) i") #'orb-insert)
-            (define-key map (kbd "C-c ) C-f") #'kisaragi-notes/open-non-literature-note)
-            (define-key map (kbd "C-c ) C-i") #'orb-insert-non-ref)
-            map)
-  :group 'org-roam-bibtex
-  :require 'orb
-  :global t
-  (require 'bibtex-completion)
-  (cond (org-roam-bibtex-mode
-         (when (featurep 'org-ref)
-           (setq org-ref-notes-function 'orb-notes-fn))
-         (add-to-list 'bibtex-completion-find-note-functions
-                      #'orb-find-note-file)
-         (advice-add 'bibtex-completion-edit-notes
-                     :override #'orb-edit-notes-ad)
-         (advice-add 'bibtex-completion-parse-bibliography
-                     :before #'orb-bibtex-completion-parse-bibliography-ad))
-        (t
-         (when (featurep 'org-ref)
-           (setq org-ref-notes-function 'org-ref-notes-function-one-file))
-         (setq bibtex-completion-find-note-functions
-               (delq #'orb-find-note-file
-                     bibtex-completion-find-note-functions))
-         (advice-remove 'bibtex-completion-edit-notes
-                        #'orb-edit-notes-ad)
-         (advice-remove 'bibtex-completion-parse-bibliography
-                        #'orb-bibtex-completion-parse-bibliography-ad))))
-
-(org-link-set-parameters "cite" :follow #'kisaragi-notes/literature-note-actions)
 
 ;;; Interactive Commands
 ;;;###autoload
