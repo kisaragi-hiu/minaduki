@@ -45,22 +45,6 @@
                  nil t)
             (match-string-no-properties 1)))))))
 
-(defun org-roam--extract-global-props (props)
-  "Extract PROPS from the current Org buffer.
-Props are extracted from both the file-level property drawer (if
-any), and Org keywords. Org keywords take precedence."
-  (let (ret)
-    ;; Org: keyword properties
-    (pcase-dolist (`(,key . ,values) (org-collect-keywords props))
-      (dolist (value values)
-        (push (cons key value) ret)))
-    ;; Org: file-level property drawer properties
-    (org-with-point-at 1
-      (dolist (prop props)
-        (when-let ((v (org-entry-get (point) prop)))
-          (push (cons prop v) ret))))
-    ret))
-
 (defun org-roam--extract-prop-as-list (prop)
   "Extract PROP from the current Org buffer as a list.
 
@@ -74,7 +58,7 @@ roam_alias."
   ;;     #+prop: a b
   ;;     #+prop: c d
   ;;     -> '(\"a\" \"b\" \"c\" \"d\")
-  (--> (org-roam--extract-global-props (list prop))
+  (--> (kisaragi-notes//org-props (list prop))
     ;; so that the returned order is the same as in the buffer
     nreverse
     ;; '(("ROAM_TAGS" . "a b") ("ROAM_TAGS" . "c d"))
@@ -317,7 +301,7 @@ If FILE-PATH is nil, use the current file."
 
 (cl-defmethod org-roam--extract-titles-title (&context (major-mode org-mode))
   "Return title from \"#+title\" in Org mode."
-  (let* ((prop (org-roam--extract-global-props '("TITLE")))
+  (let* ((prop (kisaragi-notes//org-props '("TITLE")))
          (title (cdr (assoc "TITLE" prop))))
     (when title
       (list title))))
@@ -570,7 +554,7 @@ Return value: ((TYPE . KEY) (TYPE . KEY) ...)"
   (let (refs)
     (pcase-dolist
         (`(,_ . ,roam-key)
-         (org-roam--extract-global-props '("ROAM_KEY")))
+         (kisaragi-notes//org-props '("ROAM_KEY")))
       (pcase roam-key
         ('nil nil)
         ((pred string-empty-p)

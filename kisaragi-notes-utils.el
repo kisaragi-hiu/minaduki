@@ -107,6 +107,23 @@ In Markdown, TYPE has no effect."
     (org-with-wide-buffer
      (secure-hash 'sha1 (current-buffer)))))
 
+;; `org-roam--extract-global-props'
+(defun kisaragi-notes//org-props (props)
+  "Extract PROPS from the current Org buffer.
+Props are extracted from both the file-level property drawer (if
+any), and Org keywords. Org keywords take precedence."
+  (let (ret)
+    ;; Org: keyword properties
+    (pcase-dolist (`(,key . ,values) (org-collect-keywords props))
+      (dolist (value values)
+        (push (cons key value) ret)))
+    ;; Org: file-level property drawer properties
+    (org-with-point-at 1
+      (dolist (prop props)
+        (when-let ((v (org-entry-get (point) prop)))
+          (push (cons prop v) ret))))
+    ret))
+
 (defmacro kisaragi-notes//for (message var sequence &rest body)
   "Iterate BODY over SEQUENCE.
 
