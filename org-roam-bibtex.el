@@ -58,11 +58,6 @@
 ;; As a user option, `org-roam-capture-templates' can be dynamically
 ;; preformatted with bibtex field values.  See
 ;; `orb-preformat-keywords' for more details.
-;;
-;; Optionally, automatic switching to the perspective (Persp-mode)
-;; with the notes project (Projectile) is possible.  See
-;; `orb-edit-notes' for more details.
-;;
 
 ;;; Code:
 
@@ -237,21 +232,6 @@ symbols is implied."
 ;; ============================================================================
 ;;;; Orb edit notes
 ;; ============================================================================
-
-(defun orb--switch-perspective ()
-  "Helper function for `orb-edit-notes'."
-  (when (and (require 'projectile nil t)
-             (require 'persp-mode nil t))
-    (let ((notes-project (cdr orb-persp-project))
-          (projects (projectile-relevant-open-projects))
-          openp)
-      (dolist (project projects openp)
-        (setq openp (or (f-equal? project notes-project) openp)))
-      (when openp
-        (let ((p-names (cdr (persp-names))))
-          (dolist (p-name p-names)
-            (when (s-equals? p-name (car orb-persp-project))
-              (persp-switch p-name))))))))
 
 (defun orb--store-link-functions-advice (action)
   "Add or remove advice for each of `orb-ignore-bibtex-store-link-functions'.
@@ -483,20 +463,10 @@ Please pay attention when using this feature that by setting
 title for preformatting, it will be impossible to change it in
 the `org-roam-find-file' interactive prompt since all the
 template expansions will have taken place by then.  All the title
-wildcards will be replace with the BibTeX field value.
-
-5. Optionally, if you are using Projectile and Persp-mode and
-have a dedicated workspace to work with your Org-roam collection,
-you may want to set the perspective name and project path in
-`orb-persp-project' and `orb-switch-persp' to t.  In this case,
-the perspective will be switched to the Org-roam notes project
-before calling any Org-roam functions."
+wildcards will be replace with the BibTeX field value."
   (when (consp citekey)
     (setq citekey (car citekey)))
   (unless org-roam-mode (org-roam-mode))
-  ;; Optionally switch to the notes perspective
-  (when orb-switch-persp
-    (orb--switch-perspective))
   (let ((note-data (orb-note-exists-p citekey)))
     ;; Find org-roam reference with the CITEKEY and collect data into
     ;; `orb-plist'

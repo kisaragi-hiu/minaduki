@@ -400,35 +400,6 @@ possibly other things."
           (const title))
   :group 'org-roam-bibtex)
 
-;; TODO: define a `kisaragi-notes/literature-note-directory'
-(defcustom orb-persp-project `("notes" . ,org-directory)
-  "Perspective name and path to the project with bibliography notes.
-A cons cell (PERSP-NAME . PROJECT-PATH).  Only relevant when
-`orb-switch-persp' is set to t.
-
-Requires command `persp-mode' and command `projectile-mode'.
-
-PERSP-NAME should be a valid Perspective name, PROJECT-PATH should be
-an open Projectile project.
-
-See `orb-edit-notes' for details"
-  :type '(cons (string :tag "Perspective name")
-               (directory :tag "Projectile directory"))
-  :group 'org-roam-bibtex)
-
-(defcustom orb-switch-persp nil
-  "Non-nil to enable switching to the notes perspective.
-Set the name of the perspective and the path to the notes project
-in `orb-persp-project' for this to take effect.
-
-Requires command `persp-mode' and command `projectile-mode'.
-
-See `orb-edit-notes' for details."
-  :type '(choice
-          (const :tag "Yes" t)
-          (const :tag "No" nil))
-  :group 'org-roam-bibtex)
-
 (defcustom orb-ignore-bibtex-store-link-functions
   '(org-bibtex-store-link)
   "Functions to override with `ignore' during note creation process.
