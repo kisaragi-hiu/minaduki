@@ -382,7 +382,7 @@ Otherwise, behave as if called interactively."
     (unless (or (and (bound-and-true-p emacsql-sqlite3-executable)
                      (file-executable-p emacsql-sqlite3-executable))
                 (executable-find "sqlite3"))
-      (lwarn '(org-roam) :error "Cannot find executable 'sqlite3'. \
+      (kisaragi-notes//warn :error "Cannot find executable 'sqlite3'. \
 Ensure it is installed and can be found within `exec-path'. \
 M-x info for more information at Org-roam > Installation > Post-Installation Tasks."))
     (add-to-list 'org-execute-file-search-functions 'org-roam--execute-file-row-col)

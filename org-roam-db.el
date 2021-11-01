@@ -304,14 +304,15 @@ If UPDATE-P is non-nil, first remove the ref for the file in the database."
                  (list (vector key file type)))
                 (cl-incf count))
             (error
-             (lwarn '(org-roam) :error
-                    (format "Duplicate ref %s in:\n\nA: %s\nB: %s\n\nskipping..."
-                            key
-                            file
-                            (caar (org-roam-db-query
-                                   [:select file :from refs
-                                    :where (= ref $v1)]
-                                   (vector key))))))))))
+             (kisaragi-notes//warn
+              :error
+              "Duplicate ref %s in:\n\nA: %s\nB: %s\n\nskipping..."
+              key
+              file
+              (caar (org-roam-db-query
+                     [:select file :from refs
+                      :where (= ref $v1)]
+                     (vector key)))))))))
     count))
 
 (defun org-roam-db--insert-links (&optional update-p)
@@ -350,11 +351,12 @@ Returns the number of rows inserted."
                ids)
               (length ids))
           (error
-           (lwarn '(org-roam) :error
-                  (format "Duplicate IDs in %s, one of:\n\n%s\n\nskipping..."
-                          (aref (car ids) 1)
-                          (string-join (mapcar (lambda (hl)
-                                                 (aref hl 0)) ids) "\n")))
+           (kisaragi-notes//warn
+            :error
+            "Duplicate IDs in %s, one of:\n\n%s\n\nskipping..."
+            (aref (car ids) 1)
+            (string-join (mapcar (lambda (hl)
+                                   (aref hl 0)) ids) "\n"))
            0))
       0)))
 
@@ -610,8 +612,9 @@ FILE-HASH-PAIRS is a list of (file . hash) pairs."
           (file-error
            (setq error-count (1+ error-count))
            (org-roam-db--clear-file file)
-           (lwarn '(org-roam) :warning
-                  "Skipping unreadable file while building cache: %s" file)))))
+           (kisaragi-notes//warn
+            :warning
+            "Skipping unreadable file while building cache: %s" file)))))
     ;; Process titles and tags first to allow links to depend on
     ;; titles later
     (kisaragi-notes//for "Processing titles and tags (%s/%s)..."
@@ -623,8 +626,9 @@ FILE-HASH-PAIRS is a list of (file . hash) pairs."
         (file-error
          (setq error-count (1+ error-count))
          (org-roam-db--clear-file file)
-         (lwarn '(org-roam) :warning
-                "Skipping unreadable file while building cache: %s" file))))
+         (kisaragi-notes//warn
+          :warning
+          "Skipping unreadable file while building cache: %s" file))))
     ;; Process links and ref / cite links
     (kisaragi-notes//for "Processing links (%s/%s)..."
         (file . _) file-hash-pairs
@@ -636,8 +640,9 @@ FILE-HASH-PAIRS is a list of (file . hash) pairs."
         (file-error
          (setq error-count (1+ error-count))
          (org-roam-db--clear-file file)
-         (lwarn '(org-roam) :warning
-                "Skipping unreadable file while building cache: %s" file))))
+         (kisaragi-notes//warn
+          :warning
+          "Skipping unreadable file while building cache: %s" file))))
 
     (list :error-count error-count
           :modified-count modified-count

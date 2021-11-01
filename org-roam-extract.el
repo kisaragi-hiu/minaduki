@@ -338,12 +338,11 @@ Reads from the #+roam_alias keyword."
   (condition-case nil
       (org-roam--extract-prop-as-list "ROAM_ALIAS")
     (error
-     (progn
-       (lwarn '(org-roam) :error
-              "Failed to parse aliases for buffer: %s. Skipping"
-              (or kisaragi-notes//file-name
-                  (buffer-file-name)))
-       nil))))
+     (kisaragi-notes//warn
+      :error
+      "Failed to parse aliases for buffer: %s. Skipping"
+      (or kisaragi-notes//file-name
+          (buffer-file-name))))))
 
 (cl-defmethod org-roam--extract-titles-alias (&context (major-mode markdown-mode))
   "Return the aliases in Markdown.
@@ -355,11 +354,11 @@ roam_alias: [\"alias 1\", \"alias 2\"]"
       (-some-> (kisaragi-notes-extract//markdown-props "roam_alias")
         json-parse-string)
     (json-parse-error
-     (progn
-       (lwarn '(org-roam) :error
-              "Failed to parse aliases for buffer: %s. Skipping"
-              (or kisaragi-notes//file-name
-                  (buffer-file-name)))))))
+     (kisaragi-notes//warn
+      :error
+      "Failed to parse aliases for buffer: %s. Skipping"
+      (or kisaragi-notes//file-name
+          (buffer-file-name))))))
 
 (cl-defgeneric org-roam--extract-titles-headline ()
   "Extract the first headline as the document title."
@@ -458,12 +457,11 @@ This also extracts from the #+tags[] property, which is what Hugo expects."
               ;; (The fact that you simply need to change the prop it uses.)
               (org-roam--extract-prop-as-list "TAGS[]"))
     (error
-     (progn
-       (lwarn '(org-roam) :error
-              "Failed to parse tags for buffer: %s. Skipping"
-              (or kisaragi-notes//file-name
-                  (buffer-file-name)))
-       nil))))
+     (kisaragi-notes//warn
+      :error
+      "Failed to parse tags for buffer: %s. Skipping"
+      (or kisaragi-notes//file-name
+          (buffer-file-name))))))
 
 (defun org-roam--extract-tags-vanilla (_file)
   "Extract vanilla `org-mode' tags.

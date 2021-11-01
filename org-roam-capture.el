@@ -430,8 +430,9 @@ the file if the original value of :no-save is not t and
     (if (or (file-exists-p file-path)
             (find-buffer-visiting file-path))
         (unless allow-existing-file-p
-          (lwarn '(org-roam) :warning
-                 "Attempted to recreate existing file: %s.
+          (kisaragi-notes//warn
+           :warning
+           "Attempted to recreate existing file: %s.
 This can happen when your org-roam db is not in sync with your notes.
 Using existing file..." file-path))
       (make-directory (file-name-directory file-path) t)

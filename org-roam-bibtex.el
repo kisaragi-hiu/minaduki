@@ -344,13 +344,16 @@ a capture session."
   ;; Check if the requested BibTeX entry actually exists and fail
   ;; gracefully otherwise
   (if-let* ((entry (or (bibtex-completion-get-entry citekey)
-                       (orb-warning
-                        "Could not find the BibTeX entry" citekey)))
+                       (kisaragi-notes//warn
+                        :warning
+                        "%s: Could not find the BibTeX entry" citekey)))
             ;; Depending on the templates used: run
             ;; `org-roam-capture--capture' or call `org-roam-find-file'
             (org-capture-templates
              (or orb-templates org-roam-capture-templates
-                 (orb-warning "Could not find the requested templates")))
+                 (kisaragi-notes//warn
+                  :warning
+                  "Could not find the requested templates")))
             ;; hijack org-capture-templates
             ;; entry is our bibtex entry, it just happens that
             ;; `org-capture' calls a single template entry "entry";
@@ -380,7 +383,9 @@ a capture session."
             (citekey-formatted (format (or orb-citekey-format "%s") citekey))
             (title
              (or (bibtex-completion-get-value "title" entry)
-                 (orb-warning "Title not found for this entry")
+                 (kisaragi-notes//warn
+                  :warning
+                  "Title not found for this entry")
                  ;; this is not critical, the user may input their own
                  ;; title
                  "Title not found")))

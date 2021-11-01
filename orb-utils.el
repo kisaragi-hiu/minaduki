@@ -55,13 +55,6 @@
 ;;;; General utilities
 ;; ============================================================================
 
-(defun orb-warning (warning &optional citekey)
-  "Display a WARNING message.  Return nil.
-Include CITEKEY if it is non-nil."
-  (display-warning
-   :warning (concat "ORB :" (when citekey (format "%s :" citekey)) warning))
-  nil)
-
 (defun orb--unformat-citekey (citekey)
   "Remove format from CITEKEY.
 Format is `orb-citekey-format'."

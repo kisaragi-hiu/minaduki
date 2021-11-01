@@ -19,6 +19,18 @@
 
 (declare-function org-roam-db-query "org-roam-db")
 
+(defun kisaragi-notes//warn (level message &rest args)
+  "Display a warning for kisaragi-notes at LEVEL.
+
+MESSAGE and ARGS are formatted by `format-message'.
+
+This is a convenience wrapper around `lwarn'. Difference:
+
+- TYPE is always '(org-roam). (This will be renamed later.)
+- This always returns nil."
+  (prog1 nil
+    (apply #'lwarn '(org-roam) level message args)))
+
 ;;; org-link-abbrev
 
 (defun kisaragi-notes//apply-link-abbrev (path)
