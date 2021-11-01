@@ -29,6 +29,13 @@
   :group 'org-roam
   :type 'string)
 
+(defcustom kisaragi-notes/diary-directory (f-slash
+                                           (f-join
+                                            org-directory "diary"))
+  "Where to store diary entries."
+  :group 'org-roam
+  :type 'string)
+
 (defcustom org-roam-encrypt-files nil
   "Whether to encrypt new files.  If true, create files with .gpg extension."
   :type 'boolean

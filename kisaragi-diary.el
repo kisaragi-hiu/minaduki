@@ -32,11 +32,6 @@
 
 (require 'kisaragi-notes-templates)
 
-(defcustom kisaragi-diary/directory "diary/"
-  "A path under `org-directory' to store new diary entries."
-  :group 'org-roam
-  :type 'string)
-
 (defun kisaragi-diary//read-date (prompt)
   "Like `org-read-date', but also highlight days with diary entries in calendar.
 
@@ -48,10 +43,10 @@ PROMPT is passed to `org-read-date'."
 
 ;;;###autoload
 (defun kisaragi-diary/new-entry (&optional day? time)
-  "Create a new diary entry in `kisaragi-diary/directory'.
+  "Create a new diary entry in `kisaragi-notes/diary-directory'.
 
 The entry will be stored as a file named after the current time
-under `kisaragi-diary/directory'. Example:
+under `kisaragi-notes/diary-directory'. Example:
 
     diary/20211019T233513+0900.org
 
@@ -75,9 +70,9 @@ When TIME is non-nil, create an entry for TIME instead of
          ;; Put this here so if we allow different templates later
          ;; it's easier to change
          (ext "org"))
-    (find-file (f-join org-directory
-                       kisaragi-diary/directory
-                       (concat filename "." ext)))
+    (find-file (f-join
+                kisaragi-notes/diary-directory
+                (concat filename "." ext)))
     ;; TODO: Markdown templates -> Markdown files
     (insert
      (or (and day?
@@ -113,13 +108,11 @@ whether an entry is from DAY or not."
       (kisaragi-notes//today))))
   (setq day (s-replace "-" "" day))
   (let ((file-list
-         (-some--> org-directory
-           (f-join it kisaragi-diary/directory)
-           (directory-files
-            it :full
-            (format (rx bos "%s" (0+ any) ".org")
-                    day)
-            :nosort))))
+         (directory-files
+          kisaragi-notes/diary-directory :full
+          (format (rx bos "%s" (0+ any) ".org")
+                  day)
+          :nosort)))
     (pcase (length file-list)
       (0 (when (y-or-n-p
                 (format "No entry from %s. Create one? " day))
@@ -155,8 +148,7 @@ whether an entry is from DAY or not."
 Implementation of `diary-mark-entries'."
   (interactive)
   (calendar-redraw)
-  (cl-loop for file in (directory-files
-                        (f-join org-directory kisaragi-diary/directory))
+  (cl-loop for file in (directory-files kisaragi-notes/diary-directory)
            when (>= (length file) 8)
            when (s-match (rx bos
                              (group digit digit digit digit)
