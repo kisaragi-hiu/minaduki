@@ -279,6 +279,24 @@ Return added tag."
       (switch-to-buffer (cdr (assoc name names-and-buffers))))))
 
 ;;;###autoload
+(defun kisaragi-notes/open-template ()
+  "Open a template in `kisaragi-notes/templates-directory' for edit."
+  (interactive)
+  ;; Setting `default-directory' to (a) skip passing the directory to
+  ;; `f-relative' and `f-expand', and (b) make sure each entry points
+  ;; to the right file as relative links. Without this, we have to
+  ;; settle for not setting the category correctly.
+  (org-roam--find-file
+   (let ((default-directory kisaragi-notes/templates-directory))
+     (--> kisaragi-notes/templates-directory
+       f-files
+       (-remove #'f-hidden? it)
+       (-map #'f-relative it)
+       (kisaragi-notes-completion//mark-category it 'file)
+       (completing-read "Open template: " it)
+       f-expand))))
+
+;;;###autoload
 (defun kisaragi-notes/open-non-literature-note (&optional initial-prompt)
   ;; `orb-find-non-ref-file'
   "Open a note that isn't a literature note.
@@ -397,8 +415,9 @@ CITEKEY is a list whose car is a citation key."
 ;;;; Actions
 
 (defvar kisaragi-notes/global-commands
-  '(("Open a note"                        . kisaragi-notes/open)
+  '(("Open or create a note"              . kisaragi-notes/open)
     ("Open notes directory"               . kisaragi-notes/open-directory)
+    ("Open or create a template"          . kisaragi-notes/open-template)
     ("Open the index file"                . kisaragi-notes/open-index)
     ("Open a literature note"             . kisaragi-notes/open-literature-note)
     ("Open a non-literature note"         . kisaragi-notes/open-non-literature-note)
