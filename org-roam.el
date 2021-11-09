@@ -59,8 +59,6 @@
 (when (featurep 'embark)
   (require 'kisaragi-notes-embark))
 
-(defvar org-ref-notes-function)
-
 ;;;; Features
 ;; These features should be able to be loaded order independently.
 ;; @TODO: implement something akin to `org-modules' that allows
@@ -365,8 +363,7 @@ changes, renames and deletes. It is also in charge of graceful termination of
 the database connection.
 
 This also sets `orb-edit-notes' as a function for editing
-literature notes, as well as setting up Org-ref and
-Bibtex-completion.
+literature notes, as well as setting up Bibtex-completion.
 
 When called interactively, toggle `org-roam-mode'. with prefix
 ARG, enable `org-roam-mode' if ARG is positive, otherwise disable
@@ -411,8 +408,6 @@ M-x info for more information at Org-roam > Installation > Post-Installation Tas
         (add-hook 'post-command-hook #'org-roam-buffer--update-maybe nil t)
         (add-hook 'before-save-hook #'org-roam-link--replace-link-on-save nil t)
         (add-hook 'after-save-hook #'org-roam-db-update nil t)))
-    (when (featurep 'org-ref)
-      (setq org-ref-notes-function 'orb-notes-fn))
     (add-to-list 'bibtex-completion-find-note-functions
                  #'orb-find-note-file)
     (advice-add 'bibtex-completion-edit-notes
@@ -439,8 +434,6 @@ M-x info for more information at Org-roam > Installation > Post-Installation Tas
         (remove-hook 'post-command-hook #'org-roam-buffer--update-maybe t)
         (remove-hook 'before-save-hook #'org-roam-link--replace-link-on-save t)
         (remove-hook 'after-save-hook #'org-roam-db-update t)))
-    (when (featurep 'org-ref)
-      (setq org-ref-notes-function 'org-ref-notes-function-one-file))
     (setq bibtex-completion-find-note-functions
           (delq #'orb-find-note-file
                 bibtex-completion-find-note-functions))

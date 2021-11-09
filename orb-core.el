@@ -62,7 +62,7 @@
 ;; Defcustom definitions should stay in respective files
 
 (defgroup org-roam-bibtex nil
-  "Org-ref and Bibtex-completion integration for Org-roam."
+  "Bibtex-completion integration for Org-roam."
   :group 'org-roam
   :prefix "orb-")
 

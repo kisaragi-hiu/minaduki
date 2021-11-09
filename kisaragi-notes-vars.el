@@ -376,10 +376,7 @@ based on their extension."
           (string :tag "Custom wildcard keyword")))
 
 (defcustom orb-citekey-format "%s"
-  "Format string for the citekey.
-
-The citekey obtained from Helm-bibtex/Ivy-bibtex/Org-ref
-will be formatted as specified here."
+  "Format string for the citekey when capturing new ref notes."
   :type 'string
   :group 'org-roam-bibtex)
 

@@ -47,14 +47,6 @@
 ;; `orb-edit-notes' will shadow `bibtex-completion-edit-notes' in
 ;; Helm-bibtex, Ivy-bibtex.
 ;;
-;; Additionally, `orb-notes-fn', which is a simple wrapper around
-;; `orb-edit-notes', is installed as Org-ref's
-;; `org-ref-notes-function'.  See Org-ref's documentation for how to
-;; setup many-files notes.  Take a notice that because of its size,
-;; Org-ref is not a dependency of Org-roam-bibtex, so it will not be
-;; pulled automatically by your package manager and must be installed
-;; manually.
-;;
 ;; As a user option, `org-roam-capture-templates' can be dynamically
 ;; preformatted with bibtex field values.  See
 ;; `orb-preformat-keywords' for more details.
@@ -91,11 +83,6 @@
 (declare-function projectile-relevant-open-projects "projectile")
 (declare-function persp-switch "persp-mode")
 (declare-function persp-names "persp-mode")
-
-(defvar org-ref-notes-function)
-(declare-function org-ref-find-bibliography "org-ref-core")
-
-(declare-function org-ref-format-entry "ext:org-ref-bibtex" (key))
 
 ;; ============================================================================
 ;;;; Customize definitions
@@ -494,6 +481,7 @@ wildcards will be replace with the BibTeX field value."
 ;;;; Orb insert
 ;; ============================================================================
 
+;; TODO: merge this with other insertion functions, insert Org 9.5 citation
 (defun orb-insert--link (file citekey &optional description lowercase)
   "Insert a link to FILE.
 If a region is active, replace the region with the link and used
@@ -716,18 +704,6 @@ details."
 ;; ============================================================================
 ;;;; Org-roam-bibtex minor mode
 ;; ============================================================================
-
-(defun orb-notes-fn (citekey)
-  "Open an Org-roam note associated with the CITEKEY or create a new one.
-Set `org-ref-notes-function' to this function if your
-bibliography notes are managed by Org-roam and you want some
-extra integration between the two packages.
-
-This is a wrapper function around `orb-edit-notes'
-intended for use with Org-ref."
-  (when (require 'org-ref nil t)
-    (let ((bibtex-completion-bibliography (org-ref-find-bibliography)))
-      (orb-edit-notes citekey))))
 
 (defun orb-edit-notes-ad (keys)
   "Open an Org-roam note associated with the first key from KEYS.
