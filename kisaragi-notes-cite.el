@@ -20,7 +20,7 @@
                        (keys
                         (or (completing-read "Select citation key: " keys nil t)
                             (user-error "Aborted")))))))
-              (orb-note-actions key))))
+              (kisaragi-notes/literature-note-actions key))))
 
 ;;;###autoload
 (with-eval-after-load 'oc
