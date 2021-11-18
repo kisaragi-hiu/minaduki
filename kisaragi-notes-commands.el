@@ -423,7 +423,7 @@ CITEKEY is a list whose car is a citation key."
     ("Open a non-literature note"         . kisaragi-notes/open-non-literature-note)
     ("Open a random note"                 . kisaragi-notes/open-random-note)
     ("Switch to a buffer visiting a note" . org-roam-switch-to-buffer)
-    ("Update cache explicitly"            . org-roam-db-build-cache))
+    ("Refresh cache"                      . org-roam-db-build-cache))
   "Global commands shown in `kisaragi-notes/command-palette'.
 
 List of (DISPLAY-NAME . COMMAND) pairs.")
