@@ -181,6 +181,23 @@ prepends TAGS to STR, appends TAGS to STR or omits TAGS from STR."
                     (cons orig desc)))
       (s-replace-all it str))))
 
+;;;; Dates
+
+(defun kisaragi-notes//date/ymd->calendar.el (yyyy-mm-dd)
+  "Convert date string YYYY-MM-DD to calendar.el list (MM DD YYYY)."
+  (pcase-let ((`(,year ,month ,day) (cdr (s-match (rx (group (= 4 digit)) "-"
+                                                      (group (= 2 digit)) "-"
+                                                      (group (= 2 digit)))
+                                                  yyyy-mm-dd))))
+    (list
+     (string-to-number month)
+     (string-to-number day)
+     (string-to-number year))))
+
+(defun kisaragi-notes//date/calendar.el->ymd (calendar-el-date)
+  "Convert CALENDAR-EL-DATE (a list (MM DD YYYY)) to a date string YYYY-MM-DD."
+  (apply #'format "%3$04d-%1$02d-%2$02d" calendar-el-date))
+
 (defun kisaragi-notes//today (&optional n)
   "Return today's date, taking `org-extend-today-until' into account.
 

@@ -54,6 +54,13 @@
   (kisaragi-notes-db//close))
 
 (describe "Utils"
+  (it "converts between calendar.el dates and YYYY-MM-DD date strings"
+    (expect (kisaragi-notes//date/calendar.el->ymd '(7 17 2019))
+            :to-equal
+            "2019-07-17")
+    (expect (kisaragi-notes//date/ymd->calendar.el "2012-01-02")
+            :to-equal
+            '(1 2 2012)))
   (it "converts a title to a slug"
     (expect (kisaragi-notes//title-to-slug "English")
             :to-equal "english")

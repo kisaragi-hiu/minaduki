@@ -103,9 +103,18 @@ dashes removed), and does not use any other method to determine
 whether an entry is from DAY or not."
   (interactive
    (list
-    (if current-prefix-arg
-        (kisaragi-diary//read-date "Visit diary entry from day:")
-      (kisaragi-notes//today))))
+    ;; Why not `cond': if we're in the calendar buffer but our cursor
+    ;; is not on a date (so `calendar-cursor-to-date' is nil), we want
+    ;; to fall back to the next case. `cond' doesn't do that.
+    (or (and (derived-mode-p 'calendar-mode)
+             (-some-> (calendar-cursor-to-date)
+               kisaragi-notes//date/calendar.el->ymd))
+
+        (and current-prefix-arg
+             (kisaragi-diary//read-date "Visit diary entry from day:"))
+
+        (kisaragi-notes//today))))
+
   (setq day (s-replace "-" "" day))
   (let ((file-list
          (directory-files
