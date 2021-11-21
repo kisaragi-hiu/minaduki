@@ -383,64 +383,99 @@ Otherwise, behave as if called interactively."
   :require 'org-roam
   :global t
   (cond
+
    (org-roam-mode
+    (add-hook 'find-file-hook #'org-roam--find-file-hook-function)
+
+    ;; DB
     (unless (or (and (bound-and-true-p emacsql-sqlite3-executable)
                      (file-executable-p emacsql-sqlite3-executable))
                 (executable-find "sqlite3"))
       (kisaragi-notes//warn :error "Cannot find executable 'sqlite3'. \
 Ensure it is installed and can be found within `exec-path'. \
 M-x info for more information at Org-roam > Installation > Post-Installation Tasks."))
-    (add-to-list 'org-execute-file-search-functions 'org-roam--execute-file-row-col)
-    (add-hook 'find-file-hook #'org-roam--find-file-hook-function)
     (add-hook 'kill-emacs-hook #'kisaragi-notes-db//close)
-    (add-hook 'org-open-at-point-functions #'org-roam-open-id-at-point)
     (when (and (not org-roam-db-file-update-timer)
                (eq org-roam-db-update-method 'idle-timer))
       (setq org-roam-db-file-update-timer (run-with-idle-timer org-roam-db-update-idle-seconds t #'org-roam-db-update-cache-on-timer)))
     (advice-add 'rename-file :after #'org-roam--rename-file-advice)
     (advice-add 'delete-file :before #'org-roam--delete-file-advice)
+
+    ;; Link
+    (add-to-list 'org-execute-file-search-functions 'org-roam--execute-file-row-col)
+    (add-hook 'org-open-at-point-functions #'org-roam-open-id-at-point)
     (advice-add 'org-id-new :after #'org-roam--id-new-advice)
     (when (fboundp 'org-link-set-parameters)
       (org-link-set-parameters "file" :face 'org-roam--file-link-face)
       (org-link-set-parameters "id" :face 'org-roam--id-link-face))
+
+    ;; Apply these now. New buffers get this in the find-file hook.
     (dolist (buf (org-roam--get-roam-buffers))
       (with-current-buffer buf
         (add-hook 'post-command-hook #'org-roam-buffer--update-maybe nil t)
         (add-hook 'before-save-hook #'org-roam-link--replace-link-on-save nil t)
         (add-hook 'after-save-hook #'org-roam-db-update nil t)))
+
+    ;; Bibtex
     (add-to-list 'bibtex-completion-find-note-functions
                  #'orb-find-note-file)
     (advice-add 'bibtex-completion-edit-notes
                 :override #'orb-edit-notes-ad)
     (advice-add 'bibtex-completion-parse-bibliography
-                :before #'orb-bibtex-completion-parse-bibliography-ad))
+                :before #'orb-bibtex-completion-parse-bibliography-ad)
+
+    ;; Calendar
+    (setq calendar-mark-diary-entries-flag t)
+    (advice-add 'diary-mark-entries :override #'kisaragi-diary//mark-calendar)
+    (advice-add 'org-read-date
+                :before #'kisaragi-diary//set-calendar-mark-diary-entries-flag-nil)
+    (advice-add 'org-read-date
+                :after #'kisaragi-diary//set-calendar-mark-diary-entries-flag-t))
+
    (t
-    (setq org-execute-file-search-functions (delete 'org-roam--execute-file-row-col org-execute-file-search-functions))
+
     (remove-hook 'find-file-hook #'org-roam--find-file-hook-function)
+
+    ;; DB
+    (setq org-execute-file-search-functions (delete 'org-roam--execute-file-row-col org-execute-file-search-functions))
     (remove-hook 'kill-emacs-hook #'kisaragi-notes-db//close)
-    (remove-hook 'org-open-at-point-functions #'org-roam-open-id-at-point)
     (when org-roam-db-file-update-timer
       (cancel-timer org-roam-db-file-update-timer))
     (advice-remove 'rename-file #'org-roam--rename-file-advice)
     (advice-remove 'delete-file #'org-roam--delete-file-advice)
+    (kisaragi-notes-db//close)
+
+    ;; Link
+    (remove-hook 'org-open-at-point-functions #'org-roam-open-id-at-point)
     (advice-remove 'org-id-new #'org-roam--id-new-advice)
     (when (fboundp 'org-link-set-parameters)
       (dolist (face '("file" "id"))
         (org-link-set-parameters face :face 'org-link)))
-    (kisaragi-notes-db//close)
+
     ;; Disable local hooks for all org-roam buffers
     (dolist (buf (org-roam--get-roam-buffers))
       (with-current-buffer buf
         (remove-hook 'post-command-hook #'org-roam-buffer--update-maybe t)
         (remove-hook 'before-save-hook #'org-roam-link--replace-link-on-save t)
         (remove-hook 'after-save-hook #'org-roam-db-update t)))
+
+    ;; Bibtex
     (setq bibtex-completion-find-note-functions
           (delq #'orb-find-note-file
                 bibtex-completion-find-note-functions))
     (advice-remove 'bibtex-completion-edit-notes
                    #'orb-edit-notes-ad)
     (advice-remove 'bibtex-completion-parse-bibliography
-                   #'orb-bibtex-completion-parse-bibliography-ad))))
+                   #'orb-bibtex-completion-parse-bibliography-ad)
+
+    ;; Calendar
+    (setq calendar-mark-diary-entries-flag nil)
+    (advice-remove 'diary-mark-entries
+                   #'kisaragi-diary//mark-calendar)
+    (advice-remove 'org-read-date
+                   #'kisaragi-diary//set-calendar-mark-diary-entries-flag-nil)
+    (advice-remove 'org-read-date
+                   #'kisaragi-diary//set-calendar-mark-diary-entries-flag-t))))
 
 (add-hook 'org-roam-mode-hook #'org-roam-db-build-cache)
 

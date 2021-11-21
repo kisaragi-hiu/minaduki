@@ -35,11 +35,21 @@
 (defun kisaragi-diary//read-date (prompt)
   "Like `org-read-date', but also highlight days with diary entries in calendar.
 
+Highlighting is normally enabled by default when running
+`calendar', and disabled in `org-read-date' using a pair of
+advices. This then dances around that.
+
 PROMPT is passed to `org-read-date'."
-  (add-hook 'calendar-initial-window-hook #'kisaragi-diary//mark-calendar)
+  ;; Adding them globally ensures that they are present even in the
+  ;; calendar buffer.
+  ;;
+  ;; These hooks are run when the view changes.
+  (add-hook 'calendar-today-visible-hook #'kisaragi-diary//mark-calendar)
+  (add-hook 'calendar-today-invisible-hook #'kisaragi-diary//mark-calendar)
   (let ((org-read-date-prefer-future nil))
     (unwind-protect (org-read-date nil nil nil prompt)
-      (remove-hook 'calendar-initial-window-hook #'kisaragi-diary//mark-calendar))))
+      (remove-hook 'calendar-today-visible-hook #'kisaragi-diary//mark-calendar)
+      (remove-hook 'calendar-today-invisible-hook #'kisaragi-diary//mark-calendar))))
 
 ;;;###autoload
 (defun kisaragi-diary/new-entry (&optional day? time)
@@ -152,11 +162,29 @@ whether an entry is from DAY or not."
   (interactive)
   (kisaragi-diary/visit-entry-date (kisaragi-notes//today -1)))
 
+(defun kisaragi-diary//set-calendar-mark-diary-entries-flag-nil (&rest _)
+  "Set `calendar-mark-diary-entries-flag' to nil.
+
+This is used as an advice before `org-read-date' to ensure diary
+entries are NOT highlighted in it."
+  (setq calendar-mark-diary-entries-flag nil))
+
+(defun kisaragi-diary//set-calendar-mark-diary-entries-flag-t (&rest _)
+  "Set `calendar-mark-diary-entries-flag' to t.
+
+This is used as an advice after `org-read-date' to reenable diary
+entry highlighting."
+  (setq calendar-mark-diary-entries-flag t))
+
 (defun kisaragi-diary//mark-calendar ()
   "In a calendar window, mark days that have diary entries.
-Implementation of `diary-mark-entries'."
+
+This is used as an advice to override `diary-mark-entries' when
+`org-roam-mode' (in this version) is enabled. My `org-roam-mode'
+also sets `calendar-mark-diary-entries-flag' to t.
+
+The marker is specified by `diary-entry-marker'."
   (interactive)
-  (calendar-redraw)
   (cl-loop for file in (directory-files kisaragi-notes/diary-directory)
            when (>= (length file) 8)
            when (s-match (rx bos

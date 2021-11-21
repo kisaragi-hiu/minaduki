@@ -25,6 +25,7 @@ I want the version to be bigger than 1.2.4 so that it never looks like a downgra
   - Add a user option for where to look for diary entries (instead of hard-coding it to a variable in my Emacs config)
   - Change the naming scheme for functions and variables
   - Merge necessary helpers (=k/today=) into this repository
+  - Integrates with Calendar
 - Speed up =org-roam--list-files-rg= by using =call-process= directly and not through =shell-command=
 - Remove =org-roam--list-files-find=
 - Add support for indexing and showing links in titles
