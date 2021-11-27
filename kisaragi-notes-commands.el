@@ -14,8 +14,11 @@
 
 (require 'bibtex-completion)
 
+(require 'kisaragi-diary)
 (require 'kisaragi-notes-completion)
 (require 'kisaragi-notes-utils)
+(require 'kisaragi-notes-templates)
+
 
 (require 'org-roam-extract)
 (require 'org-roam-capture)
@@ -279,6 +282,98 @@ Return added tag."
       (switch-to-buffer (cdr (assoc name names-and-buffers))))))
 
 ;;;###autoload
+(defun kisaragi-notes/new-daily-note (&optional day)
+  "Create a new daily note on DAY.
+
+This will create diary/20211129.org on the day 2021-11-29, then
+fill it in with the \"daily\" template."
+  (interactive)
+  (let* ((day (or day (kisaragi-notes//today)))
+         (now (pcase-let ((`(,y ,m ,d)
+                           (mapcar
+                            #'string-to-number
+                            (cdr (s-match (rx (group (= 4 digit)) "-"
+                                              (group (= 2 digit)) "-"
+                                              (group (= 2 digit)))
+                                          day)))))
+                (encode-time `(0 0 0 ,d ,m ,y nil nil nil))))
+         (filename (s-replace "-" "" day))
+         (ext "org"))
+    (find-file (f-join kisaragi-notes/diary-directory
+                       (concat filename "." ext)))
+    (let (;; This is how you pass arguments to org-capture-fill-templates
+          ;; It's either this or `org-capture-put'; this is
+          ;; less ugly.
+          (org-capture-plist (list :default-time now))
+          ;; Since we're creating a daily note, this
+          ;; variable should not be used.
+          (org-extend-today-until 0))
+      (insert
+       (kisaragi-notes-templates//make-note "daily")))))
+
+;;;###autoload
+(defun kisaragi-notes/new-diary-entry (&optional time)
+  "Create a new diary entry in `kisaragi-notes/diary-directory'.
+
+The entry will be stored as a file named after the current time
+under `kisaragi-notes/diary-directory'. Example:
+
+    diary/20211019T233513+0900.org
+
+When TIME is non-nil, create an entry for TIME instead of
+`current-time'."
+  (interactive)
+  (let* ((now (or time (current-time)))
+         (filename (format-time-string "%Y%m%dT%H%M%S%z" now))
+         (title (format-time-string "%FT%T%z" now))
+         ;; Put this here so if we allow different templates later
+         ;; it's easier to change
+         (ext "org"))
+    (find-file (f-join kisaragi-notes/diary-directory
+                       (concat filename "." ext)))
+    (insert (concat "#+title: " title "\n"))))
+
+;;;###autoload
+(defun kisaragi-notes/open-diary-entry ()
+  "Open a diary entry.
+
+By default, open one from today. With a \\[universal-argument],
+prompt to select a day first.
+
+When there are multiple diary entries, prompt for selection.
+
+Diary entries are files in `kisaragi-notes/diary-directory' that
+are named with a YYYYMMDD prefix (optionally with dashes)."
+  (declare (interactive-only kisaragi-diary//visit-entry-for-day))
+  (interactive)
+  (let ((day
+         ;; Why not `cond': if we're in the calendar buffer but our cursor
+         ;; is not on a date (so `calendar-cursor-to-date' is nil), we want
+         ;; to fall back to the next case. `cond' doesn't do that.
+         (or (and (derived-mode-p 'calendar-mode)
+                  (-some-> (calendar-cursor-to-date)
+                    kisaragi-notes//date/calendar.el->ymd))
+
+             (and current-prefix-arg
+                  (kisaragi-diary//read-date "Visit diary entry from day:"))
+
+             (kisaragi-notes//today))))
+    (if-let ((file (kisaragi-diary//find-entry-for-day day)))
+        (find-file file)
+      (and (y-or-n-p (format "No entry from %s. Create one? " day))
+           (kisaragi-notes/new-daily-note day)))))
+
+;;;###autoload
+(defun kisaragi-notes/open-diary-entry-yesterday ()
+  "Open a diary entry from yesterday."
+  (interactive)
+  (let ((day (kisaragi-notes//today -1)))
+    (if-let ((file (kisaragi-diary//find-entry-for-day day)))
+        (find-file file)
+      (and (y-or-n-p (format "No entry from %s. Create one? " day))
+           (kisaragi-notes/new-daily-note day)))))
+
+;;;###autoload
 (defun kisaragi-notes/open-template ()
   "Open a template in `kisaragi-notes/templates-directory' for edit."
   (interactive)
@@ -287,14 +382,7 @@ Return added tag."
   ;; to the right file as relative links. Without this, we have to
   ;; settle for not setting the category correctly.
   (org-roam--find-file
-   (let ((default-directory kisaragi-notes/templates-directory))
-     (--> kisaragi-notes/templates-directory
-       f-files
-       (-remove #'f-hidden? it)
-       (-map #'f-relative it)
-       (kisaragi-notes-completion//mark-category it 'file)
-       (completing-read "Open template: " it)
-       f-expand))))
+   (kisaragi-notes-templates//read-template "Open template: ")))
 
 ;;;###autoload
 (defun kisaragi-notes/open-non-literature-note (&optional initial-prompt)
@@ -418,6 +506,8 @@ CITEKEY is a list whose car is a citation key."
   '(("Open or create a note"              . kisaragi-notes/open)
     ("Open notes directory"               . kisaragi-notes/open-directory)
     ("Open or create a template"          . kisaragi-notes/open-template)
+    ("Create a new diary entry"           . kisaragi-notes/new-diary-entry)
+    ("Create a new note with the \"daily\" template" . kisaragi-notes/new-daily-note)
     ("Open the index file"                . kisaragi-notes/open-index)
     ("Open a literature note"             . kisaragi-notes/open-literature-note)
     ("Open a non-literature note"         . kisaragi-notes/open-non-literature-note)

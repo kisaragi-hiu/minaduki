@@ -14,6 +14,18 @@
 (require 'kisaragi-notes-vars)
 (require 'kisaragi-notes-completion)
 
+(defun kisaragi-notes-templates//read-template (prompt)
+  "Ask the user to select a template, using PROMPT.
+
+Return the absolute path to the selected template."
+  (let ((dir kisaragi-notes/templates-directory))
+    (--> (f-files dir)
+      (-remove #'f-hidden? it)
+      (--map (f-relative it dir) it)
+      (kisaragi-notes-completion//mark-category it 'file)
+      (completing-read prompt it)
+      (f-expand it dir))))
+
 (defun kisaragi-notes-templates//make-note (&optional template)
   "Fill out TEMPLATE and return the new note text as a string.
 
