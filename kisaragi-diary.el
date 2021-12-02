@@ -47,6 +47,20 @@ PROMPT is passed to `org-read-date'."
       (remove-hook 'calendar-today-visible-hook #'kisaragi-diary//mark-calendar)
       (remove-hook 'calendar-today-invisible-hook #'kisaragi-diary//mark-calendar))))
 
+(defun kisaragi-diary//set-calendar-mark-diary-entries-flag-nil (&rest _)
+  "Set `calendar-mark-diary-entries-flag' to nil.
+
+This is used as an advice before `org-read-date' to ensure diary
+entries are NOT highlighted in it."
+  (setq calendar-mark-diary-entries-flag nil))
+
+(defun kisaragi-diary//set-calendar-mark-diary-entries-flag-t (&rest _)
+  "Set `calendar-mark-diary-entries-flag' to t.
+
+This is used as an advice after `org-read-date' to reenable diary
+entry highlighting."
+  (setq calendar-mark-diary-entries-flag t))
+
 (defun kisaragi-diary//mark-calendar ()
   "In a calendar window, mark days that have diary entries.
 
