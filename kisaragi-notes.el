@@ -1,9 +1,10 @@
-;;; org-roam.el --- Roam Research replica with Org-mode -*- coding: utf-8; lexical-binding: t; -*-
+;;; kisaragi-notes.el --- An Org-roam v1 fork -*- lexical-binding: t; -*-
 
 ;; Copyright © 2020 Jethro Kuan <jethrokuan95@gmail.com>
 
 ;; Author: Jethro Kuan <jethrokuan95@gmail.com>
-;; URL: https://github.com/org-roam/org-roam
+;;         Kisaragi Hiu <mail@kisaragi-hiu.com>
+;; URL: https://github.com/kisaragi-hiu/kisaragi-notes
 ;; Keywords: org-mode, roam, convenience
 ;; Version: 1.2.3
 ;; Package-Requires: ((emacs "27.1") (dash "2.13") (f "0.17.2") (s "1.12.0") (org "9.5") (emacsql "3.0.0") (emacsql-sqlite3 "1.0.2") (bibtex-completion "2.0.0") (markdown-mode "2.4"))
@@ -27,10 +28,8 @@
 
 ;;; Commentary:
 ;;
-;; This library is an attempt at injecting Roam functionality into Org-mode.
-;; This is achieved primarily through building caches for forward links,
-;; backward links, and file titles.
-;;
+;; This is a fork of Org-roam v1, as I am unwilling to move away from
+;; file links.
 ;;
 ;;; Code:
 ;;;; Dependencies
@@ -483,5 +482,5 @@ M-x info for more information at Org-roam > Installation > Post-Installation Tas
 ;;;###autoload
 (defalias 'org-roam 'org-roam-buffer-toggle-display)
 
-(provide 'org-roam)
-;;; org-roam.el ends here
+(provide 'kisaragi-notes)
+;;; kisaragi-notes.el ends here

@@ -22,7 +22,7 @@
 ;;; Code:
 
 (require 'buttercup)
-(require 'org-roam)
+(require 'kisaragi-notes)
 
 (setq org-roam-verbose nil)
 

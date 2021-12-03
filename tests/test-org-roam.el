@@ -21,7 +21,7 @@
 ;;; Code:
 
 (require 'buttercup)
-(require 'org-roam)
+(require 'kisaragi-notes)
 (require 'seq)
 (require 'dash)
 
