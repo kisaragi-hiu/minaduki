@@ -200,7 +200,7 @@ the executable 'rg' in variable `exec-path'."
 
 ;;;###autoload
 (defun org-roam-alias-add ()
-  "Add an alias to Org-roam file.
+  "Add an alias.
 
 Return added alias."
   (interactive)
@@ -208,11 +208,20 @@ Return added alias."
   (let ((alias (read-string "Alias: ")))
     (when (string-empty-p alias)
       (user-error "Alias can't be empty"))
-    (org-roam--set-global-prop
-     "roam_alias"
-     (combine-and-quote-strings
-      (seq-uniq (cons alias
-                      (org-roam--extract-titles-alias)))))
+    (org-with-point-at 1
+      (let ((case-fold-search t))
+        (if (re-search-forward "^\\(#\\+alias:.*\\)" (point-max) t)
+            (replace-match (format "#+alias: %s\n\\1" alias)
+                           'fixedcase)
+          (while (and (not (eobp))
+                      (looking-at "^[#:]"))
+            (if (save-excursion (end-of-line) (eobp))
+                (progn
+                  (end-of-line)
+                  (insert "\n"))
+              (forward-line)
+              (beginning-of-line)))
+          (insert "#+alias: " alias "\n"))))
     (org-roam-db--update-file (buffer-file-name (buffer-base-buffer)))
     alias))
 
@@ -223,9 +232,11 @@ Return added alias."
   (unless org-roam-mode (org-roam-mode))
   (if-let ((aliases (org-roam--extract-titles-alias)))
       (let ((alias (completing-read "Alias: " aliases nil 'require-match)))
-        (org-roam--set-global-prop
-         "roam_alias"
-         (combine-and-quote-strings (delete alias aliases)))
+        (org-with-point-at 1
+          (let ((case-fold-search t))
+            (when (search-forward (concat "#+alias: " alias) (point-max) t)
+              (delete-region (line-beginning-position)
+                             (1+ (line-end-position))))))
         (org-roam-db--update-file (buffer-file-name (buffer-base-buffer))))
     (user-error "No aliases to delete")))
 

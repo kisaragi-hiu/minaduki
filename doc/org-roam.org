@@ -426,14 +426,15 @@ title extraction methods supported are:
 
 1. ~'title~: This extracts the title using the file ~#+title~ property
 2. ~'headline~: This extracts the title from the first headline in the Org file
-3. ~'alias~: This extracts a list of titles using the ~#+roam_alias~ property.
-   The aliases are space-delimited, and can be multi-worded using quotes.
+3. ~'alias~: This extracts a list of titles using the ~#+alias~ property.
+   The aliases are written in individual lines like ~#+title~.
 
 Take for example the following org file:
 
 #+BEGIN_SRC org
   #+title: World War 2
-  #+roam_alias: "WWII" "World War II"
+  #+alias: WWII
+  #+alias: World War II
 
   * Headline
 #+END_SRC
@@ -476,8 +477,7 @@ note's title.
    The ~#+title~ property of org file.
 
    ~'alias~
-   The ~#+roam_alias~ property of the org file, using
-   space-delimited strings.
+   The ~#+alias~ property of the org file, which can appear multiple times.
 
    ~'headline~
    The first headline in the org file.

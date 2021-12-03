@@ -1,3 +1,3 @@
 ---
-roam_alias: ["alias1", "alias2"]
+alias: ["alias1", "alias2"]
 ---

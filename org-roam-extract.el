@@ -48,8 +48,7 @@
 (defun org-roam--extract-prop-as-list (prop)
   "Extract PROP from the current Org buffer as a list.
 
-This is the common logic behind the extraction of roam_tags and
-roam_alias."
+This is used to extract #+roam_tags."
   ;; Values are split in two ways:
   ;; 1. with spaces and double quotes:
   ;;     #+prop: a b c \"quoted string\"
@@ -316,11 +315,13 @@ If FILE-PATH is nil, use the current file."
   nil)
 
 (cl-defmethod org-roam--extract-titles-alias (&context (major-mode org-mode))
-  "Return the aliases in Org mode.
+  "Return a list of aliases in Org mode.
 
-Reads from the #+roam_alias keyword."
+Reads from the #+alias keyword."
   (condition-case nil
-      (org-roam--extract-prop-as-list "ROAM_ALIAS")
+      (->> (kisaragi-notes//org-props '("ALIAS"))
+        (mapcar #'cdr)
+        nreverse)
     (error
      (kisaragi-notes//warn
       :error
@@ -331,11 +332,11 @@ Reads from the #+roam_alias keyword."
 (cl-defmethod org-roam--extract-titles-alias (&context (major-mode markdown-mode))
   "Return the aliases in Markdown.
 
-Reads from the roam_alias prop in the front matter.
+Reads from the alias prop in the front matter.
 
-roam_alias: [\"alias 1\", \"alias 2\"]"
+alias: [\"alias 1\", \"alias 2\"]"
   (condition-case nil
-      (-some-> (kisaragi-notes-extract//markdown-props "roam_alias")
+      (-some-> (kisaragi-notes-extract//markdown-props "alias")
         json-parse-string)
     (json-parse-error
      (kisaragi-notes//warn

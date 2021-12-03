@@ -6,6 +6,7 @@ This fork starts off from Org-roam 1.2.4 and Org-roam-bibtex 0.4 ([[https://gith
 
 I want the version to be bigger than 1.2.4 so that it never looks like a downgrade. So an arbitrary number it is then.
 
+- Alias changes: from =#+roam_alias= to =#+alias= and no longer space-delimited. They are now specified like titles.
 - Add a new rudimentary file templates system. Just add files in templates/.
 - Remove =org-roam-list-files-commands=; when listing existing files internally, Ripgrep will be always used if it's present
 - Markdown support, effectively including the functionalities of md-roam

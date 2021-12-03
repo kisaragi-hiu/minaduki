@@ -88,10 +88,10 @@ processing multiple files"
     :description "Check #+roam_tags.")
    (make-org-roam-doctor-checker
     :name 'org-roam-doctor-check-alias
-    :description "Check #+roam_alias.")))
+    :description "Check #+alias.")))
 
 (defconst org-roam-doctor--supported-roam-properties
-  '("roam_tags" "roam_alias" "roam_key")
+  '("roam_tags" "alias" "roam_key")
   "List of supported Org-roam properties.")
 
 (defun org-roam-doctor-check-roam-props (ast)
@@ -133,12 +133,12 @@ AST is the org-element parse tree."
     reports))
 
 (defun org-roam-doctor-check-alias (ast)
-  "Checker for detecting invalid #+roam_alias.
+  "Checker for detecting invalid #+alias.
 AST is the org-element parse tree."
   (let (reports)
     (org-element-map ast 'keyword
       (lambda (kw)
-        (when (string-collate-equalp (org-element-property :key kw) "roam_alias" nil t)
+        (when (string-collate-equalp (org-element-property :key kw) "alias" nil t)
           (let ((aliases (org-element-property :value kw)))
             (condition-case nil
                 (split-string-and-unquote aliases)

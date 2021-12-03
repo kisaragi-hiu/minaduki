@@ -150,7 +150,7 @@ The currently supported symbols are:
    The \"#+title\" property of org file.
 
   `alias'
-   The \"#+roam_alias\" property of the org file, using
+   The \"#+alias\" property of the org file, using
    space-delimited strings.
 
    `headline'
