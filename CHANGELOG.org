@@ -2,40 +2,117 @@
 
 This fork starts off from Org-roam 1.2.4 and Org-roam-bibtex 0.4 ([[https://github.com/org-roam/org-roam-bibtex/commit/5236917e1d8a4f88daadacc690248854f53facb4][5236917]]).
 
-** Fork 1.5
+** Fork 0.1
 
-I want the version to be bigger than 1.2.4 so that it never looks like a downgrade. So an arbitrary number it is then.
++I want the version to be bigger than 1.2.4 so that it never looks like a downgrade. So an arbitrary number it is then.+ That was just silly.
 
-- Alias changes: from =#+roam_alias= to =#+alias= and no longer space-delimited. They are now specified like titles.
+*** Added support for Markdown
+
+Many functions from =md-roam= were adapted into here.
+
+- Links are expected to be ordinary inline links
+- Wiki links (=[[path]]=) are not yet supported
+- Aliases are specified as JSON arrays
+- Front matter is specified in what is supposedly YAML. (If there is a YAML library for Emacs Lisp it would be real YAML, but that doesn't exist.)
+
+*** Added support for Org 9.5 citations (extraction and following)
+*** Merged library: =org-roam-bibtex= 0.4 ([[https://github.com/org-roam/org-roam-bibtex/commit/5236917e1d8a4f88daadacc690248854f53facb4][5236917]])
+- Don't format field values in APA style
+- Inject the =url= key in the capture template
+- Remove =orb-anystyle= and =orb-pdf-scrapper=
+*** Compat libraries are removed
+- Remove =org-roam-compat= and =orb-compat= as I shouldn't pretend to be compatible
+*** Aliases are specified with =#+alias= and are no longer space-delimited
+
+To save unnecessary keystrokes, the keyword is changed from =#+roam_alias= to =#+alias=.
+
+When I am writing my notes, I find that specifying aliases with spaces is way more common than specifying multiple aliases for the same file. Therefore the default is now to not require spaces to be escaped with double quotes — the =alias= prop is no longer space-delimited.
+
+Whereas before, aliases with spaces had to be specified with
+
+#+begin_src org
+,#+roam_alias: "An alias with spaces"
+#+end_src
+
+, it should now be specified as
+
+#+begin_src org
+,#+alias: An alias with spaces
+#+end_src
+
+. This also puts it more inline with =#+title=.
+
+In Markdown, use the =alias= prop with a JSON list.
+
+#+begin_src markdown
+---
+alias: ["An alias with spaces", "Another alias"]
+---
+#+end_src
+
+*** =#+roam_key= can now be a plain string, which is interpreted as a cite ref
+
+Previously, to associate a note with a bibtex key, one would put:
+
+#+begin_src org
+,#+roam_key: cite:miman2017
+#+end_src
+
+in it. Now it can be written as
+
+#+begin_src org
+,#+roam_key: miman2017
+#+end_src
+
+.
+
+*** Tags are also read from the =#+tags[]= property
+
+This key is used by Hugo.
+
+*** When creating links, =org-link-abbrev-alist= will first be applied ([[https://github.com/kisaragi-hiu/org-roam/commit/15fecc6da54edc4d0f58458b81d0ef7132033f8c][15fecc6]])
+
+For example, I map ="notes"= to point to =/home/kisaragi/notes/=. If a link is created for =/home/kisaragi/notes/hello.org=, it will be created as =notes:hello.org= in Org mode.
+
+As Markdown has no equivalent, a relatively link will still be created.
+
+*** Annotations via Marginalia
+
+File paths and notes completion now have additional information attached (including their category), which can be shown if Marginalia is installed.
+
+*** New “Command palette” system
+
+Currently, two palettes are provided: =kisaragi-notes/command-palette=, which provides a list of global commands, and =kisaragi-notes/literature-note-actions=, which provides note-local commands for literature notes.
+
+*** Replace =org-roam-dailies= with my own diary system =kisaragi-diary= ([[https://github.com/kisaragi-hiu/org-roam/commit/a6021db958f4a3c449a7fd1564e0b0c2b78cfda4][a6021db]], [[https://github.com/kisaragi-hiu/org-roam/commit/011b6087626471b0b4e46dfd3e5b7305166e0b3b][011b608]], [[https://github.com/kisaragi-hiu/org-roam/commit/9b744249ba292e9b8b1ad696e96c471859231681][9b74424]])
+
+=kisaragi-diary= originally lived in my config, but is also now merged here.
+
+- Commands: =kisaragi-notes/new-diary-entry=, =kisaragi-notes/open-diary-entry=
+- Integrates with =calendar.el=: =C-u M-x kisaragi-notes/open-diary-entry RET= opens a Calendar so one can choose to open entries for a particular day. Days that have diary entries are highlighted.
+- Add a user option for where to look for diary entries (instead of hard-coding it to a variable in my Emacs config)
+
+*** Renames
+
+- =org-roam-find-file= → =kisaragi-notes/open=
+
+*** Backlinks buffer now remembers your cursor location
+*** Backlinks buffer now displays link context
+*** Replace =org-protocol://roam-ref= and =org-protocol://roam-file= handlers with =org-protocol://notes=, which supports =file= and =key= arguments
+
+Examples:
+
+#+begin_src bash
+emacsclient 'org-protocol://notes?key=banjoazusa2020'
+emacsclient 'org-protocol://notes?file=blender.org'
+#+end_src
+
+*** etc.
 - Add a new rudimentary file templates system. Just add files in templates/.
 - Remove =org-roam-list-files-commands=; when listing existing files internally, Ripgrep will be always used if it's present
-- Markdown support, effectively including the functionalities of md-roam
-  - Links are expected to be ordinary inline links
-  - Wiki links (=[[path]]=) are not yet supported
-  - Aliases are specified in JSON style arrays
-- Org 9.5 citation support (extraction, following)
-- Annotations in =kisaragi-notes/open= (renamed from =org-roam-find-file=) via Marginalia
-- Merge org-roam-bibtex 0.4 ([[https://github.com/org-roam/org-roam-bibtex/commit/5236917e1d8a4f88daadacc690248854f53facb4][5236917]]) in here
-  - Don't format field values in APA style
-  - Inject the =url= key in the capture template
-  - Remove =orb-anystyle= and =orb-pdf-scrapper=
-- Remove =org-roam-compat= and =orb-compat= as I shouldn't pretend to be compatible
-- Consult org-link-abbrev-alist when creating links ([[https://github.com/kisaragi-hiu/org-roam/commit/15fecc6da54edc4d0f58458b81d0ef7132033f8c][15fecc6]])
-- Replace org-roam-dailies with kisaragi-diary (originally living in my config, now with some changes) ([[https://github.com/kisaragi-hiu/org-roam/commit/a6021db958f4a3c449a7fd1564e0b0c2b78cfda4][a6021db]], [[https://github.com/kisaragi-hiu/org-roam/commit/011b6087626471b0b4e46dfd3e5b7305166e0b3b][011b608]], [[https://github.com/kisaragi-hiu/org-roam/commit/9b744249ba292e9b8b1ad696e96c471859231681][9b74424]])
-  - Also move =k/new-diary-entry= in here (as =kisaragi-notes/new-diary-entry=)
-  - Add a user option for where to look for diary entries (instead of hard-coding it to a variable in my Emacs config)
-  - Change the naming scheme for functions and variables
-  - Merge necessary helpers (=k/today=) into this repository
-  - Integrates with Calendar
 - Speed up =org-roam--list-files-rg= by using =call-process= directly and not through =shell-command=
 - Remove =org-roam--list-files-find=
 - Add support for indexing and showing links in titles
   - Not highlighted in Org mode, but will show up as backlinks.
-- Overhaul the backlinks buffer somewhat
-  - When you open another note then go back to the previous one, the backlinks buffer now remembers where your cursor was.
-  - Link context is also saved and displayed
-- Support plain strings in =ROAM_KEY= like ~#+roam_key: miman2017~
 - Slug styles are defined in =kisaragi-notes/slug-replacements= now
-- Replace =org-protocol://roam-ref= and =org-protocol://roam-file= handlers with =org-protocol://notes=, which supports =file= and =key= arguments
 - Tag sources is now specified as a list of extraction functions and not as symbols.
-- Hugo's =#+tags[]= property is also used as a tag source.
