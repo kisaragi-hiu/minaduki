@@ -395,6 +395,13 @@ are named with a YYYYMMDD prefix (optionally with dashes)."
   (org-roam--find-file
    (kisaragi-notes-templates//read-template "Open template: ")))
 
+(defun kisaragi-notes/capture-template ()
+  "Capture a template."
+  (interactive)
+  (-> (kisaragi-notes-templates//read-template "Template: ")
+    kisaragi-notes-templates//capture
+    org-roam--find-file))
+
 ;;;###autoload
 (defun kisaragi-notes/open-non-literature-note (&optional initial-prompt)
   ;; `orb-find-non-ref-file'
@@ -518,6 +525,7 @@ CITEKEY is a list whose car is a citation key."
     ("Open notes directory"               . kisaragi-notes/open-directory)
     ("Open or create a template"          . kisaragi-notes/open-template)
     ("Create a new diary entry"           . kisaragi-notes/new-diary-entry)
+    ("Create a new note from a template" . kisaragi-notes/capture-template)
     ("Create a new note with the \"daily\" template" . kisaragi-notes/new-daily-note)
     ("Open the index file"                . kisaragi-notes/open-index)
     ("Open a literature note"             . kisaragi-notes/open-literature-note)

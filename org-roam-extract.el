@@ -319,9 +319,7 @@ If FILE-PATH is nil, use the current file."
 
 Reads from the #+alias keyword."
   (condition-case nil
-      (->> (kisaragi-notes//org-props '("ALIAS"))
-        (mapcar #'cdr)
-        nreverse)
+      (kisaragi-notes//org-prop "ALIAS")
     (error
      (kisaragi-notes//warn
       :error

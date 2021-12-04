@@ -26,6 +26,44 @@ Return the absolute path to the selected template."
       (completing-read prompt it)
       (f-expand it dir))))
 
+(defun kisaragi-notes-templates//path-to (template)
+  "Return absolute path to TEMPLATE.
+
+TEMPLATE is a file under `kisaragi-notes/templates-directory'. If
+TEMPLATE has no extension, TEMPLATE.org or TEMPLATE.md will be used."
+  (unless (f-ext? template)
+    ;; TODO: choose an appropriate template
+    (setq template (car (f-files kisaragi-notes/templates-directory
+                                 (lambda (f) (equal template (f-base f)))))))
+  (setq template (f-expand template kisaragi-notes/templates-directory))
+  template)
+
+(defun kisaragi-notes-templates//capture (template)
+  "Create a new note using TEMPLATE.
+
+The note is stored in a location specified in the #+path: keyword.
+
+Template is a file under `kisaragi-notes/templates-directory'.
+
+Return the captured file.
+
+The template's contents are expanded with `org-capture-fill-template'."
+  (let ((file (kisaragi-notes-templates//path-to template))
+        target content)
+    (org-roam-with-file file nil
+      (-when-let* ((path (car (kisaragi-notes//org-prop "path"))))
+        (setq target (f-expand (s-trim (org-capture-fill-template path))
+                               org-directory)))
+      (setq content (buffer-string)))
+    (with-temp-file target
+      (insert (org-capture-fill-template content))
+      (save-excursion
+        (goto-char 1)
+        (while (search-forward "^#+path:" nil t)
+          (delete-region (line-beginning-position)
+                         (1+ (line-end-position))))))
+    target))
+
 (defun kisaragi-notes-templates//make-note (&optional template)
   "Fill out TEMPLATE and return the new note text as a string.
 

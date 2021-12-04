@@ -124,6 +124,19 @@ any), and Org keywords. Org keywords take precedence."
           (push (cons prop v) ret))))
     ret))
 
+(defsubst kisaragi-notes//org-prop (prop)
+  "Return values of PROP as a list.
+
+Given an Org file
+
+  #+title: abc
+  #+prop1: abcdef
+  #+prop1: ghi
+
+\(kisaragi-notes//org-prop \"title\") -> '(\"abc\")
+\(kisaragi-notes//org-prop \"prop1\") -> '(\"abcdef\" \"ghi\")"
+  (nreverse (mapcar #'cdr (kisaragi-notes//org-props (list prop)))))
+
 (defmacro kisaragi-notes//for (message var sequence &rest body)
   "Iterate BODY over SEQUENCE.
 
