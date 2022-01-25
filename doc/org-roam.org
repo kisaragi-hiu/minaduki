@@ -411,7 +411,7 @@ functionality.
 This section explains the important components of a file, and the extensions to
 Org-mode.
 
-** File Titles
+** TODO File Titles
 
 To easily find a note, a title needs to be prescribed to a note.
 
@@ -420,14 +420,7 @@ names, which is especially useful for topics or concepts with acronyms. For
 example, for a note like "World War 2", it may be desirable to also refer to it
 using the acronym "WWII".
 
-Org-roam calls ~org-roam--extract-titles~ to extract titles. It uses the
-variable ~org-roam-title-sources~, to control how the titles are extracted. The
-title extraction methods supported are:
-
-1. ~'title~: This extracts the title using the file ~#+title~ property
-2. ~'headline~: This extracts the title from the first headline in the Org file
-3. ~'alias~: This extracts a list of titles using the ~#+alias~ property.
-   The aliases are written in individual lines like ~#+title~.
+Org-roam calls ~org-roam--extract-titles~ to extract titles.
 
 Take for example the following org file:
 
@@ -439,55 +432,13 @@ Take for example the following org file:
   * Headline
 #+END_SRC
 
-| Method      | Titles                   |
+| type  | titles                   |
 |-------------+--------------------------|
-| ~'title~    | '("World War 2")         |
-| ~'headline~ | '("Headline")            |
-| ~'alias~    | '("WWII" "World War II") |
+| title       | '("World War 2")         |
+| headline    | '("Headline")            |
+| alias       | '("WWII" "World War II") |
 
 If no title is provided, Org-roam defaults to using the file-path.
-
-*** Customizing Title Extraction
-
-To control how Org-roam extracts titles, customize ~org-roam-title-sources~. If
-all methods of title extraction return no results, the file-name is used as the
-note's title.
-
-- User Option: org-roam-title-sources
-
-  The list of sources from which to retrieve a note title.
-  Each element in the list is either:
-
-1. a symbol -- this symbol corresponds to a title retrieval function, which
-   returns the list of titles for the current buffer
-  2. a list of symbols -- symbols in the list are treated as with (1). The
-     return value of this list is the first symbol in the list returning a
-     non-nil value.
-
-  The return results of the root list are concatenated.
-
-  For example the setting: '((title headline) alias) means the following:
-
-  1. Return the 'title + 'alias, if the title of current buffer is non-empty;
-  2. Or return 'headline + 'alias otherwise.
-
-  The currently supported symbols are:
-
-   ~'title~
-   The ~#+title~ property of org file.
-
-   ~'alias~
-   The ~#+alias~ property of the org file, which can appear multiple times.
-
-   ~'headline~
-   The first headline in the org file.
-
-Adding your own title extraction method requires two steps. First, define a
-method ~(defun org-roam--extract-titles-foo () ...)~, where ~foo~ a
-self-prescribed name for the title extraction method. This method takes no
-arguments, and returns a list of strings (titles). Finally, push the symbol
-~foo~ into ~org-roam-title-sources~. You may need to rebuild the cache from
-scratch to re-process all files to pick up the new titles.
 
 ** File Tags
 

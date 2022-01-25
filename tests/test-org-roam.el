@@ -215,25 +215,11 @@
               :to-equal
               '("Headline")))
 
-    (describe "uses org-roam-title-sources correctly"
-      (it "'((title headline) alias)"
-        (expect (let ((org-roam-title-sources '((title headline) alias)))
-                  (test #'org-roam--extract-titles
-                        "titles/combination.org"))
-                :to-equal
-                '("TITLE PROP" "roam" "alias")))
-      (it "'((headline title) alias)"
-        (expect (let ((org-roam-title-sources '((headline title) alias)))
-                  (test #'org-roam--extract-titles
-                        "titles/combination.org"))
-                :to-equal
-                '("Headline" "roam" "alias")))
-      (it "'(headline alias title)"
-        (expect (let ((org-roam-title-sources '(headline alias title)))
-                  (test #'org-roam--extract-titles
-                        "titles/combination.org"))
-                :to-equal
-                '("Headline" "roam" "alias" "TITLE PROP"))))))
+    (it "extracts all"
+      (expect (test #'org-roam--extract-titles
+                    "titles/combination.org")
+              :to-equal
+              '("TITLE PROP" "roam" "alias")))))
 
 (describe "Link extraction"
   (before-all

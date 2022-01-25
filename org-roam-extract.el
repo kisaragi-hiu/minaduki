@@ -388,23 +388,15 @@ alias: [\"alias 1\", \"alias 2\"]"
     (when headline
       (list headline))))
 
-(defun org-roam--extract-titles (&optional sources nested)
-  "Extract the titles from current buffer using SOURCES.
-If NESTED, return the first successful result from SOURCES."
+(defun org-roam--extract-titles ()
+  "Extract the titles from current buffer.
+
+This extracts the aliases plus either the title or the first
+headline."
   (org-with-wide-buffer
-   (let (coll res)
-     (cl-dolist (source (or sources
-                            org-roam-title-sources))
-       (setq res (if (symbolp source)
-                     (funcall (intern (concat "org-roam--extract-titles-" (symbol-name source))))
-                   (org-roam--extract-titles source t))
-             res (cl-coerce res 'list))
-       (when res
-         (if (not nested)
-             (setq coll (nconc coll res))
-           (setq coll res)
-           (cl-return))))
-     (-uniq coll))))
+   (-uniq (append (or (org-roam--extract-titles-title)
+                      (org-roam--extract-titles-headline))
+                  (org-roam--extract-titles-alias)))))
 
 ;; TODO: use project root
 (defun org-roam--extract-tags-all-directories (file)
