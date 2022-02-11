@@ -71,6 +71,7 @@ When VISIT? is non-nil, visit the new file after creating it.
 
 Interactively, please use the transient command instead."
   (interactive (let ((args (transient-args 'minaduki/org-heading-to-file)))
+                 (transient-save)
                  (list (transient-arg-value "--dir=" args)
                        (transient-arg-value "--full" args)
                        (transient-arg-value "--open" args))))
