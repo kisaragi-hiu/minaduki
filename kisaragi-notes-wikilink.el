@@ -68,10 +68,6 @@ the link."
        (org-goto-marker-or-bmk mkr)))))
 
 ;;; Retrieval Functions
-(defun org-roam-link--get-titles ()
-  "Return all titles within Org-roam."
-  (mapcar #'car (minaduki-db/query [:select [titles:title] :from titles])))
-
 (defun org-roam-link--get-headlines (&optional file with-marker use-stack)
   "Return all outline headings for the current buffer.
 If FILE, return outline headings for passed FILE instead.
@@ -107,7 +103,6 @@ If USE-STACK, include the parent paths as well."
                       (cons name marker)
                     name) cands))))
       (nreverse cands))))
-
 
 (defun org-roam-link--get-file-from-title (title &optional no-interactive)
   "Return the file path corresponding to TITLE.
@@ -252,54 +247,6 @@ DESC is the link description."
   "Hook to replace all roam links on save."
   (when org-roam-link-auto-replace
     (org-roam-link-replace-all)))
-
-;;; Completion
-(defun org-roam-link-complete-at-point ()
-  "Do appropriate completion for the link at point."
-  (let ((end (point))
-        (start (point))
-        collection link-type headline-only-p)
-    (when (org-in-regexp org-link-bracket-re 1)
-      (setq start (match-beginning 1)
-            end (match-end 1))
-      (let ((context (org-element-context)))
-        (pcase (org-element-lineage context '(link) t)
-          (`nil nil)
-          (link
-           (setq link-type (org-element-property :type link))
-           (when (member link-type '("roam" "fuzzy"))
-             (when (string= link-type "roam") (setq start (+ start (length "roam:"))))
-             (pcase-let ((`(,type ,title _ ,star-idx)
-                          (org-roam-link--split-path (org-element-property :path link))))
-               (pcase type
-                 ('title+headline
-                  (when-let ((file (org-roam-link--get-file-from-title title t)))
-                    (setq collection (apply-partially #'org-roam-link--get-headlines file))
-                    (setq start (+ start star-idx 1))))
-                 ('title
-                  (setq collection #'org-roam-link--get-titles))
-                 ('headline
-                  (setq collection #'org-roam-link--get-headlines)
-                  (setq start (+ start star-idx 1))
-                  (setq headline-only-p t)))))))))
-    (when collection
-      (let ((prefix (buffer-substring-no-properties start end)))
-        (list start end
-              (if (functionp collection)
-                  (completion-table-case-fold
-                   (completion-table-dynamic
-                    (lambda (_)
-                      (cl-remove-if (apply-partially #'string= prefix)
-                                    (funcall collection))))
-                   (not org-roam-completion-ignore-case))
-                collection)
-              :exit-function
-              (lambda (str &rest _)
-                (delete-char (- 0 (length str)
-                                (if headline-only-p 1 0)))
-                (insert (concat (unless (string= link-type "roam") "roam:")
-                                (when headline-only-p "*")
-                                (org-link-escape str)))))))))
 
 (provide 'kisaragi-notes-wikilink)
 ;;; kisaragi-notes-wikilink.el ends here

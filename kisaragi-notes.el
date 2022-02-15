@@ -158,8 +158,7 @@ file."
     (add-hook 'before-save-hook #'org-roam-link--replace-link-on-save nil t)
     (add-hook 'after-save-hook #'minaduki-db/update nil t)
     (dolist (fn '(kisaragi-notes-completion/tags-at-point
-                  kisaragi-notes-completion/everywhere
-                  org-roam-link-complete-at-point))
+                  kisaragi-notes-completion/everywhere))
       (add-hook 'completion-at-point-functions fn nil t))
     (org-roam-buffer--update-maybe :redisplay t)))
 
