@@ -1,4 +1,4 @@
-;;; kisaragi-diary.el --- My own way of keeping a diary  -*- lexical-binding: t; -*-
+;;; minaduki-diary.el --- My own way of keeping a diary  -*- lexical-binding: t; -*-
 ;;; Commentary:
 ;;
 ;; My alternative to org-roam-dailies, org-journal, or diary.el
@@ -119,5 +119,5 @@ whether an entry is from DAY or not."
          (cdr
           (assoc selected-key title-file-alist)))))))
 
-(provide 'kisaragi-diary)
-;;; kisaragi-diary.el ends here
+(provide 'minaduki-diary)
+;;; minaduki-diary.el ends here

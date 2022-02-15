@@ -16,7 +16,7 @@
 
 (require 'bibtex-completion)
 
-(require 'kisaragi-diary)
+(require 'minaduki-diary)
 (require 'kisaragi-notes-completion)
 (require 'kisaragi-notes-utils)
 (require 'kisaragi-notes-templates)
@@ -415,7 +415,7 @@ When there are multiple diary entries, prompt for selection.
 
 Diary entries are files in `minaduki/diary-directory' that
 are named with a YYYYMMDD prefix (optionally with dashes)."
-  (declare (interactive-only kisaragi-diary//visit-entry-for-day))
+  (declare (interactive-only minaduki-diary//find-entry-for-day))
   (interactive)
   (let ((day
          ;; Why not `cond': if we're in the calendar buffer but our cursor
