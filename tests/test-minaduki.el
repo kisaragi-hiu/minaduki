@@ -42,7 +42,7 @@
   "."
   (let ((original-dir test-repository)
         (new-dir (expand-file-name (make-temp-name "org-roam") temporary-file-directory))
-        (org-roam-verbose nil))
+        (minaduki-verbose nil))
     (copy-directory original-dir new-dir)
     (setq org-directory new-dir)
     (org-roam-mode +1)

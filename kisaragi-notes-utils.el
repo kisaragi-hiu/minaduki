@@ -427,8 +427,8 @@ If FILE, set `org-roam-temp-file-name' to file and insert its contents."
            ,@body)))))
 
 (defun org-roam-message (format-string &rest args)
-  "Pass FORMAT-STRING and ARGS to `message' when `org-roam-verbose' is t."
-  (when org-roam-verbose
+  "Pass FORMAT-STRING and ARGS to `message' when `minaduki-verbose' is t."
+  (when minaduki-verbose
     (apply #'message `(,(concat "(org-roam) " format-string) ,@args))))
 
 (defun org-roam-string-quote (str)

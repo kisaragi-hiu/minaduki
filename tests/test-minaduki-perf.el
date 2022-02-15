@@ -1,4 +1,4 @@
-;;; test-org-roam-perf.el --- Performance Tests for Org-roam -*- lexical-binding: t; -*-
+;;; test-minaduki-perf.el --- Performance Tests for Minaduki -*- lexical-binding: t; -*-
 
 ;; Copyright (C) 2020 Jethro Kuan
 
@@ -24,7 +24,7 @@
 (require 'buttercup)
 (require 'kisaragi-notes)
 
-(setq org-roam-verbose nil)
+(setq minaduki-verbose nil)
 
 (defconst test-org-roam-perf-zip-url "https://github.com/org-roam/test-org-files/archive/master.zip"
   "Path to zip for test org-roam files.")

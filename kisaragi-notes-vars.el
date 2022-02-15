@@ -258,7 +258,7 @@ which case the list is passed to `cl-sort' as arguments."
   :group 'org-roam
   :type 'boolean)
 
-(defcustom org-roam-verbose t
+(defcustom minaduki-verbose t
   "Echo messages that are not errors."
   :type 'boolean
   :group 'org-roam)
