@@ -1,4 +1,4 @@
-;;; org-roam-buffer.el --- Metadata buffer -*- coding: utf-8; lexical-binding: t; -*-
+;;; minaduki-buffer.el --- Metadata buffer -*- coding: utf-8; lexical-binding: t; -*-
 
 ;; Copyright © 2020 Jethro Kuan <jethrokuan95@gmail.com>
 
@@ -27,10 +27,12 @@
 
 ;;; Commentary:
 ;;
-;; This library provides the org-roam-buffer functionality for org-roam
+;; This library provides the minaduki-buffer functionality for org-roam
 ;;; Code:
 ;;;; Library Requires
-(eval-when-compile (require 'subr-x))
+(eval-when-compile
+  (require 'subr-x))
+
 (require 'cl-lib)
 (require 'dash)
 (require 's)
@@ -52,14 +54,15 @@
 (declare-function org-roam-format-link        "org-roam")
 (declare-function org-roam-link-get-path      "kisaragi-notes-wikilink")
 
-(defcustom org-roam-buffer-position 'right
-  "Position of `org-roam' buffer.
+(defcustom minaduki-buffer/position 'right
+  "Where the metadata buffer should be placed.
+
 Valid values are
- * left,
- * right,
- * top,
- * bottom,
- * a function returning one of the above."
+`left',
+`right',
+`top',
+`bottom', or
+a function returning one of the above."
   :type '(choice (const left)
                  (const right)
                  (const top)
@@ -67,57 +70,52 @@ Valid values are
                  function)
   :group 'org-roam)
 
-(defcustom org-roam-buffer-width 0.33
-  "Width of `org-roam' buffer.
-Has an effect if and only if `org-roam-buffer-position' is `left' or `right'."
+(defcustom minaduki-buffer/width 0.33
+  "Width of the metadata buffer.
+
+Has an effect if and only if `minaduki-buffer/position' is `left' or `right'."
   :type 'number
   :group 'org-roam)
 
-(defcustom org-roam-buffer-height 0.27
-  "Height of `org-roam' buffer.
-Has an effect if and only if `org-roam-buffer-position' is `top' or `bottom'."
+(defcustom minaduki-buffer/height 0.27
+  "Height of the metadata buffer.
+
+Has an effect if and only if `minaduki-buffer/position' is `top' or `bottom'."
   :type 'number
   :group 'org-roam)
 
 (defcustom minaduki-buffer/hidden-tags nil
-  "Tags that should not be inserted into the backlinks buffer."
+  "Tags that should not be inserted into the metadata buffer."
   :type '(repeat string)
   :group 'org-roam)
 
-(defcustom minaduki-buffer/name "*minaduki backlinks*"
-  "Name of the backlinks buffer."
+(defcustom minaduki-buffer/name "*minaduki*"
+  "Name of the metadata buffer."
   :type 'string
   :group 'org-roam)
 
-(defcustom org-roam-buffer-prepare-hook
-  '(org-roam-buffer--insert-title
+(defcustom minaduki-buffer/prepare-hook
+  '(minaduki-buffer//insert-title
     minaduki-buffer//insert-cite-backlinks
     minaduki-buffer//insert-reflection-backlinks
     minaduki-buffer//insert-diary-backlinks
     minaduki-buffer//insert-other-backlinks
     minaduki-buffer//restore-point)
-  "Hook run in the `org-roam-buffer' before it is displayed."
+  "Hook run in the metadata buffer before it is displayed."
   :type 'hook
   :group 'org-roam)
 
-(defcustom org-roam-buffer-preview-function #'org-roam-buffer--preview
-  "Function to obtain preview contents for a given link.
-The function takes in two arguments, the FILE containing the
-link, and the POINT of the link."
-  :type 'function
-  :group 'org-roam)
-
-(defcustom org-roam-buffer-window-parameters nil
-  "Additional window parameters for the `org-roam-buffer' side window.
-For example: (setq org-roam-buffer-window-parameters '((no-other-window . t)))"
+(defcustom minaduki-buffer/window-parameters nil
+  "Additional window parameters for the `minaduki-buffer' side window.
+For example: (setq minaduki-buffer/window-parameters '((no-other-window . t)))"
   :type '(alist)
   :group 'org-roam)
 
-(defvar org-roam-buffer--current nil
+(defvar minaduki-buffer//current nil
   "Currently displayed file in `org-roam' buffer.")
 
-(defun org-roam-buffer--find-file (file)
-  "Open FILE in the window `org-roam' was called from."
+(defun minaduki-buffer//find-file (file)
+  "Open FILE in the other window."
   (setq file (expand-file-name file))
   (let ((last-window org-roam-last-window))
     (if (window-valid-p last-window)
@@ -126,10 +124,10 @@ For example: (setq org-roam-buffer-window-parameters '((no-other-window . t)))"
                (select-window last-window))
       (minaduki//find-file file))))
 
-(defun org-roam-buffer--insert-title ()
-  "Insert the org-roam-buffer title."
+(defun minaduki-buffer//insert-title ()
+  "Insert the minaduki-buffer title."
   (insert (propertize (minaduki-db//fetch-title
-                       (buffer-file-name org-roam-buffer--current))
+                       (buffer-file-name minaduki-buffer//current))
                       'font-lock-face
                       'org-document-title)))
 
@@ -146,13 +144,13 @@ This function hooks into `org-open-at-point' via `org-open-at-point-functions'."
            (path (org-element-property :path context)))
       (when (and (eq (org-element-type context) 'link)
                  (org-roam--org-roam-file-p path))
-        (org-roam-buffer--find-file path)
+        (minaduki-buffer//find-file path)
         (org-show-context)
         t)))
    ;; Org-roam preview text
    ((when-let ((file-from (get-text-property (point) 'file-from))
                (p (get-text-property (point) 'file-from-point)))
-      (org-roam-buffer--find-file file-from)
+      (minaduki-buffer//find-file file-from)
       (goto-char p)
       (org-show-context)
       t))
@@ -161,7 +159,7 @@ This function hooks into `org-open-at-point' via `org-open-at-point-functions'."
 
 ;;; org-roam-backlinks-mode
 (define-minor-mode org-roam-backlinks-mode
-  "Minor mode for the `org-roam-buffer'.
+  "Minor mode for the `minaduki-buffer'.
 \\{org-roam-backlinks-mode-map}"
   :lighter " Backlinks"
   :keymap  (let ((map (make-sparse-keymap)))
@@ -183,14 +181,14 @@ This function hooks into `org-open-at-point' via `org-open-at-point-functions'."
 (defun minaduki-buffer//save-point ()
   "Save cursor position in backlinks buffer for the current file."
   (with-current-buffer minaduki-buffer/name
-    (puthash (buffer-file-name org-roam-buffer--current)
+    (puthash (buffer-file-name minaduki-buffer//current)
              (point)
              minaduki-buffer//point-map)))
 
 (defun minaduki-buffer//restore-point ()
   "Restore last visited point in backlinks buffer for this file."
   (with-selected-window (get-buffer-window minaduki-buffer/name)
-    (let ((saved-point (gethash (buffer-file-name org-roam-buffer--current)
+    (let ((saved-point (gethash (buffer-file-name minaduki-buffer//current)
                                 minaduki-buffer//point-map)))
       (when (and (integerp saved-point)
                  (<= (point-min) saved-point (point-max)))
@@ -199,7 +197,7 @@ This function hooks into `org-open-at-point' via `org-open-at-point-functions'."
 ;;;; Inserting backlinks
 
 (cl-defun minaduki-buffer//insert-backlinks (&key cite? filter (heading "Backlink"))
-  "Insert the org-roam-buffer backlinks string for the current buffer.
+  "Insert the minaduki-buffer backlinks string for the current buffer.
 
 Customized:
 
@@ -226,9 +224,9 @@ or to this file's ROAM_KEY.
 
 6. Links in titles are removed."
   (let (props file-from)
-    (when-let* ((file-path (buffer-file-name org-roam-buffer--current))
+    (when-let* ((file-path (buffer-file-name minaduki-buffer//current))
                 (titles-and-refs
-                 (with-current-buffer org-roam-buffer--current
+                 (with-current-buffer minaduki-buffer//current
                    (cons (org-roam--extract-titles)
                          (minaduki-extract/refs))))
                 (backlinks
@@ -242,7 +240,7 @@ or to this file's ROAM_KEY.
       ;; The heading
       (insert (let ((l (length backlinks)))
                 (format "\n\n* %d %s"
-                        l (org-roam-buffer--pluralize heading l))))
+                        l (minaduki-buffer//pluralize heading l))))
       ;; Backlinks
       ;; Links from the same group originate from the same file
       (dolist (group backlink-groups)
@@ -272,12 +270,12 @@ or to this file's ROAM_KEY.
            (format "\n\n/%s/\n\n"
                    (or (-some--> (plist-get prop :outline)
                          (string-join it " › ")
-                         (org-roam-buffer-expand-links it file-from)
+                         (minaduki-buffer/expand-links it file-from)
                          (format "Top › %s" it))
                        "Top")))
           (when-let ((content (plist-get prop :content)))
             (insert
-             (--> (org-roam-buffer-expand-links content file-from)
+             (--> (minaduki-buffer/expand-links content file-from)
                   s-trim
                   (if (= ?* (elt it 0))
                       (concat "  " it)
@@ -320,18 +318,7 @@ come from Reflections."
                       (string-match-p "diary/" from))))
    :heading "Internal Backlink"))
 
-(defun org-roam-buffer--preview (file point)
-  "Get preview content for FILE at POINT."
-  (save-excursion
-    (org-roam--with-temp-buffer file
-      (goto-char point)
-      (let ((elem (org-element-at-point)))
-        (or (org-element-property :raw-value elem)
-            (when-let ((begin (org-element-property :begin elem))
-                       (end (org-element-property :end elem)))
-              (string-trim (buffer-substring-no-properties begin end))))))))
-
-(defun org-roam-buffer--pluralize (string number)
+(defun minaduki-buffer//pluralize (string number)
   "Conditionally pluralize STRING if NUMBER is above 1."
   (let ((l (pcase number
              ((pred (listp)) (length number))
@@ -341,7 +328,7 @@ come from Reflections."
                                    ,wrong-type))))))
     (concat string (when (> l 1) "s"))))
 
-(defun org-roam-buffer-expand-links (content orig-path)
+(defun minaduki-buffer/expand-links (content orig-path)
   "Crawl CONTENT for relative links and corrects them to be correctly displayed.
 ORIG-PATH is the path where the CONTENT originated."
   (with-temp-buffer
@@ -359,14 +346,14 @@ ORIG-PATH is the path where the CONTENT originated."
 
 ;; TODO: resolve by project root
 ;; source project root & target project root can still be different
-(defun org-roam-buffer-update ()
+(defun minaduki-buffer/update ()
   "Render the backlinks buffer."
   (interactive)
   (minaduki-db//ensure-built)
   (let* ((source-org-directory org-directory))
     (with-current-buffer minaduki-buffer/name
       ;; When dir-locals.el is used to override org-directory,
-      ;; org-roam-buffer should have a different local org-directory and
+      ;; minaduki-buffer should have a different local org-directory and
       ;; default-directory, as relative links are relative from the overridden
       ;; org-directory.
       (setq-local org-directory source-org-directory)
@@ -383,10 +370,10 @@ ORIG-PATH is the path where the CONTENT originated."
           (org-roam-backlinks-mode))
         (make-local-variable 'org-return-follows-link)
         (setq org-return-follows-link t)
-        (run-hooks 'org-roam-buffer-prepare-hook)
+        (run-hooks 'minaduki-buffer/prepare-hook)
         (read-only-mode 1)))))
 
-(cl-defun org-roam-buffer--update-maybe (&key redisplay)
+(cl-defun minaduki-buffer//update-maybe (&key redisplay)
   "Reconstruct the backlinks buffer.
 
 This needs to be quick or infrequent, because this is run at
@@ -394,15 +381,15 @@ This needs to be quick or infrequent, because this is run at
 what."
   (let ((buffer (window-buffer)))
     (when (and (or redisplay
-                   (not (eq org-roam-buffer--current buffer)))
-               (eq 'visible (org-roam-buffer--visibility))
+                   (not (eq minaduki-buffer//current buffer)))
+               (eq 'visible (minaduki-buffer//visibility))
                (buffer-file-name buffer)
                (minaduki-db//file-present? (buffer-file-name buffer)))
-      (setq org-roam-buffer--current buffer)
-      (org-roam-buffer-update))))
+      (setq minaduki-buffer//current buffer)
+      (minaduki-buffer/update))))
 
 ;;;; Toggling the org-roam buffer
-(define-inline org-roam-buffer--visibility ()
+(define-inline minaduki-buffer//visibility ()
   "Return whether the current visibility state of the org-roam buffer.
 Valid states are 'visible, 'exists and 'none."
   (declare (side-effect-free t))
@@ -412,7 +399,7 @@ Valid states are 'visible, 'exists and 'none."
     ((get-buffer minaduki-buffer/name) 'exists)
     (t 'none))))
 
-(defun org-roam-buffer--set-width (width)
+(defun minaduki-buffer//set-width (width)
   "Set the width of the current window to WIDTH."
   (unless (one-window-p)
     (let ((window-size-fixed)
@@ -423,7 +410,7 @@ Valid states are 'visible, 'exists and 'none."
        ((< (window-width) w)
         (enlarge-window-horizontally (- w (window-width))))))))
 
-(defun org-roam-buffer--set-height (height)
+(defun minaduki-buffer//set-height (height)
   "Set the height of the current window to HEIGHT."
   (unless (one-window-p)
     (let ((window-size-fixed)
@@ -434,45 +421,45 @@ Valid states are 'visible, 'exists and 'none."
        ((< (window-height) h)
         (enlarge-window (- h (window-height))))))))
 
-(defun org-roam-buffer--get-create ()
-  "Set up the `org-roam' buffer at `org-roam-buffer-position'."
-  (let ((position (if (functionp org-roam-buffer-position)
-                      (funcall org-roam-buffer-position)
-                    org-roam-buffer-position)))
+(defun minaduki-buffer//get-create ()
+  "Set up the `org-roam' buffer at `minaduki-buffer/position'."
+  (let ((position (if (functionp minaduki-buffer/position)
+                      (funcall minaduki-buffer/position)
+                    minaduki-buffer/position)))
     (save-selected-window
       (-> (get-buffer-create minaduki-buffer/name)
           (display-buffer-in-side-window
            `((side . ,position)
-             (window-parameters . ,org-roam-buffer-window-parameters)))
+             (window-parameters . ,minaduki-buffer/window-parameters)))
           (select-window))
       (pcase position
         ((or 'right 'left)
-         (org-roam-buffer--set-width
-          (round (* (frame-width)  org-roam-buffer-width))))
+         (minaduki-buffer//set-width
+          (round (* (frame-width)  minaduki-buffer/width))))
         ((or 'top  'bottom)
-         (org-roam-buffer--set-height
-          (round (* (frame-height) org-roam-buffer-height))))))))
+         (minaduki-buffer//set-height
+          (round (* (frame-height) minaduki-buffer/height))))))))
 
-(defun org-roam-buffer-activate ()
-  "Activate display of the `org-roam-buffer'."
+(defun minaduki-buffer/activate ()
+  "Activate display of the `minaduki-buffer'."
   (interactive)
   (unless org-roam-mode (org-roam-mode))
   (setq org-roam-last-window (get-buffer-window))
-  (org-roam-buffer--get-create))
+  (minaduki-buffer//get-create))
 
-(defun org-roam-buffer-deactivate ()
-  "Deactivate display of the `org-roam-buffer'."
+(defun minaduki-buffer/deactivate ()
+  "Deactivate display of the `minaduki-buffer'."
   (interactive)
   (setq org-roam-last-window (get-buffer-window))
   (delete-window (get-buffer-window minaduki-buffer/name)))
 
-(defun org-roam-buffer-toggle-display ()
-  "Toggle display of the `org-roam-buffer'."
+(defun minaduki-buffer/toggle-display ()
+  "Toggle display of the `minaduki-buffer'."
   (interactive)
-  (pcase (org-roam-buffer--visibility)
-    ('visible (org-roam-buffer-deactivate))
-    ((or 'exists 'none) (org-roam-buffer-activate))))
+  (pcase (minaduki-buffer//visibility)
+    ('visible (minaduki-buffer/deactivate))
+    ((or 'exists 'none) (minaduki-buffer/activate))))
 
-(provide 'org-roam-buffer)
+(provide 'minaduki-buffer)
 
-;;; org-roam-buffer.el ends here
+;;; minaduki-buffer.el ends here

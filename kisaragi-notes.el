@@ -67,7 +67,7 @@
 (when (featurep 'oc)
   (require 'kisaragi-notes-cite))
 
-(require 'org-roam-buffer)
+(require 'minaduki-buffer)
 (require 'minaduki-bibtex)
 (require 'org-roam-capture)
 (require 'org-roam-extract)
@@ -81,7 +81,7 @@
 (defun minaduki//backlink-to-current-p ()
   "Return t if the link at point is to the current Org-roam file."
   (save-match-data
-    (let ((current-file (buffer-file-name org-roam-buffer--current))
+    (let ((current-file (buffer-file-name minaduki-buffer//current))
           (backlink-dest (save-excursion
                            (let* ((context (org-element-context))
                                   (type (org-element-property :type context))
@@ -154,13 +154,13 @@ file."
     (setq org-roam-last-window (get-buffer-window))
     (run-hooks 'minaduki/file-setup-hook) ; Run user hooks
     (org-roam--setup-title-auto-update)
-    (add-hook 'post-command-hook #'org-roam-buffer--update-maybe nil t)
+    (add-hook 'post-command-hook #'minaduki-buffer//update-maybe nil t)
     (add-hook 'before-save-hook #'org-roam-link--replace-link-on-save nil t)
     (add-hook 'after-save-hook #'minaduki-db/update nil t)
     (dolist (fn '(minaduki-completion/tags-at-point
                   minaduki-completion/everywhere))
       (add-hook 'completion-at-point-functions fn nil t))
-    (org-roam-buffer--update-maybe :redisplay t)))
+    (minaduki-buffer//update-maybe :redisplay t)))
 
 (defun minaduki//delete-file-advice (file &optional _trash)
   "Advice for maintaining cache consistency when FILE is deleted."
@@ -403,7 +403,7 @@ M-x info for more information at Org-roam > Installation > Post-Installation Tas
     ;; Apply these now. New buffers get this in the find-file hook.
     (dolist (buf (org-roam--get-roam-buffers))
       (with-current-buffer buf
-        (add-hook 'post-command-hook #'org-roam-buffer--update-maybe nil t)
+        (add-hook 'post-command-hook #'minaduki-buffer//update-maybe nil t)
         (add-hook 'before-save-hook #'org-roam-link--replace-link-on-save nil t)
         (add-hook 'after-save-hook #'minaduki-db/update nil t)))
 
@@ -446,7 +446,7 @@ M-x info for more information at Org-roam > Installation > Post-Installation Tas
     ;; Disable local hooks for all org-roam buffers
     (dolist (buf (org-roam--get-roam-buffers))
       (with-current-buffer buf
-        (remove-hook 'post-command-hook #'org-roam-buffer--update-maybe t)
+        (remove-hook 'post-command-hook #'minaduki-buffer//update-maybe t)
         (remove-hook 'before-save-hook #'org-roam-link--replace-link-on-save t)
         (remove-hook 'after-save-hook #'minaduki-db/update t)))
 
@@ -472,7 +472,7 @@ M-x info for more information at Org-roam > Installation > Post-Installation Tas
 
 ;;; Interactive Commands
 ;;;###autoload
-(defalias 'org-roam 'org-roam-buffer-toggle-display)
+(defalias 'org-roam 'minaduki-buffer/toggle-display)
 
 (provide 'kisaragi-notes)
 ;;; kisaragi-notes.el ends here

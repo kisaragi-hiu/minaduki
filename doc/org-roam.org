@@ -665,33 +665,33 @@ This section concerns the placement and creation of files.
 
 The Org-roam buffer displays backlinks for the currently active Org-roam note.
 
-- User Option: org-roam-buffer
+- User Option: minaduki-buffer
 
   The name of the org-roam buffer. Defaults to ~*org-roam*~.
 
-- User Option: org-roam-buffer-position
+- User Option: minaduki-buffer/position
 
   The position of the Org-roam buffer side window. Valid values are ~'left~,
   ~'right~, ~'top~, ~'bottom~.
 
-- User Option: org-roam-buffer-width
+- User Option: minaduki-buffer/width
 
-  Width of ~org-roam-buffer~. Has an effect only if ~org-roam-buffer-position~ is
+  Width of ~minaduki-buffer~. Has an effect only if ~minaduki-buffer/position~ is
   ~'left~ or ~'right~.
 
-- User Option: org-roam-buffer-height
+- User Option: minaduki-buffer/height
 
-  Height of ~org-roam-buffer~. Has an effect only if ~org-roam-buffer-position~ is
+  Height of ~minaduki-buffer~. Has an effect only if ~minaduki-buffer/position~ is
   ~'top~ or ~'bottom~.
 
-- User Option: org-roam-buffer-window-parameters
+- User Option: minaduki-buffer/window-parameters
 
-  Additional window parameters for the org-roam-buffer side window.
+  Additional window parameters for the minaduki-buffer side window.
 
   For example one can prevent the window from being deleted when calling
   ~delete-other-windows~, by setting it with the following:
 
-  ~(setq org-roam-buffer-window-parameters '((no-delete-other-windows . t)))~
+  ~(setq minaduki-buffer/window-parameters '((no-delete-other-windows . t)))~
 
 ** Org-roam Files
 
