@@ -44,9 +44,9 @@
     (let ((parsed (org-element-parse-buffer)))
       (delete-region beg end)
       (insert (->> parsed
-                ;; Yes, this works.
-                dom-texts
-                (s-replace-regexp "[ \t]+" " "))))))
+                   ;; Yes, this works.
+                   dom-texts
+                   (s-replace-regexp "[ \t]+" " "))))))
 
 (defun minaduki/org-heading-to-file//suffix (&optional dir full? visit?)
   "Write the current heading to a file under DIR.
@@ -80,12 +80,12 @@ Interactively, please use the transient command instead."
          (filename (->> (if full?
                             title
                           (car (s-split " " title)))
-                     (s-replace-regexp (rx (any "-/,:?\"!'\\")) "")
-                     (s-replace-regexp " +" "-")
-                     downcase
-                     (s-replace-regexp (rx (group digit) "t" (group digit))
-                                       "\\1T\\2")
-                     (format "%s.org")))
+                        (s-replace-regexp (rx (any "-/,:?\"!'\\")) "")
+                        (s-replace-regexp " +" "-")
+                        downcase
+                        (s-replace-regexp (rx (group digit) "t" (group digit))
+                                          "\\1T\\2")
+                        (format "%s.org")))
          (path (f-join dir filename))
          (content (save-mark-and-excursion
                     (org-mark-subtree)
@@ -132,9 +132,9 @@ If DESCRIPTION is provided, use this as the link label.  See
                     (setq region-text (org-link-display-format (buffer-substring-no-properties beg end)))))
                (completions (--> (or completions
                                      (org-roam--get-title-path-completions))
-                              (if filter-fn
-                                  (funcall filter-fn it)
-                                it)))
+                                 (if filter-fn
+                                     (funcall filter-fn it)
+                                   it)))
                (title-with-tags (completing-read "File: " completions
                                                  nil nil region-text))
                (res (cdr (assoc title-with-tags completions)))
@@ -459,8 +459,8 @@ are named with a YYYYMMDD prefix (optionally with dashes)."
   "Capture a template."
   (interactive)
   (-> (kisaragi-notes-templates//read-template "Template: ")
-    kisaragi-notes-templates//capture
-    org-roam--find-file))
+      kisaragi-notes-templates//capture
+      org-roam--find-file))
 
 ;;;###autoload
 (defun kisaragi-notes/open-non-literature-note (&optional initial-prompt)
@@ -502,7 +502,7 @@ included as a candidate."
   (let* ((completions (org-roam--get-ref-path-completions interactive? filter))
          (ref (completing-read "Literature note: " completions nil t))
          (file (-> (cdr (assoc ref completions))
-                 (plist-get :path))))
+                   (plist-get :path))))
     (org-roam--find-file file)))
 
 ;;;###autoload
@@ -564,8 +564,8 @@ one."
       ;; FIXME: Hardcodes choice of Org
       (with-current-buffer (find-file-noselect
                             (-> (kisaragi-notes//title-to-slug title)
-                              (f-expand org-directory)
-                              (concat ".org")))
+                                (f-expand org-directory)
+                                (concat ".org")))
         (insert "#+TITLE: " title "\n")
         (pop-to-buffer-same-window (current-buffer))))))
 

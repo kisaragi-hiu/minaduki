@@ -392,9 +392,9 @@ Return the number of rows inserted."
         [:select [file] :from titles
          :where (= title $s0)]
         title)
-    ;; The above returns ((path1) (path2) ...).
-    ;; Turn it into (path1 path2 ...).
-    (apply #'nconc)))
+       ;; The above returns ((path1) (path2) ...).
+       ;; Turn it into (path1 path2 ...).
+       (apply #'nconc)))
 
 (defun kisaragi-notes-db//query-ref (ref)
   "Return the file associated with REF as (TITLE FILE)."

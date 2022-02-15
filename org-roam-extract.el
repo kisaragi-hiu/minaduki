@@ -58,14 +58,14 @@ This is used to extract #+roam_tags."
   ;;     #+prop: c d
   ;;     -> '(\"a\" \"b\" \"c\" \"d\")
   (--> (kisaragi-notes//org-props (list prop))
-    ;; so that the returned order is the same as in the buffer
-    nreverse
-    ;; '(("ROAM_TAGS" . "a b") ("ROAM_TAGS" . "c d"))
-    ;; -> '("a b" "c d")
-    (mapcar #'cdr it)
-    (mapcar #'split-string-and-unquote it)
-    ;; We have a list of lists at this point. Join them.
-    (apply #'append it)))
+       ;; so that the returned order is the same as in the buffer
+       nreverse
+       ;; '(("ROAM_TAGS" . "a b") ("ROAM_TAGS" . "c d"))
+       ;; -> '("a b" "c d")
+       (mapcar #'cdr it)
+       (mapcar #'split-string-and-unquote it)
+       ;; We have a list of lists at this point. Join them.
+       (apply #'append it)))
 
 (defun kisaragi-notes-extract/citation (file-from)
   "Extract Org 9.5+ citations.
@@ -456,8 +456,8 @@ Tags are obtained via:
 2. The key #+roam_tags."
   (let* ((file (or file (buffer-file-name (buffer-base-buffer))))
          (tags (->> kisaragi-notes/tag-sources
-                 (mapcan (lambda (it) (funcall it file)))
-                 -uniq)))
+                    (mapcan (lambda (it) (funcall it file)))
+                    -uniq)))
     (cond
      ((not org-roam-tag-sort)
       tags)

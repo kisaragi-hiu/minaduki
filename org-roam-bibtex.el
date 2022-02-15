@@ -201,10 +201,10 @@ symbols is implied."
   (let* ((targets (--> (if (and targets (not (listp targets)))
                            (listp targets)
                          targets)
-                    ;; filter irrelevant symbols,
-                    ;; or if targets were nil, make all targets
-                    (or (-intersection it '(prepare before after))
-                        '(prepare before after)))))
+                       ;; filter irrelevant symbols,
+                       ;; or if targets were nil, make all targets
+                       (or (-intersection it '(prepare before after))
+                           '(prepare before after)))))
     (dolist (target targets)
       (let ((functions (sort (orb-plist-get
                               (intern (format ":%s-functions" target)))
@@ -348,11 +348,11 @@ a capture session."
                                ;; if only one template is defined, use it
                                (car org-capture-templates)
                              (org-capture-select-template))
-                        (copy-tree it)
-                        ;; optionally preformat templates
-                        (if orb-preformat-templates
-                            (orb--preformat-template it entry)
-                          it)))
+                           (copy-tree it)
+                           ;; optionally preformat templates
+                           (if orb-preformat-templates
+                               (orb--preformat-template it entry)
+                             it)))
             ;; pretend we had only one template
             ;; `org-roam-capture--capture' behaves specially in this case
             ;; NOTE: this circumvents using functions other than
@@ -575,8 +575,8 @@ If ARG is non-nil, rebuild `bibtex-completion-cache'."
          (citekey (if (eq orb-insert-generic-candidates-format 'key)
                       selection
                     (--> (alist-get selection candidates nil nil #'equal)
-                      (cdr it)
-                      (alist-get "=key=" it  nil nil #'equal)))))
+                         (cdr it)
+                         (alist-get "=key=" it  nil nil #'equal)))))
     (orb-insert-edit-notes (list citekey))))
 
 (defun orb-insert-edit-notes (citekey)

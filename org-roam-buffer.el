@@ -278,15 +278,15 @@ or to this file's ROAM_KEY.
           (when-let ((content (plist-get prop :content)))
             (insert
              (--> (org-roam-buffer-expand-links content file-from)
-               s-trim
-               (if (= ?* (elt it 0))
-                   (concat "  " it)
-                 it)
-               (propertize
-                it
-                'help-echo "mouse-1: visit backlinked note"
-                'file-from file-from
-                'file-from-point (plist-get prop :point))))))))))
+                  s-trim
+                  (if (= ?* (elt it 0))
+                      (concat "  " it)
+                    it)
+                  (propertize
+                   it
+                   'help-echo "mouse-1: visit backlinked note"
+                   'file-from file-from
+                   'file-from-point (plist-get prop :point))))))))))
 
 (defun kisaragi-notes-buffer//insert-cite-backlinks ()
   "Insert ref backlinks.
@@ -441,10 +441,10 @@ Valid states are 'visible, 'exists and 'none."
                     org-roam-buffer-position)))
     (save-selected-window
       (-> (get-buffer-create kisaragi-notes-buffer/name)
-        (display-buffer-in-side-window
-         `((side . ,position)
-           (window-parameters . ,org-roam-buffer-window-parameters)))
-        (select-window))
+          (display-buffer-in-side-window
+           `((side . ,position)
+             (window-parameters . ,org-roam-buffer-window-parameters)))
+          (select-window))
       (pcase position
         ((or 'right 'left)
          (org-roam-buffer--set-width

@@ -47,10 +47,10 @@ plist containing the path and title for the file."
                             rows))
     (dolist (row rows completions)
       (pcase-let ((`(,file-path ,title ,tags) row))
-        (let ((k (-> (org-roam--add-tag-string title tags)
-                   (propertize :metadata `((path . ,file-path)
-                                           (title . ,title)
-                                           (tags . ,tags)))))
+        (let ((k (-> (minaduki//add-tag-string title tags)
+                     (propertize :metadata `((path . ,file-path)
+                                             (title . ,title)
+                                             (tags . ,tags)))))
               (v (list :path file-path :title title)))
           (push (cons k v) completions))))))
 
@@ -165,9 +165,9 @@ returned by `org-roam--get-title-path-completions'. When nil,
 FILTER-FN: completions will pass through this function first
 before being prompted for selection."
   (let* ((completions (--> (or completions (org-roam--get-title-path-completions))
-                        (if filter-fn
-                            (funcall filter-fn it)
-                          it)))
+                           (if filter-fn
+                               (funcall filter-fn it)
+                             it)))
          (selection (completing-read "Note: "
                                      (kisaragi-notes-completion//mark-category
                                       completions 'note)
@@ -192,8 +192,8 @@ This is active when `org-roam-completion-everywhere' is non-nil."
                   ;; Get our own completion request string
                   (lambda (_)
                     (->> (-map #'car (org-roam-db-query [:select [title] :from titles]))
-                      (--remove (string= prefix it)))))
-              (completion-table-case-fold it (not org-roam-completion-ignore-case)))
+                         (--remove (string= prefix it)))))
+                 (completion-table-case-fold it (not org-roam-completion-ignore-case)))
             :exit-function (lambda (str _status)
                              (delete-char (- (length str)))
                              (insert "[[roam:" str "]]"))))))
@@ -214,8 +214,8 @@ This is active when `org-roam-completion-everywhere' is non-nil."
                     ;; Get our own completion request string
                     (lambda (_)
                       (->> (kisaragi-notes-db//fetch-all-tags)
-                        (--remove (string= prefix it)))))
-                (completion-table-case-fold it (not org-roam-completion-ignore-case)))
+                           (--remove (string= prefix it)))))
+                   (completion-table-case-fold it (not org-roam-completion-ignore-case)))
               :exit-function (lambda (str _status)
                                (delete-char (- (length str)))
                                (insert "\"" str "\"")))))))

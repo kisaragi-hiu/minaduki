@@ -237,7 +237,7 @@
     (it "extracts links from Markdown files"
       (expect (->> (test #'org-roam--extract-links
                          "baz.md")
-                (--map (seq-take it 3)))
+                   (--map (seq-take it 3)))
               :to-have-same-items-as
               `([,(test-org-roam--abs-path "baz.md")
                  ,(test-org-roam--abs-path "nested/bar.org")
@@ -251,8 +251,8 @@
     (it "extracts links from Org files"
       (expect (->> (test #'org-roam--extract-links
                          "foo.org")
-                ;; Drop the link type and properties
-                (--map (seq-take it 2)))
+                   ;; Drop the link type and properties
+                   (--map (seq-take it 2)))
               :to-have-same-items-as
               `([,(test-org-roam--abs-path "foo.org")
                  ,(test-org-roam--abs-path "baz.md")]
@@ -265,8 +265,8 @@
     (xit "extracts Org citations"
       (expect (->> (test #'kisaragi-notes-extract/citation
                          "org-cite.org")
-                ;; Drop the link properties
-                (--map (seq-take it 3)))
+                   ;; Drop the link properties
+                   (--map (seq-take it 3)))
               :to-have-same-items-as
               `([,(test-org-roam--abs-path "org-cite.org")
                  "赤坂アカand横槍メンゴ-oshinoko"

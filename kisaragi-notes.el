@@ -110,7 +110,7 @@ currently opened Org-roam file in the backlink buffer, or
 file."
   (save-match-data
     (let* ((in-note (-> (buffer-file-name (buffer-base-buffer))
-                      (org-roam--org-roam-file-p)))
+                        (org-roam--org-roam-file-p)))
            (custom (or (and in-note org-roam-link-use-custom-faces)
                        (eq org-roam-link-use-custom-faces 'everywhere))))
       (cond ((and custom
@@ -134,7 +134,7 @@ currently opened Org-roam file in the backlink buffer, or
 file."
   (save-match-data
     (let* ((in-note (-> (buffer-file-name (buffer-base-buffer))
-                      (org-roam--org-roam-file-p)))
+                        (org-roam--org-roam-file-p)))
            (custom (or (and in-note org-roam-link-use-custom-faces)
                        (eq org-roam-link-use-custom-faces 'everywhere))))
       (cond ((and (org-roam--in-buffer-p)
