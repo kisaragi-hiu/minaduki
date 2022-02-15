@@ -94,14 +94,14 @@ Has an effect if and only if `minaduki-buffer/position' is `top' or `bottom'."
   :type 'string
   :group 'org-roam)
 
-(defcustom minaduki-buffer/prepare-hook
-  '(minaduki-buffer//insert-title
-    minaduki-buffer//insert-cite-backlinks
-    minaduki-buffer//insert-reflection-backlinks
-    minaduki-buffer//insert-diary-backlinks
-    minaduki-buffer//insert-other-backlinks
-    minaduki-buffer//restore-point)
-  "Hook run in the metadata buffer before it is displayed."
+(defcustom minaduki-buffer/before-insert-hook nil
+  "Hook run in the metadata buffer before new content is inserted."
+  :type 'hook
+  :group 'org-roam)
+
+(defcustom minaduki-buffer/after-insert-hook
+  '(minaduki-buffer//restore-point)
+  "Hook run in the metadata buffer after new content is inserted."
   :type 'hook
   :group 'org-roam)
 
@@ -158,20 +158,26 @@ This function hooks into `org-open-at-point' via `org-open-at-point-functions'."
    (t nil)))
 
 ;;; org-roam-backlinks-mode
-(define-minor-mode org-roam-backlinks-mode
-  "Minor mode for the `minaduki-buffer'.
+(define-minor-mode minaduki-buffer/mode
+  "Set up code for the metadata buffer.
+
 \\{org-roam-backlinks-mode-map}"
   :lighter " Backlinks"
-  :keymap  (let ((map (make-sparse-keymap)))
-             (define-key map [mouse-1] 'org-open-at-point)
-             (define-key map (kbd "RET") 'org-open-at-point)
-             map)
-  (cond (org-roam-backlinks-mode
-         (add-hook 'post-command-hook #'minaduki-buffer//save-point nil :local)
-         (add-hook 'org-open-at-point-functions #'minaduki-buffer//open-at-point nil :local))
-        (t
-         (remove-hook 'post-command-hook #'minaduki-buffer//save-point :local)
-         (remove-hook 'org-open-at-point-functions #'minaduki-buffer//open-at-point :local))))
+  :keymap (let ((map (make-sparse-keymap)))
+            (define-key map [mouse-1] 'org-open-at-point)
+            (define-key map (kbd "RET") 'org-open-at-point)
+            map)
+  ;; We use a minor mode just for the keymap. It's not meant to be
+  ;; turned off.
+  ;;
+  ;; Content is rendered in `minaduki-buffer/update'.
+  (setq-local org-return-follows-link t)
+  (add-hook 'post-command-hook
+            #'minaduki-buffer//save-point
+            nil :local)
+  (add-hook 'org-open-at-point-functions
+            #'minaduki-buffer//open-at-point
+            nil :local))
 
 ;;;; Saving cursor position
 
@@ -344,8 +350,6 @@ ORIG-PATH is the path where the CONTENT originated."
                          nil t nil 2))))
     (buffer-string)))
 
-;; TODO: resolve by project root
-;; source project root & target project root can still be different
 (defun minaduki-buffer/update ()
   "Render the backlinks buffer."
   (interactive)
@@ -364,13 +368,17 @@ ORIG-PATH is the path where the CONTENT originated."
                   (cons '(file . minaduki//find-file) org-link-frame-setup))
       (let ((inhibit-read-only t))
         (erase-buffer)
-        (unless (eq major-mode 'org-mode)
-          (org-mode))
-        (unless org-roam-backlinks-mode
-          (org-roam-backlinks-mode))
-        (make-local-variable 'org-return-follows-link)
-        (setq org-return-follows-link t)
-        (run-hooks 'minaduki-buffer/prepare-hook)
+        (run-hooks 'minaduki-buffer/before-insert-hook)
+        (minaduki-buffer//insert-title)
+        (minaduki-buffer//insert-cite-backlinks)
+        (minaduki-buffer//insert-reflection-backlinks)
+        (minaduki-buffer//insert-diary-backlinks)
+        (minaduki-buffer//insert-other-backlinks)
+        ;; HACK: we should figure out we have no backlinks directly
+        (unless (< 2 (s-count-matches "\n" (buffer-string)))
+          (insert "\n\n/No backlinks/"))
+        (kisaragi-notes-buffer//restore-point)
+        (run-hooks 'minaduki-buffer/after-insert-hook)
         (read-only-mode 1)))))
 
 (cl-defun minaduki-buffer//update-maybe (&key redisplay)
@@ -382,22 +390,17 @@ what."
   (let ((buffer (window-buffer)))
     (when (and (or redisplay
                    (not (eq minaduki-buffer//current buffer)))
-               (eq 'visible (minaduki-buffer//visibility))
+               (minaduki-buffer/visible?)
                (buffer-file-name buffer)
                (minaduki-db//file-present? (buffer-file-name buffer)))
       (setq minaduki-buffer//current buffer)
       (minaduki-buffer/update))))
 
 ;;;; Toggling the org-roam buffer
-(define-inline minaduki-buffer//visibility ()
-  "Return whether the current visibility state of the org-roam buffer.
-Valid states are 'visible, 'exists and 'none."
+(defun minaduki-buffer/visible? ()
+  "Is the metadata buffer currently visible?"
   (declare (side-effect-free t))
-  (inline-quote
-   (cond
-    ((get-buffer-window minaduki-buffer/name) 'visible)
-    ((get-buffer minaduki-buffer/name) 'exists)
-    (t 'none))))
+  (get-buffer-window minaduki-buffer/name))
 
 (defun minaduki-buffer//set-width (width)
   "Set the width of the current window to WIDTH."
@@ -421,8 +424,11 @@ Valid states are 'visible, 'exists and 'none."
        ((< (window-height) h)
         (enlarge-window (- h (window-height))))))))
 
-(defun minaduki-buffer//get-create ()
-  "Set up the `org-roam' buffer at `minaduki-buffer/position'."
+(defun minaduki-buffer/activate ()
+  "Activate display of the `minaduki-buffer'."
+  (interactive)
+  (setq org-roam-last-window (get-buffer-window))
+  ;; Set up the window
   (let ((position (if (functionp minaduki-buffer/position)
                       (funcall minaduki-buffer/position)
                     minaduki-buffer/position)))
@@ -438,14 +444,11 @@ Valid states are 'visible, 'exists and 'none."
           (round (* (frame-width)  minaduki-buffer/width))))
         ((or 'top  'bottom)
          (minaduki-buffer//set-height
-          (round (* (frame-height) minaduki-buffer/height))))))))
-
-(defun minaduki-buffer/activate ()
-  "Activate display of the `minaduki-buffer'."
-  (interactive)
-  (unless org-roam-mode (org-roam-mode))
-  (setq org-roam-last-window (get-buffer-window))
-  (minaduki-buffer//get-create))
+          (round (* (frame-height) minaduki-buffer/height)))))))
+  ;; Set up the buffer
+  (with-current-buffer minaduki-buffer/name
+    (org-mode)
+    (org-roam-backlinks-mode)))
 
 (defun minaduki-buffer/deactivate ()
   "Deactivate display of the `minaduki-buffer'."
@@ -456,9 +459,9 @@ Valid states are 'visible, 'exists and 'none."
 (defun minaduki-buffer/toggle-display ()
   "Toggle display of the `minaduki-buffer'."
   (interactive)
-  (pcase (minaduki-buffer//visibility)
-    ('visible (minaduki-buffer/deactivate))
-    ((or 'exists 'none) (minaduki-buffer/activate))))
+  (if (minaduki-buffer/visible?)
+      (minaduki-buffer/deactivate)
+    (minaduki-buffer/activate)))
 
 (provide 'minaduki-buffer)
 
