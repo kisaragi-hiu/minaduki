@@ -168,9 +168,9 @@ If WRAP-VAL is non-nil it wraps the VAL."
 The Org-roam database titles table is read, to obtain the list of titles.
 The links table is then read to obtain all directed links, and formatted
 into a digraph."
-  (org-roam-db--ensure-built)
+  (minaduki-db//ensure-built)
   (org-roam--with-temp-buffer nil
-    (let* ((nodes (org-roam-db-query node-query))
+    (let* ((nodes (minaduki-db/query node-query))
            (edges-query
             `[:with selected :as [:select [file] :from ,node-query]
               :select :distinct [dest source] :from links
@@ -182,8 +182,8 @@ into a digraph."
                                                      (= links:type "cite")
                                                      (= refs:type "cite"))
               :where (and (in file selected) (in source selected))])
-           (edges       (org-roam-db-query edges-query))
-           (edges-cites (org-roam-db-query edges-cites-query)))
+           (edges       (minaduki-db/query edges-query))
+           (edges-cites (minaduki-db/query edges-cites-query)))
       (insert "digraph \"org-roam\" {\n")
       (dolist (option org-roam-graph-extra-config)
         (insert (org-roam-graph--dot-option option) ";\n"))
@@ -271,8 +271,8 @@ If MAX-DISTANCE is non-nil, limit nodes to MAX-DISTANCE steps.
 CALLBACK is passed to `org-roam-graph--build'."
   (let* ((file (expand-file-name file))
          (files (or (if (and max-distance (>= max-distance 0))
-                        (org-roam-db--links-with-max-distance file max-distance)
-                      (org-roam-db--connected-component file))
+                        (minaduki-db//links-with-max-distance file max-distance)
+                      (minaduki-db//connected-component file))
                     (list file)))
          (query `[:select [file title]
                   :from titles

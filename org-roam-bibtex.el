@@ -47,7 +47,7 @@
 ;; `orb-edit-notes' will shadow `bibtex-completion-edit-notes' in
 ;; Helm-bibtex, Ivy-bibtex.
 ;;
-;; As a user option, `org-roam-capture-templates' can be dynamically
+;; As a user option, `minaduki-capture/templates' can be dynamically
 ;; preformatted with bibtex field values.  See
 ;; `orb-preformat-keywords' for more details.
 
@@ -235,9 +235,9 @@ is the function `ignore', it is added as `:override'."
 
 (defun orb--preformat-template (template entry)
   "Helper function for `orb--preformat-templates'.
-TEMPLATE is an element of `org-roam-capture-templates' and ENTRY
+TEMPLATE is an element of `minaduki-capture/templates' and ENTRY
 is a BibTeX entry as returned by `bibtex-completion-get-entry'."
-  ;; Handle org-roam-capture part
+  ;; Handle minaduki-capture part
   (let* (;; Org-capture templates: handle different types of
          ;; org-capture-templates: string, file and function; this is
          ;; a stripped down version of `org-capture-get-template'
@@ -265,7 +265,7 @@ is a BibTeX entry as returned by `bibtex-completion-get-entry'."
     ;; First run:
     ;; 1) Make a list of (rplc-s field-value match-position) for the
     ;; second run
-    ;; 2) replace org-roam-capture wildcards
+    ;; 2) replace minaduki-capture wildcards
     (dolist (keyword orb-preformat-keywords)
       (let* (;; prompt wildcard keyword
              ;; bibtex field name
@@ -289,11 +289,11 @@ is a BibTeX entry as returned by `bibtex-completion-get-entry'."
                   ""))
              ;; org-capture prompt wildcard
              (rplc-s (concat "%^{" (or keyword "citekey") "}"))
-             ;; org-roam-capture prompt wildcard
+             ;; minaduki-capture prompt wildcard
              (rplc-s2 (concat "${" (or keyword "citekey") "}"))
-             ;; org-roam-capture :head template
+             ;; minaduki-capture :head template
              (head (plist-get plst :head))
-             ;; org-roam-capture :file-name template
+             ;; minaduki-capture :file-name template
              (fl-nm (plist-get plst :file-name))
              (i 1)                        ; match counter
              pos)
@@ -306,7 +306,7 @@ is a BibTeX entry as returned by `bibtex-completion-get-entry'."
                   (cl-pushnew (list rplc-s field-value i) lst))
               (setq pos (match-end 1)
                     i (1+ i)))))
-        ;; Replace org-roam-capture prompt wildcards
+        ;; Replace minaduki-capture prompt wildcards
         (when head
           (plist-put plst :head (s-replace rplc-s2 field-value head)))
         (when fl-nm
@@ -324,7 +324,7 @@ is a BibTeX entry as returned by `bibtex-completion-get-entry'."
     template))
 
 (defun orb--edit-notes (citekey)
-  "Process templates and run `org-roam-capture--capture'.
+  "Process templates and run `minaduki-capture//capture'.
 CITEKEY is a citation key.
 Helper function for `orb-edit-notes', which abstracts initiating
 a capture session."
@@ -335,9 +335,9 @@ a capture session."
                         :warning
                         "%s: Could not find the BibTeX entry" citekey)))
             ;; Depending on the templates used: run
-            ;; `org-roam-capture--capture' or call `org-roam-find-file'
+            ;; `minaduki-capture//capture' or call `org-roam-find-file'
             (org-capture-templates
-             (or orb-templates org-roam-capture-templates
+             (or orb-templates minaduki-capture/templates
                  (kisaragi-notes//warn
                   :warning
                   "Could not find the requested templates")))
@@ -354,19 +354,19 @@ a capture session."
                                (orb--preformat-template it entry)
                              it)))
             ;; pretend we had only one template
-            ;; `org-roam-capture--capture' behaves specially in this case
+            ;; `minaduki-capture//capture' behaves specially in this case
             ;; NOTE: this circumvents using functions other than
-            ;; `org-capture', see `org-roam-capture-function'.
+            ;; `org-capture', see `minaduki-capture/function'.
             ;; If the users start complaining, we may revert previous
             ;; implementation
-            (org-roam-capture-templates (list template))
+            (minaduki-capture/templates (list template))
             ;; Org-roam coverts the templates to its own syntax;
             ;; since we are telling `org-capture' to use the template entry
             ;; (by setting `org-capture-entry'), and Org-roam converts the
             ;; whole template list, we must do the conversion of the entry
             ;; ourselves
             (org-capture-entry
-             (org-roam-capture--convert-template template))
+             (minaduki-capture//convert-template template))
             (citekey-formatted (format (or orb-citekey-format "%s") citekey))
             (title
              (or (bibtex-completion-get-value "title" entry)
@@ -385,24 +385,24 @@ a capture session."
               ;; install capture hook functions
               (orb-do-hook-functions 'add)
               ;; Depending on the templates used: run
-              ;; `org-roam-capture--capture' with ORB-predefined
+              ;; `minaduki-capture//capture' with ORB-predefined
               ;; settings or call vanilla `org-roam-find-file'
               (if orb-templates
-                  (let* ((org-roam-capture--context 'ref)
+                  (let* ((minaduki-capture//context 'ref)
                          (slug-source (cl-case orb-slug-source
                                         (citekey citekey)
                                         (title title)
                                         (t (user-error "Only `citekey' \
 or `title' should be used for slug: %s not supported" orb-slug-source))))
-                         (org-roam-capture--info
+                         (minaduki-capture//info
                           `((title . ,title)
                             (ref . ,citekey-formatted)
                             ,@(when-let (url (bibtex-completion-get-value "url" entry))
                                 `((url . ,url)))
                             (slug . ,(kisaragi-notes//title-to-slug slug-source)))))
-                    (setq org-roam-capture-additional-template-props
+                    (setq minaduki-capture/additional-template-props
                           (list :finalize 'find-file))
-                    (org-roam-capture--capture))
+                    (minaduki-capture//capture))
                 (kisaragi-notes/open title)))
           (orb--store-link-functions-advice 'remove)))
     (message "ORB: Something went wrong. Check the *Warnings* buffer")))
@@ -434,7 +434,7 @@ pre-populated with the record title.
 
 3. The template used to create the note is stored in
 `orb-templates'.  If the variable is not defined, revert to using
-`org-roam-capture-templates'.  In the former case, a new file
+`minaduki-capture/templates'.  In the former case, a new file
 will be created and filled according to the template, possibly
 preformatted (see below) without additional user interaction.  In
 the latter case, an interactive `org-capture' process will be
@@ -442,10 +442,10 @@ run.
 
 4. Optionally, when `orb-preformat-templates' is non-nil, any
 prompt wildcards in `orb-templates' or
-`org-roam-capture-templates', associated with the bibtex record
+`minaduki-capture/templates', associated with the bibtex record
 fields as specified in `orb-preformat-templates', will be
 preformatted.  Both `org-capture-templates' (%^{}) and
-`org-roam-capture-templates' (`s-format', ${}) prompt syntaxes
+`minaduki-capture/templates' (`s-format', ${}) prompt syntaxes
 are supported.
 
 See `orb-preformat-keywords' for more details on how
@@ -459,7 +459,7 @@ wildcards will be replace with the BibTeX field value."
   (when (consp citekey)
     (setq citekey (car citekey)))
   (unless org-roam-mode (org-roam-mode))
-  (let ((note-data (kisaragi-notes-db//query-ref citekey)))
+  (let ((note-data (minaduki-db//query-ref citekey)))
     ;; Find org-roam reference with the CITEKEY and collect data into
     ;; `orb-plist'
     (orb-plist-put :note-existed (and note-data t))
@@ -468,7 +468,7 @@ wildcards will be replace with the BibTeX field value."
       (orb-plist-put :title (elt note-data 0)
                      :file (elt note-data 1))
       (apply #'orb-plist-put (cdr note-data))
-      (ignore-errors (org-roam--find-file (orb-plist-get :file))))
+      (ignore-errors (minaduki//find-file (orb-plist-get :file))))
      ;; we need to clean up if the capture process was aborted signaling
      ;; user-error
      (t (condition-case nil

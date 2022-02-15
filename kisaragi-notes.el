@@ -78,14 +78,7 @@
 
 ;;; Org-roam-mode
 
-(defun org-roam--save-buffers (&optional ask update)
-  "Save all Org-roam buffers.
-When ASK is non-nil, ask whether the buffers should be saved.
-When UPDATE is non-nil, update the database after."
-  (save-some-buffers (not ask) #'org-roam--org-roam-buffer-p)
-  (when update (org-roam-db-update)))
-
-(defun org-roam--backlink-to-current-p ()
+(defun minaduki//backlink-to-current-p ()
   "Return t if the link at point is to the current Org-roam file."
   (save-match-data
     (let ((current-file (buffer-file-name org-roam-buffer--current))
@@ -94,7 +87,7 @@ When UPDATE is non-nil, update the database after."
                                   (type (org-element-property :type context))
                                   (dest (org-element-property :path context)))
                              (pcase type
-                               ("id" (org-roam-id-get-file dest))
+                               ("id" (minaduki-id/get-file dest))
                                (_ dest))))))
       (string= current-file backlink-dest))))
 
@@ -102,7 +95,7 @@ When UPDATE is non-nil, update the database after."
 ;; These faces are used by `org-link-set-parameters', which take one argument,
 ;; which is the path.
 
-(defun org-roam--file-link-face (path)
+(defun minaduki//file-link-face (path)
   "Conditional face for file: links.
 Applies `org-roam-link-current' if PATH corresponds to the
 currently opened Org-roam file in the backlink buffer, or
@@ -118,7 +111,7 @@ file."
                   (not (file-exists-p path)))
              'org-roam-link-invalid)
             ((and (org-roam--in-buffer-p)
-                  (org-roam--backlink-to-current-p))
+                  (minaduki//backlink-to-current-p))
              'org-roam-link-current)
             ((and custom
                   (org-roam--org-roam-file-p path))
@@ -126,7 +119,7 @@ file."
             (t
              'org-link)))))
 
-(defun org-roam--id-link-face (id)
+(defun minaduki//id-link-face (id)
   "Conditional face for id links.
 Applies `org-roam-link-current' if ID corresponds to the
 currently opened Org-roam file in the backlink buffer, or
@@ -138,45 +131,45 @@ file."
            (custom (or (and in-note org-roam-link-use-custom-faces)
                        (eq org-roam-link-use-custom-faces 'everywhere))))
       (cond ((and (org-roam--in-buffer-p)
-                  (org-roam--backlink-to-current-p))
+                  (minaduki//backlink-to-current-p))
              'org-roam-link-current)
             ((and custom
-                  (org-roam-id-get-file id t))
+                  (minaduki-id/get-file id t))
              'org-roam-link)
             ((and custom
-                  (not (org-roam-id-get-file id)))
+                  (not (minaduki-id/get-file id)))
              'org-roam-link-invalid)
             (t
              'org-link)))))
 
 ;;;; Hooks and Advices
-(defcustom org-roam-file-setup-hook nil
+(defcustom minaduki/file-setup-hook nil
   "Hook that is run on setting up an Org-roam file."
   :group 'org-roam
   :type 'hook)
 
-(defun org-roam--find-file-hook-function ()
+(defun minaduki//find-file-hook-function ()
   "Called by `find-file-hook' when mode symbol `org-roam-mode' is on."
   (when (org-roam--org-roam-file-p)
     (setq org-roam-last-window (get-buffer-window))
-    (run-hooks 'org-roam-file-setup-hook) ; Run user hooks
+    (run-hooks 'minaduki/file-setup-hook) ; Run user hooks
     (org-roam--setup-title-auto-update)
     (add-hook 'post-command-hook #'org-roam-buffer--update-maybe nil t)
     (add-hook 'before-save-hook #'org-roam-link--replace-link-on-save nil t)
-    (add-hook 'after-save-hook #'org-roam-db-update nil t)
+    (add-hook 'after-save-hook #'minaduki-db/update nil t)
     (dolist (fn '(kisaragi-notes-completion/tags-at-point
                   kisaragi-notes-completion/everywhere
                   org-roam-link-complete-at-point))
       (add-hook 'completion-at-point-functions fn nil t))
     (org-roam-buffer--update-maybe :redisplay t)))
 
-(defun org-roam--delete-file-advice (file &optional _trash)
+(defun minaduki//delete-file-advice (file &optional _trash)
   "Advice for maintaining cache consistency when FILE is deleted."
   (when (and (not (auto-save-file-name-p file))
              (org-roam--org-roam-file-p file))
-    (org-roam-db--clear-file (expand-file-name file))))
+    (minaduki-db//clear-file (expand-file-name file))))
 
-(defun org-roam--get-link-replacement (old-path new-path &optional old-desc new-desc)
+(defun minaduki//get-link-replacement (old-path new-path &optional old-desc new-desc)
   "Create replacement text for link at point if OLD-PATH is a match.
 Will update link to NEW-PATH. If OLD-DESC is set, and is not the
 same as the link description, it is assumed that the user has
@@ -202,7 +195,7 @@ description, and the description will not be updated. Else,
 update with NEW-DESC."
   (org-with-point-at 1
     (while (re-search-forward org-link-bracket-re nil t)
-      (when-let ((link (save-match-data (org-roam--get-link-replacement old-path new-path old-desc new-desc))))
+      (when-let ((link (save-match-data (minaduki//get-link-replacement old-path new-path old-desc new-desc))))
         (replace-match link)))))
 
 (defun org-roam--fix-relative-links (old-path)
@@ -262,7 +255,7 @@ if applicable.
 
 To be added to `org-roam-title-change-hook'."
   (let* ((current-path (buffer-file-name (buffer-base-buffer)))
-         (files-affected (org-roam-db-query [:select :distinct [source]
+         (files-affected (minaduki-db/query [:select :distinct [source]
                                              :from links
                                              :where (= dest $s1)]
                                             current-path)))
@@ -278,7 +271,7 @@ current filename, the new slug is computed with NEW-TITLE, and
 that portion of the filename is renamed.
 
 To be added to `org-roam-title-change-hook'."
-  (org-roam--save-buffers)
+  (save-some-buffers :dont-ask #'org-roam--org-roam-buffer-p)
   (when org-roam-rename-file-on-title-change
     (let* ((old-slug (kisaragi-notes//title-to-slug old-title))
            (file (buffer-file-name (buffer-base-buffer)))
@@ -289,7 +282,7 @@ To be added to `org-roam-title-change-hook'."
           (unless (string-equal file-name new-file-name)
             (rename-file file-name new-file-name)
             (set-visited-file-name new-file-name t t)
-            (org-roam-db-update)
+            (minaduki-db/update)
             (org-roam-message "File moved to %S" (abbreviate-file-name new-file-name))))))))
 
 (defun org-roam--rename-file-advice (old-file new-file-or-dir &rest _args)
@@ -306,13 +299,13 @@ When NEW-FILE-OR-DIR is a directory, we use it to compute the new file path."
                (not (backup-file-name-p old-file))
                (not (backup-file-name-p new-file))
                (org-roam--org-roam-file-p old-file))
-      (org-roam-db--ensure-built)
-      (setq files-affected (org-roam-db-query [:select :distinct [source]
+      (minaduki-db//ensure-built)
+      (setq files-affected (minaduki-db/query [:select :distinct [source]
                                                :from links
                                                :where (= dest $s1)]
                                               old-file))
       ;; Remove database entries for old-file.org
-      (org-roam-db--clear-file old-file)
+      (minaduki-db//clear-file old-file)
       ;; If the new path is in a different directory, relative links
       ;; will break. Fix all file-relative links:
       (unless (string= (file-name-directory old-file)
@@ -320,7 +313,7 @@ When NEW-FILE-OR-DIR is a directory, we use it to compute the new file path."
         (org-roam-with-file new-file nil
           (org-roam--fix-relative-links old-file)))
       (when (org-roam--org-roam-file-p new-file)
-        (org-roam-db--update-file new-file))
+        (minaduki-db//update-file new-file))
       ;; Replace links from old-file.org -> new-file.org in all Org-roam files with these links
       (mapc (lambda (file)
               (setq file (if (string-equal (car file) old-file)
@@ -329,16 +322,16 @@ When NEW-FILE-OR-DIR is a directory, we use it to compute the new file path."
               (org-roam-with-file file nil
                 (org-roam--replace-link old-file new-file)
                 (save-buffer)
-                (org-roam-db--update-file)))
+                (minaduki-db//update-file)))
             files-affected))))
 
 (defun org-roam--id-new-advice (&rest _args)
   "Update the database if a new Org ID is created."
   (when (and org-roam-enable-headline-linking
              (org-roam--org-roam-file-p)
-             (not (eq org-roam-db-update-method 'immediate))
-             (not (org-roam-capture-p)))
-    (org-roam-db-update)))
+             (not (eq minaduki-db/update-method 'immediate))
+             (not (minaduki-capture/p)))
+    (minaduki-db/update)))
 
 (defun org-roam--execute-file-row-col (s)
   "Move to row:col if S match the row:col syntax. To be used with `org-execute-file-search-functions'."
@@ -384,7 +377,7 @@ Otherwise, behave as if called interactively."
   (cond
 
    (org-roam-mode
-    (add-hook 'find-file-hook #'org-roam--find-file-hook-function)
+    (add-hook 'find-file-hook #'minaduki//find-file-hook-function)
 
     ;; DB
     (unless (or (and (bound-and-true-p emacsql-sqlite3-executable)
@@ -393,27 +386,27 @@ Otherwise, behave as if called interactively."
       (kisaragi-notes//warn :error "Cannot find executable 'sqlite3'. \
 Ensure it is installed and can be found within `exec-path'. \
 M-x info for more information at Org-roam > Installation > Post-Installation Tasks."))
-    (add-hook 'kill-emacs-hook #'kisaragi-notes-db//close)
-    (when (and (not org-roam-db-file-update-timer)
-               (eq org-roam-db-update-method 'idle-timer))
-      (setq org-roam-db-file-update-timer (run-with-idle-timer org-roam-db-update-idle-seconds t #'org-roam-db-update-cache-on-timer)))
+    (add-hook 'kill-emacs-hook #'minaduki-db//close)
+    (when (and (not minaduki-db/file-update-timer)
+               (eq minaduki-db/update-method 'idle-timer))
+      (setq minaduki-db/file-update-timer (run-with-idle-timer minaduki-db/update-idle-seconds t #'minaduki-db/update-cache-on-timer)))
     (advice-add 'rename-file :after #'org-roam--rename-file-advice)
-    (advice-add 'delete-file :before #'org-roam--delete-file-advice)
+    (advice-add 'delete-file :before #'minaduki//delete-file-advice)
 
     ;; Link
     (add-to-list 'org-execute-file-search-functions 'org-roam--execute-file-row-col)
-    (add-hook 'org-open-at-point-functions #'org-roam-open-id-at-point)
+    (add-hook 'org-open-at-point-functions #'minaduki-id/open-id-at-point)
     (advice-add 'org-id-new :after #'org-roam--id-new-advice)
     (when (fboundp 'org-link-set-parameters)
-      (org-link-set-parameters "file" :face 'org-roam--file-link-face)
-      (org-link-set-parameters "id" :face 'org-roam--id-link-face))
+      (org-link-set-parameters "file" :face 'minaduki//file-link-face)
+      (org-link-set-parameters "id" :face 'minaduki//id-link-face))
 
     ;; Apply these now. New buffers get this in the find-file hook.
     (dolist (buf (org-roam--get-roam-buffers))
       (with-current-buffer buf
         (add-hook 'post-command-hook #'org-roam-buffer--update-maybe nil t)
         (add-hook 'before-save-hook #'org-roam-link--replace-link-on-save nil t)
-        (add-hook 'after-save-hook #'org-roam-db-update nil t)))
+        (add-hook 'after-save-hook #'minaduki-db/update nil t)))
 
     ;; Bibtex
     (add-to-list 'bibtex-completion-find-note-functions
@@ -425,27 +418,27 @@ M-x info for more information at Org-roam > Installation > Post-Installation Tas
 
     ;; Calendar
     (setq calendar-mark-diary-entries-flag t)
-    (advice-add 'diary-mark-entries :override #'kisaragi-diary//mark-calendar)
+    (advice-add 'diary-mark-entries :override #'minaduki//mark-calendar)
     (advice-add 'org-read-date
-                :before #'kisaragi-diary//set-calendar-mark-diary-entries-flag-nil)
+                :before #'minaduki//set-calendar-mark-diary-entries-flag-nil)
     (advice-add 'org-read-date
-                :after #'kisaragi-diary//set-calendar-mark-diary-entries-flag-t))
+                :after #'minaduki//set-calendar-mark-diary-entries-flag-t))
 
    (t
 
-    (remove-hook 'find-file-hook #'org-roam--find-file-hook-function)
+    (remove-hook 'find-file-hook #'minaduki//find-file-hook-function)
 
     ;; DB
     (setq org-execute-file-search-functions (delete 'org-roam--execute-file-row-col org-execute-file-search-functions))
-    (remove-hook 'kill-emacs-hook #'kisaragi-notes-db//close)
-    (when org-roam-db-file-update-timer
-      (cancel-timer org-roam-db-file-update-timer))
+    (remove-hook 'kill-emacs-hook #'minaduki-db//close)
+    (when minaduki-db/file-update-timer
+      (cancel-timer minaduki-db/file-update-timer))
     (advice-remove 'rename-file #'org-roam--rename-file-advice)
-    (advice-remove 'delete-file #'org-roam--delete-file-advice)
-    (kisaragi-notes-db//close)
+    (advice-remove 'delete-file #'minaduki//delete-file-advice)
+    (minaduki-db//close)
 
     ;; Link
-    (remove-hook 'org-open-at-point-functions #'org-roam-open-id-at-point)
+    (remove-hook 'org-open-at-point-functions #'minaduki-id/open-id-at-point)
     (advice-remove 'org-id-new #'org-roam--id-new-advice)
     (when (fboundp 'org-link-set-parameters)
       (dolist (face '("file" "id"))
@@ -456,7 +449,7 @@ M-x info for more information at Org-roam > Installation > Post-Installation Tas
       (with-current-buffer buf
         (remove-hook 'post-command-hook #'org-roam-buffer--update-maybe t)
         (remove-hook 'before-save-hook #'org-roam-link--replace-link-on-save t)
-        (remove-hook 'after-save-hook #'org-roam-db-update t)))
+        (remove-hook 'after-save-hook #'minaduki-db/update t)))
 
     ;; Bibtex
     (setq bibtex-completion-find-note-functions
@@ -470,13 +463,13 @@ M-x info for more information at Org-roam > Installation > Post-Installation Tas
     ;; Calendar
     (setq calendar-mark-diary-entries-flag nil)
     (advice-remove 'diary-mark-entries
-                   #'kisaragi-diary//mark-calendar)
+                   #'minaduki//mark-calendar)
     (advice-remove 'org-read-date
-                   #'kisaragi-diary//set-calendar-mark-diary-entries-flag-nil)
+                   #'minaduki//set-calendar-mark-diary-entries-flag-nil)
     (advice-remove 'org-read-date
-                   #'kisaragi-diary//set-calendar-mark-diary-entries-flag-t))))
+                   #'minaduki//set-calendar-mark-diary-entries-flag-t))))
 
-(add-hook 'org-roam-mode-hook #'org-roam-db-build-cache)
+(add-hook 'org-roam-mode-hook #'minaduki-db/build-cache)
 
 ;;; Interactive Commands
 ;;;###autoload

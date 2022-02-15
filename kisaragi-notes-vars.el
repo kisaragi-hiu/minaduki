@@ -290,7 +290,7 @@ See `orb-edit-notes' for details."
 
 (defcustom orb-templates
   '(("r" "ref" plain
-     (function org-roam-capture--get-point)
+     (function minaduki-capture//get-point)
      ""
      :file-name "${citekey}"
      :head "#+TITLE: ${title}\n#+ROAM_KEY: ${ref}\n"
@@ -322,7 +322,7 @@ Usage example:
 
 \(setq orb-preformat-keywords '(\"citekey\" \"author\" \"date\"))
 \(setq orb-templates
-      '((\"r\" \"reference\" plain (function org-roam-capture--get-point)
+      '((\"r\" \"reference\" plain (function minaduki-capture//get-point)
          \"#+ROAM_KEY: %^{citekey}%?
 %^{author} published %^{entry-type} in %^{date}: fullcite:%\\1.\"
          :file-name \"references/${citekey}\"
@@ -385,7 +385,7 @@ based on their extension."
 Supported values are symbols `citekey' and `title'.
 
 A special variable `${slug}` in `orb-templates' (and
-`org-roam-capture-templates') is used as a placeholder for an
+`minaduki-capture/templates') is used as a placeholder for an
 automatically generated string which is meant to be used in
 filenames. Org Roam uses the note's title to create a slug. ORB
 also allows for the citekey. `kisaragi-notes//title-to-slug' is
@@ -514,7 +514,7 @@ This face is used for links without a destination."
   '((t :inherit (warning org-link)))
   "Face for Org-roam links that are shielded.
 This face is used on the region target by `org-roam-insertion'
-during an `org-roam-capture'."
+during an `minaduki-capture'."
   :group 'org-roam-faces)
 
 (provide 'kisaragi-notes-vars)

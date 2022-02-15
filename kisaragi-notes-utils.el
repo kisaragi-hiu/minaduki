@@ -17,7 +17,7 @@
 ;; regardless of whether Org is loaded before their compilation.
 (require 'org)
 
-(declare-function org-roam-db-query "org-roam-db")
+(declare-function minaduki-db/query "org-roam-db")
 
 (defun kisaragi-notes//warn (level message &rest args)
   "Display a warning for kisaragi-notes at LEVEL.
@@ -69,7 +69,7 @@ In Markdown, TYPE has no effect."
   (cond
    ((derived-mode-p 'org-mode)
     (when (and org-roam-prefer-id-links (string-equal type "file"))
-      (-when-let (id (caar (org-roam-db-query [:select [id] :from ids
+      (-when-let (id (caar (minaduki-db/query [:select [id] :from ids
                                                :where (= file $s1)
                                                :and (= level 0)
                                                :limit 1]
@@ -93,7 +93,7 @@ In Markdown, TYPE has no effect."
           (t
            (format "[%s](%s)" description target))))))
 
-(defun org-roam--find-file (file)
+(defun minaduki//find-file (file)
   "Open FILE using `org-roam-find-file-function' or `find-file'."
   (funcall (or org-roam-find-file-function #'find-file) file))
 
@@ -167,7 +167,7 @@ afterwards. The value of BODY is returned."
        (progn ,@body)
      (message "%s...done" ,message)))
 
-(defun org-roam--add-tag-string (str tags)
+(defun minaduki//add-tag-string (str tags)
   "Add TAGS to STR.
 
 Depending on the value of `org-roam-file-completion-tag-position', this function
@@ -192,7 +192,7 @@ prepends TAGS to STR, appends TAGS to STR or omits TAGS from STR."
                         (desc (or (elt link 2)
                                   (elt link 1))))
                     (cons orig desc)))
-      (s-replace-all it str))))
+         (s-replace-all it str))))
 
 ;;;; Dates
 
@@ -251,7 +251,7 @@ If FILE is not specified, use the current buffer's file-path."
   (when-let ((path (or file
                        kisaragi-notes//file-name
                        (-> (buffer-base-buffer)
-                         (buffer-file-name)))))
+                           (buffer-file-name)))))
     (save-match-data
       (and
        (org-roam--org-file-p path)
@@ -307,21 +307,21 @@ Use Ripgrep if we can find it."
 (defun kisaragi-notes//path-to-title (path)
   "Convert PATH to a string that's suitable as a title."
   (-> path
-    (f-relative (f-expand org-directory))
-    f-no-ext))
+      (f-relative (f-expand org-directory))
+      f-no-ext))
 
 (defun kisaragi-notes//title-to-slug (title)
   "Convert TITLE to a filename-suitable slug."
   (let ((slug
          (--> title
-           ;; Normalize combining characters (use single character ä
-           ;; instead of combining a + #x308 (combining diaeresis))
-           ucs-normalize-NFC-string
-           ;; Do the replacement. Note that `s-replace-all' does not
-           ;; use regexp.
-           (--reduce-from
-            (replace-regexp-in-string (car it) (cdr it) acc) it
-            kisaragi-notes/slug-replacements))))
+              ;; Normalize combining characters (use single character ä
+              ;; instead of combining a + #x308 (combining diaeresis))
+              ucs-normalize-NFC-string
+              ;; Do the replacement. Note that `s-replace-all' does not
+              ;; use regexp.
+              (--reduce-from
+               (replace-regexp-in-string (car it) (cdr it) acc) it
+               kisaragi-notes/slug-replacements))))
     (downcase slug)))
 
 ;;;; File utilities
@@ -434,8 +434,8 @@ If FILE, set `org-roam-temp-file-name' to file and insert its contents."
 (defun org-roam-string-quote (str)
   "Quote STR."
   (->> str
-    (s-replace "\\" "\\\\")
-    (s-replace "\"" "\\\"")))
+       (s-replace "\\" "\\\\")
+       (s-replace "\"" "\\\"")))
 
 ;;; Shielding regions
 (defun org-roam-shield-region (beg end)

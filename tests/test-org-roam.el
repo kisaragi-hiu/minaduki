@@ -29,7 +29,7 @@
   "Get absolute FILE-PATH from `org-directory'."
   (expand-file-name file-path org-directory))
 
-(defun test-org-roam--find-file (path)
+(defun test-minaduki//find-file (path)
   "PATH."
   (let ((path (test-org-roam--abs-path path)))
     (make-directory (file-name-directory path) t)
@@ -51,7 +51,7 @@
 (defun test-org-roam--teardown ()
   (org-roam-mode -1)
   (delete-file kisaragi-notes/db-location)
-  (kisaragi-notes-db//close))
+  (minaduki-db//close))
 
 (describe "Utils"
   (it "converts between calendar.el dates and YYYY-MM-DD date strings"
@@ -426,15 +426,15 @@
     (test-org-roam--teardown))
 
   (it "Returns a file from its title"
-    (expect (kisaragi-notes-db//query-title "Foo")
+    (expect (minaduki-db//query-title "Foo")
             :to-equal
             (list (test-org-roam--abs-path "foo.org")))
-    (expect (kisaragi-notes-db//query-title "Deeply Nested File")
+    (expect (minaduki-db//query-title "Deeply Nested File")
             :to-equal
             (list (test-org-roam--abs-path "nested/deeply/deeply_nested_file.org")))))
 
 ;;; Tests
-(xdescribe "org-roam-db-build-cache"
+(xdescribe "minaduki-db/build-cache"
   (before-each
     (test-org-roam--init))
 
@@ -443,33 +443,33 @@
 
   (it "initializes correctly"
     ;; Cache
-    (expect (caar (org-roam-db-query [:select (funcall count) :from files])) :to-be 8)
-    (expect (caar (org-roam-db-query [:select (funcall count) :from links])) :to-be 5)
-    (expect (caar (org-roam-db-query [:select (funcall count) :from titles])) :to-be 8)
-    (expect (caar (org-roam-db-query [:select (funcall count) :from titles
+    (expect (caar (minaduki-db/query [:select (funcall count) :from files])) :to-be 8)
+    (expect (caar (minaduki-db/query [:select (funcall count) :from links])) :to-be 5)
+    (expect (caar (minaduki-db/query [:select (funcall count) :from titles])) :to-be 8)
+    (expect (caar (minaduki-db/query [:select (funcall count) :from titles
                                       :where titles :is-null])) :to-be 1)
-    (expect (caar (org-roam-db-query [:select (funcall count) :from refs])) :to-be 1)
+    (expect (caar (minaduki-db/query [:select (funcall count) :from refs])) :to-be 1)
 
     ;; Links
-    (expect (caar (org-roam-db-query [:select (funcall count) :from links
+    (expect (caar (minaduki-db/query [:select (funcall count) :from links
                                       :where (= source $s1)]
                                      (test-org-roam--abs-path "foo.org"))) :to-be 1)
-    (expect (caar (org-roam-db-query [:select (funcall count) :from links
+    (expect (caar (minaduki-db/query [:select (funcall count) :from links
                                       :where (= source $s1)]
                                      (test-org-roam--abs-path "nested/bar.org"))) :to-be 2)
 
     ;; Links -- File-to
-    (expect (caar (org-roam-db-query [:select (funcall count) :from links
+    (expect (caar (minaduki-db/query [:select (funcall count) :from links
                                       :where (= dest $s1)]
                                      (test-org-roam--abs-path "nested/foo.org"))) :to-be 1)
-    (expect (caar (org-roam-db-query [:select (funcall count) :from links
+    (expect (caar (minaduki-db/query [:select (funcall count) :from links
                                       :where (= dest $s1)]
                                      (test-org-roam--abs-path "nested/bar.org"))) :to-be 1)
-    (expect (caar (org-roam-db-query [:select (funcall count) :from links
+    (expect (caar (minaduki-db/query [:select (funcall count) :from links
                                       :where (= dest $s1)]
                                      (test-org-roam--abs-path "unlinked.org"))) :to-be 0)
     ;; TODO Test titles
-    (expect (org-roam-db-query [:select * :from titles])
+    (expect (minaduki-db/query [:select * :from titles])
             :to-have-same-items-as
             (list (list (test-org-roam--abs-path "alias.org")
                         (list "t1" "a1" "a 2"))
@@ -487,12 +487,12 @@
                   (list (test-org-roam--abs-path "unlinked.org")
                         (list "Unlinked"))))
 
-    (expect (org-roam-db-query [:select * :from refs])
+    (expect (minaduki-db/query [:select * :from refs])
             :to-have-same-items-as
             (list (list "https://google.com/" (test-org-roam--abs-path "web_ref.org") "website")))
 
     ;; Expect rebuilds to be really quick (nothing changed)
-    (expect (org-roam-db-build-cache)
+    (expect (minaduki-db/build-cache)
             :to-equal
             (list :files 0 :links 0 :tags 0 :titles 0 :refs 0 :deleted 0))))
 

@@ -48,7 +48,7 @@
 (defvar org-roam-mode)
 
 (declare-function org-roam-mode               "org-roam")
-(declare-function org-roam--find-file         "org-roam")
+(declare-function minaduki//find-file         "org-roam")
 (declare-function org-roam-format-link        "org-roam")
 (declare-function org-roam-link-get-path      "kisaragi-notes-wikilink")
 
@@ -122,13 +122,13 @@ For example: (setq org-roam-buffer-window-parameters '((no-other-window . t)))"
   (let ((last-window org-roam-last-window))
     (if (window-valid-p last-window)
         (progn (with-selected-window last-window
-                 (org-roam--find-file file))
+                 (minaduki//find-file file))
                (select-window last-window))
-      (org-roam--find-file file))))
+      (minaduki//find-file file))))
 
 (defun org-roam-buffer--insert-title ()
   "Insert the org-roam-buffer title."
-  (insert (propertize (kisaragi-notes-db//fetch-title
+  (insert (propertize (minaduki-db//fetch-title
                        (buffer-file-name org-roam-buffer--current))
                       'font-lock-face
                       'org-document-title)))
@@ -233,9 +233,9 @@ or to this file's ROAM_KEY.
                          (kisaragi-notes-extract/refs))))
                 (backlinks
                  (if cite?
-                     (mapcan #'kisaragi-notes-db//fetch-backlinks
+                     (mapcan #'minaduki-db//fetch-backlinks
                              (-map #'cdr (cdr titles-and-refs)))
-                   (kisaragi-notes-db//fetch-backlinks
+                   (minaduki-db//fetch-backlinks
                     (push file-path (car titles-and-refs)))))
                 (backlinks (if filter (-filter filter backlinks) backlinks))
                 (backlink-groups (--group-by (nth 0 it) backlinks)))
@@ -256,9 +256,9 @@ or to this file's ROAM_KEY.
                 ;; title link
                 (org-roam-format-link file-from
                                       (kisaragi-notes//remove-org-links
-                                       (kisaragi-notes-db//fetch-title file-from)))
+                                       (minaduki-db//fetch-title file-from)))
                 ;; tags
-                (or (-some->> (org-roam-db-query [:select tags :from tags
+                (or (-some->> (minaduki-db/query [:select tags :from tags
                                                   :where (= file $s1)]
                                                  file-from)
                       caar
@@ -362,7 +362,7 @@ ORIG-PATH is the path where the CONTENT originated."
 (defun org-roam-buffer-update ()
   "Render the backlinks buffer."
   (interactive)
-  (org-roam-db--ensure-built)
+  (minaduki-db//ensure-built)
   (let* ((source-org-directory org-directory))
     (with-current-buffer kisaragi-notes-buffer/name
       ;; When dir-locals.el is used to override org-directory,
@@ -374,7 +374,7 @@ ORIG-PATH is the path where the CONTENT originated."
       ;; Locally overwrite the file opening function to re-use the
       ;; last window org-roam was called from
       (setq-local org-link-frame-setup
-                  (cons '(file . org-roam--find-file) org-link-frame-setup))
+                  (cons '(file . minaduki//find-file) org-link-frame-setup))
       (let ((inhibit-read-only t))
         (erase-buffer)
         (unless (eq major-mode 'org-mode)
@@ -397,7 +397,7 @@ what."
                    (not (eq org-roam-buffer--current buffer)))
                (eq 'visible (org-roam-buffer--visibility))
                (buffer-file-name buffer)
-               (kisaragi-notes-db//file-present? (buffer-file-name buffer)))
+               (minaduki-db//file-present? (buffer-file-name buffer)))
       (setq org-roam-buffer--current buffer)
       (org-roam-buffer-update))))
 

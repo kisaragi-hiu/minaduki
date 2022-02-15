@@ -21,7 +21,7 @@
 (declare-function org-element-citation-reference-parser "org-element")
 (defvar org-element-citation-prefix-re)
 
-(declare-function kisaragi-notes-db//query-title "org-roam-db")
+(declare-function minaduki-db//query-title "org-roam-db")
 
 (defun kisaragi-notes-extract//markdown-props (prop)
   "Extract PROP in the Markdown front matter."
@@ -129,7 +129,7 @@ Assume links come from FILE-PATH."
                                        :content content))
                      (names (pcase type
                               ("id"
-                               (when-let ((file-path (org-roam-id-get-file path)))
+                               (when-let ((file-path (minaduki-id/get-file path)))
                                  (list file-path)))
                               ("cite" (list path))
                               ("website" (list path))
@@ -162,7 +162,7 @@ Assume links come from FILE-PATH."
     (goto-char (point-min))
     (cl-loop while (re-search-forward "\\[\\[\\([^]]+\\)\\]\\]" nil t)
              collect
-             (let* ((target (car (kisaragi-notes-db//query-title
+             (let* ((target (car (minaduki-db//query-title
                                   (match-string-no-properties 1))))
                     (begin-of-block (match-beginning 0))
                     (end-of-block (save-excursion

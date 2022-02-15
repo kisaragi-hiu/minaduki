@@ -72,7 +72,7 @@
 ;;            (mapc #'orb-find-note-file cite-refs)))
 ;;        (benchmark-run 10
 ;;          (mapc (lambda (key)
-;;                  (org-roam-db-query
+;;                  (minaduki-db/query
 ;;                   [:select [file] :from refs
 ;;                    :where (= ref $s1)]
 ;;                   key))

@@ -30,9 +30,9 @@
 ;; This library is provides the underlying database api to org-roam.
 ;;
 ;; - Low level DB interface
-;; - org-roam-db-build-cache
-;; - org-roam-db--get-* (except get-collection)
-;;   kisaragi-notes-db//fetch-*
+;; - minaduki-db/build-cache
+;; - minaduki-db//get-* (except get-collection)
+;;   minaduki-db//fetch-*
 ;;
 ;;; Code:
 ;;;; Library Requires
@@ -68,9 +68,9 @@ per-project."
   :type 'string
   :group 'org-roam)
 
-(defcustom org-roam-db-gc-threshold gc-cons-threshold
+(defcustom minaduki-db/gc-threshold gc-cons-threshold
   "The value to temporarily set the `gc-cons-threshold' threshold to.
-During large, heavy operations like `org-roam-db-build-cache',
+During large, heavy operations like `minaduki-db/build-cache',
 many GC operations happen because of the large number of
 temporary structures generated (e.g. parsed ASTs). Temporarily
 increasing `gc-cons-threshold' will help reduce the number of GC
@@ -83,15 +83,15 @@ value like `most-positive-fixnum'."
   :type 'int
   :group 'org-roam)
 
-(defconst org-roam-db--version 10)
+(defconst minaduki-db//version 10)
 
-(defvar kisaragi-notes-db//connection nil
+(defvar minaduki-db//connection nil
   "Database connection to the cache.")
 
-(defvar kisaragi-notes-db//dirty nil
+(defvar minaduki-db//dirty nil
   "Whether the cache needs to be updated.")
 
-(defcustom org-roam-db-update-method 'idle-timer
+(defcustom minaduki-db/update-method 'idle-timer
   "Method to update the Org-roam database.
 
 `immediate'
@@ -99,55 +99,55 @@ value like `most-positive-fixnum'."
 
 `idle-timer'
   Updates the database if dirty, if Emacs idles for
-  `org-roam-db-update-idle-seconds'."
+  `minaduki-db/update-idle-seconds'."
   :type '(choice (const :tag "idle-timer" idle-timer)
                  (const :tag "immediate" immediate))
   :group 'org-roam)
 
-(defcustom org-roam-db-update-idle-seconds 2
+(defcustom minaduki-db/update-idle-seconds 2
   "Number of idle seconds before triggering an Org-roam database update."
   :type 'integer
   :group 'org-roam)
 
 ;;;; Core Functions
 
-(defun org-roam-db ()
+(defun minaduki-db ()
   "Entrypoint to the Org-roam sqlite database.
 Initializes and stores the database, and the database connection.
 Performs a database upgrade when required."
-  (unless (and kisaragi-notes-db//connection
-               (emacsql-live-p kisaragi-notes-db//connection))
+  (unless (and minaduki-db//connection
+               (emacsql-live-p minaduki-db//connection))
     (let ((initialize? (not (file-exists-p kisaragi-notes/db-location))))
       (make-directory (file-name-directory kisaragi-notes/db-location) t)
       (let ((conn (emacsql-sqlite3 kisaragi-notes/db-location)))
         (set-process-query-on-exit-flag (emacsql-process conn) nil)
-        (setq kisaragi-notes-db//connection conn)
+        (setq minaduki-db//connection conn)
         (when initialize?
-          (org-roam-db--init conn))
+          (minaduki-db//init conn))
         (let* ((version (caar (emacsql conn "PRAGMA user_version")))
-               (version (org-roam-db--upgrade-maybe conn version)))
+               (version (minaduki-db//upgrade-maybe conn version)))
           (cond
-           ((> version org-roam-db--version)
+           ((> version minaduki-db//version)
             (emacsql-close conn)
             (user-error
              "The Org-roam database was created with a newer Org-roam version.  "
              "You need to update the Org-roam package"))
-           ((< version org-roam-db--version)
+           ((< version minaduki-db//version)
             (emacsql-close conn)
             (error "BUG: The Org-roam database scheme changed %s"
                    "and there is no upgrade path")))))))
-  kisaragi-notes-db//connection)
+  minaduki-db//connection)
 
-;;;; Entrypoint: (org-roam-db-query)
-(defun org-roam-db-query (sql &rest args)
+;;;; Entrypoint: (minaduki-db/query)
+(defun minaduki-db/query (sql &rest args)
   "Run SQL query on Org-roam database with ARGS.
 SQL can be either the emacsql vector representation, or a string."
   (if (stringp sql)
-      (emacsql (org-roam-db) (apply #'format sql args))
-    (apply #'emacsql (org-roam-db) sql args)))
+      (emacsql (minaduki-db) (apply #'format sql args))
+    (apply #'emacsql (minaduki-db) sql args)))
 
 ;;;; Schemata
-(defconst org-roam-db--table-schemata
+(defconst minaduki-db//table-schemata
   '((files
      [(file :unique :primary-key)
       (hash :not-null)
@@ -177,77 +177,77 @@ SQL can be either the emacsql vector representation, or a string."
       (file :not-null)
       (type :not-null)])))
 
-(defun org-roam-db--init (conn)
+(defun minaduki-db//init (conn)
   "Initialize database connection CONN with the correct schema and user version."
   (emacsql-with-transaction conn
-    (pcase-dolist (`(,table . ,schema) org-roam-db--table-schemata)
+    (pcase-dolist (`(,table . ,schema) minaduki-db//table-schemata)
       (emacsql conn [:create-table $i1 $S2] table schema))
-    (emacsql conn (format "PRAGMA user_version = %s" org-roam-db--version))))
+    (emacsql conn (format "PRAGMA user_version = %s" minaduki-db//version))))
 
-(defun org-roam-db--upgrade-maybe (db version)
+(defun minaduki-db//upgrade-maybe (db version)
   "Upgrades the database schema for DB, if VERSION is old."
   (emacsql-with-transaction db
     'ignore
-    (if (< version org-roam-db--version)
+    (if (< version minaduki-db//version)
         (progn
           (org-roam-message (format "Upgrading the Org-roam database from version %d to version %d"
-                                    version org-roam-db--version))
-          (org-roam-db-build-cache t))))
+                                    version minaduki-db//version))
+          (minaduki-db/build-cache t))))
   version)
 
-(defun kisaragi-notes-db//close ()
+(defun minaduki-db//close ()
   "Close the connection with the cache database."
-  (let ((conn kisaragi-notes-db//connection))
+  (let ((conn minaduki-db//connection))
     (when (and conn (emacsql-live-p conn))
       (emacsql-close conn))))
 
 ;;;; Timer-based updating
-(defvar org-roam-db-file-update-timer nil
+(defvar minaduki-db/file-update-timer nil
   "Timer for updating the database when dirty.")
 
-(defun org-roam-db-mark-dirty ()
+(defun minaduki-db/mark-dirty ()
   "Mark the Org-roam database as dirty."
-  (setq kisaragi-notes-db//dirty t))
+  (setq minaduki-db//dirty t))
 
-(defun org-roam-db-update-cache-on-timer ()
+(defun minaduki-db/update-cache-on-timer ()
   "Update the cache if the database is dirty.
-This function is called on `org-roam-db-file-update-timer'."
-  (when kisaragi-notes-db//dirty
-    (org-roam-db-build-cache))
-  (setq kisaragi-notes-db//dirty nil))
+This function is called on `minaduki-db/file-update-timer'."
+  (when minaduki-db//dirty
+    (minaduki-db/build-cache))
+  (setq minaduki-db//dirty nil))
 
 ;;;; Database API
 ;;;;; Initialization
-(defun org-roam-db--initialized-p ()
+(defun minaduki-db//initialized-p ()
   "Whether the Org-roam cache has been initialized."
   (and (file-exists-p kisaragi-notes/db-location)
-       (> (caar (org-roam-db-query [:select (funcall count) :from titles]))
+       (> (caar (minaduki-db/query [:select (funcall count) :from titles]))
           0)))
 
-(defun org-roam-db--ensure-built ()
+(defun minaduki-db//ensure-built ()
   "Ensures that Org-roam cache is built."
-  (unless (org-roam-db--initialized-p)
-    (error "[Org-roam] your cache isn't built yet! Please run org-roam-db-build-cache")))
+  (unless (minaduki-db//initialized-p)
+    (error "[Org-roam] your cache isn't built yet! Please run minaduki-db/build-cache")))
 
 ;;;;; Clearing
-(defun org-roam-db-clear ()
+(defun minaduki-db/clear ()
   "Clears all entries in the Org-roam cache."
   (interactive)
   (when (file-exists-p kisaragi-notes/db-location)
-    (dolist (table (mapcar #'car org-roam-db--table-schemata))
-      (org-roam-db-query `[:delete :from ,table]))))
+    (dolist (table (mapcar #'car minaduki-db//table-schemata))
+      (minaduki-db/query `[:delete :from ,table]))))
 
-(defun org-roam-db--clear-file (&optional file)
+(defun minaduki-db//clear-file (&optional file)
   "Remove any related links to the FILE.
 This is equivalent to removing the node from the graph."
   (setq file (or file (buffer-file-name (buffer-base-buffer))))
-  (dolist (table (mapcar #'car org-roam-db--table-schemata))
-    (org-roam-db-query `[:delete :from ,table
+  (dolist (table (mapcar #'car minaduki-db//table-schemata))
+    (minaduki-db/query `[:delete :from ,table
                          :where (= ,(if (eq table 'links) 'source 'file) $s1)]
                        file)))
 
 ;;;;; Inserting
-(defun org-roam-db--insert-meta (&optional update-p)
+(defun minaduki-db//insert-meta (&optional update-p)
   "Update the metadata of the current buffer into the cache.
 If UPDATE-P is non-nil, first remove the meta for the file in the database."
   (let* ((file (or kisaragi-notes//file-name (buffer-file-name)))
@@ -256,15 +256,15 @@ If UPDATE-P is non-nil, first remove the meta for the file in the database."
          (mtime (file-attribute-modification-time attr))
          (hash (kisaragi-notes//compute-content-hash)))
     (when update-p
-      (org-roam-db-query [:delete :from files
+      (minaduki-db/query [:delete :from files
                           :where (= file $s1)]
                          file))
-    (org-roam-db-query
+    (minaduki-db/query
      [:insert :into files
       :values $v1]
      (list (vector file hash (list :atime atime :mtime mtime))))))
 
-(defun org-roam-db--insert-titles (&optional update-p)
+(defun minaduki-db//insert-titles (&optional update-p)
   "Update the titles of the current buffer into the cache.
 If UPDATE-P is non-nil, first remove titles for the file in the database.
 Returns the number of rows inserted."
@@ -275,22 +275,22 @@ Returns the number of rows inserted."
                          (vector file title))
                        titles)))
     (when update-p
-      (org-roam-db-query [:delete :from titles
+      (minaduki-db/query [:delete :from titles
                           :where (= file $s1)]
                          file))
-    (org-roam-db-query
+    (minaduki-db/query
      [:insert :into titles
       :values $v1]
      rows)
     (length rows)))
 
-(defun org-roam-db--insert-refs (&optional update-p)
+(defun minaduki-db//insert-refs (&optional update-p)
   "Update the refs of the current buffer into the cache.
 If UPDATE-P is non-nil, first remove the ref for the file in the database."
   (let ((file (or kisaragi-notes//file-name (buffer-file-name)))
         (count 0))
     (when update-p
-      (org-roam-db-query [:delete :from refs
+      (minaduki-db/query [:delete :from refs
                           :where (= file $s1)]
                          file))
     (when-let ((refs (kisaragi-notes-extract/refs)))
@@ -299,7 +299,7 @@ If UPDATE-P is non-nil, first remove the ref for the file in the database."
               (type (car ref)))
           (condition-case nil
               (progn
-                (org-roam-db-query
+                (minaduki-db/query
                  [:insert :into refs :values $v1]
                  (list (vector key file type)))
                 (cl-incf count))
@@ -309,43 +309,43 @@ If UPDATE-P is non-nil, first remove the ref for the file in the database."
               "Duplicate ref %s in:\n\nA: %s\nB: %s\n\nskipping..."
               key
               file
-              (caar (org-roam-db-query
+              (caar (minaduki-db/query
                      [:select file :from refs
                       :where (= ref $v1)]
                      (vector key)))))))))
     count))
 
-(defun org-roam-db--insert-links (&optional update-p)
+(defun minaduki-db//insert-links (&optional update-p)
   "Update the file links of the current buffer in the cache.
 If UPDATE-P is non-nil, first remove the links for the file in the database.
 Return the number of rows inserted."
   (let ((file (or kisaragi-notes//file-name (buffer-file-name))))
     (when update-p
-      (org-roam-db-query [:delete :from links
+      (minaduki-db/query [:delete :from links
                           :where (= source $s1)]
                          file))
     (if-let ((links (org-roam--extract-links)))
         (progn
-          (org-roam-db-query
+          (minaduki-db/query
            [:insert :into links
             :values $v1]
            links)
           (length links))
       0)))
 
-(defun org-roam-db--insert-ids (&optional update-p)
+(defun minaduki-db//insert-ids (&optional update-p)
   "Update the ids of the current buffer into the cache.
 If UPDATE-P is non-nil, first remove ids for the file in the database.
 Returns the number of rows inserted."
   (let ((file (or kisaragi-notes//file-name (buffer-file-name))))
     (when update-p
-      (org-roam-db-query [:delete :from ids
+      (minaduki-db/query [:delete :from ids
                           :where (= file $s1)]
                          file))
     (if-let ((ids (org-roam--extract-ids file)))
         (condition-case nil
             (progn
-              (org-roam-db-query
+              (minaduki-db/query
                [:insert :into ids
                 :values $v1]
                ids)
@@ -360,18 +360,18 @@ Returns the number of rows inserted."
            0))
       0)))
 
-(defun org-roam-db--insert-tags (&optional update-p)
+(defun minaduki-db//insert-tags (&optional update-p)
   "Insert tags for the current buffer into the Org-roam cache.
 If UPDATE-P is non-nil, first remove tags for the file in the database.
 Return the number of rows inserted."
   (let* ((file (or kisaragi-notes//file-name (buffer-file-name)))
          (tags (org-roam--extract-tags file)))
     (when update-p
-      (org-roam-db-query [:delete :from tags
+      (minaduki-db/query [:delete :from tags
                           :where (= file $s1)]
                          file))
     (if tags
-        (progn (org-roam-db-query
+        (progn (minaduki-db/query
                 [:insert :into tags
                  :values $v1]
                 (list (vector file tags)))
@@ -379,16 +379,16 @@ Return the number of rows inserted."
       0)))
 
 ;;;;; Fetching
-(defun kisaragi-notes-db//file-present? (file)
+(defun minaduki-db//file-present? (file)
   "Does FILE exist in the cache DB?"
-  (> (caar (org-roam-db-query [:select (funcall count) :from files
+  (> (caar (minaduki-db/query [:select (funcall count) :from files
                                :where (= file $s1)]
                               file))
      0))
 
-(defun kisaragi-notes-db//query-title (title)
+(defun minaduki-db//query-title (title)
   "Return files matching TITLE in the DB."
-  (->> (org-roam-db-query
+  (->> (minaduki-db/query
         [:select [file] :from titles
          :where (= title $s0)]
         title)
@@ -396,39 +396,39 @@ Return the number of rows inserted."
        ;; Turn it into (path1 path2 ...).
        (apply #'nconc)))
 
-(defun kisaragi-notes-db//query-ref (ref)
+(defun minaduki-db//query-ref (ref)
   "Return the file associated with REF as (TITLE FILE)."
-  (car (org-roam-db-query
+  (car (minaduki-db/query
         [:select [titles:title refs:file]
          :from refs
          :left-join titles :on (= titles:file refs:file)
          :where (= refs:ref $s1)]
         ref)))
 
-(defun kisaragi-notes-db//fetch-all-files-hash ()
+(defun minaduki-db//fetch-all-files-hash ()
   "Return ((path . content-hash) ...) for all cached files as a hash-table."
-  (let* ((current-files (org-roam-db-query [:select [file hash] :from files]))
+  (let* ((current-files (minaduki-db/query [:select [file hash] :from files]))
          (ht (make-hash-table :test #'equal)))
     (dolist (row current-files)
       (puthash (car row) (cadr row) ht))
     ht))
 
-(defun kisaragi-notes-db//fetch-title (file)
+(defun minaduki-db//fetch-title (file)
   "Return the main title of FILE from the cache."
-  (caar (org-roam-db-query [:select [title] :from titles
+  (caar (minaduki-db/query [:select [title] :from titles
                             :where (= file $s1)
                             :limit 1]
                            file)))
 
-(defun kisaragi-notes-db//fetch-file-tags (file)
+(defun minaduki-db//fetch-file-tags (file)
   "Return tags of FILE from the cache."
-  (caar (org-roam-db-query [:select [tags] :from tags
+  (caar (minaduki-db/query [:select [tags] :from tags
                             :where (= file $s1)]
                            file)))
 
-(defun kisaragi-notes-db//fetch-all-tags ()
+(defun minaduki-db//fetch-all-tags ()
   "Return all distinct tags from the cache."
-  (let ((rows (org-roam-db-query [:select :distinct [tags] :from tags]))
+  (let ((rows (minaduki-db/query [:select :distinct [tags] :from tags]))
         acc)
     (dolist (row rows)
       (dolist (tag (car row))
@@ -436,7 +436,7 @@ Return the number of rows inserted."
           (push tag acc))))
     acc))
 
-(defun kisaragi-notes-db//fetch-backlinks (targets)
+(defun minaduki-db//fetch-backlinks (targets)
   "Fetch backlinks to TARGETS from the cache.
 
 TARGETS are strings that are either file paths or ref keys. They
@@ -444,13 +444,13 @@ correspond to the TO field in the cache DB."
   (unless (listp targets)
     (setq targets (list targets)))
   (let ((conditions (--> targets
-                      (--map `(= dest ,it) it)
-                      (-interpose :or it))))
-    (org-roam-db-query `[:select [source dest properties] :from links
+                         (--map `(= dest ,it) it)
+                         (-interpose :or it))))
+    (minaduki-db/query `[:select [source dest properties] :from links
                          :where ,@conditions
                          :order-by (asc source)])))
 
-(defun org-roam-db--connected-component (file)
+(defun minaduki-db//connected-component (file)
   "Return all files reachable from/connected to FILE, including the file itself.
 If the file does not have any connections, nil is returned."
   (let* ((query "WITH RECURSIVE
@@ -468,10 +468,10 @@ If the file does not have any connections, nil is returned."
                       UNION
                       SELECT link FROM links_of JOIN connected_component USING(file))
                    SELECT * FROM connected_component;")
-         (files (mapcar 'car-safe (emacsql (org-roam-db) query file))))
+         (files (mapcar 'car-safe (emacsql (minaduki-db) query file))))
     files))
 
-(defun org-roam-db--links-with-max-distance (file max-distance)
+(defun minaduki-db//links-with-max-distance (file max-distance)
   "Return all files connected to FILE in at most MAX-DISTANCE steps.
 This includes the file itself. If the file does not have any
 connections, nil is returned."
@@ -501,52 +501,52 @@ connections, nil is returned."
                    SELECT DISTINCT file, min(json_array_length(trace)) AS distance
                    FROM connected_component GROUP BY file ORDER BY distance;")
          ;; In principle the distance would be available in the second column.
-         (files (mapcar 'car-safe (emacsql (org-roam-db) query file max-distance))))
+         (files (mapcar 'car-safe (emacsql (minaduki-db) query file max-distance))))
     files))
 
-(defun kisaragi-notes-db//fetch-file-hash (&optional file)
+(defun minaduki-db//fetch-file-hash (&optional file)
   "Fetch the hash of FILE as stored in the cache."
   (setq file (or file (buffer-file-name (buffer-base-buffer))))
-  (caar (org-roam-db-query [:select hash :from files
+  (caar (minaduki-db/query [:select hash :from files
                             :where (= file $s1)]
                            file)))
 
 ;;;;; Updating
-(defun org-roam-db--update-file (&optional file-path)
+(defun minaduki-db//update-file (&optional file-path)
   "Update Org-roam cache for FILE-PATH.
 If the file does not exist anymore, remove it from the cache.
 If the file exists, update the cache with information."
   (setq file-path (or file-path
                       (buffer-file-name (buffer-base-buffer))))
   (if (not (file-exists-p file-path))
-      (org-roam-db--clear-file file-path)
+      (minaduki-db//clear-file file-path)
     ;; save the file before performing a database update
     (when-let ((buf (find-buffer-visiting file-path)))
       (with-current-buffer buf
         (save-buffer)))
     (org-roam--with-temp-buffer file-path
-      (emacsql-with-transaction (org-roam-db)
-        (org-roam-db--insert-meta 'update)
-        (org-roam-db--insert-tags 'update)
-        (org-roam-db--insert-titles 'update)
-        (org-roam-db--insert-refs 'update)
+      (emacsql-with-transaction (minaduki-db)
+        (minaduki-db//insert-meta 'update)
+        (minaduki-db//insert-tags 'update)
+        (minaduki-db//insert-titles 'update)
+        (minaduki-db//insert-refs 'update)
         (when org-roam-enable-headline-linking
-          (org-roam-db--insert-ids 'update))
-        (org-roam-db--insert-links 'update)))))
+          (minaduki-db//insert-ids 'update))
+        (minaduki-db//insert-links 'update)))))
 
-(defun org-roam-db-build-cache (&optional force)
+(defun minaduki-db/build-cache (&optional force)
   "Build the cache for `org-directory'.
 If FORCE, force a rebuild of the cache from scratch."
   (interactive "P")
   (when force (delete-file kisaragi-notes/db-location))
-  (kisaragi-notes-db//close) ;; Force a reconnect
-  (org-roam-db) ;; To initialize the database, no-op if already initialized
-  (let* ((gc-cons-threshold org-roam-db-gc-threshold)
+  (minaduki-db//close) ;; Force a reconnect
+  (minaduki-db) ;; To initialize the database, no-op if already initialized
+  (let* ((gc-cons-threshold minaduki-db/gc-threshold)
          (org-agenda-files nil)
          (deleted-count 0)
          dir-files db-files count-plist modified-files)
     (setq dir-files (org-roam--list-all-files)
-          db-files (kisaragi-notes-db//fetch-all-files-hash))
+          db-files (minaduki-db//fetch-all-files-hash))
     (dolist-with-progress-reporter (file dir-files)
         "(org-roam) Finding modified files"
       (let ((content-hash (kisaragi-notes//compute-content-hash file)))
@@ -556,9 +556,9 @@ If FORCE, force a rebuild of the cache from scratch."
     (dolist-with-progress-reporter (file (hash-table-keys db-files))
         "(org-roam) Removing deleted files from cache"
       ;; These files are no longer around, remove from cache...
-      (org-roam-db--clear-file file)
+      (minaduki-db//clear-file file)
       (setq deleted-count (1+ deleted-count)))
-    (setq count-plist (org-roam-db--update-files modified-files))
+    (setq count-plist (minaduki-db//update-files modified-files))
     (org-roam-message "total: Δ%s, files-modified: Δ%s, ids: Δ%s, links: Δ%s, tags: Δ%s, titles: Δ%s, refs: Δ%s, deleted: Δ%s"
                       (- (length dir-files) (plist-get count-plist :error-count))
                       (plist-get count-plist :modified-count)
@@ -569,20 +569,20 @@ If FORCE, force a rebuild of the cache from scratch."
                       (plist-get count-plist :ref-count)
                       deleted-count)))
 
-(defun org-roam-db-update-file (file-path)
+(defun minaduki-db/update-file (file-path)
   "Update Org-roam cache for FILE-PATH.
 If the file does not exist anymore, remove it from the cache.
 If the file exists, update the cache with information."
   (let ((content-hash (kisaragi-notes//compute-content-hash file-path))
-        (db-hash (kisaragi-notes-db//fetch-file-hash file-path)))
+        (db-hash (minaduki-db//fetch-file-hash file-path)))
     (unless (string= content-hash db-hash)
-      (org-roam-db--update-files (list (cons file-path content-hash)))
+      (minaduki-db//update-files (list (cons file-path content-hash)))
       (org-roam-message "Updated: %s" file-path))))
 
-(defun org-roam-db--update-files (file-hash-pairs)
+(defun minaduki-db//update-files (file-hash-pairs)
   "Update Org-roam cache for FILE-HASH-PAIRS.
 FILE-HASH-PAIRS is a list of (file . hash) pairs."
-  (let* ((gc-cons-threshold org-roam-db-gc-threshold)
+  (let* ((gc-cons-threshold minaduki-db/gc-threshold)
          (org-agenda-files nil)
          (error-count 0)
          (id-count 0)
@@ -594,7 +594,7 @@ FILE-HASH-PAIRS is a list of (file . hash) pairs."
     ;; Clear existing cache entries so that we can put in new versions
     (kisaragi-notes//for "Clearing files (%s/%s)..."
         (file . _) file-hash-pairs
-      (org-roam-db--clear-file file))
+      (minaduki-db//clear-file file))
     ;; Process IDs first to eliminate the need to read the file to
     ;; check if the ID really exists, making link extraction cheaper
     (kisaragi-notes//for "Processing IDs (%s/%s)..."
@@ -604,15 +604,15 @@ FILE-HASH-PAIRS is a list of (file . hash) pairs."
              (mtime (file-attribute-modification-time attr)))
         (condition-case nil
             (org-roam--with-temp-buffer file
-              (org-roam-db-query
+              (minaduki-db/query
                [:insert :into files
                 :values $v1]
                (vector file contents-hash (list :atime atime :mtime mtime)))
               (when org-roam-enable-headline-linking
-                (setq id-count (+ id-count (org-roam-db--insert-ids)))))
+                (setq id-count (+ id-count (minaduki-db//insert-ids)))))
           (file-error
            (setq error-count (1+ error-count))
-           (org-roam-db--clear-file file)
+           (minaduki-db//clear-file file)
            (kisaragi-notes//warn
             :warning
             "Skipping unreadable file while building cache: %s" file)))))
@@ -622,11 +622,11 @@ FILE-HASH-PAIRS is a list of (file . hash) pairs."
         (file . _) file-hash-pairs
       (condition-case nil
           (org-roam--with-temp-buffer file
-            (setq tag-count (+ tag-count (org-roam-db--insert-tags)))
-            (setq title-count (+ title-count (org-roam-db--insert-titles))))
+            (setq tag-count (+ tag-count (minaduki-db//insert-tags)))
+            (setq title-count (+ title-count (minaduki-db//insert-titles))))
         (file-error
          (setq error-count (1+ error-count))
-         (org-roam-db--clear-file file)
+         (minaduki-db//clear-file file)
          (kisaragi-notes//warn
           :warning
           "Skipping unreadable file while building cache: %s" file))))
@@ -636,11 +636,11 @@ FILE-HASH-PAIRS is a list of (file . hash) pairs."
       (condition-case nil
           (org-roam--with-temp-buffer file
             (setq modified-count (1+ modified-count))
-            (setq ref-count (+ ref-count (org-roam-db--insert-refs)))
-            (setq link-count (+ link-count (org-roam-db--insert-links))))
+            (setq ref-count (+ ref-count (minaduki-db//insert-refs)))
+            (setq link-count (+ link-count (minaduki-db//insert-links))))
         (file-error
          (setq error-count (1+ error-count))
-         (org-roam-db--clear-file file)
+         (minaduki-db//clear-file file)
          (kisaragi-notes//warn
           :warning
           "Skipping unreadable file while building cache: %s" file))))
@@ -653,15 +653,15 @@ FILE-HASH-PAIRS is a list of (file . hash) pairs."
           :link-count link-count
           :ref-count ref-count)))
 
-(defun org-roam-db-update ()
+(defun minaduki-db/update ()
   "Update the database."
-  (pcase org-roam-db-update-method
+  (pcase minaduki-db/update-method
     ('immediate
-     (org-roam-db-update-file (buffer-file-name (buffer-base-buffer))))
+     (minaduki-db/update-file (buffer-file-name (buffer-base-buffer))))
     ('idle-timer
-     (org-roam-db-mark-dirty))
+     (minaduki-db/mark-dirty))
     (_
-     (user-error "Invalid `org-roam-db-update-method'"))))
+     (user-error "Invalid `minaduki-db/update-method'"))))
 
 (provide 'org-roam-db)
 

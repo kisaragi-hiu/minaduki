@@ -43,15 +43,15 @@
 
 (require 'org-element)
 
-(declare-function  org-roam--find-file                  "org-roam")
+(declare-function  minaduki//find-file                  "org-roam")
 (declare-function  kisaragi-notes/open                  "org-roam")
 (declare-function org-roam-format-link                  "org-roam")
 
 ;;; the roam: link
 (org-link-set-parameters "roam"
-                         :follow #'org-roam-link-follow-link)
+                         :follow #'minaduki-link/follow-link)
 
-(defun org-roam-link-follow-link (_path)
+(defun minaduki-link/follow-link (_path)
   "Navigates to location in Org-roam link.
 This function is called by Org when following links of the type
 `roam'. While the path is passed, assume that the cursor is on
@@ -62,7 +62,7 @@ the link."
     (pcase link-type
       ("file"
        (if loc
-           (org-roam--find-file loc)
+           (minaduki//find-file loc)
          (kisaragi-notes/open desc)))
       ("id"
        (org-goto-marker-or-bmk mkr)))))
@@ -70,7 +70,7 @@ the link."
 ;;; Retrieval Functions
 (defun org-roam-link--get-titles ()
   "Return all titles within Org-roam."
-  (mapcar #'car (org-roam-db-query [:select [titles:title] :from titles])))
+  (mapcar #'car (minaduki-db/query [:select [titles:title] :from titles])))
 
 (defun org-roam-link--get-headlines (&optional file with-marker use-stack)
   "Return all outline headings for the current buffer.
@@ -112,7 +112,7 @@ If USE-STACK, include the parent paths as well."
 (defun org-roam-link--get-file-from-title (title &optional no-interactive)
   "Return the file path corresponding to TITLE.
 When NO-INTERACTIVE, return nil if there are multiple options."
-  (let ((files (mapcar #'car (org-roam-db-query [:select [titles:file] :from titles
+  (let ((files (mapcar #'car (minaduki-db/query [:select [titles:file] :from titles
                                                  :where (= titles:title $v1)]
                                                 (vector title)))))
     (pcase files

@@ -31,11 +31,11 @@
 (require 'org-roam-db)
 
 ;;;; Completion utils
-(defun org-roam--get-title-path-completions ()
+(defun minaduki//get-title-path-completions ()
   "Return an alist for completion.
 The car is the displayed title for completion, and the cdr is a
 plist containing the path and title for the file."
-  (let* ((rows (org-roam-db-query [:select [files:file titles:title tags:tags files:meta] :from titles
+  (let* ((rows (minaduki-db/query [:select [files:file titles:title tags:tags files:meta] :from titles
                                    :left :join tags
                                    :on (= titles:file tags:file)
                                    :left :join files
@@ -54,7 +54,7 @@ plist containing the path and title for the file."
               (v (list :path file-path :title title)))
           (push (cons k v) completions))))))
 
-(defun org-roam--get-ref-path-completions (&optional arg filter)
+(defun minaduki//get-ref-path-completions (&optional arg filter)
   "Return an alist of refs to absolute path of Org-roam files.
 
 When called interactively (i.e. when ARG is 1), formats the car
@@ -74,7 +74,7 @@ FILTER can either be a string or a function:
   takes three arguments: the type, the ref, and the file of the
   current candidate. It should return t if that candidate is to
   be included as a candidate."
-  (let ((rows (org-roam-db-query
+  (let ((rows (minaduki-db/query
                [:select [refs:type refs:ref refs:file titles:title tags:tags]
                 :from titles
                 :left :join tags
@@ -99,7 +99,7 @@ FILTER can either be a string or a function:
                        (concat
                         (when org-roam-include-type-in-ref-path-completions
                           (format "{%s} " type))
-                        (org-roam--add-tag-string (format "%s (%s)" title ref)
+                        (minaduki//add-tag-string (format "%s (%s)" title ref)
                                                   tags))
                      ref))
                 (v (list :path file-path :type type :ref ref)))
@@ -111,7 +111,7 @@ FILTER can either be a string or a function:
 
 Each note is a list (STR :path PATH :title TITLE), where STR is
 displayed in `completing-read'."
-  (let* ((rows (org-roam-db-query
+  (let* ((rows (minaduki-db/query
                 [:select [titles:file titles:title tags:tags]
                  :from titles
                  :left :join tags
@@ -159,12 +159,12 @@ Embark to create what are in effect context menus."
 INITIAL-INPUT: passed to `completing-read'.
 
 COMPLETIONS: if non-nil a list of note entries in the format
-returned by `org-roam--get-title-path-completions'. When nil,
-`org-roam--get-title-path-completions' will be queried.
+returned by `minaduki//get-title-path-completions'. When nil,
+`minaduki//get-title-path-completions' will be queried.
 
 FILTER-FN: completions will pass through this function first
 before being prompted for selection."
-  (let* ((completions (--> (or completions (org-roam--get-title-path-completions))
+  (let* ((completions (--> (or completions (minaduki//get-title-path-completions))
                            (if filter-fn
                                (funcall filter-fn it)
                              it)))
@@ -191,7 +191,7 @@ This is active when `org-roam-completion-everywhere' is non-nil."
             (--> (completion-table-dynamic
                   ;; Get our own completion request string
                   (lambda (_)
-                    (->> (-map #'car (org-roam-db-query [:select [title] :from titles]))
+                    (->> (-map #'car (minaduki-db/query [:select [title] :from titles]))
                          (--remove (string= prefix it)))))
                  (completion-table-case-fold it (not org-roam-completion-ignore-case)))
             :exit-function (lambda (str _status)
@@ -213,7 +213,7 @@ This is active when `org-roam-completion-everywhere' is non-nil."
               (--> (completion-table-dynamic
                     ;; Get our own completion request string
                     (lambda (_)
-                      (->> (kisaragi-notes-db//fetch-all-tags)
+                      (->> (minaduki-db//fetch-all-tags)
                            (--remove (string= prefix it)))))
                    (completion-table-case-fold it (not org-roam-completion-ignore-case)))
               :exit-function (lambda (str _status)
