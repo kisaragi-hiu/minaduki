@@ -30,10 +30,7 @@
 
 ;;; Commentary:
 ;;
-;; This file contains utility macros and helper functions used accross
-;; different org-mode-bibtex modules.  This library may be required
-;; directly or through orb-core.el.  Definitions in this file should
-;; only depend on built-in Emacs libraries.
+;; This file will be merged into minaduki-utils.el.
 
 ;;; Code:
 

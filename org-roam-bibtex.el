@@ -57,7 +57,6 @@
 ;;;; Dependencies
 ;; ============================================================================
 
-(require 'orb-core)
 (require 'kisaragi-notes-utils)
 (require 'kisaragi-notes-vars)
 
@@ -85,8 +84,42 @@
 (declare-function persp-names "persp-mode")
 
 ;; ============================================================================
-;;;; Customize definitions
+;;;; Utils
 ;; ============================================================================
+
+;;;###autoload
+(defun orb-process-file-field (citekey)
+  "Process the 'file' BibTeX field and resolve if there are multiples.
+Search the disk for the document associated with this BibTeX
+entry.  The disk matching is based on looking in the
+`bibtex-completion-library-path' for a file with the
+CITEKEY.
+
+If variable `orb-file-field-extensions' is non-nil, return only
+the file paths with the respective extensions.
+
+\(Mendeley, Zotero, normal paths) are all supported.  If there
+are multiple files found the user is prompted to select which one
+to enter."
+  ;; ignore any errors that may be thrown by `bibtex-completion-find-pdf'
+  ;; don't stop the capture process
+  (ignore-errors
+    (when-let* ((entry (bibtex-completion-get-entry citekey))
+                (paths (bibtex-completion-find-pdf entry)))
+      (when-let ((extensions orb-file-field-extensions))
+        (unless (listp extensions)
+          (setq extensions (list extensions)))
+        (setq paths (--filter
+                     (lambda ()
+                       (when-let ((extension (file-name-extension it)))
+                         (member-ignore-case extension extensions)))
+                     paths)))
+      (when paths
+        (if (= (length paths) 1)
+            (car paths)
+          (completing-read "File to use: "
+                           (minaduki-completion//mark-category
+                            paths 'file)))))))
 
 ;; ============================================================================
 ;;;; Orb plist

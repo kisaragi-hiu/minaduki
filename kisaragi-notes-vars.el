@@ -17,6 +17,21 @@
   :link '(url-link :tag "Github" "https://github.com/org-roam/org-roam")
   :link '(url-link :tag "Online Manual" "https://www.orgroam.com/manual.html"))
 
+(defgroup org-roam-bibtex nil
+  "Bibtex-completion integration for Org-roam."
+  :group 'org-roam
+  :prefix "orb-")
+
+(defgroup orb-note-actions nil
+  "Orb Note Actions - run actions in note's context."
+  :group 'org-roam-bibtex
+  :prefix "orb-note-actions-")
+
+(defgroup orb-autokey nil
+  "Automatic generation of BibTeX citation keys."
+  :group 'org-roam-bibtex
+  :prefix "orb-autokey-")
+
 (defgroup org-roam-faces nil
   "Faces used by Org-roam."
   :group 'org-roam
@@ -374,6 +389,36 @@ based on their extension."
           (const :tag "Yes" t)
           (const :tag "No" nil)
           (string :tag "Custom wildcard keyword")))
+
+(defcustom orb-bibtex-field-aliases
+  '(("=type=" . "entry-type")
+    ("=key=" . "citekey")
+    ("=has-pdf=" . "pdf?")
+    ("=has-note=" . "note?")
+    ("citation-number" . "#"))
+  "Alist of ORB-specific field aliases of the form (FIELD . ALIAS).
+The ALIAS can be used instead of the FIELD anywhere in ORB's
+configuration.  This variable is useful to replace
+`bibtex-completion''s internal '='-embraced virtual fields with
+more casual alternatives."
+  :group 'org-roam-bibtex
+  :type '(repeat
+          (cons (string :tag "Field name")
+                (string :tag "Alias name"))))
+
+(defcustom orb-file-field-extensions '("pdf")
+  "Extensions of file names to keep when retrieving values from the file field.
+This may be a string or a list of strings corresponding to file
+extensions without a dot.
+
+Set it to nil to keep all file names.  You will be prompted to choose one.
+
+The name of the file field is determined by
+  `bibtex-completion-pdf-field' (default \"file\")."
+  :group 'org-roam-bibtex
+  :type '(choice
+          (string)
+          (repeat :tag "List of extensions" (string))))
 
 (defcustom orb-citekey-format "%s"
   "Format string for the citekey when capturing new ref notes."
