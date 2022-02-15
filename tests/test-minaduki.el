@@ -1,4 +1,4 @@
-;;; test-org-roam.el --- Tests for Org-roam -*- lexical-binding: t; -*-
+;;; test-minaduki.el --- Tests for Minaduki -*- lexical-binding: t; -*-
 
 ;; Copyright (C) 2020 Jethro Kuan
 
@@ -25,30 +25,30 @@
 (require 'seq)
 (require 'dash)
 
-(defun test-org-roam--abs-path (file-path)
+(defun test-minaduki--abs-path (file-path)
   "Get absolute FILE-PATH from `org-directory'."
   (expand-file-name file-path org-directory))
 
 (defun test-minaduki//find-file (path)
   "PATH."
-  (let ((path (test-org-roam--abs-path path)))
+  (let ((path (test-minaduki--abs-path path)))
     (make-directory (file-name-directory path) t)
     (find-file path)))
 
-(defvar test-repository (expand-file-name "tests/roam-files")
-  "Directory containing org-roam test org files.")
+(defvar test-repository (expand-file-name "tests/minaduki-files")
+  "Directory containing minaduki test org files.")
 
-(defun test-org-roam--init ()
+(defun test-minaduki--init ()
   "."
   (let ((original-dir test-repository)
-        (new-dir (expand-file-name (make-temp-name "org-roam") temporary-file-directory))
+        (new-dir (expand-file-name (make-temp-name "minaduki") temporary-file-directory))
         (minaduki-verbose nil))
     (copy-directory original-dir new-dir)
     (setq org-directory new-dir)
-    (org-roam-mode +1)
+    (org-roam-mode)
     (sleep-for 2)))
 
-(defun test-org-roam--teardown ()
+(defun test-minaduki--teardown ()
   (org-roam-mode -1)
   (delete-file minaduki/db-location)
   (minaduki-db//close))
@@ -102,14 +102,14 @@
 
 (describe "Ref extraction"
   (before-all
-    (test-org-roam--init))
+    (test-minaduki--init))
 
   (after-all
-    (test-org-roam--teardown))
+    (test-minaduki--teardown))
 
   (cl-flet
       ((test (fn file)
-             (let* ((fname (test-org-roam--abs-path file))
+             (let* ((fname (test-minaduki--abs-path file))
                     (buf (find-file-noselect fname)))
                (with-current-buffer buf
                  ;; Unlike tag extraction, it doesn't make sense to
@@ -140,17 +140,16 @@
                 ("website" . "//www.orgroam.com/"))))))
 
 (describe "Title extraction"
-  :var (org-roam-title-sources)
   (before-all
-    (test-org-roam--init))
+    (test-minaduki--init))
 
   (after-all
-    (test-org-roam--teardown))
+    (test-minaduki--teardown))
 
   (cl-flet
       ((test (fn file)
              (let ((buf (find-file-noselect
-                         (test-org-roam--abs-path file))))
+                         (test-minaduki--abs-path file))))
                (with-current-buffer buf
                  (funcall fn)))))
     (it "extracts title from title property"
@@ -223,15 +222,15 @@
 
 (describe "Link extraction"
   (before-all
-    (test-org-roam--init))
+    (test-minaduki--init))
 
   (after-all
-    (test-org-roam--teardown))
+    (test-minaduki--teardown))
 
   (cl-flet
       ((test (fn file)
              (let ((buf (find-file-noselect
-                         (test-org-roam--abs-path file))))
+                         (test-minaduki--abs-path file))))
                (with-current-buffer buf
                  (funcall fn)))))
     (it "extracts links from Markdown files"
@@ -239,13 +238,13 @@
                          "baz.md")
                    (--map (seq-take it 3)))
               :to-have-same-items-as
-              `([,(test-org-roam--abs-path "baz.md")
-                 ,(test-org-roam--abs-path "nested/bar.org")
+              `([,(test-minaduki--abs-path "baz.md")
+                 ,(test-minaduki--abs-path "nested/bar.org")
                  "file"]
-                [,(test-org-roam--abs-path "baz.md")
+                [,(test-minaduki--abs-path "baz.md")
                  "乙野四方字20180920"
                  "cite"]
-                [,(test-org-roam--abs-path "baz.md")
+                [,(test-minaduki--abs-path "baz.md")
                  "quro2017"
                  "cite"])))
     (it "extracts links from Org files"
@@ -254,41 +253,41 @@
                    ;; Drop the link type and properties
                    (--map (seq-take it 2)))
               :to-have-same-items-as
-              `([,(test-org-roam--abs-path "foo.org")
-                 ,(test-org-roam--abs-path "baz.md")]
-                [,(test-org-roam--abs-path "foo.org")
+              `([,(test-minaduki--abs-path "foo.org")
+                 ,(test-minaduki--abs-path "baz.md")]
+                [,(test-minaduki--abs-path "foo.org")
                  "foo@john.com"]
-                [,(test-org-roam--abs-path "foo.org")
+                [,(test-minaduki--abs-path "foo.org")
                  "google.com"]
-                [,(test-org-roam--abs-path "foo.org")
-                 ,(test-org-roam--abs-path "bar.org")])))
+                [,(test-minaduki--abs-path "foo.org")
+                 ,(test-minaduki--abs-path "bar.org")])))
     (xit "extracts Org citations"
       (expect (->> (test #'minaduki-extract/citation
                          "org-cite.org")
                    ;; Drop the link properties
                    (--map (seq-take it 3)))
               :to-have-same-items-as
-              `([,(test-org-roam--abs-path "org-cite.org")
+              `([,(test-minaduki--abs-path "org-cite.org")
                  "赤坂アカand横槍メンゴ-oshinoko"
                  "cite"]
-                [,(test-org-roam--abs-path "org-cite.org")
+                [,(test-minaduki--abs-path "org-cite.org")
                  "フライand森永みるくand伊藤ハチand玄鉄絢and天野しゅにんたand雪子andもちオーレandコダマナオコand吉田丸悠andよしむらかなand黄井ぴかちand郷本andしおやてるこand松崎夏未and川浪いずみ20190511"
                  "cite"]
-                [,(test-org-roam--abs-path "org-cite.org")
+                [,(test-minaduki--abs-path "org-cite.org")
                  "takeshisu20191228"
                  "cite"])))))
 
 (describe "Tag extraction"
   :var (minaduki/tag-sources)
   (before-all
-    (test-org-roam--init))
+    (test-minaduki--init))
 
   (after-all
-    (test-org-roam--teardown))
+    (test-minaduki--teardown))
 
   (cl-flet
       ((test (fn file)
-             (let* ((fname (test-org-roam--abs-path file))
+             (let* ((fname (test-minaduki--abs-path file))
                     (buf (find-file-noselect fname)))
                (with-current-buffer buf
                  (funcall fn fname)))))
@@ -378,14 +377,14 @@
 
 (describe "ID extraction"
   (before-all
-    (test-org-roam--init))
+    (test-minaduki--init))
 
   (after-all
-    (test-org-roam--teardown))
+    (test-minaduki--teardown))
 
   (cl-flet
       ((test (fn file)
-             (let* ((fname (test-org-roam--abs-path file))
+             (let* ((fname (test-minaduki--abs-path file))
                     (buf (find-file-noselect fname)))
                (with-current-buffer buf
                  (funcall fn fname)))))
@@ -393,8 +392,8 @@
       (expect (test #'org-roam--extract-ids
                     "headlines/headline.org")
               :to-have-same-items-as
-              `(["e84d0630-efad-4017-9059-5ef917908823" ,(test-org-roam--abs-path "headlines/headline.org") 1]
-                ["801b58eb-97e2-435f-a33e-ff59a2f0c213" ,(test-org-roam--abs-path "headlines/headline.org") 1])))))
+              `(["e84d0630-efad-4017-9059-5ef917908823" ,(test-minaduki--abs-path "headlines/headline.org") 1]
+                ["801b58eb-97e2-435f-a33e-ff59a2f0c213" ,(test-minaduki--abs-path "headlines/headline.org") 1])))))
 
 (describe "Test roam links"
   (it ""
@@ -420,26 +419,26 @@
 
 (describe "Accessing the DB"
   (before-all
-    (test-org-roam--init))
+    (test-minaduki--init))
 
   (after-all
-    (test-org-roam--teardown))
+    (test-minaduki--teardown))
 
   (it "Returns a file from its title"
     (expect (minaduki-db//query-title "Foo")
             :to-equal
-            (list (test-org-roam--abs-path "foo.org")))
+            (list (test-minaduki--abs-path "foo.org")))
     (expect (minaduki-db//query-title "Deeply Nested File")
             :to-equal
-            (list (test-org-roam--abs-path "nested/deeply/deeply_nested_file.org")))))
+            (list (test-minaduki--abs-path "nested/deeply/deeply_nested_file.org")))))
 
 ;;; Tests
 (xdescribe "minaduki-db/build-cache"
   (before-each
-    (test-org-roam--init))
+    (test-minaduki--init))
 
   (after-each
-    (test-org-roam--teardown))
+    (test-minaduki--teardown))
 
   (it "initializes correctly"
     ;; Cache
@@ -453,49 +452,49 @@
     ;; Links
     (expect (caar (minaduki-db/query [:select (funcall count) :from links
                                       :where (= source $s1)]
-                                     (test-org-roam--abs-path "foo.org"))) :to-be 1)
+                                     (test-minaduki--abs-path "foo.org"))) :to-be 1)
     (expect (caar (minaduki-db/query [:select (funcall count) :from links
                                       :where (= source $s1)]
-                                     (test-org-roam--abs-path "nested/bar.org"))) :to-be 2)
+                                     (test-minaduki--abs-path "nested/bar.org"))) :to-be 2)
 
     ;; Links -- File-to
     (expect (caar (minaduki-db/query [:select (funcall count) :from links
                                       :where (= dest $s1)]
-                                     (test-org-roam--abs-path "nested/foo.org"))) :to-be 1)
+                                     (test-minaduki--abs-path "nested/foo.org"))) :to-be 1)
     (expect (caar (minaduki-db/query [:select (funcall count) :from links
                                       :where (= dest $s1)]
-                                     (test-org-roam--abs-path "nested/bar.org"))) :to-be 1)
+                                     (test-minaduki--abs-path "nested/bar.org"))) :to-be 1)
     (expect (caar (minaduki-db/query [:select (funcall count) :from links
                                       :where (= dest $s1)]
-                                     (test-org-roam--abs-path "unlinked.org"))) :to-be 0)
+                                     (test-minaduki--abs-path "unlinked.org"))) :to-be 0)
     ;; TODO Test titles
     (expect (minaduki-db/query [:select * :from titles])
             :to-have-same-items-as
-            (list (list (test-org-roam--abs-path "alias.org")
+            (list (list (test-minaduki--abs-path "alias.org")
                         (list "t1" "a1" "a 2"))
-                  (list (test-org-roam--abs-path "bar.org")
+                  (list (test-minaduki--abs-path "bar.org")
                         (list "Bar"))
-                  (list (test-org-roam--abs-path "foo.org")
+                  (list (test-minaduki--abs-path "foo.org")
                         (list "Foo"))
-                  (list (test-org-roam--abs-path "nested/bar.org")
+                  (list (test-minaduki--abs-path "nested/bar.org")
                         (list "Nested Bar"))
-                  (list (test-org-roam--abs-path "nested/foo.org")
+                  (list (test-minaduki--abs-path "nested/foo.org")
                         (list "Nested Foo"))
-                  (list (test-org-roam--abs-path "no-title.org")
+                  (list (test-minaduki--abs-path "no-title.org")
                         (list "Headline title"))
-                  (list (test-org-roam--abs-path "web_ref.org") nil)
-                  (list (test-org-roam--abs-path "unlinked.org")
+                  (list (test-minaduki--abs-path "web_ref.org") nil)
+                  (list (test-minaduki--abs-path "unlinked.org")
                         (list "Unlinked"))))
 
     (expect (minaduki-db/query [:select * :from refs])
             :to-have-same-items-as
-            (list (list "https://google.com/" (test-org-roam--abs-path "web_ref.org") "website")))
+            (list (list "https://google.com/" (test-minaduki--abs-path "web_ref.org") "website")))
 
     ;; Expect rebuilds to be really quick (nothing changed)
     (expect (minaduki-db/build-cache)
             :to-equal
             (list :files 0 :links 0 :tags 0 :titles 0 :refs 0 :deleted 0))))
 
-(provide 'test-org-roam)
+(provide 'test-minaduki)
 
-;;; test-org-roam.el ends here
+;;; test-minaduki.el ends here
