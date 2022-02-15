@@ -79,23 +79,23 @@ Has an effect if and only if `org-roam-buffer-position' is `top' or `bottom'."
   :type 'number
   :group 'org-roam)
 
-(defcustom kisaragi-notes-buffer/hidden-tags nil
+(defcustom minaduki-buffer/hidden-tags nil
   "Tags that should not be inserted into the backlinks buffer."
   :type '(repeat string)
   :group 'org-roam)
 
-(defcustom kisaragi-notes-buffer/name "*kisaragi-notes backlinks*"
+(defcustom minaduki-buffer/name "*minaduki backlinks*"
   "Name of the backlinks buffer."
   :type 'string
   :group 'org-roam)
 
 (defcustom org-roam-buffer-prepare-hook
   '(org-roam-buffer--insert-title
-    kisaragi-notes-buffer//insert-cite-backlinks
-    kisaragi-notes-buffer//insert-reflection-backlinks
-    kisaragi-notes-buffer//insert-diary-backlinks
-    kisaragi-notes-buffer//insert-other-backlinks
-    kisaragi-notes-buffer//restore-point)
+    minaduki-buffer//insert-cite-backlinks
+    minaduki-buffer//insert-reflection-backlinks
+    minaduki-buffer//insert-diary-backlinks
+    minaduki-buffer//insert-other-backlinks
+    minaduki-buffer//restore-point)
   "Hook run in the `org-roam-buffer' before it is displayed."
   :type 'hook
   :group 'org-roam)
@@ -133,7 +133,7 @@ For example: (setq org-roam-buffer-window-parameters '((no-other-window . t)))"
                       'font-lock-face
                       'org-document-title)))
 
-(defun kisaragi-notes-buffer//open-at-point ()
+(defun minaduki-buffer//open-at-point ()
   "Open an Org-roam link or visit the text previewed at point.
 
 When point is on an Org-roam link, open the link in the Org-roam window.
@@ -169,36 +169,36 @@ This function hooks into `org-open-at-point' via `org-open-at-point-functions'."
              (define-key map (kbd "RET") 'org-open-at-point)
              map)
   (cond (org-roam-backlinks-mode
-         (add-hook 'post-command-hook #'kisaragi-notes-buffer//save-point nil :local)
-         (add-hook 'org-open-at-point-functions #'kisaragi-notes-buffer//open-at-point nil :local))
+         (add-hook 'post-command-hook #'minaduki-buffer//save-point nil :local)
+         (add-hook 'org-open-at-point-functions #'minaduki-buffer//open-at-point nil :local))
         (t
-         (remove-hook 'post-command-hook #'kisaragi-notes-buffer//save-point :local)
-         (remove-hook 'org-open-at-point-functions #'kisaragi-notes-buffer//open-at-point :local))))
+         (remove-hook 'post-command-hook #'minaduki-buffer//save-point :local)
+         (remove-hook 'org-open-at-point-functions #'minaduki-buffer//open-at-point :local))))
 
 ;;;; Saving cursor position
 
-(defvar kisaragi-notes-buffer//point-map (make-hash-table :test #'equal)
+(defvar minaduki-buffer//point-map (make-hash-table :test #'equal)
   "A hash table storing cursor position in the backlinks buffer.")
 
-(defun kisaragi-notes-buffer//save-point ()
+(defun minaduki-buffer//save-point ()
   "Save cursor position in backlinks buffer for the current file."
-  (with-current-buffer kisaragi-notes-buffer/name
+  (with-current-buffer minaduki-buffer/name
     (puthash (buffer-file-name org-roam-buffer--current)
              (point)
-             kisaragi-notes-buffer//point-map)))
+             minaduki-buffer//point-map)))
 
-(defun kisaragi-notes-buffer//restore-point ()
+(defun minaduki-buffer//restore-point ()
   "Restore last visited point in backlinks buffer for this file."
-  (with-selected-window (get-buffer-window kisaragi-notes-buffer/name)
+  (with-selected-window (get-buffer-window minaduki-buffer/name)
     (let ((saved-point (gethash (buffer-file-name org-roam-buffer--current)
-                                kisaragi-notes-buffer//point-map)))
+                                minaduki-buffer//point-map)))
       (when (and (integerp saved-point)
                  (<= (point-min) saved-point (point-max)))
         (goto-char saved-point)))))
 
 ;;;; Inserting backlinks
 
-(cl-defun kisaragi-notes-buffer//insert-backlinks (&key cite? filter (heading "Backlink"))
+(cl-defun minaduki-buffer//insert-backlinks (&key cite? filter (heading "Backlink"))
   "Insert the org-roam-buffer backlinks string for the current buffer.
 
 Customized:
@@ -222,7 +222,7 @@ or to this file's ROAM_KEY.
 4. Nothing is inserted when there are no backlinks.
 
 5. Tags are shown for each entry, except for those in
-   `kisaragi-notes-buffer/hidden-tags'.
+   `minaduki-buffer/hidden-tags'.
 
 6. Links in titles are removed."
   (let (props file-from)
@@ -230,7 +230,7 @@ or to this file's ROAM_KEY.
                 (titles-and-refs
                  (with-current-buffer org-roam-buffer--current
                    (cons (org-roam--extract-titles)
-                         (kisaragi-notes-extract/refs))))
+                         (minaduki-extract/refs))))
                 (backlinks
                  (if cite?
                      (mapcan #'minaduki-db//fetch-backlinks
@@ -255,14 +255,14 @@ or to this file's ROAM_KEY.
         (insert "\n\n** "
                 ;; title link
                 (org-roam-format-link file-from
-                                      (kisaragi-notes//remove-org-links
+                                      (minaduki//remove-org-links
                                        (minaduki-db//fetch-title file-from)))
                 ;; tags
                 (or (-some->> (minaduki-db/query [:select tags :from tags
                                                   :where (= file $s1)]
                                                  file-from)
                       caar
-                      (--remove (member it kisaragi-notes-buffer/hidden-tags))
+                      (--remove (member it minaduki-buffer/hidden-tags))
                       (--map (s-replace " " "_" (downcase it)))
                       (s-join ":")
                       (format "  :%s:"))
@@ -288,33 +288,33 @@ or to this file's ROAM_KEY.
                    'file-from file-from
                    'file-from-point (plist-get prop :point))))))))))
 
-(defun kisaragi-notes-buffer//insert-cite-backlinks ()
+(defun minaduki-buffer//insert-cite-backlinks ()
   "Insert ref backlinks.
 
 I'm calling it \"Citation Backlinks\" because I want to
 distinguish between Org-roam's ref backlinks and backlinks that
 come from Reflections."
-  (kisaragi-notes-buffer//insert-backlinks
+  (minaduki-buffer//insert-backlinks
    :heading "Citation Backlink"
    :cite? t))
 
-(defun kisaragi-notes-buffer//insert-reflection-backlinks ()
+(defun minaduki-buffer//insert-reflection-backlinks ()
   "Insert backlinks from the \"reflections\" directory."
-  (kisaragi-notes-buffer//insert-backlinks
+  (minaduki-buffer//insert-backlinks
    :filter (pcase-lambda (`(,from ,_to ,_plist))
              (string-match-p "reflection/" from))
    :heading "Reflection Backlink"))
 
-(defun kisaragi-notes-buffer//insert-diary-backlinks ()
+(defun minaduki-buffer//insert-diary-backlinks ()
   "Insert backlinks from the \"diary\" directory."
-  (kisaragi-notes-buffer//insert-backlinks
+  (minaduki-buffer//insert-backlinks
    :filter (pcase-lambda (`(,from ,_to ,_plist))
              (string-match-p "diary/" from))
    :heading "Diary Backlink"))
 
-(defun kisaragi-notes-buffer//insert-other-backlinks ()
+(defun minaduki-buffer//insert-other-backlinks ()
   "Insert backlinks that are not from reflections or diary entries."
-  (kisaragi-notes-buffer//insert-backlinks
+  (minaduki-buffer//insert-backlinks
    :filter (pcase-lambda (`(,from ,_to ,_plist))
              (not (or (string-match-p "reflection/" from)
                       (string-match-p "diary/" from))))
@@ -364,7 +364,7 @@ ORIG-PATH is the path where the CONTENT originated."
   (interactive)
   (minaduki-db//ensure-built)
   (let* ((source-org-directory org-directory))
-    (with-current-buffer kisaragi-notes-buffer/name
+    (with-current-buffer minaduki-buffer/name
       ;; When dir-locals.el is used to override org-directory,
       ;; org-roam-buffer should have a different local org-directory and
       ;; default-directory, as relative links are relative from the overridden
@@ -408,8 +408,8 @@ Valid states are 'visible, 'exists and 'none."
   (declare (side-effect-free t))
   (inline-quote
    (cond
-    ((get-buffer-window kisaragi-notes-buffer/name) 'visible)
-    ((get-buffer kisaragi-notes-buffer/name) 'exists)
+    ((get-buffer-window minaduki-buffer/name) 'visible)
+    ((get-buffer minaduki-buffer/name) 'exists)
     (t 'none))))
 
 (defun org-roam-buffer--set-width (width)
@@ -440,7 +440,7 @@ Valid states are 'visible, 'exists and 'none."
                       (funcall org-roam-buffer-position)
                     org-roam-buffer-position)))
     (save-selected-window
-      (-> (get-buffer-create kisaragi-notes-buffer/name)
+      (-> (get-buffer-create minaduki-buffer/name)
           (display-buffer-in-side-window
            `((side . ,position)
              (window-parameters . ,org-roam-buffer-window-parameters)))
@@ -464,7 +464,7 @@ Valid states are 'visible, 'exists and 'none."
   "Deactivate display of the `org-roam-buffer'."
   (interactive)
   (setq org-roam-last-window (get-buffer-window))
-  (delete-window (get-buffer-window kisaragi-notes-buffer/name)))
+  (delete-window (get-buffer-window minaduki-buffer/name)))
 
 (defun org-roam-buffer-toggle-display ()
   "Toggle display of the `org-roam-buffer'."

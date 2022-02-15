@@ -69,7 +69,7 @@ also sets `calendar-mark-diary-entries-flag' to t.
 
 The marker is specified by `diary-entry-marker'."
   (interactive)
-  (cl-loop for file in (directory-files kisaragi-notes/diary-directory)
+  (cl-loop for file in (directory-files minaduki/diary-directory)
            when (>= (length file) 8)
            when (s-match (rx bos
                              (group digit digit digit digit)
@@ -97,7 +97,7 @@ whether an entry is from DAY or not."
   (setq day (s-replace "-" "" day))
   (let ((file-list
          (directory-files
-          kisaragi-notes/diary-directory :full
+          minaduki/diary-directory :full
           (format (rx bos "%s" (0+ any) ".org")
                   day)
           :nosort)))

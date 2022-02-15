@@ -142,7 +142,7 @@ to enter."
         (if (= (length paths) 1)
             (car paths)
           (completing-read "File to use: "
-                           (kisaragi-notes-completion//mark-category
+                           (minaduki-completion//mark-category
                             paths 'file)))))))
 
 ;; ============================================================================

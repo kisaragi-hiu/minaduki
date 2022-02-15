@@ -14,7 +14,7 @@
 
 (require 'marginalia)
 
-(defun kisaragi-notes-completion/annotate-note (cand)
+(defun minaduki-completion/annotate-note (cand)
   "Marginalia annotation for note entries.
 
 CAND is the entry in the completion. Metadata is passed through
@@ -30,7 +30,7 @@ title."
         :truncate 40 :face 'marginalia-file-name)))))
 
 (add-to-list 'marginalia-annotator-registry
-             '(note kisaragi-notes-completion/annotate-note none))
+             '(note minaduki-completion/annotate-note none))
 
 (provide 'kisaragi-notes-marginalia)
 

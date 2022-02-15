@@ -106,7 +106,7 @@ FILTER can either be a string or a function:
             (push (cons k v) completions)))))))
 
 ;; `orb--get-non-ref-path-completions'
-(defun kisaragi-notes-completion//get-non-literature ()
+(defun minaduki-completion//get-non-literature ()
   "Return a list of non-literature notes for completion.
 
 Each note is a list (STR :path PATH :title TITLE), where STR is
@@ -121,7 +121,7 @@ displayed in `completing-read'."
          completions)
     (dolist (row rows)
       (pcase-let ((`(,file-path ,title ,tags) row))
-        (let ((title (or title (kisaragi-notes//path-to-title file-path))))
+        (let ((title (or title (minaduki//path-to-title file-path))))
           (let ((k (concat
                     (when tags
                       (format "(%s) " (s-join org-roam-tag-separator tags)))
@@ -131,7 +131,7 @@ displayed in `completing-read'."
     completions))
 
 ;;;; `completing-read' completions
-(defun kisaragi-notes-completion//mark-category (seq category)
+(defun minaduki-completion//mark-category (seq category)
   "Mark SEQ as being in CATEGORY.
 
 Return a collection (as defined by `completing-read') that is the
@@ -153,7 +153,7 @@ Embark to create what are in effect context menus."
       (_
        (all-completions str seq pred)))))
 
-(defun kisaragi-notes-completion//read-note (&optional initial-input completions filter-fn)
+(defun minaduki-completion//read-note (&optional initial-input completions filter-fn)
   "Read a note from the repository.
 
 INITIAL-INPUT: passed to `completing-read'.
@@ -169,7 +169,7 @@ before being prompted for selection."
                                (funcall filter-fn it)
                              it)))
          (selection (completing-read "Note: "
-                                     (kisaragi-notes-completion//mark-category
+                                     (minaduki-completion//mark-category
                                       completions 'note)
                                      nil nil initial-input)))
     (or (cdr (assoc selection completions))
@@ -178,7 +178,7 @@ before being prompted for selection."
 
 ;;;; `completion-at-point' completions
 
-(defun kisaragi-notes-completion/everywhere ()
+(defun minaduki-completion/everywhere ()
   "`completion-at-point' function for word at point.
 This is active when `org-roam-completion-everywhere' is non-nil."
   (when (and org-roam-completion-everywhere
@@ -198,7 +198,7 @@ This is active when `org-roam-completion-everywhere' is non-nil."
                              (delete-char (- (length str)))
                              (insert "[[roam:" str "]]"))))))
 
-(defun kisaragi-notes-completion/tags-at-point ()
+(defun minaduki-completion/tags-at-point ()
   "`completion-at-point' function for Org-roam tags."
   (let ((end (point))
         (start (point)))

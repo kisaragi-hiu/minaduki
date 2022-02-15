@@ -430,7 +430,7 @@ the file if the original value of :no-save is not t and
     (if (or (file-exists-p file-path)
             (find-buffer-visiting file-path))
         (unless allow-existing-file-p
-          (kisaragi-notes//warn
+          (minaduki//warn
            :warning
            "Attempted to recreate existing file: %s.
 This can happen when your org-roam db is not in sync with your notes.
@@ -535,7 +535,7 @@ This function is used solely in Org-roam's capture templates: see
                        (minaduki-capture//new-file 'allow-existing))
                       ('ref
                        (if-let ((ref (cdr (assoc 'ref minaduki-capture//info))))
-                           (pcase (kisaragi-notes-extract//process-ref ref)
+                           (pcase (minaduki-extract//process-ref ref)
                              (`(,type . ,path)
                               (or (minaduki-capture//get-ref-path type path)
                                   (minaduki-capture//new-file)))
@@ -624,7 +624,7 @@ Arguments GOTO and KEYS see `org-capture'."
          (title (or (plist-get res :title) title-with-keys))
          (file-path (plist-get res :path)))
     (let ((minaduki-capture//info (list (cons 'title title)
-                                        (cons 'slug (kisaragi-notes//title-to-slug title))
+                                        (cons 'slug (minaduki//title-to-slug title))
                                         (cons 'file file-path)))
           (minaduki-capture//context 'capture))
       (condition-case err

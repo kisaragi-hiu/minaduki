@@ -22,16 +22,16 @@
   :group 'org-roam
   :group 'faces)
 
-(defcustom kisaragi-notes/templates-directory (f-slash
-                                               (f-join
-                                                org-directory "templates"))
+(defcustom minaduki/templates-directory (f-slash
+                                         (f-join
+                                          org-directory "templates"))
   "Where to look for templates."
   :group 'org-roam
   :type 'string)
 
-(defcustom kisaragi-notes/diary-directory (f-slash
-                                           (f-join
-                                            org-directory "diary"))
+(defcustom minaduki/diary-directory (f-slash
+                                     (f-join
+                                      org-directory "diary"))
   "Where to store diary entries."
   :group 'org-roam
   :type 'string)
@@ -107,11 +107,11 @@ Formatter may be a function that takes title as its only argument."
   :group 'org-roam)
 
 (defcustom org-roam-tag-separator ","
-  "String to use to separate tags when `kisaragi-notes/tag-sources' is non-nil."
+  "String to use to separate tags when `minaduki/tag-sources' is non-nil."
   :type 'string
   :group 'org-roam)
 
-(defcustom kisaragi-notes/slug-replacements
+(defcustom minaduki/slug-replacements
   '(("[^[:alnum:][:digit:]]" . "_") ; convert anything not alphanumeric
     ("__*" . "_") ; remove sequential underscores (perhaps from above)
     ("^_" . "") ; remove starting underscore
@@ -192,7 +192,7 @@ Otherwise, do not apply custom faces to Org-roam links."
           (const :tag "Do not apply custom faces" nil))
   :group 'org-roam)
 
-(defcustom kisaragi-notes/tag-sources
+(defcustom minaduki/tag-sources
   '(org-roam--extract-tags-prop)
   "Sources to obtain tags from.
 
@@ -388,7 +388,7 @@ A special variable `${slug}` in `orb-templates' (and
 `minaduki-capture/templates') is used as a placeholder for an
 automatically generated string which is meant to be used in
 filenames. Org Roam uses the note's title to create a slug. ORB
-also allows for the citekey. `kisaragi-notes//title-to-slug' is
+also allows for the citekey. `minaduki//title-to-slug' is
 used to create the slug. This operation typilcally involves
 removing whitespace and converting words to lowercase, among
 possibly other things."
@@ -466,7 +466,7 @@ Possible values are `key' and `entry'."
 
 ;;;; Internal Variables
 
-(defvar-local kisaragi-notes//file-name nil
+(defvar-local minaduki//file-name nil
   "The corresponding file for a temp buffer.
 This is set by `org-roam--with-temp-buffer', to allow throwing of
 descriptive warnings when certain operations fail (e.g. parsing).")

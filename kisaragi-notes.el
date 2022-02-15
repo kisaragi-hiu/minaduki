@@ -157,8 +157,8 @@ file."
     (add-hook 'post-command-hook #'org-roam-buffer--update-maybe nil t)
     (add-hook 'before-save-hook #'org-roam-link--replace-link-on-save nil t)
     (add-hook 'after-save-hook #'minaduki-db/update nil t)
-    (dolist (fn '(kisaragi-notes-completion/tags-at-point
-                  kisaragi-notes-completion/everywhere))
+    (dolist (fn '(minaduki-completion/tags-at-point
+                  minaduki-completion/everywhere))
       (add-hook 'completion-at-point-functions fn nil t))
     (org-roam-buffer--update-maybe :redisplay t)))
 
@@ -216,7 +216,7 @@ replaced links are made relative to the current buffer."
 (defcustom org-roam-rename-file-on-title-change t
   "If non-nil, alter the filename on title change.
 The new title is converted into a slug using
-`kisaragi-notes//title-to-slug', and compared with the current
+`minaduki//title-to-slug', and compared with the current
 filename."
   :group 'org-roam
   :type 'boolean)
@@ -265,18 +265,18 @@ To be added to `org-roam-title-change-hook'."
 (defun org-roam--update-file-name-on-title-change (old-title new-title)
   "Update the file name on title change.
 The slug is computed from OLD-TITLE using
-`kisaragi-notes//title-to-slug'. If the slug is part of the
+`minaduki//title-to-slug'. If the slug is part of the
 current filename, the new slug is computed with NEW-TITLE, and
 that portion of the filename is renamed.
 
 To be added to `org-roam-title-change-hook'."
   (save-some-buffers :dont-ask #'org-roam--org-roam-buffer-p)
   (when org-roam-rename-file-on-title-change
-    (let* ((old-slug (kisaragi-notes//title-to-slug old-title))
+    (let* ((old-slug (minaduki//title-to-slug old-title))
            (file (buffer-file-name (buffer-base-buffer)))
            (file-name (file-name-nondirectory file)))
       (when (string-match-p old-slug file-name)
-        (let* ((new-slug (kisaragi-notes//title-to-slug new-title))
+        (let* ((new-slug (minaduki//title-to-slug new-title))
                (new-file-name (replace-regexp-in-string old-slug new-slug file-name)))
           (unless (string-equal file-name new-file-name)
             (rename-file file-name new-file-name)
@@ -365,9 +365,9 @@ nil, or positive. If ARG is `toggle', toggle `org-roam-mode'.
 Otherwise, behave as if called interactively."
   :lighter " Org-roam"
   :keymap (let ((map (make-sparse-keymap)))
-            (define-key map (kbd "C-c ) a") #'kisaragi-notes/literature-note-actions)
+            (define-key map (kbd "C-c ) a") #'minaduki/literature-note-actions)
             (define-key map (kbd "C-c ) i") #'orb-insert)
-            (define-key map (kbd "C-c ) C-f") #'kisaragi-notes/open-non-literature-note)
+            (define-key map (kbd "C-c ) C-f") #'minaduki/open-non-literature-note)
             (define-key map (kbd "C-c ) C-i") #'orb-insert-non-ref)
             map)
   :group 'org-roam
@@ -382,7 +382,7 @@ Otherwise, behave as if called interactively."
     (unless (or (and (bound-and-true-p emacsql-sqlite3-executable)
                      (file-executable-p emacsql-sqlite3-executable))
                 (executable-find "sqlite3"))
-      (kisaragi-notes//warn :error "Cannot find executable 'sqlite3'. \
+      (minaduki//warn :error "Cannot find executable 'sqlite3'. \
 Ensure it is installed and can be found within `exec-path'. \
 M-x info for more information at Org-roam > Installation > Post-Installation Tasks."))
     (add-hook 'kill-emacs-hook #'minaduki-db//close)

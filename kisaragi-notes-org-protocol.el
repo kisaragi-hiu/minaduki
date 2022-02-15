@@ -67,7 +67,7 @@
 ;;;; Functions
 
 ;;;###autoload
-(cl-defun kisaragi-notes-protocol/open-file ((&key file key))
+(cl-defun minaduki-org-protocol/open-file ((&key file key))
   "An org-protocol handler to open a note file.
 
 Arguments are passed in as a plist like (:file FILE :key KEY).
@@ -90,9 +90,9 @@ emacsclient 'org-protocol://notes?key=banjoazusa2020'"
 
 ;;;###autoload
 (with-eval-after-load 'org-protocol
-  (cl-pushnew '("kisaragi-notes"
+  (cl-pushnew '("minaduki"
                 :protocol "notes"
-                :function kisaragi-notes-protocol/open-file)
+                :function minaduki-org-protocol/open-file)
               org-protocol-protocol-alist
               :test #'equal))
 

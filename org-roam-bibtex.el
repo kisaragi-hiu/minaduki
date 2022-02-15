@@ -331,14 +331,14 @@ a capture session."
   ;; Check if the requested BibTeX entry actually exists and fail
   ;; gracefully otherwise
   (if-let* ((entry (or (bibtex-completion-get-entry citekey)
-                       (kisaragi-notes//warn
+                       (minaduki//warn
                         :warning
                         "%s: Could not find the BibTeX entry" citekey)))
             ;; Depending on the templates used: run
             ;; `minaduki-capture//capture' or call `org-roam-find-file'
             (org-capture-templates
              (or orb-templates minaduki-capture/templates
-                 (kisaragi-notes//warn
+                 (minaduki//warn
                   :warning
                   "Could not find the requested templates")))
             ;; hijack org-capture-templates
@@ -370,7 +370,7 @@ a capture session."
             (citekey-formatted (format (or orb-citekey-format "%s") citekey))
             (title
              (or (bibtex-completion-get-value "title" entry)
-                 (kisaragi-notes//warn
+                 (minaduki//warn
                   :warning
                   "Title not found for this entry")
                  ;; this is not critical, the user may input their own
@@ -399,11 +399,11 @@ or `title' should be used for slug: %s not supported" orb-slug-source))))
                             (ref . ,citekey-formatted)
                             ,@(when-let (url (bibtex-completion-get-value "url" entry))
                                 `((url . ,url)))
-                            (slug . ,(kisaragi-notes//title-to-slug slug-source)))))
+                            (slug . ,(minaduki//title-to-slug slug-source)))))
                     (setq minaduki-capture/additional-template-props
                           (list :finalize 'find-file))
                     (minaduki-capture//capture))
-                (kisaragi-notes/open title)))
+                (minaduki/open title)))
           (orb--store-link-functions-advice 'remove)))
     (message "ORB: Something went wrong. Check the *Warnings* buffer")))
 
@@ -595,7 +595,7 @@ newly created note."
   ;; still exists.  But if the capture process was killed, our before hook
   ;; function did not run and therefore title is nil on `orb-plist'.
   (orb-register-hook-function get-title before nil
-    (orb-plist-put :title (cdar (kisaragi-notes//org-props '("title")))
+    (orb-plist-put :title (cdar (minaduki//org-props '("title")))
                    :immediate-finish
                    (plist-get org-capture-plist :immediate-finish)))
 
@@ -693,10 +693,10 @@ two or three universal arguments `\\[universal-argument]' are supplied."
 (defun orb-insert-non-ref (prefix)
   "Find a non-ref Org-roam file, and insert a relative org link to it at point.
 If PREFIX, downcase the title before insertion.  See
-`org-roam-insert' and `kisaragi-notes-completion//get-non-literature' for
+`org-roam-insert' and `minaduki-completion//get-non-literature' for
 details."
   (interactive "P")
-  (org-roam-insert prefix (kisaragi-notes-completion//get-non-literature)))
+  (org-roam-insert prefix (minaduki-completion//get-non-literature)))
 
 ;; ============================================================================
 ;;;; Orb note actions

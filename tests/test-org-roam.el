@@ -50,52 +50,52 @@
 
 (defun test-org-roam--teardown ()
   (org-roam-mode -1)
-  (delete-file kisaragi-notes/db-location)
+  (delete-file minaduki/db-location)
   (minaduki-db//close))
 
 (describe "Utils"
   (it "converts between calendar.el dates and YYYY-MM-DD date strings"
-    (expect (kisaragi-notes//date/calendar.el->ymd '(7 17 2019))
+    (expect (minaduki//date/calendar.el->ymd '(7 17 2019))
             :to-equal
             "2019-07-17")
-    (expect (kisaragi-notes//date/ymd->calendar.el "2012-01-02")
+    (expect (minaduki//date/ymd->calendar.el "2012-01-02")
             :to-equal
             '(1 2 2012)))
   (it "converts a title to a slug"
-    (expect (kisaragi-notes//title-to-slug "English")
+    (expect (minaduki//title-to-slug "English")
             :to-equal "english")
-    (expect (kisaragi-notes//title-to-slug "Text with space と漢字")
+    (expect (minaduki//title-to-slug "Text with space と漢字")
             :to-equal "text_with_space_と漢字")
-    (expect (kisaragi-notes//title-to-slug "many____underscores")
+    (expect (minaduki//title-to-slug "many____underscores")
             :to-equal "many_underscores")
     ;; Keep diacritics
-    (expect (kisaragi-notes//title-to-slug "äöü")
+    (expect (minaduki//title-to-slug "äöü")
             :to-equal "äöü")
     ;; Normalizes to composed from
-    (expect (kisaragi-notes//title-to-slug (string ?て #x3099))
+    (expect (minaduki//title-to-slug (string ?て #x3099))
             :to-equal (string ?で))
-    (expect (kisaragi-notes//title-to-slug "_starting and ending_")
+    (expect (minaduki//title-to-slug "_starting and ending_")
             :to-equal "starting_and_ending")
-    (expect (kisaragi-notes//title-to-slug "isn't alpha numeric")
+    (expect (minaduki//title-to-slug "isn't alpha numeric")
             :to-equal "isn_t_alpha_numeric"))
   (it "removes Org links from a string"
     (expect
-     (kisaragi-notes//remove-org-links
+     (minaduki//remove-org-links
       "Abc [[https://gnu.org][Link1]] def [[https://gnu.org][Link2]]")
      :to-equal
      "Abc Link1 def Link2")
     (expect
-     (kisaragi-notes//remove-org-links
+     (minaduki//remove-org-links
       "Abc [not a link]")
      :to-equal
      "Abc [not a link]")
     (expect
-     (kisaragi-notes//remove-org-links
+     (minaduki//remove-org-links
       "Abc [[https://google.com]]")
      :to-equal
      "Abc https://google.com")
     (expect
-     (kisaragi-notes//remove-org-links
+     (minaduki//remove-org-links
       "Abc [[https://google.com][Google]]")
      :to-equal
      "Abc Google")))
@@ -118,21 +118,21 @@
     ;; Enable "cite:" link parsing
     (org-link-set-parameters "cite")
     (it "extracts web keys"
-      (expect (test #'kisaragi-notes-extract/refs
+      (expect (test #'minaduki-extract/refs
                     "web_ref.org")
               :to-equal
               '(("website" . "//google.com/"))))
     (it "extracts cite keys"
-      (expect (test #'kisaragi-notes-extract/refs
+      (expect (test #'minaduki-extract/refs
                     "cite_ref.org")
               :to-equal
               '(("cite" . "mitsuha2007")))
-      (expect (test #'kisaragi-notes-extract/refs
+      (expect (test #'minaduki-extract/refs
                     "cite-ref.md")
               :to-equal
               '(("cite" . "sumire2019"))))
     (it "extracts all keys"
-      (expect (test #'kisaragi-notes-extract/refs
+      (expect (test #'minaduki-extract/refs
                     "multiple-refs.org")
               :to-have-same-items-as
               '(("cite" . "orgroam2020")
@@ -263,7 +263,7 @@
                 [,(test-org-roam--abs-path "foo.org")
                  ,(test-org-roam--abs-path "bar.org")])))
     (xit "extracts Org citations"
-      (expect (->> (test #'kisaragi-notes-extract/citation
+      (expect (->> (test #'minaduki-extract/citation
                          "org-cite.org")
                    ;; Drop the link properties
                    (--map (seq-take it 3)))
@@ -279,7 +279,7 @@
                  "cite"])))))
 
 (describe "Tag extraction"
-  :var (kisaragi-notes/tag-sources)
+  :var (minaduki/tag-sources)
   (before-all
     (test-org-roam--init))
 
@@ -298,13 +298,13 @@
               :to-equal
               '("hello" "tag2" "tag3")))
     (it "extracts hashtag style tags, but only from frontmatter"
-      (expect (test #'kisaragi-notes-extract/tags-hashtag-frontmatter
+      (expect (test #'minaduki-extract/tags-hashtag-frontmatter
                     "tags/tag.md")
               :to-equal
               '("#abc" "#def" "#ghi")))
 
     (it "extracts hashtag style tags"
-      (expect (test #'kisaragi-notes-extract/tags-hashtag
+      (expect (test #'minaduki-extract/tags-hashtag
                     "tags/tag.md")
               :to-equal
               '("#abc" "#def" "#ghi" "#not-frontmatter-a" "#not-front-matter-b")))
@@ -361,16 +361,16 @@
               :to-equal
               '("nested")))
 
-    (describe "uses kisaragi-notes/tag-sources correctly"
+    (describe "uses minaduki/tag-sources correctly"
       (it "'(prop)"
-        (expect (let ((kisaragi-notes/tag-sources '(org-roam--extract-tags-prop)))
+        (expect (let ((minaduki/tag-sources '(org-roam--extract-tags-prop)))
                   (test #'org-roam--extract-tags
                         "tags/tag.org"))
                 :to-equal
                 '("t1" "t2 with space" "t3" "t4 second-line")))
       (it "'(prop all-directories)"
-        (expect (let ((kisaragi-notes/tag-sources '(org-roam--extract-tags-prop
-                                                    org-roam--extract-tags-all-directories)))
+        (expect (let ((minaduki/tag-sources '(org-roam--extract-tags-prop
+                                              org-roam--extract-tags-all-directories)))
                   (test #'org-roam--extract-tags
                         "tags/tag.org"))
                 :to-equal

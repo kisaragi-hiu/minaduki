@@ -197,7 +197,7 @@ into a digraph."
       (dolist (node nodes)
         (let* ((file (xml-escape-string (car node)))
                (title (or (cadr node)
-                          (kisaragi-notes//path-to-title file)))
+                          (minaduki//path-to-title file)))
                (shortened-title (pcase org-roam-graph-shorten-titles
                                   (`truncate (s-truncate org-roam-graph-max-title-length title))
                                   (`wrap (s-word-wrap org-roam-graph-max-title-length title))

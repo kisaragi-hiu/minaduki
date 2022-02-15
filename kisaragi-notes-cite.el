@@ -9,7 +9,7 @@
 (require 'oc)
 (require 'org-element)
 
-(org-cite-register-processor 'kisaragi-notes
+(org-cite-register-processor 'minaduki
   :follow (lambda (datum _)
             (let ((key
                    ;; Taken from the `basic' processor's follow function
@@ -20,11 +20,11 @@
                        (keys
                         (or (completing-read "Select citation key: " keys nil t)
                             (user-error "Aborted")))))))
-              (kisaragi-notes/literature-note-actions key))))
+              (minaduki/literature-note-actions key))))
 
 ;;;###autoload
 (with-eval-after-load 'oc
-  (setq org-cite-follow-processor 'kisaragi-notes))
+  (setq org-cite-follow-processor 'minaduki))
 
 (provide 'kisaragi-notes-cite)
 

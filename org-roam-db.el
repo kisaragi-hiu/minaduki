@@ -52,14 +52,14 @@
 
 (defvar org-agenda-files)
 (declare-function org-roam--extract-titles                 "org-roam-extract")
-(declare-function kisaragi-notes-extract/refs              "org-roam-extract")
+(declare-function minaduki-extract/refs              "org-roam-extract")
 (declare-function org-roam--extract-tags                   "org-roam-extract")
 (declare-function org-roam--extract-ids                    "org-roam-extract")
 (declare-function org-roam--extract-links                  "org-roam-extract")
 (declare-function org-roam--list-all-files                 "org-roam")
 
 ;;;; Options
-(defcustom kisaragi-notes/db-location (expand-file-name "org-roam.db" user-emacs-directory)
+(defcustom minaduki/db-location (expand-file-name "org-roam.db" user-emacs-directory)
   "Full path to the cache database.
 
 All cache will be saved here regardless of which project a note
@@ -117,9 +117,9 @@ Initializes and stores the database, and the database connection.
 Performs a database upgrade when required."
   (unless (and minaduki-db//connection
                (emacsql-live-p minaduki-db//connection))
-    (let ((initialize? (not (file-exists-p kisaragi-notes/db-location))))
-      (make-directory (file-name-directory kisaragi-notes/db-location) t)
-      (let ((conn (emacsql-sqlite3 kisaragi-notes/db-location)))
+    (let ((initialize? (not (file-exists-p minaduki/db-location))))
+      (make-directory (file-name-directory minaduki/db-location) t)
+      (let ((conn (emacsql-sqlite3 minaduki/db-location)))
         (set-process-query-on-exit-flag (emacsql-process conn) nil)
         (setq minaduki-db//connection conn)
         (when initialize?
@@ -220,7 +220,7 @@ This function is called on `minaduki-db/file-update-timer'."
 ;;;;; Initialization
 (defun minaduki-db//initialized-p ()
   "Whether the Org-roam cache has been initialized."
-  (and (file-exists-p kisaragi-notes/db-location)
+  (and (file-exists-p minaduki/db-location)
        (> (caar (minaduki-db/query [:select (funcall count) :from titles]))
           0)))
 
@@ -233,7 +233,7 @@ This function is called on `minaduki-db/file-update-timer'."
 (defun minaduki-db/clear ()
   "Clears all entries in the Org-roam cache."
   (interactive)
-  (when (file-exists-p kisaragi-notes/db-location)
+  (when (file-exists-p minaduki/db-location)
     (dolist (table (mapcar #'car minaduki-db//table-schemata))
       (minaduki-db/query `[:delete :from ,table]))))
 
@@ -250,11 +250,11 @@ This is equivalent to removing the node from the graph."
 (defun minaduki-db//insert-meta (&optional update-p)
   "Update the metadata of the current buffer into the cache.
 If UPDATE-P is non-nil, first remove the meta for the file in the database."
-  (let* ((file (or kisaragi-notes//file-name (buffer-file-name)))
+  (let* ((file (or minaduki//file-name (buffer-file-name)))
          (attr (file-attributes file))
          (atime (file-attribute-access-time attr))
          (mtime (file-attribute-modification-time attr))
-         (hash (kisaragi-notes//compute-content-hash)))
+         (hash (minaduki//compute-content-hash)))
     (when update-p
       (minaduki-db/query [:delete :from files
                           :where (= file $s1)]
@@ -268,9 +268,9 @@ If UPDATE-P is non-nil, first remove the meta for the file in the database."
   "Update the titles of the current buffer into the cache.
 If UPDATE-P is non-nil, first remove titles for the file in the database.
 Returns the number of rows inserted."
-  (let* ((file (or kisaragi-notes//file-name (buffer-file-name)))
+  (let* ((file (or minaduki//file-name (buffer-file-name)))
          (titles (or (org-roam--extract-titles)
-                     (list (kisaragi-notes//path-to-title file))))
+                     (list (minaduki//path-to-title file))))
          (rows (mapcar (lambda (title)
                          (vector file title))
                        titles)))
@@ -287,13 +287,13 @@ Returns the number of rows inserted."
 (defun minaduki-db//insert-refs (&optional update-p)
   "Update the refs of the current buffer into the cache.
 If UPDATE-P is non-nil, first remove the ref for the file in the database."
-  (let ((file (or kisaragi-notes//file-name (buffer-file-name)))
+  (let ((file (or minaduki//file-name (buffer-file-name)))
         (count 0))
     (when update-p
       (minaduki-db/query [:delete :from refs
                           :where (= file $s1)]
                          file))
-    (when-let ((refs (kisaragi-notes-extract/refs)))
+    (when-let ((refs (minaduki-extract/refs)))
       (dolist (ref refs)
         (let ((key (cdr ref))
               (type (car ref)))
@@ -304,7 +304,7 @@ If UPDATE-P is non-nil, first remove the ref for the file in the database."
                  (list (vector key file type)))
                 (cl-incf count))
             (error
-             (kisaragi-notes//warn
+             (minaduki//warn
               :error
               "Duplicate ref %s in:\n\nA: %s\nB: %s\n\nskipping..."
               key
@@ -319,7 +319,7 @@ If UPDATE-P is non-nil, first remove the ref for the file in the database."
   "Update the file links of the current buffer in the cache.
 If UPDATE-P is non-nil, first remove the links for the file in the database.
 Return the number of rows inserted."
-  (let ((file (or kisaragi-notes//file-name (buffer-file-name))))
+  (let ((file (or minaduki//file-name (buffer-file-name))))
     (when update-p
       (minaduki-db/query [:delete :from links
                           :where (= source $s1)]
@@ -337,7 +337,7 @@ Return the number of rows inserted."
   "Update the ids of the current buffer into the cache.
 If UPDATE-P is non-nil, first remove ids for the file in the database.
 Returns the number of rows inserted."
-  (let ((file (or kisaragi-notes//file-name (buffer-file-name))))
+  (let ((file (or minaduki//file-name (buffer-file-name))))
     (when update-p
       (minaduki-db/query [:delete :from ids
                           :where (= file $s1)]
@@ -351,7 +351,7 @@ Returns the number of rows inserted."
                ids)
               (length ids))
           (error
-           (kisaragi-notes//warn
+           (minaduki//warn
             :error
             "Duplicate IDs in %s, one of:\n\n%s\n\nskipping..."
             (aref (car ids) 1)
@@ -364,7 +364,7 @@ Returns the number of rows inserted."
   "Insert tags for the current buffer into the Org-roam cache.
 If UPDATE-P is non-nil, first remove tags for the file in the database.
 Return the number of rows inserted."
-  (let* ((file (or kisaragi-notes//file-name (buffer-file-name)))
+  (let* ((file (or minaduki//file-name (buffer-file-name)))
          (tags (org-roam--extract-tags file)))
     (when update-p
       (minaduki-db/query [:delete :from tags
@@ -538,7 +538,7 @@ If the file exists, update the cache with information."
   "Build the cache for `org-directory'.
 If FORCE, force a rebuild of the cache from scratch."
   (interactive "P")
-  (when force (delete-file kisaragi-notes/db-location))
+  (when force (delete-file minaduki/db-location))
   (minaduki-db//close) ;; Force a reconnect
   (minaduki-db) ;; To initialize the database, no-op if already initialized
   (let* ((gc-cons-threshold minaduki-db/gc-threshold)
@@ -549,7 +549,7 @@ If FORCE, force a rebuild of the cache from scratch."
           db-files (minaduki-db//fetch-all-files-hash))
     (dolist-with-progress-reporter (file dir-files)
         "(org-roam) Finding modified files"
-      (let ((content-hash (kisaragi-notes//compute-content-hash file)))
+      (let ((content-hash (minaduki//compute-content-hash file)))
         (unless (string= content-hash (gethash file db-files))
           (push (cons file content-hash) modified-files)))
       (remhash file db-files))
@@ -573,7 +573,7 @@ If FORCE, force a rebuild of the cache from scratch."
   "Update Org-roam cache for FILE-PATH.
 If the file does not exist anymore, remove it from the cache.
 If the file exists, update the cache with information."
-  (let ((content-hash (kisaragi-notes//compute-content-hash file-path))
+  (let ((content-hash (minaduki//compute-content-hash file-path))
         (db-hash (minaduki-db//fetch-file-hash file-path)))
     (unless (string= content-hash db-hash)
       (minaduki-db//update-files (list (cons file-path content-hash)))
@@ -592,12 +592,12 @@ FILE-HASH-PAIRS is a list of (file . hash) pairs."
          (ref-count 0)
          (modified-count 0))
     ;; Clear existing cache entries so that we can put in new versions
-    (kisaragi-notes//for "Clearing files (%s/%s)..."
+    (minaduki//for "Clearing files (%s/%s)..."
         (file . _) file-hash-pairs
       (minaduki-db//clear-file file))
     ;; Process IDs first to eliminate the need to read the file to
     ;; check if the ID really exists, making link extraction cheaper
-    (kisaragi-notes//for "Processing IDs (%s/%s)..."
+    (minaduki//for "Processing IDs (%s/%s)..."
         (file . contents-hash) file-hash-pairs
       (let* ((attr (file-attributes file))
              (atime (file-attribute-access-time attr))
@@ -613,12 +613,12 @@ FILE-HASH-PAIRS is a list of (file . hash) pairs."
           (file-error
            (setq error-count (1+ error-count))
            (minaduki-db//clear-file file)
-           (kisaragi-notes//warn
+           (minaduki//warn
             :warning
             "Skipping unreadable file while building cache: %s" file)))))
     ;; Process titles and tags first to allow links to depend on
     ;; titles later
-    (kisaragi-notes//for "Processing titles and tags (%s/%s)..."
+    (minaduki//for "Processing titles and tags (%s/%s)..."
         (file . _) file-hash-pairs
       (condition-case nil
           (org-roam--with-temp-buffer file
@@ -627,11 +627,11 @@ FILE-HASH-PAIRS is a list of (file . hash) pairs."
         (file-error
          (setq error-count (1+ error-count))
          (minaduki-db//clear-file file)
-         (kisaragi-notes//warn
+         (minaduki//warn
           :warning
           "Skipping unreadable file while building cache: %s" file))))
     ;; Process links and ref / cite links
-    (kisaragi-notes//for "Processing links (%s/%s)..."
+    (minaduki//for "Processing links (%s/%s)..."
         (file . _) file-hash-pairs
       (condition-case nil
           (org-roam--with-temp-buffer file
@@ -641,7 +641,7 @@ FILE-HASH-PAIRS is a list of (file . hash) pairs."
         (file-error
          (setq error-count (1+ error-count))
          (minaduki-db//clear-file file)
-         (kisaragi-notes//warn
+         (minaduki//warn
           :warning
           "Skipping unreadable file while building cache: %s" file))))
 

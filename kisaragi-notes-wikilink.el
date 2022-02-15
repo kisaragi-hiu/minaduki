@@ -44,7 +44,7 @@
 (require 'org-element)
 
 (declare-function  minaduki//find-file                  "org-roam")
-(declare-function  kisaragi-notes/open                  "org-roam")
+(declare-function  minaduki/open                  "org-roam")
 (declare-function org-roam-format-link                  "org-roam")
 
 ;;; the roam: link
@@ -63,7 +63,7 @@ the link."
       ("file"
        (if loc
            (minaduki//find-file loc)
-         (kisaragi-notes/open desc)))
+         (minaduki/open desc)))
       ("id"
        (org-goto-marker-or-bmk mkr)))))
 
@@ -116,7 +116,7 @@ When NO-INTERACTIVE, return nil if there are multiple options."
       (_
        (unless no-interactive
          (completing-read "Select file: "
-                          (kisaragi-notes-completion//mark-category files 'file)))))))
+                          (minaduki-completion//mark-category files 'file)))))))
 
 (defun org-roam-link--get-id-from-headline (headline &optional file)
   "Return (marker . id) correspondng to HEADLINE in FILE.

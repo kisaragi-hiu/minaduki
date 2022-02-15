@@ -19,8 +19,8 @@
 
 (declare-function minaduki-db/query "org-roam-db")
 
-(defun kisaragi-notes//warn (level message &rest args)
-  "Display a warning for kisaragi-notes at LEVEL.
+(defun minaduki//warn (level message &rest args)
+  "Display a warning for minaduki at LEVEL.
 
 MESSAGE and ARGS are formatted by `format-message'.
 
@@ -33,7 +33,7 @@ This is a convenience wrapper around `lwarn'. Difference:
 
 ;;; org-link-abbrev
 
-(defun kisaragi-notes//apply-link-abbrev (path)
+(defun minaduki//apply-link-abbrev (path)
   "Apply `org-link-abbrev-alist' to PATH.
 
 For example, if `org-link-abbrev-alist' maps \"x\" to \"/home/\",
@@ -78,7 +78,7 @@ In Markdown, TYPE has no effect."
               target id)))
     (org-link-make-string
      (if (string-equal type "file")
-         (kisaragi-notes//apply-link-abbrev target)
+         (minaduki//apply-link-abbrev target)
        (concat type ":" target))
      (if (functionp org-roam-link-title-format)
          (funcall org-roam-link-title-format description type)
@@ -97,7 +97,7 @@ In Markdown, TYPE has no effect."
   "Open FILE using `org-roam-find-file-function' or `find-file'."
   (funcall (or org-roam-find-file-function #'find-file) file))
 
-(defun kisaragi-notes//compute-content-hash (&optional file)
+(defun minaduki//compute-content-hash (&optional file)
   "Compute the hash of the contents of FILE or the current buffer."
   (if file
       (with-temp-buffer
@@ -108,7 +108,7 @@ In Markdown, TYPE has no effect."
      (secure-hash 'sha1 (current-buffer)))))
 
 ;; `org-roam--extract-global-props'
-(defun kisaragi-notes//org-props (props)
+(defun minaduki//org-props (props)
   "Extract PROPS from the current Org buffer.
 Props are extracted from both the file-level property drawer (if
 any), and Org keywords. Org keywords take precedence."
@@ -124,7 +124,7 @@ any), and Org keywords. Org keywords take precedence."
           (push (cons prop v) ret))))
     ret))
 
-(defsubst kisaragi-notes//org-prop (prop)
+(defsubst minaduki//org-prop (prop)
   "Return values of PROP as a list.
 
 Given an Org file
@@ -133,11 +133,11 @@ Given an Org file
   #+prop1: abcdef
   #+prop1: ghi
 
-\(kisaragi-notes//org-prop \"title\") -> '(\"abc\")
-\(kisaragi-notes//org-prop \"prop1\") -> '(\"abcdef\" \"ghi\")"
-  (nreverse (mapcar #'cdr (kisaragi-notes//org-props (list prop)))))
+\(minaduki//org-prop \"title\") -> '(\"abc\")
+\(minaduki//org-prop \"prop1\") -> '(\"abcdef\" \"ghi\")"
+  (nreverse (mapcar #'cdr (minaduki//org-props (list prop)))))
 
-(defmacro kisaragi-notes//for (message var sequence &rest body)
+(defmacro minaduki//for (message var sequence &rest body)
   "Iterate BODY over SEQUENCE.
 
 VAR is the variable bound for each element in SEQUENCE. This is
@@ -156,7 +156,7 @@ SEQUENCE."
               ,@body)))
 
 ;; From `orb--with-message!'
-(defmacro kisaragi-notes//with-message (message &rest body)
+(defmacro minaduki//with-message (message &rest body)
   "Put MESSAGE before and after BODY.
 
 Echo \"MESSAGE...\", run BODY, then echo \"MESSAGE...done\"
@@ -183,7 +183,7 @@ prepends TAGS to STR, appends TAGS to STR or omits TAGS from STR."
                                      'face 'org-roam-tag))))
     ('omit str)))
 
-(defun kisaragi-notes//remove-org-links (str)
+(defun minaduki//remove-org-links (str)
   "Remove Org bracket links from STR."
   (let ((links (s-match-strings-all org-link-bracket-re str)))
     (--> (cl-loop for link in links
@@ -196,7 +196,7 @@ prepends TAGS to STR, appends TAGS to STR or omits TAGS from STR."
 
 ;;;; Dates
 
-(defun kisaragi-notes//date/ymd->calendar.el (yyyy-mm-dd)
+(defun minaduki//date/ymd->calendar.el (yyyy-mm-dd)
   "Convert date string YYYY-MM-DD to calendar.el list (MM DD YYYY)."
   (pcase-let ((`(,year ,month ,day) (cdr (s-match (rx (group (= 4 digit)) "-"
                                                       (group (= 2 digit)) "-"
@@ -207,11 +207,11 @@ prepends TAGS to STR, appends TAGS to STR or omits TAGS from STR."
      (string-to-number day)
      (string-to-number year))))
 
-(defun kisaragi-notes//date/calendar.el->ymd (calendar-el-date)
+(defun minaduki//date/calendar.el->ymd (calendar-el-date)
   "Convert CALENDAR-EL-DATE (a list (MM DD YYYY)) to a date string YYYY-MM-DD."
   (apply #'format "%3$04d-%1$02d-%2$02d" calendar-el-date))
 
-(defun kisaragi-notes//today (&optional n)
+(defun minaduki//today (&optional n)
   "Return today's date, taking `org-extend-today-until' into account.
 
 Return values look like \"2020-01-23\".
@@ -240,7 +240,7 @@ means tomorrow, and N = -1 means yesterday."
       (setq ext (org-roam--file-name-extension (file-name-sans-extension path))))
     (member ext org-roam-file-extensions)))
 
-(defsubst kisaragi-notes//excluded? (file)
+(defsubst minaduki//excluded? (file)
   "Should FILE be excluded from indexing?"
   (and org-roam-file-exclude-regexp
        (string-match-p org-roam-file-exclude-regexp file)))
@@ -249,13 +249,13 @@ means tomorrow, and N = -1 means yesterday."
   "Return t if FILE is part of Org-roam system, nil otherwise.
 If FILE is not specified, use the current buffer's file-path."
   (when-let ((path (or file
-                       kisaragi-notes//file-name
+                       minaduki//file-name
                        (-> (buffer-base-buffer)
                            (buffer-file-name)))))
     (save-match-data
       (and
        (org-roam--org-file-p path)
-       (not (kisaragi-notes//excluded? path))
+       (not (minaduki//excluded? path))
        (f-descendant-of-p path (expand-file-name org-directory))))))
 
 ;;;; File functions and predicates
@@ -285,7 +285,7 @@ E.g. (\".org\") => (\"*.org\" \"*.org.gpg\")"
         result)
     (dolist (file (directory-files-recursively dir regexp nil nil t))
       (when (and (file-readable-p file)
-                 (not (kisaragi-notes//excluded? file)))
+                 (not (minaduki//excluded? file)))
         (push file result)))
     result))
 
@@ -294,7 +294,7 @@ E.g. (\".org\") => (\"*.org\" \"*.org.gpg\")"
 Use Ripgrep if we can find it."
   (if-let ((rg (executable-find "rg")))
       (-some->> (org-roam--list-files-rg rg dir)
-        (-remove #'kisaragi-notes//excluded?)
+        (-remove #'minaduki//excluded?)
         (-map #'f-expand))
     (org-roam--list-files-elisp dir)))
 
@@ -304,13 +304,13 @@ Use Ripgrep if we can find it."
 
 ;;;; Title/Path/Slug conversion
 
-(defun kisaragi-notes//path-to-title (path)
+(defun minaduki//path-to-title (path)
   "Convert PATH to a string that's suitable as a title."
   (-> path
       (f-relative (f-expand org-directory))
       f-no-ext))
 
-(defun kisaragi-notes//title-to-slug (title)
+(defun minaduki//title-to-slug (title)
   "Convert TITLE to a filename-suitable slug."
   (let ((slug
          (--> title
@@ -321,7 +321,7 @@ Use Ripgrep if we can find it."
               ;; use regexp.
               (--reduce-from
                (replace-regexp-in-string (car it) (cdr it) acc) it
-               kisaragi-notes/slug-replacements))))
+               minaduki/slug-replacements))))
     (downcase slug)))
 
 ;;;; File utilities
@@ -422,7 +422,7 @@ If FILE, set `org-roam-temp-file-name' to file and insert its contents."
                         org-mode))
            (when ,file
              (insert-file-contents ,file)
-             (setq-local kisaragi-notes//file-name ,file)
+             (setq-local minaduki//file-name ,file)
              (setq-local default-directory (file-name-directory ,file)))
            ,@body)))))
 
