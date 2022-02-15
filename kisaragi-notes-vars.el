@@ -17,20 +17,10 @@
   :link '(url-link :tag "Github" "https://github.com/org-roam/org-roam")
   :link '(url-link :tag "Online Manual" "https://www.orgroam.com/manual.html"))
 
-(defgroup org-roam-bibtex nil
+(defgroup minaduki-bibtex nil
   "Bibtex-completion integration for Org-roam."
   :group 'org-roam
   :prefix "orb-")
-
-(defgroup orb-note-actions nil
-  "Orb Note Actions - run actions in note's context."
-  :group 'org-roam-bibtex
-  :prefix "orb-note-actions-")
-
-(defgroup orb-autokey nil
-  "Automatic generation of BibTeX citation keys."
-  :group 'org-roam-bibtex
-  :prefix "orb-autokey-")
 
 (defgroup org-roam-faces nil
   "Faces used by Org-roam."
@@ -301,7 +291,7 @@ See `orb-edit-notes' for details."
   :type '(choice
           (const :tag "Yes" t)
           (const :tag "No" nil))
-  :group 'org-roam-bibtex)
+  :group 'minaduki-bibtex)
 
 (defcustom orb-templates
   '(("r" "ref" plain
@@ -313,7 +303,7 @@ See `orb-edit-notes' for details."
   "Template to use when creating a new note.
 See `orb-edit-notes' for details."
   :type '(list)
-  :group 'org-roam-bibtex)
+  :group 'minaduki-bibtex)
 
 (defcustom orb-include-citekey-in-titles nil
   "Non-nil to include the citekey in titles.
@@ -321,7 +311,7 @@ See `orb-edit-notes' for details."
   :type '(choice
           (const :tag "Yes" t)
           (const :tag "No" nil))
-  :group 'org-roam-bibtex)
+  :group 'minaduki-bibtex)
 
 (defcustom orb-preformat-keywords
   '("citekey" "entry-type" "date" "pdf?" "note?" "file"
@@ -359,7 +349,7 @@ to t (default). See also `orb-edit-notes' for further details.
 Consult bibtex-completion package for additional information
 about BibTeX field names."
   :type '(repeat :tag "BibTeX field names" string)
-  :group 'org-roam-bibtex)
+  :group 'minaduki-bibtex)
 
 (defcustom orb-process-file-keyword t
   "Whether to treat the file wildcards specially during template preformatting.
@@ -384,7 +374,7 @@ of the file names based on file extensions.
 
 See also `orb-file-field-extensions' for filtering file names
 based on their extension."
-  :group 'org-roam-bibtex
+  :group 'minaduki-bibtex
   :type '(choice
           (const :tag "Yes" t)
           (const :tag "No" nil)
@@ -401,7 +391,7 @@ The ALIAS can be used instead of the FIELD anywhere in ORB's
 configuration.  This variable is useful to replace
 `bibtex-completion''s internal '='-embraced virtual fields with
 more casual alternatives."
-  :group 'org-roam-bibtex
+  :group 'minaduki-bibtex
   :type '(repeat
           (cons (string :tag "Field name")
                 (string :tag "Alias name"))))
@@ -415,7 +405,7 @@ Set it to nil to keep all file names.  You will be prompted to choose one.
 
 The name of the file field is determined by
   `bibtex-completion-pdf-field' (default \"file\")."
-  :group 'org-roam-bibtex
+  :group 'minaduki-bibtex
   :type '(choice
           (string)
           (repeat :tag "List of extensions" (string))))
@@ -423,7 +413,7 @@ The name of the file field is determined by
 (defcustom orb-citekey-format "%s"
   "Format string for the citekey when capturing new ref notes."
   :type 'string
-  :group 'org-roam-bibtex)
+  :group 'minaduki-bibtex)
 
 (defcustom orb-slug-source 'citekey
   "What should be used as a source for creating the note's slug.
@@ -440,7 +430,7 @@ possibly other things."
   :type '(choice
           (const citekey)
           (const title))
-  :group 'org-roam-bibtex)
+  :group 'minaduki-bibtex)
 
 (defcustom orb-ignore-bibtex-store-link-functions
   '(org-bibtex-store-link)
@@ -466,7 +456,7 @@ used to store a link to the BibTeX buffer.  See
 `org-capture-templates' on how to use the link in your templates."
   :type '(repeat (function))
   :risky t
-  :group 'org-roam-bibtex)
+  :group 'minaduki-bibtex)
 
 (defcustom orb-insert-link-description 'title
   "What should be used as link description for links created with `orb-insert'.
@@ -488,7 +478,7 @@ The default value set by this variable can be overriden by
 calling `orb-insert' with an appropriated numerical prefix
 argument.  See the docstring of the function for more
 information."
-  :group 'org-roam-bibtex
+  :group 'minaduki-bibtex
   :type '(choice
           (const :tag "Title" title)
           (const :tag "Citation key" citekey)
@@ -504,7 +494,7 @@ information."
 (defcustom orb-insert-generic-candidates-format 'key
   "Format of selection candidates for `orb-insert' with `generic' interface.
 Possible values are `key' and `entry'."
-  :group 'org-roam-bibtex
+  :group 'minaduki-bibtex
   :type '(choice
           (const key)
           (const entry)))

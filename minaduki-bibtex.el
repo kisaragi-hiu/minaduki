@@ -1,4 +1,4 @@
-;;; org-roam-bibtex.el --- Org Roam meets BibTeX -*- lexical-binding: t -*-
+;;; minaduki-bibtex.el --- BibTeX integration -*- lexical-binding: t -*-
 
 ;; Copyright © 2020 Jethro Kuan <jethrokuan95@gmail.com>
 ;; Copyright © 2020 Mykhailo Shevchuk <mail@mshevchuk.com>
@@ -7,10 +7,6 @@
 ;; Author: Leo Vivier <leo.vivier+dev@gmail.com>
 ;; 	Mykhailo Shevchuk <mail@mshevchuk.com>
 ;; 	Jethro Kuan <jethrokuan95@gmail.com>
-;; URL: https://github.com/org-roam/org-roam-bibtex
-;; Keywords: bib, hypermedia, outlines, wp
-;; Verstion 0.4.0
-;; Package-Requires: ((emacs "27.1") (bibtex-completion "2.0.0"))
 
 ;; Soft dependencies: projectile, persp-mode
 
@@ -40,10 +36,10 @@
 ;;
 ;; To use it:
 ;;
-;; call interactively `org-roam-bibtex-mode' or
-;; call (org-roam-bibtex-mode +1) from Lisp.
+;; call interactively `minaduki-bibtex-mode' or
+;; call (minaduki-bibtex-mode +1) from Lisp.
 ;;
-;; After enabling `org-roam-bibtex-mode', the function
+;; After enabling `minaduki-bibtex-mode', the function
 ;; `orb-edit-notes' will shadow `bibtex-completion-edit-notes' in
 ;; Helm-bibtex, Ivy-bibtex.
 ;;
@@ -669,7 +665,7 @@ link will be inserted.
 If the note does not exist yet, it will be created using
 `orb-edit-notes' function.
 
-\\<universal-argument-map>\\<org-roam-bibtex-mode-map> The
+\\<universal-argument-map>\\<minaduki-bibtex-mode-map> The
 customization option `orb-insert-link-description' determines
 what will be used as the link's description.  It is possible to
 override the default value with numerical prefix ARG:
@@ -735,7 +731,7 @@ details."
 ;;;; Orb note actions
 ;; ============================================================================
 ;; ============================================================================
-;;;; Org-roam-bibtex minor mode
+;;;; minaduki-bibtex minor mode
 ;; ============================================================================
 
 (defun orb-edit-notes-ad (keys)
@@ -748,9 +744,54 @@ first key from KEYS will actually be used."
   "Update `orb-notes-cache' before `bibtex-completion-parse-bibliography'."
   (orb-make-notes-cache))
 
-(provide 'org-roam-bibtex)
+;;;; Cache all refs.
+;; This is because `orb-find-note-file' is called on every existing
+;; cite key when `bibtex-completion' is preparing to display entries.
+;;
+;; Rapidly querying the DB is slower than `gethash' on a hash table.
+;; It's about an order of magnitude slower on my device. Try it:
+;;
+;;     ;; Fetch a list of citekeys
+;;     (let ((cite-refs (->> (org-roam--get-ref-path-completions nil "cite")
+;;                        (--map (plist-get (cdr it) :ref)))))
+;;       (list
+;;        (benchmark-run 10
+;;          (progn
+;;            (setq orb-notes-cache nil)
+;;            (mapc #'orb-find-note-file cite-refs)))
+;;        (benchmark-run 10
+;;          (mapc (lambda (key)
+;;                  (minaduki-db/query
+;;                   [:select [file] :from refs
+;;                    :where (= ref $s1)]
+;;                   key))
+;;                cite-refs))))
+;;
+;; -> ((0.24450254200000002 0 0.0) (3.7526077939999998 0 0.0))
 
-;;; org-roam-bibtex.el ends here
+(defvar orb-notes-cache nil
+  "Cache of ORB notes.")
+
+(defun orb-make-notes-cache ()
+  "Update ORB notes hash table `orb-notes-cache'."
+  (let* ((db-entries (org-roam--get-ref-path-completions nil "cite"))
+         (size (round (/ (length db-entries) 0.8125))) ;; ht oversize
+         (ht (make-hash-table :test #'equal :size size)))
+    (dolist (entry db-entries)
+      (let* ((key (car entry))
+             (value (plist-get (cdr (assoc key db-entries)) :path)))
+        (puthash key value ht)))
+    (setq orb-notes-cache ht)))
+
+(defun orb-find-note-file (citekey)
+  "Find note file associated with CITEKEY.
+Returns the path to the note file, or nil if it doesn’t exist."
+  (gethash citekey (or orb-notes-cache
+                       (orb-make-notes-cache))))
+
+(provide 'minaduki-bibtex)
+
+;;; minaduki-bibtex.el ends here
 ;; Local Variables:
 ;; coding: utf-8
 ;; fill-column: 79

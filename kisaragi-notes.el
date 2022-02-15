@@ -68,7 +68,7 @@
   (require 'kisaragi-notes-cite))
 
 (require 'org-roam-buffer)
-(require 'org-roam-bibtex)
+(require 'minaduki-bibtex)
 (require 'org-roam-capture)
 (require 'org-roam-extract)
 (require 'org-roam-db)

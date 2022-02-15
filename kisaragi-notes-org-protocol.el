@@ -62,7 +62,7 @@
 ;;; Code:
 (require 'org-protocol)
 (require 'kisaragi-notes)
-(require 'org-roam-bibtex) ; orb-edit-notes
+(require 'minaduki-bibtex) ; orb-edit-notes
 
 ;;;; Functions
 
