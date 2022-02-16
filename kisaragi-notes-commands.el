@@ -455,8 +455,9 @@ details."
   (interactive)
   (minaduki/open
    (minaduki-completion//read-note
-    initial-prompt
-    (car (minaduki-completion//get-non-literature)))))
+    :initial-input initial-prompt
+    :completions (car (minaduki-completion//get-non-literature))
+    :prompt "Open non-literature note: ")))
 
 ;;;###autoload
 (defun minaduki/open-directory ()
@@ -522,7 +523,7 @@ The index file is specified in this order:
   ;; Some usages:
   ;; (minaduki/open title)
   ;; (minaduki/open
-  ;;   (minaduki-completion//read-note initial-input))
+  ;;   (minaduki-completion//read-note :initial-input initial-input))
   "Find and open the note ENTRY.
 
 ENTRY is a plist (:path PATH :title TITLE). It can also be a

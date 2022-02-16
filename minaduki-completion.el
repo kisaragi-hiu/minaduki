@@ -153,7 +153,8 @@ Embark to create what are in effect context menus."
       (_
        (all-completions str seq pred)))))
 
-(defun minaduki-completion//read-note (&optional initial-input completions filter-fn)
+(cl-defun minaduki-completion//read-note
+    (&key initial-input completions filter-fn (prompt "Note: "))
   "Read a note from the repository.
 
 INITIAL-INPUT: passed to `completing-read'.
@@ -163,12 +164,14 @@ returned by `minaduki//get-title-path-completions'. When nil,
 `minaduki//get-title-path-completions' will be queried.
 
 FILTER-FN: completions will pass through this function first
-before being prompted for selection."
+before being prompted for selection.
+
+PROMPT: the prompt to use during completion. Default: \"Note: \""
   (let* ((completions (--> (or completions (minaduki//get-title-path-completions))
                            (if filter-fn
                                (funcall filter-fn it)
                              it)))
-         (selection (completing-read "Note: "
+         (selection (completing-read prompt
                                      (minaduki-completion//mark-category
                                       completions 'note)
                                      nil nil initial-input)))
