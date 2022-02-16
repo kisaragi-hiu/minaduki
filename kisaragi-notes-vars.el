@@ -106,11 +106,6 @@ Formatter may be a function that takes title as its only argument."
   :group 'org-roam
   :type 'boolean)
 
-(defcustom org-roam-prefer-id-links t
-  "If non-nil, use ID for linking instead where available."
-  :type 'boolean
-  :group 'org-roam)
-
 (defcustom org-roam-tag-separator ","
   "String to use to separate tags when `minaduki/tag-sources' is non-nil."
   :type 'string

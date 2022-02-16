@@ -61,21 +61,10 @@ Inverse of `org-link-expand-abbrev'."
 
 TYPE defaults to \"file\".
 
-In Org mode, if the file has an ID and `org-roam-prefer-id-links'
-is non-nil, return an ID link.
-
 In Markdown, TYPE has no effect."
   (setq type (or type "file"))
   (cond
    ((derived-mode-p 'org-mode)
-    (when (and org-roam-prefer-id-links (string-equal type "file"))
-      (-when-let (id (caar (minaduki-db/query [:select [id] :from ids
-                                               :where (= file $s1)
-                                               :and (= level 0)
-                                               :limit 1]
-                                              target)))
-        (setq type "id"
-              target id)))
     (org-link-make-string
      (if (string-equal type "file")
          (minaduki//apply-link-abbrev target)
