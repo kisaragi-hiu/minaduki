@@ -176,15 +176,15 @@ modified the description, and the description will not be
 updated. Else, update with NEW-DESC."
   (let (type path label new-label)
     (when-let ((link (org-element-lineage (org-element-context) '(link) t)))
-      (setq type (org-element-property :type link)
-            path (org-element-property :path link))
+      (setq path (org-element-property :path link))
       (when (and (string-equal (expand-file-name path) old-path)
                  (org-in-regexp org-link-bracket-re 1))
         (setq label (if (match-end 2)
                         (match-string-no-properties 2)
                       (org-link-unescape (match-string-no-properties 1))))
         (setq new-label (if (string-equal label old-desc) new-desc label))
-        (org-roam-format-link new-path new-label type)))))
+        (minaduki/format-link :target new-path
+                              :desc new-label)))))
 
 (defun org-roam--replace-link (old-path new-path &optional old-desc new-desc)
   "Replace Org-roam file links with path OLD-PATH to path NEW-PATH.

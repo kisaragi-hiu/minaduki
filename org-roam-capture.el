@@ -45,7 +45,6 @@
 (defvar org-roam-mode)
 
 (declare-function  minaduki//find-file                  "org-roam")
-(declare-function  org-roam-format-link                 "org-roam")
 (declare-function  org-roam-mode                        "org-roam")
 
 (defvar minaduki-capture//file-path nil

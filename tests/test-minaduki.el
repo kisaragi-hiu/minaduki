@@ -53,6 +53,32 @@
   (delete-file minaduki/db-location)
   (minaduki-db//close))
 
+(describe "New"
+  (it "formats Org links"
+    (cl-flet ((test-org (&rest args)
+                        (let ((major-mode 'org-mode))
+                          (apply #'minaduki/format-link args))))
+      (expect
+       (test-org "file:///tmp/abc.org")
+       :to-equal
+       "[[/tmp/abc.org]]")
+      (expect
+       (test-org "file:///tmp/abc.org" "ABC")
+       :to-equal
+       "[[/tmp/abc.org][ABC]]")
+      (expect
+       (test-org "https://kisaragi-hiu.com" "ABC")
+       :to-equal
+       "[[https://kisaragi-hiu.com][ABC]]")))
+  (it "formats Markdown links"
+    (cl-flet ((test-markdown (&rest args)
+                             (let ((major-mode 'markdown-mode))
+                               (apply #'minaduki/format-link args))))
+      (expect
+       (test-markdown "https://kisaragi-hiu.com" "ABC")
+       :to-equal
+       "[ABC](https://kisaragi-hiu.com)"))))
+
 (describe "Utils"
   (it "converts between calendar.el dates and YYYY-MM-DD date strings"
     (expect (minaduki//date/calendar.el->ymd '(7 17 2019))

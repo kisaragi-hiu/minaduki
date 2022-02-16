@@ -133,7 +133,8 @@ If DESCRIPTION is provided, use this as the link label.  See
                    (delete-region beg end)
                    (set-marker beg nil)
                    (set-marker end nil))
-                 (insert (org-roam-format-link target-file-path description type)))
+                 (insert (minaduki/format-link :target target-file-path
+                                               :desc description)))
                 (t
                  (let ((minaduki-capture//info `((title . ,title-with-tags)
                                                  (slug . ,(minaduki//title-to-slug title-with-tags))))

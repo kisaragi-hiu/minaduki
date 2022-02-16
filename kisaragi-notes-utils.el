@@ -56,6 +56,38 @@ Inverse of `org-link-expand-abbrev'."
           (throw 'ret (s-replace abbrev (concat key ":") path)))))
     (throw 'ret path)))
 
+(cl-defun minaduki/format-link (&key target desc)
+  "Format TARGET and DESC as a link according to the major mode.
+
+`org-link-abbrev-alist' is applied when in Org mode, unless
+TARGET is an HTTP link."
+  (let ((url? (s-matches? "https?://" target))
+        ;; - Allow `minaduki//apply-link-abbrev' to work even on file: links
+        ;; - Allow f.el to work in general
+        (target (s-replace-regexp "^file://" "" target)))
+    (cond ((derived-mode-p 'org-mode)
+           ;; Don't apply link-abbrev if TARGET is https or http
+           (unless url?
+             (setq target (minaduki//apply-link-abbrev target)))
+           (if (and (not desc) url?) ; plain url
+               target
+             (org-link-make-string target desc)))
+
+          ((derived-mode-p 'markdown-mode)
+           (cond ((and (not desc) url?)
+                  ;; plain URL links
+                  (format "<%s>" target))
+                 ((not desc)
+                  ;; Just a URL
+                  (format "[%s](%s)"
+                          (f-filename target)
+                          (f-relative target)))
+                 (t
+                  (format "[%s](%s)" desc target))))
+
+          ;; No common way to insert descriptions
+          (t target))))
+
 (defun org-roam-format-link (target &optional description type)
   "Format a link for TARGET and DESCRIPTION.
 

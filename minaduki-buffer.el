@@ -51,7 +51,6 @@
 
 (declare-function org-roam-mode               "org-roam")
 (declare-function minaduki//find-file         "org-roam")
-(declare-function org-roam-format-link        "org-roam")
 (declare-function org-roam-link-get-path      "kisaragi-notes-wikilink")
 
 (defcustom minaduki-buffer/position 'right
@@ -258,9 +257,9 @@ or to this file's ROAM_KEY.
         (setq props (seq-sort-by (lambda (p) (plist-get p :point)) #'< props))
         (insert "\n\n** "
                 ;; title link
-                (org-roam-format-link file-from
-                                      (minaduki//remove-org-links
-                                       (minaduki-db//fetch-title file-from)))
+                (minaduki/format-link :target file-from
+                                      :desc (minaduki//remove-org-links
+                                             (minaduki-db//fetch-title file-from)))
                 ;; tags
                 (or (-some->> (minaduki-db/query [:select tags :from tags
                                                   :where (= file $s1)]

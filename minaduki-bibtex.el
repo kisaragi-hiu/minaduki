@@ -543,7 +543,8 @@ Return the filename if it exists."
                 (let ((description (if lowercase
                                        (downcase description)
                                      description)))
-                  (insert (org-roam-format-link file description)))
+                  (insert (minaduki/format-link :target file
+                                                :desc description)))
               (let ((cite-link (if (boundp 'org-ref-default-citation-link)
                                    (concat org-ref-default-citation-link ":")
                                  "cite:")))

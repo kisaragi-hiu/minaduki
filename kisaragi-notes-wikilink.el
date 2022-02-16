@@ -45,7 +45,6 @@
 
 (declare-function  minaduki//find-file                  "org-roam")
 (declare-function  minaduki/open                  "org-roam")
-(declare-function org-roam-format-link                  "org-roam")
 
 ;;; the roam: link
 (org-link-set-parameters "roam"
