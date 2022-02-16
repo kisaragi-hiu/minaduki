@@ -103,19 +103,19 @@ If USE-STACK, include the parent paths as well."
                     name) cands))))
       (nreverse cands))))
 
-(defun org-roam-link--get-file-from-title (title &optional no-interactive)
+(defun minaduki-link//get-file-from-title (title &optional no-interactive)
   "Return the file path corresponding to TITLE.
-When NO-INTERACTIVE, return nil if there are multiple options."
-  (let ((files (mapcar #'car (minaduki-db/query [:select [titles:file] :from titles
-                                                 :where (= titles:title $v1)]
-                                                (vector title)))))
-    (pcase files
-      ('nil nil)
-      (`(,file) file)
-      (_
-       (unless no-interactive
-         (completing-read "Select file: "
-                          (minaduki-completion//mark-category files 'file)))))))
+
+When there are multiple options, ask the user to choose one. When
+NO-INTERACTIVE is non-nil, return nil in this case."
+  (let ((files (minaduki-db//query-title title)))
+    (if (< (length files) 2)
+        files
+      (unless no-interactive
+        (completing-read
+         (format "More than one file has the title \"%s\". Select one: "
+                 title)
+         (minaduki-completion//mark-category files 'file))))))
 
 (defun org-roam-link--get-id-from-headline (headline &optional file)
   "Return (marker . id) correspondng to HEADLINE in FILE.
@@ -190,7 +190,7 @@ the target of LINK (title or heading content)."
                                                    (org-element-property :path link))))
            (pcase type
              ('title+headline
-              (let ((file (org-roam-link--get-file-from-title title)))
+              (let ((file (minaduki-link//get-file-from-title title)))
                 (if (not file)
                     (org-roam-message "Cannot find matching file")
                   (setq mkr (org-roam-link--get-id-from-headline headline file))
@@ -203,7 +203,7 @@ the target of LINK (title or heading content)."
                              link-type "id")))
                     (_ (org-roam-message "Cannot find matching id"))))))
              ('title
-              (setq loc (org-roam-link--get-file-from-title title)
+              (setq loc (minaduki-link//get-file-from-title title)
                     link-type "file"
                     desc (or desc title)))
              ('headline
