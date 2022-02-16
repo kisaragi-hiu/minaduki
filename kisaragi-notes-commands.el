@@ -88,6 +88,30 @@ Interactively, please use the transient command instead."
   ["Command"
    ("e" "Export" minaduki/org-heading-to-file//suffix)])
 
+(cl-defun minaduki/insert (&key entry lowercase?)
+  "Insert a link to a note.
+
+If region is active, the selected text is used as the link description.
+
+ENTRY: the note entry (as returned by `minaduki-completion/read-note')
+LOWERCASE?: if non-nil, the link description will be downcased."
+  (interactive
+   (list :entry (minaduki-completion//read-note)))
+  (let ((desc (plist-get entry :title)))
+    (when (region-active-p)
+      (setq desc
+            (s-trim
+             (buffer-substring-no-properties
+              (region-beginning)
+              (region-end))))
+      (delete-active-region))
+    (insert (minaduki/format-link
+             :target (plist-get entry :path)
+             :desc (--> desc
+                        (if lowercase?
+                            (downcase it)
+                          it))))))
+
 ;;;###autoload
 (defun org-roam-insert (&optional lowercase completions filter-fn description type)
   "Find an Org-roam file, and insert a relative org link to it at point.
@@ -147,18 +171,6 @@ If DESCRIPTION is provided, use this as the link label.  See
                    (minaduki-capture//capture))))
           res))
     (deactivate-mark)))
-
-;;;###autoload
-(defun org-roam-insert-immediate (arg &rest args)
-  "Find an Org-roam file, and insert a relative org link to it at point.
-This variant of `org-roam-insert' inserts the link immediately by
-using the template in `minaduki-capture/immediate-template'. The
-interactive ARG and ARGS are passed to `org-roam-insert'.
-See `org-roam-insert' for details."
-  (interactive "P")
-  (let ((args (push arg args))
-        (minaduki-capture/templates (list minaduki-capture/immediate-template)))
-    (apply #'org-roam-insert args)))
 
 ;;;###autoload
 (defun org-roam-unlinked-references ()

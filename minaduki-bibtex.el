@@ -720,13 +720,15 @@ two or three universal arguments `\\[universal-argument]' are supplied."
 ;; ============================================================================
 
 ;;;###autoload
-(defun orb-insert-non-ref (prefix)
+(defun orb-insert-non-ref (lowercase?)
   "Find a non-ref Org-roam file, and insert a relative org link to it at point.
-If PREFIX, downcase the title before insertion.  See
+If LOWERCASE?, downcase the title before insertion.  See
 `org-roam-insert' and `minaduki-completion//get-non-literature' for
 details."
   (interactive "P")
-  (org-roam-insert prefix (minaduki-completion//get-non-literature)))
+  (minaduki/insert :lowercase? lowercase?
+                   :entry (minaduki-completion//read-note
+                           :completions (minaduki-completion//get-non-literature))))
 
 ;; ============================================================================
 ;;;; Orb note actions
