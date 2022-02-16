@@ -72,7 +72,7 @@ If nil, `find-file' is used."
 (defcustom org-roam-include-type-in-ref-path-completions nil
   "When t, include the type in ref-path completions.
 Note that this only affects interactive calls.
-See `org-roam--get-ref-path-completions' for details."
+See `minaduki//get-ref-path-completions' for details."
   :type 'boolean
   :group 'org-roam)
 

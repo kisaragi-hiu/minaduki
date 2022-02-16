@@ -483,7 +483,7 @@ details."
   ;; Originally `org-roam-find-ref'
   "Open a literature note, allowing search for their ROAM_KEYs.
 
-INTERACTIVE? is passed to `org-roam--get-ref-path-completions'.
+INTERACTIVE? is passed to `minaduki//get-ref-path-completions'.
 
 FILTER is used to filter results, and can either be a string or a function:
 
@@ -495,7 +495,7 @@ takes three arguments: the type, the ref, and the file of the
 current candidate.  It should return t if that candidate is to be
 included as a candidate."
   (interactive (list t))
-  (let* ((completions (org-roam--get-ref-path-completions interactive? filter))
+  (let* ((completions (minaduki//get-ref-path-completions interactive? filter))
          (ref (completing-read "Literature note: " completions nil t))
          (file (-> (cdr (assoc ref completions))
                    (plist-get :path))))

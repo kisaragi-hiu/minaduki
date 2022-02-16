@@ -755,7 +755,7 @@ first key from KEYS will actually be used."
 ;; It's about an order of magnitude slower on my device. Try it:
 ;;
 ;;     ;; Fetch a list of citekeys
-;;     (let ((cite-refs (->> (org-roam--get-ref-path-completions nil "cite")
+;;     (let ((cite-refs (->> (minaduki//get-ref-path-completions nil "cite")
 ;;                        (--map (plist-get (cdr it) :ref)))))
 ;;       (list
 ;;        (benchmark-run 10
@@ -777,7 +777,7 @@ first key from KEYS will actually be used."
 
 (defun orb-make-notes-cache ()
   "Update ORB notes hash table `orb-notes-cache'."
-  (let* ((db-entries (org-roam--get-ref-path-completions nil "cite"))
+  (let* ((db-entries (minaduki//get-ref-path-completions nil "cite"))
          (size (round (/ (length db-entries) 0.8125))) ;; ht oversize
          (ht (make-hash-table :test #'equal :size size)))
     (dolist (entry db-entries)

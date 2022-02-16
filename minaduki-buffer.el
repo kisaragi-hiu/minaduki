@@ -376,7 +376,7 @@ ORIG-PATH is the path where the CONTENT originated."
         ;; HACK: we should figure out we have no backlinks directly
         (unless (< 2 (s-count-matches "\n" (buffer-string)))
           (insert "\n\n/No backlinks/"))
-        (kisaragi-notes-buffer//restore-point)
+        (minaduki-buffer//restore-point)
         (run-hooks 'minaduki-buffer/after-insert-hook)
         (read-only-mode 1)))))
 
