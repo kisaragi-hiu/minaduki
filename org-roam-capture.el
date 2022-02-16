@@ -38,7 +38,7 @@
 (require 'kisaragi-notes-utils)
 (require 'org-roam-db)
 (require 'org-roam-extract)
-(require 'kisaragi-notes-completion)
+(require 'minaduki-completion)
 (require 'kisaragi-notes-vars)
 
 ;; Declarations

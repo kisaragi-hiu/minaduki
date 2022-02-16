@@ -17,7 +17,7 @@
 (require 'bibtex-completion)
 
 (require 'minaduki-diary)
-(require 'kisaragi-notes-completion)
+(require 'minaduki-completion)
 (require 'kisaragi-notes-utils)
 (require 'kisaragi-notes-templates)
 

@@ -39,7 +39,7 @@
 (require 'org-roam-db)
 
 (require 'kisaragi-notes-vars)
-(require 'kisaragi-notes-completion)
+(require 'minaduki-completion)
 
 (require 'org-element)
 

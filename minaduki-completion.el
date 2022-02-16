@@ -1,4 +1,4 @@
-;;; kisaragi-notes-completion.el --- Completion utilities -*- coding: utf-8; lexical-binding: t; -*-
+;;; minaduki-completion.el --- Completion utilities -*- coding: utf-8; lexical-binding: t; -*-
 
 ;; This file is NOT part of GNU Emacs.
 
@@ -220,6 +220,6 @@ This is active when `org-roam-completion-everywhere' is non-nil."
                                (delete-char (- (length str)))
                                (insert "\"" str "\"")))))))
 
-(provide 'kisaragi-notes-completion)
+(provide 'minaduki-completion)
 
-;;; kisaragi-notes-completion.el ends here
+;;; minaduki-completion.el ends here

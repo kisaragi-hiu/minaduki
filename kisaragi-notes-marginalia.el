@@ -10,7 +10,7 @@
 (require 'f)
 
 (require 'kisaragi-notes-vars)
-(require 'kisaragi-notes-completion)
+(require 'minaduki-completion)
 
 (require 'marginalia)
 

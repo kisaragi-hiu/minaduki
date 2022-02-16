@@ -12,7 +12,7 @@
 (require 'org-capture)
 
 (require 'kisaragi-notes-vars)
-(require 'kisaragi-notes-completion)
+(require 'minaduki-completion)
 
 (defun minaduki-templates//read-template (prompt)
   "Ask the user to select a template, using PROMPT.

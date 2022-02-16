@@ -48,7 +48,7 @@
 (eval-when-compile (require 'subr-x))
 
 (require 'kisaragi-notes-vars)
-(require 'kisaragi-notes-completion)
+(require 'minaduki-completion)
 (require 'kisaragi-notes-commands)
 (require 'kisaragi-notes-utils)
 
