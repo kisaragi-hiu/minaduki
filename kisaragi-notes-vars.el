@@ -93,14 +93,6 @@ whose title is 'Index'."
           (function :tag "Function to generate the path"))
   :group 'org-roam)
 
-(defcustom org-roam-link-title-format "%s"
-  "The formatter used when inserting Org-roam links that use their title.
-Formatter may be a function that takes title as its only argument."
-  :type '(choice
-          (string :tag "String Format" "%s")
-          (function :tag "Custom function"))
-  :group 'org-roam)
-
 (defcustom org-roam-completion-everywhere nil
   "If non-nil, provide completions from the current word at point."
   :group 'org-roam
