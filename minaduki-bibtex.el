@@ -653,68 +653,6 @@ newly created note."
     ;; we call the hook function so that the hook is removed
     (orb-call-hook-function 'insert-link)))
 
-;;;###autoload
-(defun orb-insert (&optional arg)
-  "Insert a link to an Org-roam bibliography note.
-
-If the note does not exist, create it using `orb-insert-generic'.
-
-A simple list of available citation keys will be presented using
-`completion-read' and after choosing a candidate the appropriate
-link will be inserted.
-
-If the note does not exist yet, it will be created using
-`orb-edit-notes' function.
-
-\\<universal-argument-map>\\<minaduki-bibtex-mode-map> The
-customization option `orb-insert-link-description' determines
-what will be used as the link's description.  It is possible to
-override the default value with numerical prefix ARG:
-
-`C-1' \\[orb-insert] will force `title'
-`C-2' \\[orb-insert] will force `citekey'
-`C-0' \\[orb-insert] will force `citation'
-
-If a region of text is active (selected) when calling `orb-insert',
-the text in the region will be replaced with the link and the
-text string will be used as the link's description — similar to
-`org-roam-insert'.
-
-Normally, the case of the link description will be preserved.  It
-is possible to force lowercase by supplying either one or three
-universal arguments `\\[universal-argument]'.
-
-Finally, `bibtex-completion-cache' will be re-populated if either
-two or three universal arguments `\\[universal-argument]' are supplied."
-  (interactive "P")
-  ;; parse arg
-  ;; C-u or C-u C-u C-u => force lowercase
-  ;; C-u C-u or C-u C-u C-u => force `bibtex-completion-clear-cache'
-  ;; C-1 force title in description
-  ;; C-2 force citekey in description
-  ;; C-3 force inserting the link as Org-ref citation
-  (let* ((lowercase (or (equal arg '(4))
-                        (equal arg '(64))))
-         (description (cl-case arg
-                        (1 'title)
-                        (2 'citekey)
-                        (0 'citation)))
-         (clear-cache (or (equal arg '(16))
-                          (equal arg '(64)))))
-    (orb-plist-put :link-description
-                   (or description orb-insert-link-description)
-                   :link-lowercase
-                   (or lowercase orb-insert-lowercase))
-    (unless org-roam-mode (org-roam-mode))
-    ;; execution chain:
-    ;; 1. interface function
-    ;; 2. orb-insert-edit-notes
-    ;; 3. orb-edit-notes
-    ;; 4. orb-insert--link-h
-    ;; if the note exists or a new note was created and capture not cancelled
-    ;; 5. orb-insert--link
-    (orb-insert-generic clear-cache)))
-
 ;; ============================================================================
 ;;;; Non-ref functions
 ;; ============================================================================
@@ -723,7 +661,7 @@ two or three universal arguments `\\[universal-argument]' are supplied."
 (defun orb-insert-non-ref (lowercase?)
   "Find a non-ref Org-roam file, and insert a relative org link to it at point.
 If LOWERCASE?, downcase the title before insertion.  See
-`org-roam-insert' and `minaduki-completion//get-non-literature' for
+`minaduki/insert' and `minaduki-completion//get-non-literature' for
 details."
   (interactive "P")
   (minaduki/insert :lowercase? lowercase?

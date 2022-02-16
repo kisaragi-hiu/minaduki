@@ -95,8 +95,9 @@ If region is active, the selected text is used as the link description.
 
 ENTRY: the note entry (as returned by `minaduki-completion/read-note')
 LOWERCASE?: if non-nil, the link description will be downcased."
-  (interactive
-   (list :entry (minaduki-completion//read-note)))
+  (interactive)
+  (unless entry
+    (setq entry (minaduki-completion//read-note)))
   (let ((desc (plist-get entry :title)))
     (when (region-active-p)
       (setq desc
@@ -111,66 +112,6 @@ LOWERCASE?: if non-nil, the link description will be downcased."
                         (if lowercase?
                             (downcase it)
                           it))))))
-
-;;;###autoload
-(defun org-roam-insert (&optional lowercase completions filter-fn description type)
-  "Find an Org-roam file, and insert a relative org link to it at point.
-Return selected file if it exists.
-If LOWERCASE is non-nil, downcase the link description.
-TYPE is the type of link to be created. It defaults to \"file\".
-COMPLETIONS is a list of completions to be used instead of
-`org-roam--get-title-path-completions`.
-FILTER-FN is the name of a function to apply on the candidates
-which takes as its argument an alist of path-completions.
-If DESCRIPTION is provided, use this as the link label.  See
-`org-roam--get-title-path-completions' for details."
-  (interactive "P")
-  (unless org-roam-mode (org-roam-mode))
-  ;; Deactivate the mark on quit since `atomic-change-group' prevents it
-  (unwind-protect
-      ;; Group functions together to avoid inconsistent state on quit
-      (atomic-change-group
-        (let* (region-text
-               beg end
-               (_ (when (region-active-p)
-                    (setq beg (set-marker (make-marker) (region-beginning)))
-                    (setq end (set-marker (make-marker) (region-end)))
-                    (setq region-text (org-link-display-format (buffer-substring-no-properties beg end)))))
-               (completions (--> (or completions
-                                     (org-roam--get-title-path-completions))
-                                 (if filter-fn
-                                     (funcall filter-fn it)
-                                   it)))
-               (title-with-tags (completing-read "File: " completions
-                                                 nil nil region-text))
-               (res (cdr (assoc title-with-tags completions)))
-               (title (or (plist-get res :title)
-                          title-with-tags))
-               (target-file-path (plist-get res :path))
-               (description (or description region-text title))
-               (description (if lowercase
-                                (downcase description)
-                              description)))
-          (cond ((and target-file-path
-                      (file-exists-p target-file-path))
-                 (when region-text
-                   (delete-region beg end)
-                   (set-marker beg nil)
-                   (set-marker end nil))
-                 (insert (minaduki/format-link :target target-file-path
-                                               :desc description)))
-                (t
-                 (let ((minaduki-capture//info `((title . ,title-with-tags)
-                                                 (slug . ,(minaduki//title-to-slug title-with-tags))))
-                       (minaduki-capture//context 'title))
-                   (setq minaduki-capture/additional-template-props (list :region (org-roam-shield-region beg end)
-                                                                          :insert-at (point-marker)
-                                                                          :link-type type
-                                                                          :link-description description
-                                                                          :finalize 'insert-link))
-                   (minaduki-capture//capture))))
-          res))
-    (deactivate-mark)))
 
 ;;;###autoload
 (defun org-roam-unlinked-references ()
