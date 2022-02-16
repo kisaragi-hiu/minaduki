@@ -30,24 +30,6 @@
 
 ;;;; Local commands
 
-;;;###autoload
-(defun minaduki/remove-markup (&optional beg end)
-  "Remove markup between BEG and END."
-  (interactive
-   (when (region-active-p)
-     (list (region-beginning)
-           (region-end))))
-  (unless (and beg end)
-    (user-error "Please select text to remove markup from"))
-  (save-restriction
-    (narrow-to-region beg end)
-    (let ((parsed (org-element-parse-buffer)))
-      (delete-region beg end)
-      (insert (->> parsed
-                   ;; Yes, this works.
-                   dom-texts
-                   (s-replace-regexp "[ \t]+" " "))))))
-
 (defun minaduki/org-heading-to-file//suffix (&optional dir full? visit?)
   "Write the current heading to a file under DIR.
 
