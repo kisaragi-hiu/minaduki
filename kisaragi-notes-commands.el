@@ -95,9 +95,10 @@ If region is active, the selected text is used as the link description.
 
 ENTRY: the note entry (as returned by `minaduki-completion/read-note')
 LOWERCASE?: if non-nil, the link description will be downcased."
-  (interactive)
+  (interactive (list :lowercase? current-prefix-arg))
   (unless entry
-    (setq entry (minaduki-completion//read-note)))
+    (setq entry (minaduki-completion//read-note
+                 :prompt "Insert link to note: ")))
   (let ((desc (plist-get entry :title)))
     (when (region-active-p)
       (setq desc
