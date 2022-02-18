@@ -61,7 +61,7 @@ Inverse of `org-link-expand-abbrev'."
 
 `org-link-abbrev-alist' is applied when in Org mode, unless
 TARGET is an HTTP link."
-  (let ((url? (s-matches? "https?://" target))
+  (let ((url? (minaduki//url? target))
         ;; - Allow `minaduki//apply-link-abbrev' to work even on file: links
         ;; - Allow f.el to work in general
         (target (s-replace-regexp "^file://" "" target)))
@@ -397,11 +397,13 @@ Assume buffer is widened and point is on a headline."
         (push (cons prop val) res)))
     res))
 
-(defun org-roam--url-p (path)
+(defun minaduki//url? (path)
   "Check if PATH is a URL.
 Assume the protocol is not present in PATH; e.g. URL `https://google.com' is
 passed as `//google.com'."
-  (string-prefix-p "//" path))
+  (or (s-prefix? "//" path)
+      (s-prefix? "http://" path)
+      (s-prefix? "https://" path)))
 
 (defmacro org-roam-with-file (file keep-buf-p &rest body)
   "Execute BODY within FILE.

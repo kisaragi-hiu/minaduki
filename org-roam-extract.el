@@ -136,7 +136,7 @@ Assume links come from FILE-PATH."
                               ("fuzzy" (list path))
                               ("roam" (list path))
                               (_ (if (or (file-remote-p path)
-                                         (org-roam--url-p path))
+                                         (minaduki//url? path))
                                      (list path)
                                    (let ((file-maybe (expand-file-name path (file-name-directory file-path))))
                                      (if (f-exists? file-maybe)
