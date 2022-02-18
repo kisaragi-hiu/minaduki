@@ -176,8 +176,12 @@ PROMPT: the prompt to use during completion. Default: \"Note: \""
                                       completions 'note)
                                      nil nil initial-input)))
     (or (cdr (assoc selection completions))
-        ;; When there is no match, return the title in an entry object
-        `(:title ,selection))))
+        ;; When there is no existing match, the entered text is both
+        ;; the title and the path.
+        ;;
+        ;; TODO: the path should be resolved relative to `org-directory'
+        ;;       (unless it's a url or an absolute path)
+        `(:title ,selection :path ,selection :new? t))))
 
 ;;;; `completion-at-point' completions
 
