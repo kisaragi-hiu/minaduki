@@ -160,13 +160,6 @@ The currently supported symbols are:
                  (const :tag "Omit" omit))
   :group 'org-roam)
 
-(defcustom org-roam-enable-headline-linking t
-  "Enable linking to headlines.
-This includes automatic :ID: creation and scanning of :ID:s for
-org-roam database."
-  :type 'boolean
-  :group 'org-roam)
-
 (defcustom org-roam-link-use-custom-faces t
   "Define where to apply custom faces to Org-roam links.
 

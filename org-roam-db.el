@@ -48,8 +48,6 @@
 (require 'kisaragi-notes-utils)
 (require 'kisaragi-notes-vars)
 
-(defvar org-roam-enable-headline-linking)
-
 (defvar org-agenda-files)
 (declare-function org-roam--extract-titles                 "org-roam-extract")
 (declare-function minaduki-extract/refs              "org-roam-extract")
@@ -530,8 +528,7 @@ If the file exists, update the cache with information."
         (minaduki-db//insert-tags 'update)
         (minaduki-db//insert-titles 'update)
         (minaduki-db//insert-refs 'update)
-        (when org-roam-enable-headline-linking
-          (minaduki-db//insert-ids 'update))
+        (minaduki-db//insert-ids 'update)
         (minaduki-db//insert-links 'update)))))
 
 (defun minaduki-db/build-cache (&optional force)
@@ -608,8 +605,7 @@ FILE-HASH-PAIRS is a list of (file . hash) pairs."
                [:insert :into files
                 :values $v1]
                (vector file contents-hash (list :atime atime :mtime mtime)))
-              (when org-roam-enable-headline-linking
-                (setq id-count (+ id-count (minaduki-db//insert-ids)))))
+              (setq id-count (+ id-count (minaduki-db//insert-ids))))
           (file-error
            (setq error-count (1+ error-count))
            (minaduki-db//clear-file file)

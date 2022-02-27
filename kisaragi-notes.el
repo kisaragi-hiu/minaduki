@@ -326,8 +326,7 @@ When NEW-FILE-OR-DIR is a directory, we use it to compute the new file path."
 
 (defun org-roam--id-new-advice (&rest _args)
   "Update the database if a new Org ID is created."
-  (when (and org-roam-enable-headline-linking
-             (org-roam--org-roam-file-p)
+  (when (and (org-roam--org-roam-file-p)
              (not (eq minaduki-db/update-method 'immediate))
              (not (minaduki-capture/p)))
     (minaduki-db/update)))
