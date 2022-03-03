@@ -9,7 +9,7 @@
 (require 'f)
 (require 'org)
 
-;;;; User Options
+;;;; Groups
 (defgroup minaduki nil
   "Roam Research replica in Org-mode."
   :group 'org
@@ -21,11 +21,12 @@
   :group 'minaduki
   :prefix "orb-")
 
-(defgroup org-roam-faces nil
+(defgroup minaduki-faces nil
   "Faces used by Org-roam."
   :group 'minaduki
   :group 'faces)
 
+;;;; User Options
 (defcustom minaduki/templates-directory (f-slash
                                          (f-join
                                           org-directory "templates"))
