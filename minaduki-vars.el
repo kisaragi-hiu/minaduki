@@ -68,6 +68,11 @@ If nil, `find-file' is used."
   :type 'function
   :group 'minaduki)
 
+(defcustom minaduki/file-setup-hook nil
+  "Hook that is run on setting up an Org-roam file."
+  :group 'minaduki
+  :type 'hook)
+
 (defcustom org-roam-include-type-in-ref-path-completions nil
   "When t, include the type in ref-path completions.
 Note that this only affects interactive calls.

@@ -143,11 +143,6 @@ file."
              'org-link)))))
 
 ;;;; Hooks and Advices
-(defcustom minaduki/file-setup-hook nil
-  "Hook that is run on setting up an Org-roam file."
-  :group 'minaduki
-  :type 'hook)
-
 (defun minaduki//find-file-hook-function ()
   "Called by `find-file-hook' when mode symbol `org-roam-mode' is on."
   (when (org-roam--org-roam-file-p)
