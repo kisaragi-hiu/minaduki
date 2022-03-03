@@ -25,7 +25,7 @@
 
 (require 'org-roam-db)
 (require 'kisaragi-notes-utils)
-(require 'kisaragi-notes-vars)
+(require 'minaduki-vars)
 
 (defun minaduki//read-date (prompt)
   "Like `org-read-date', but also highlight days with diary entries in calendar.

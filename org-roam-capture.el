@@ -39,7 +39,7 @@
 (require 'org-roam-db)
 (require 'org-roam-extract)
 (require 'minaduki-completion)
-(require 'kisaragi-notes-vars)
+(require 'minaduki-vars)
 
 ;; Declarations
 (defvar org-roam-mode)

@@ -46,7 +46,7 @@
   (require 'org-macs))
 
 (require 'kisaragi-notes-utils)
-(require 'kisaragi-notes-vars)
+(require 'minaduki-vars)
 
 (defvar org-agenda-files)
 (declare-function org-roam--extract-titles                 "org-roam-extract")

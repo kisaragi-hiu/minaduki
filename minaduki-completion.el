@@ -26,7 +26,7 @@
 (require 'dash)
 (require 'f)
 
-(require 'kisaragi-notes-vars)
+(require 'minaduki-vars)
 (require 'kisaragi-notes-utils)
 (require 'org-roam-db)
 

@@ -12,7 +12,7 @@
 
 (require 'org-roam-id)
 (require 'kisaragi-notes-utils)
-(require 'kisaragi-notes-vars)
+(require 'minaduki-vars)
 
 (defvar markdown-regex-link-inline)
 

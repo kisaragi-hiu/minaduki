@@ -10,7 +10,7 @@
 (require 's)
 (require 'f)
 
-(require 'kisaragi-notes-vars)
+(require 'minaduki-vars)
 
 ;; This is necessary to ensure all dependents on this module see
 ;; `org-mode-hook' and `org-inhibit-startup' as dynamic variables,

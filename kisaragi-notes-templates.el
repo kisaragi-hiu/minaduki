@@ -11,7 +11,7 @@
 
 (require 'org-capture)
 
-(require 'kisaragi-notes-vars)
+(require 'minaduki-vars)
 (require 'minaduki-completion)
 
 (defun minaduki-templates//read-template (prompt)

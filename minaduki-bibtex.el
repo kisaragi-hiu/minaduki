@@ -54,7 +54,7 @@
 ;; ============================================================================
 
 (require 'kisaragi-notes-utils)
-(require 'kisaragi-notes-vars)
+(require 'minaduki-vars)
 
 (require 'org-roam-capture)
 

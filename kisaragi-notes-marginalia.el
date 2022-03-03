@@ -9,7 +9,7 @@
 (require 's)
 (require 'f)
 
-(require 'kisaragi-notes-vars)
+(require 'minaduki-vars)
 (require 'minaduki-completion)
 
 (require 'marginalia)

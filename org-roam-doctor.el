@@ -54,7 +54,7 @@
 (declare-function org-roam--list-all-files "org-roam")
 (declare-function org-roam-mode "org-roam")
 
-(require 'kisaragi-notes-vars)
+(require 'minaduki-vars)
 
 (defvar org-roam-mode)
 

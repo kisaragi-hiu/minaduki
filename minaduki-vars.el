@@ -1,4 +1,4 @@
-;;; kisaragi-notes-vars.el --- Variable declarations -*- lexical-binding: t -*-
+;;; minaduki-vars.el --- Variable declarations -*- lexical-binding: t -*-
 
 ;;; Commentary:
 
@@ -532,6 +532,6 @@ This face is used on the region target by `org-roam-insertion'
 during an `minaduki-capture'."
   :group 'org-roam-faces)
 
-(provide 'kisaragi-notes-vars)
+(provide 'minaduki-vars)
 
-;;; kisaragi-notes-vars.el ends here
+;;; minaduki-vars.el ends here

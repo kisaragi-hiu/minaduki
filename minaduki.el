@@ -47,7 +47,7 @@
 (require 'bibtex-completion)
 (eval-when-compile (require 'subr-x))
 
-(require 'kisaragi-notes-vars)
+(require 'minaduki-vars)
 (require 'minaduki-completion)
 (require 'kisaragi-notes-commands)
 (require 'kisaragi-notes-utils)
