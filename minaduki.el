@@ -148,7 +148,6 @@ file."
   (when (org-roam--org-roam-file-p)
     (setq org-roam-last-window (get-buffer-window))
     (run-hooks 'minaduki/file-setup-hook) ; Run user hooks
-    (org-roam--setup-title-auto-update)
     (add-hook 'post-command-hook #'minaduki-buffer//update-maybe nil t)
     (add-hook 'before-save-hook #'org-roam-link--replace-link-on-save nil t)
     (add-hook 'after-save-hook #'minaduki-db/update nil t)
@@ -207,77 +206,6 @@ replaced links are made relative to the current buffer."
             (setq new-link
                   (concat type ":" (org-roam-link-get-path (expand-file-name path (file-name-directory old-path)))))
             (replace-match new-link nil t nil 1)))))))
-
-(defcustom org-roam-rename-file-on-title-change t
-  "If non-nil, alter the filename on title change.
-The new title is converted into a slug using
-`minaduki//title-to-slug', and compared with the current
-filename."
-  :group 'minaduki
-  :type 'boolean)
-
-(defcustom org-roam-title-change-hook '(org-roam--update-file-name-on-title-change
-                                        org-roam--update-links-on-title-change)
-  "Hook run after detecting a title change.
-Each hook is passed two arguments: the old title, and new title
-respectively."
-  :group 'minaduki
-  :type 'hook)
-
-(defvar-local org-roam-current-title nil
-  "The current title of the Org-roam file.")
-
-(defun org-roam--handle-title-change ()
-  "Detect a title change, and run `org-roam-title-change-hook'."
-  (let ((new-title (car (org-roam--extract-titles)))
-        (old-title org-roam-current-title))
-    (unless (or (eq old-title nil)
-                (string-equal old-title new-title))
-      (run-hook-with-args 'org-roam-title-change-hook old-title new-title))
-    (setq-local org-roam-current-title new-title)))
-
-(defun org-roam--setup-title-auto-update ()
-  "Setup automatic link description update on title change."
-  (setq-local org-roam-current-title (car (org-roam--extract-titles)))
-  (add-hook 'after-save-hook #'org-roam--handle-title-change nil t))
-
-(defun org-roam--update-links-on-title-change (old-title new-title)
-  "Update the link description of other Org-roam files.
-Iterate over all Org-roam files that have link description of
-OLD-TITLE, and replace the link descriptions with the NEW-TITLE
-if applicable.
-
-To be added to `org-roam-title-change-hook'."
-  (let* ((current-path (buffer-file-name (buffer-base-buffer)))
-         (files-affected (minaduki-db/query [:select :distinct [source]
-                                             :from links
-                                             :where (= dest $s1)]
-                                            current-path)))
-    (dolist (file files-affected)
-      (org-roam-with-file (car file) nil
-        (org-roam--replace-link current-path current-path old-title new-title)))))
-
-(defun org-roam--update-file-name-on-title-change (old-title new-title)
-  "Update the file name on title change.
-The slug is computed from OLD-TITLE using
-`minaduki//title-to-slug'. If the slug is part of the
-current filename, the new slug is computed with NEW-TITLE, and
-that portion of the filename is renamed.
-
-To be added to `org-roam-title-change-hook'."
-  (save-some-buffers :dont-ask #'org-roam--org-roam-buffer-p)
-  (when org-roam-rename-file-on-title-change
-    (let* ((old-slug (minaduki//title-to-slug old-title))
-           (file (buffer-file-name (buffer-base-buffer)))
-           (file-name (file-name-nondirectory file)))
-      (when (string-match-p old-slug file-name)
-        (let* ((new-slug (minaduki//title-to-slug new-title))
-               (new-file-name (replace-regexp-in-string old-slug new-slug file-name)))
-          (unless (string-equal file-name new-file-name)
-            (rename-file file-name new-file-name)
-            (set-visited-file-name new-file-name t t)
-            (minaduki-db/update)
-            (org-roam-message "File moved to %S" (abbreviate-file-name new-file-name))))))))
 
 (defun org-roam--rename-file-advice (old-file new-file-or-dir &rest _args)
   "Rename backlinks of OLD-FILE to refer to NEW-FILE-OR-DIR.
