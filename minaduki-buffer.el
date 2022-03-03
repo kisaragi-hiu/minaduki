@@ -26,8 +26,17 @@
 ;; Boston, MA 02110-1301, USA.
 
 ;;; Commentary:
+
+;; The backlinks buffer.
 ;;
-;; This library provides the minaduki-buffer functionality for org-roam
+;; minaduki-buffer/activate shows the buffer; if the buffer doesn't
+;; exist beforehand, it will create it and start the right major mode
+;; and minor mode (org-mode and minaduki-buffer/mode (for keybinds)).
+;;
+;; The content is rendered by minaduki-buffer/update (through
+;; minaduki-buffer/update-maybe), which is triggered in
+;; `post-command-hook' (registered by find-file-hook)
+
 ;;; Code:
 ;;;; Library Requires
 (eval-when-compile
