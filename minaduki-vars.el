@@ -27,6 +27,49 @@
   :group 'faces)
 
 ;;;; User Options
+
+(defcustom minaduki/db-location (expand-file-name "org-roam.db" user-emacs-directory)
+  "Full path to the cache database.
+
+All cache will be saved here regardless of which project a note
+file might belong to, and there is no need to change this
+per-project."
+  :type 'string
+  :group 'minaduki)
+
+(defcustom minaduki-db/gc-threshold gc-cons-threshold
+  "The value to temporarily set the `gc-cons-threshold' threshold to.
+During large, heavy operations like `minaduki-db/build-cache',
+many GC operations happen because of the large number of
+temporary structures generated (e.g. parsed ASTs). Temporarily
+increasing `gc-cons-threshold' will help reduce the number of GC
+operations, at the cost of temporary memory usage.
+
+This defaults to the original value of `gc-cons-threshold', but
+tweaking this number may lead to better overall performance. For
+example, to reduce the number of GCs, one may set it to a large
+value like `most-positive-fixnum'."
+  :type 'int
+  :group 'minaduki)
+
+(defcustom minaduki-db/update-method 'idle-timer
+  "Method to update the Org-roam database.
+
+`immediate'
+  Update the database immediately upon file changes.
+
+`idle-timer'
+  Updates the database if dirty, if Emacs idles for
+  `minaduki-db/update-idle-seconds'."
+  :type '(choice (const :tag "idle-timer" idle-timer)
+                 (const :tag "immediate" immediate))
+  :group 'minaduki)
+
+(defcustom minaduki-db/update-idle-seconds 2
+  "Number of idle seconds before triggering an Org-roam database update."
+  :type 'integer
+  :group 'minaduki)
+
 (defcustom minaduki/templates-directory (f-slash
                                          (f-join
                                           org-directory "templates"))
