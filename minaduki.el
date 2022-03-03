@@ -1,10 +1,10 @@
-;;; kisaragi-notes.el --- An Org-roam v1 fork -*- lexical-binding: t; -*-
+;;; minaduki.el --- An Org-roam v1 fork -*- lexical-binding: t; -*-
 
 ;; Copyright © 2020 Jethro Kuan <jethrokuan95@gmail.com>
 
 ;; Author: Jethro Kuan <jethrokuan95@gmail.com>
 ;;         Kisaragi Hiu <mail@kisaragi-hiu.com>
-;; URL: https://github.com/kisaragi-hiu/kisaragi-notes
+;; URL: https://github.com/kisaragi-hiu/minaduki
 ;; Keywords: org-mode, roam, convenience
 ;; Version: 1.2.3
 ;; Package-Requires: ((emacs "27.1") (dash "2.13") (f "0.17.2") (s "1.12.0") (org "9.5") (emacsql "3.0.0") (emacsql-sqlite3 "1.0.2") (bibtex-completion "2.0.0") (markdown-mode "2.4") (transient "0.3.7"))
@@ -473,5 +473,5 @@ M-x info for more information at Org-roam > Installation > Post-Installation Tas
 ;;;###autoload
 (defalias 'org-roam 'minaduki-buffer/toggle-display)
 
-(provide 'kisaragi-notes)
-;;; kisaragi-notes.el ends here
+(provide 'minaduki)
+;;; minaduki.el ends here
