@@ -8,11 +8,11 @@
 (require 'org-element)
 (require 'org-roam-db)
 
-(defun org-roam-id-get-file (id &optional strict)
+(defun minaduki-id/get-file (id &optional strict)
   "Return the file if ID exists.
 When STRICT is non-nil, only consider Org-roam's database.
 Return nil otherwise."
-  (or (caar (org-roam-db-query [:select [file]
+  (or (caar (minaduki-db/query [:select [file]
                                 :from ids
                                 :where (= id $s1)
                                 :limit 1]
@@ -24,34 +24,34 @@ Return nil otherwise."
                       (hash-table-p org-id-locations)
                       (gethash id org-id-locations)))))))
 
-(defun org-roam-id-find (id &optional markerp strict keep-buffer-p)
+(defun minaduki-id/find (id &optional markerp strict keep-buffer-p)
   "Return the location of the entry with the id ID.
 When MARKERP is non-nil, return a marker pointing to the headline.
 Otherwise, return a cons formatted as \(file . pos).
 When STRICT is non-nil, only consider Org-roam’s database.
 When KEEP-BUFFER-P is non-nil, keep the buffers navigated by Org-roam open."
-  (let ((file (org-roam-id-get-file id strict)))
+  (let ((file (minaduki-id/get-file id strict)))
     (when file
       (org-roam-with-file file keep-buffer-p
         (org-id-find-id-in-file id file markerp)))))
 
-(defun org-roam-id-open (id-or-marker &optional strict)
+(defun minaduki-id/open (id-or-marker &optional strict)
   "Go to the entry with ID-OR-MARKER.
 Wrapper for `org-id-open' which tries to find the ID in the
 Org-roam's database.
 ID-OR-MARKER can either be the ID of the entry or the marker
 pointing to it if it has already been computed by
-`org-roam-id-find'. If the ID-OR-MARKER is not found, it reverts
+`minaduki-id/find'. If the ID-OR-MARKER is not found, it reverts
 to the default behaviour of `org-id-open'.
 When STRICT is non-nil, only consider Org-roam’s database."
   (when-let ((marker (if (markerp id-or-marker)
                          id-or-marker
-                       (org-roam-id-find id-or-marker t strict t))))
+                       (minaduki-id/find id-or-marker t strict t))))
     (org-mark-ring-push)
     (org-goto-marker-or-bmk marker)
     (set-marker marker nil)))
 
-(defun org-roam-open-id-at-point ()
+(defun minaduki-id/open-id-at-point ()
   "Open link, timestamp, footnote or tags at point.
 The function tries to open ID-links with Org-roam’s database
 before falling back to the default behaviour of
@@ -64,7 +64,7 @@ This function hooks into `org-open-at-point' via
          (type (org-element-property :type context))
          (id (org-element-property :path context)))
     (when (string= type "id")
-      (cond ((org-roam-id-open id)
+      (cond ((minaduki-id/open id)
              t)
             ;; Ask whether to parse `org-id-files'
             ((not (y-or-n-p (concat "ID was not found in `org-directory' nor in `org-id-locations'.\n"

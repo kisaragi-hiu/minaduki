@@ -1,4 +1,4 @@
-;;; test-org-roam.el --- Tests for Org-roam -*- lexical-binding: t; -*-
+;;; test-minaduki.el --- Tests for Minaduki -*- lexical-binding: t; -*-
 
 ;; Copyright (C) 2020 Jethro Kuan
 
@@ -25,91 +25,117 @@
 (require 'seq)
 (require 'dash)
 
-(defun test-org-roam--abs-path (file-path)
+(defun test-minaduki--abs-path (file-path)
   "Get absolute FILE-PATH from `org-directory'."
   (expand-file-name file-path org-directory))
 
-(defun test-org-roam--find-file (path)
+(defun test-minaduki//find-file (path)
   "PATH."
-  (let ((path (test-org-roam--abs-path path)))
+  (let ((path (test-minaduki--abs-path path)))
     (make-directory (file-name-directory path) t)
     (find-file path)))
 
-(defvar test-repository (expand-file-name "tests/roam-files")
-  "Directory containing org-roam test org files.")
+(defvar test-repository (expand-file-name "tests/minaduki-files")
+  "Directory containing minaduki test org files.")
 
-(defun test-org-roam--init ()
+(defun test-minaduki--init ()
   "."
   (let ((original-dir test-repository)
-        (new-dir (expand-file-name (make-temp-name "org-roam") temporary-file-directory))
-        (org-roam-verbose nil))
+        (new-dir (expand-file-name (make-temp-name "minaduki") temporary-file-directory))
+        (minaduki-verbose nil))
     (copy-directory original-dir new-dir)
     (setq org-directory new-dir)
-    (org-roam-mode +1)
+    (org-roam-mode)
     (sleep-for 2)))
 
-(defun test-org-roam--teardown ()
+(defun test-minaduki--teardown ()
   (org-roam-mode -1)
-  (delete-file kisaragi-notes/db-location)
-  (kisaragi-notes-db//close))
+  (delete-file minaduki/db-location)
+  (minaduki-db//close))
+
+(describe "New"
+  (it "formats Org links"
+    (cl-flet ((test-org (&rest args)
+                        (let ((major-mode 'org-mode))
+                          (apply #'minaduki/format-link args))))
+      (expect
+       (test-org "file:///tmp/abc.org")
+       :to-equal
+       "[[/tmp/abc.org]]")
+      (expect
+       (test-org "file:///tmp/abc.org" "ABC")
+       :to-equal
+       "[[/tmp/abc.org][ABC]]")
+      (expect
+       (test-org "https://kisaragi-hiu.com" "ABC")
+       :to-equal
+       "[[https://kisaragi-hiu.com][ABC]]")))
+  (it "formats Markdown links"
+    (cl-flet ((test-markdown (&rest args)
+                             (let ((major-mode 'markdown-mode))
+                               (apply #'minaduki/format-link args))))
+      (expect
+       (test-markdown "https://kisaragi-hiu.com" "ABC")
+       :to-equal
+       "[ABC](https://kisaragi-hiu.com)"))))
 
 (describe "Utils"
   (it "converts between calendar.el dates and YYYY-MM-DD date strings"
-    (expect (kisaragi-notes//date/calendar.el->ymd '(7 17 2019))
+    (expect (minaduki//date/calendar.el->ymd '(7 17 2019))
             :to-equal
             "2019-07-17")
-    (expect (kisaragi-notes//date/ymd->calendar.el "2012-01-02")
+    (expect (minaduki//date/ymd->calendar.el "2012-01-02")
             :to-equal
             '(1 2 2012)))
   (it "converts a title to a slug"
-    (expect (kisaragi-notes//title-to-slug "English")
+    (expect (minaduki//title-to-slug "English")
             :to-equal "english")
-    (expect (kisaragi-notes//title-to-slug "Text with space と漢字")
+    (expect (minaduki//title-to-slug "Text with space と漢字")
             :to-equal "text_with_space_と漢字")
-    (expect (kisaragi-notes//title-to-slug "many____underscores")
+    (expect (minaduki//title-to-slug "many____underscores")
             :to-equal "many_underscores")
     ;; Keep diacritics
-    (expect (kisaragi-notes//title-to-slug "äöü")
+    (expect (minaduki//title-to-slug "äöü")
             :to-equal "äöü")
     ;; Normalizes to composed from
-    (expect (kisaragi-notes//title-to-slug (string ?て #x3099))
+    (expect (minaduki//title-to-slug (string ?て #x3099))
             :to-equal (string ?で))
-    (expect (kisaragi-notes//title-to-slug "_starting and ending_")
+    (expect (minaduki//title-to-slug "_starting and ending_")
             :to-equal "starting_and_ending")
-    (expect (kisaragi-notes//title-to-slug "isn't alpha numeric")
+    (expect (minaduki//title-to-slug "isn't alpha numeric")
             :to-equal "isn_t_alpha_numeric"))
   (it "removes Org links from a string"
     (expect
-     (kisaragi-notes//remove-org-links
+     (minaduki//remove-org-links
       "Abc [[https://gnu.org][Link1]] def [[https://gnu.org][Link2]]")
      :to-equal
      "Abc Link1 def Link2")
     (expect
-     (kisaragi-notes//remove-org-links
+     (minaduki//remove-org-links
       "Abc [not a link]")
      :to-equal
      "Abc [not a link]")
     (expect
-     (kisaragi-notes//remove-org-links
+     (minaduki//remove-org-links
       "Abc [[https://google.com]]")
      :to-equal
      "Abc https://google.com")
     (expect
-     (kisaragi-notes//remove-org-links
+     (minaduki//remove-org-links
       "Abc [[https://google.com][Google]]")
      :to-equal
      "Abc Google")))
 
 (describe "Ref extraction"
   (before-all
-    (test-org-roam--init))
+    (test-minaduki--init))
 
   (after-all
-    (test-org-roam--teardown))
+    (test-minaduki--teardown))
 
   (cl-flet
       ((test (fn file)
-             (let* ((fname (test-org-roam--abs-path file))
+             (let* ((fname (test-minaduki--abs-path file))
                     (buf (find-file-noselect fname)))
                (with-current-buffer buf
                  ;; Unlike tag extraction, it doesn't make sense to
@@ -118,21 +144,21 @@
     ;; Enable "cite:" link parsing
     (org-link-set-parameters "cite")
     (it "extracts web keys"
-      (expect (test #'kisaragi-notes-extract/refs
+      (expect (test #'minaduki-extract/refs
                     "web_ref.org")
               :to-equal
               '(("website" . "//google.com/"))))
     (it "extracts cite keys"
-      (expect (test #'kisaragi-notes-extract/refs
+      (expect (test #'minaduki-extract/refs
                     "cite_ref.org")
               :to-equal
               '(("cite" . "mitsuha2007")))
-      (expect (test #'kisaragi-notes-extract/refs
+      (expect (test #'minaduki-extract/refs
                     "cite-ref.md")
               :to-equal
               '(("cite" . "sumire2019"))))
     (it "extracts all keys"
-      (expect (test #'kisaragi-notes-extract/refs
+      (expect (test #'minaduki-extract/refs
                     "multiple-refs.org")
               :to-have-same-items-as
               '(("cite" . "orgroam2020")
@@ -140,17 +166,16 @@
                 ("website" . "//www.orgroam.com/"))))))
 
 (describe "Title extraction"
-  :var (org-roam-title-sources)
   (before-all
-    (test-org-roam--init))
+    (test-minaduki--init))
 
   (after-all
-    (test-org-roam--teardown))
+    (test-minaduki--teardown))
 
   (cl-flet
       ((test (fn file)
              (let ((buf (find-file-noselect
-                         (test-org-roam--abs-path file))))
+                         (test-minaduki--abs-path file))))
                (with-current-buffer buf
                  (funcall fn)))))
     (it "extracts title from title property"
@@ -223,72 +248,72 @@
 
 (describe "Link extraction"
   (before-all
-    (test-org-roam--init))
+    (test-minaduki--init))
 
   (after-all
-    (test-org-roam--teardown))
+    (test-minaduki--teardown))
 
   (cl-flet
       ((test (fn file)
              (let ((buf (find-file-noselect
-                         (test-org-roam--abs-path file))))
+                         (test-minaduki--abs-path file))))
                (with-current-buffer buf
                  (funcall fn)))))
     (it "extracts links from Markdown files"
       (expect (->> (test #'org-roam--extract-links
                          "baz.md")
-                (--map (seq-take it 3)))
+                   (--map (seq-take it 3)))
               :to-have-same-items-as
-              `([,(test-org-roam--abs-path "baz.md")
-                 ,(test-org-roam--abs-path "nested/bar.org")
+              `([,(test-minaduki--abs-path "baz.md")
+                 ,(test-minaduki--abs-path "nested/bar.org")
                  "file"]
-                [,(test-org-roam--abs-path "baz.md")
+                [,(test-minaduki--abs-path "baz.md")
                  "乙野四方字20180920"
                  "cite"]
-                [,(test-org-roam--abs-path "baz.md")
+                [,(test-minaduki--abs-path "baz.md")
                  "quro2017"
                  "cite"])))
     (it "extracts links from Org files"
       (expect (->> (test #'org-roam--extract-links
                          "foo.org")
-                ;; Drop the link type and properties
-                (--map (seq-take it 2)))
+                   ;; Drop the link type and properties
+                   (--map (seq-take it 2)))
               :to-have-same-items-as
-              `([,(test-org-roam--abs-path "foo.org")
-                 ,(test-org-roam--abs-path "baz.md")]
-                [,(test-org-roam--abs-path "foo.org")
+              `([,(test-minaduki--abs-path "foo.org")
+                 ,(test-minaduki--abs-path "baz.md")]
+                [,(test-minaduki--abs-path "foo.org")
                  "foo@john.com"]
-                [,(test-org-roam--abs-path "foo.org")
+                [,(test-minaduki--abs-path "foo.org")
                  "google.com"]
-                [,(test-org-roam--abs-path "foo.org")
-                 ,(test-org-roam--abs-path "bar.org")])))
+                [,(test-minaduki--abs-path "foo.org")
+                 ,(test-minaduki--abs-path "bar.org")])))
     (xit "extracts Org citations"
-      (expect (->> (test #'kisaragi-notes-extract/citation
+      (expect (->> (test #'minaduki-extract/citation
                          "org-cite.org")
-                ;; Drop the link properties
-                (--map (seq-take it 3)))
+                   ;; Drop the link properties
+                   (--map (seq-take it 3)))
               :to-have-same-items-as
-              `([,(test-org-roam--abs-path "org-cite.org")
+              `([,(test-minaduki--abs-path "org-cite.org")
                  "赤坂アカand横槍メンゴ-oshinoko"
                  "cite"]
-                [,(test-org-roam--abs-path "org-cite.org")
+                [,(test-minaduki--abs-path "org-cite.org")
                  "フライand森永みるくand伊藤ハチand玄鉄絢and天野しゅにんたand雪子andもちオーレandコダマナオコand吉田丸悠andよしむらかなand黄井ぴかちand郷本andしおやてるこand松崎夏未and川浪いずみ20190511"
                  "cite"]
-                [,(test-org-roam--abs-path "org-cite.org")
+                [,(test-minaduki--abs-path "org-cite.org")
                  "takeshisu20191228"
                  "cite"])))))
 
 (describe "Tag extraction"
-  :var (kisaragi-notes/tag-sources)
+  :var (minaduki/tag-sources)
   (before-all
-    (test-org-roam--init))
+    (test-minaduki--init))
 
   (after-all
-    (test-org-roam--teardown))
+    (test-minaduki--teardown))
 
   (cl-flet
       ((test (fn file)
-             (let* ((fname (test-org-roam--abs-path file))
+             (let* ((fname (test-minaduki--abs-path file))
                     (buf (find-file-noselect fname)))
                (with-current-buffer buf
                  (funcall fn fname)))))
@@ -298,13 +323,13 @@
               :to-equal
               '("hello" "tag2" "tag3")))
     (it "extracts hashtag style tags, but only from frontmatter"
-      (expect (test #'kisaragi-notes-extract/tags-hashtag-frontmatter
+      (expect (test #'minaduki-extract/tags-hashtag-frontmatter
                     "tags/tag.md")
               :to-equal
               '("#abc" "#def" "#ghi")))
 
     (it "extracts hashtag style tags"
-      (expect (test #'kisaragi-notes-extract/tags-hashtag
+      (expect (test #'minaduki-extract/tags-hashtag
                     "tags/tag.md")
               :to-equal
               '("#abc" "#def" "#ghi" "#not-frontmatter-a" "#not-front-matter-b")))
@@ -361,16 +386,16 @@
               :to-equal
               '("nested")))
 
-    (describe "uses kisaragi-notes/tag-sources correctly"
+    (describe "uses minaduki/tag-sources correctly"
       (it "'(prop)"
-        (expect (let ((kisaragi-notes/tag-sources '(org-roam--extract-tags-prop)))
+        (expect (let ((minaduki/tag-sources '(org-roam--extract-tags-prop)))
                   (test #'org-roam--extract-tags
                         "tags/tag.org"))
                 :to-equal
                 '("t1" "t2 with space" "t3" "t4 second-line")))
       (it "'(prop all-directories)"
-        (expect (let ((kisaragi-notes/tag-sources '(org-roam--extract-tags-prop
-                                                    org-roam--extract-tags-all-directories)))
+        (expect (let ((minaduki/tag-sources '(org-roam--extract-tags-prop
+                                              org-roam--extract-tags-all-directories)))
                   (test #'org-roam--extract-tags
                         "tags/tag.org"))
                 :to-equal
@@ -378,14 +403,14 @@
 
 (describe "ID extraction"
   (before-all
-    (test-org-roam--init))
+    (test-minaduki--init))
 
   (after-all
-    (test-org-roam--teardown))
+    (test-minaduki--teardown))
 
   (cl-flet
       ((test (fn file)
-             (let* ((fname (test-org-roam--abs-path file))
+             (let* ((fname (test-minaduki--abs-path file))
                     (buf (find-file-noselect fname)))
                (with-current-buffer buf
                  (funcall fn fname)))))
@@ -393,8 +418,8 @@
       (expect (test #'org-roam--extract-ids
                     "headlines/headline.org")
               :to-have-same-items-as
-              `(["e84d0630-efad-4017-9059-5ef917908823" ,(test-org-roam--abs-path "headlines/headline.org") 1]
-                ["801b58eb-97e2-435f-a33e-ff59a2f0c213" ,(test-org-roam--abs-path "headlines/headline.org") 1])))))
+              `(["e84d0630-efad-4017-9059-5ef917908823" ,(test-minaduki--abs-path "headlines/headline.org") 1]
+                ["801b58eb-97e2-435f-a33e-ff59a2f0c213" ,(test-minaduki--abs-path "headlines/headline.org") 1])))))
 
 (describe "Test roam links"
   (it ""
@@ -420,82 +445,82 @@
 
 (describe "Accessing the DB"
   (before-all
-    (test-org-roam--init))
+    (test-minaduki--init))
 
   (after-all
-    (test-org-roam--teardown))
+    (test-minaduki--teardown))
 
   (it "Returns a file from its title"
-    (expect (kisaragi-notes-db//query-title "Foo")
+    (expect (minaduki-db//query-title "Foo")
             :to-equal
-            (list (test-org-roam--abs-path "foo.org")))
-    (expect (kisaragi-notes-db//query-title "Deeply Nested File")
+            (list (test-minaduki--abs-path "foo.org")))
+    (expect (minaduki-db//query-title "Deeply Nested File")
             :to-equal
-            (list (test-org-roam--abs-path "nested/deeply/deeply_nested_file.org")))))
+            (list (test-minaduki--abs-path "nested/deeply/deeply_nested_file.org")))))
 
 ;;; Tests
-(xdescribe "org-roam-db-build-cache"
+(xdescribe "minaduki-db/build-cache"
   (before-each
-    (test-org-roam--init))
+    (test-minaduki--init))
 
   (after-each
-    (test-org-roam--teardown))
+    (test-minaduki--teardown))
 
   (it "initializes correctly"
     ;; Cache
-    (expect (caar (org-roam-db-query [:select (funcall count) :from files])) :to-be 8)
-    (expect (caar (org-roam-db-query [:select (funcall count) :from links])) :to-be 5)
-    (expect (caar (org-roam-db-query [:select (funcall count) :from titles])) :to-be 8)
-    (expect (caar (org-roam-db-query [:select (funcall count) :from titles
+    (expect (caar (minaduki-db/query [:select (funcall count) :from files])) :to-be 8)
+    (expect (caar (minaduki-db/query [:select (funcall count) :from links])) :to-be 5)
+    (expect (caar (minaduki-db/query [:select (funcall count) :from titles])) :to-be 8)
+    (expect (caar (minaduki-db/query [:select (funcall count) :from titles
                                       :where titles :is-null])) :to-be 1)
-    (expect (caar (org-roam-db-query [:select (funcall count) :from refs])) :to-be 1)
+    (expect (caar (minaduki-db/query [:select (funcall count) :from refs])) :to-be 1)
 
     ;; Links
-    (expect (caar (org-roam-db-query [:select (funcall count) :from links
+    (expect (caar (minaduki-db/query [:select (funcall count) :from links
                                       :where (= source $s1)]
-                                     (test-org-roam--abs-path "foo.org"))) :to-be 1)
-    (expect (caar (org-roam-db-query [:select (funcall count) :from links
+                                     (test-minaduki--abs-path "foo.org"))) :to-be 1)
+    (expect (caar (minaduki-db/query [:select (funcall count) :from links
                                       :where (= source $s1)]
-                                     (test-org-roam--abs-path "nested/bar.org"))) :to-be 2)
+                                     (test-minaduki--abs-path "nested/bar.org"))) :to-be 2)
 
     ;; Links -- File-to
-    (expect (caar (org-roam-db-query [:select (funcall count) :from links
+    (expect (caar (minaduki-db/query [:select (funcall count) :from links
                                       :where (= dest $s1)]
-                                     (test-org-roam--abs-path "nested/foo.org"))) :to-be 1)
-    (expect (caar (org-roam-db-query [:select (funcall count) :from links
+                                     (test-minaduki--abs-path "nested/foo.org"))) :to-be 1)
+    (expect (caar (minaduki-db/query [:select (funcall count) :from links
                                       :where (= dest $s1)]
-                                     (test-org-roam--abs-path "nested/bar.org"))) :to-be 1)
-    (expect (caar (org-roam-db-query [:select (funcall count) :from links
+                                     (test-minaduki--abs-path "nested/bar.org"))) :to-be 1)
+    (expect (caar (minaduki-db/query [:select (funcall count) :from links
                                       :where (= dest $s1)]
-                                     (test-org-roam--abs-path "unlinked.org"))) :to-be 0)
+                                     (test-minaduki--abs-path "unlinked.org"))) :to-be 0)
     ;; TODO Test titles
-    (expect (org-roam-db-query [:select * :from titles])
+    (expect (minaduki-db/query [:select * :from titles])
             :to-have-same-items-as
-            (list (list (test-org-roam--abs-path "alias.org")
+            (list (list (test-minaduki--abs-path "alias.org")
                         (list "t1" "a1" "a 2"))
-                  (list (test-org-roam--abs-path "bar.org")
+                  (list (test-minaduki--abs-path "bar.org")
                         (list "Bar"))
-                  (list (test-org-roam--abs-path "foo.org")
+                  (list (test-minaduki--abs-path "foo.org")
                         (list "Foo"))
-                  (list (test-org-roam--abs-path "nested/bar.org")
+                  (list (test-minaduki--abs-path "nested/bar.org")
                         (list "Nested Bar"))
-                  (list (test-org-roam--abs-path "nested/foo.org")
+                  (list (test-minaduki--abs-path "nested/foo.org")
                         (list "Nested Foo"))
-                  (list (test-org-roam--abs-path "no-title.org")
+                  (list (test-minaduki--abs-path "no-title.org")
                         (list "Headline title"))
-                  (list (test-org-roam--abs-path "web_ref.org") nil)
-                  (list (test-org-roam--abs-path "unlinked.org")
+                  (list (test-minaduki--abs-path "web_ref.org") nil)
+                  (list (test-minaduki--abs-path "unlinked.org")
                         (list "Unlinked"))))
 
-    (expect (org-roam-db-query [:select * :from refs])
+    (expect (minaduki-db/query [:select * :from refs])
             :to-have-same-items-as
-            (list (list "https://google.com/" (test-org-roam--abs-path "web_ref.org") "website")))
+            (list (list "https://google.com/" (test-minaduki--abs-path "web_ref.org") "website")))
 
     ;; Expect rebuilds to be really quick (nothing changed)
-    (expect (org-roam-db-build-cache)
+    (expect (minaduki-db/build-cache)
             :to-equal
             (list :files 0 :links 0 :tags 0 :titles 0 :refs 0 :deleted 0))))
 
-(provide 'test-org-roam)
+(provide 'test-minaduki)
 
-;;; test-org-roam.el ends here
+;;; test-minaduki.el ends here

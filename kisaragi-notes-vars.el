@@ -17,21 +17,26 @@
   :link '(url-link :tag "Github" "https://github.com/org-roam/org-roam")
   :link '(url-link :tag "Online Manual" "https://www.orgroam.com/manual.html"))
 
+(defgroup minaduki-bibtex nil
+  "Bibtex-completion integration for Org-roam."
+  :group 'org-roam
+  :prefix "orb-")
+
 (defgroup org-roam-faces nil
   "Faces used by Org-roam."
   :group 'org-roam
   :group 'faces)
 
-(defcustom kisaragi-notes/templates-directory (f-slash
-                                               (f-join
-                                                org-directory "templates"))
+(defcustom minaduki/templates-directory (f-slash
+                                         (f-join
+                                          org-directory "templates"))
   "Where to look for templates."
   :group 'org-roam
   :type 'string)
 
-(defcustom kisaragi-notes/diary-directory (f-slash
-                                           (f-join
-                                            org-directory "diary"))
+(defcustom minaduki/diary-directory (f-slash
+                                     (f-join
+                                      org-directory "diary"))
   "Where to store diary entries."
   :group 'org-roam
   :type 'string)
@@ -67,7 +72,7 @@ If nil, `find-file' is used."
 (defcustom org-roam-include-type-in-ref-path-completions nil
   "When t, include the type in ref-path completions.
 Note that this only affects interactive calls.
-See `org-roam--get-ref-path-completions' for details."
+See `minaduki//get-ref-path-completions' for details."
   :type 'boolean
   :group 'org-roam)
 
@@ -88,30 +93,17 @@ whose title is 'Index'."
           (function :tag "Function to generate the path"))
   :group 'org-roam)
 
-(defcustom org-roam-link-title-format "%s"
-  "The formatter used when inserting Org-roam links that use their title.
-Formatter may be a function that takes title as its only argument."
-  :type '(choice
-          (string :tag "String Format" "%s")
-          (function :tag "Custom function"))
-  :group 'org-roam)
-
 (defcustom org-roam-completion-everywhere nil
   "If non-nil, provide completions from the current word at point."
   :group 'org-roam
   :type 'boolean)
 
-(defcustom org-roam-prefer-id-links t
-  "If non-nil, use ID for linking instead where available."
-  :type 'boolean
-  :group 'org-roam)
-
 (defcustom org-roam-tag-separator ","
-  "String to use to separate tags when `kisaragi-notes/tag-sources' is non-nil."
+  "String to use to separate tags when `minaduki/tag-sources' is non-nil."
   :type 'string
   :group 'org-roam)
 
-(defcustom kisaragi-notes/slug-replacements
+(defcustom minaduki/slug-replacements
   '(("[^[:alnum:][:digit:]]" . "_") ; convert anything not alphanumeric
     ("__*" . "_") ; remove sequential underscores (perhaps from above)
     ("^_" . "") ; remove starting underscore
@@ -168,13 +160,6 @@ The currently supported symbols are:
                  (const :tag "Omit" omit))
   :group 'org-roam)
 
-(defcustom org-roam-enable-headline-linking t
-  "Enable linking to headlines.
-This includes automatic :ID: creation and scanning of :ID:s for
-org-roam database."
-  :type 'boolean
-  :group 'org-roam)
-
 (defcustom org-roam-link-use-custom-faces t
   "Define where to apply custom faces to Org-roam links.
 
@@ -192,7 +177,7 @@ Otherwise, do not apply custom faces to Org-roam links."
           (const :tag "Do not apply custom faces" nil))
   :group 'org-roam)
 
-(defcustom kisaragi-notes/tag-sources
+(defcustom minaduki/tag-sources
   '(org-roam--extract-tags-prop)
   "Sources to obtain tags from.
 
@@ -253,7 +238,7 @@ which case the list is passed to `cl-sort' as arguments."
   :group 'org-roam
   :type 'boolean)
 
-(defcustom org-roam-verbose t
+(defcustom minaduki-verbose t
   "Echo messages that are not errors."
   :type 'boolean
   :group 'org-roam)
@@ -286,11 +271,11 @@ See `orb-edit-notes' for details."
   :type '(choice
           (const :tag "Yes" t)
           (const :tag "No" nil))
-  :group 'org-roam-bibtex)
+  :group 'minaduki-bibtex)
 
 (defcustom orb-templates
   '(("r" "ref" plain
-     (function org-roam-capture--get-point)
+     (function minaduki-capture//get-point)
      ""
      :file-name "${citekey}"
      :head "#+TITLE: ${title}\n#+ROAM_KEY: ${ref}\n"
@@ -298,7 +283,7 @@ See `orb-edit-notes' for details."
   "Template to use when creating a new note.
 See `orb-edit-notes' for details."
   :type '(list)
-  :group 'org-roam-bibtex)
+  :group 'minaduki-bibtex)
 
 (defcustom orb-include-citekey-in-titles nil
   "Non-nil to include the citekey in titles.
@@ -306,7 +291,7 @@ See `orb-edit-notes' for details."
   :type '(choice
           (const :tag "Yes" t)
           (const :tag "No" nil))
-  :group 'org-roam-bibtex)
+  :group 'minaduki-bibtex)
 
 (defcustom orb-preformat-keywords
   '("citekey" "entry-type" "date" "pdf?" "note?" "file"
@@ -322,7 +307,7 @@ Usage example:
 
 \(setq orb-preformat-keywords '(\"citekey\" \"author\" \"date\"))
 \(setq orb-templates
-      '((\"r\" \"reference\" plain (function org-roam-capture--get-point)
+      '((\"r\" \"reference\" plain (function minaduki-capture//get-point)
          \"#+ROAM_KEY: %^{citekey}%?
 %^{author} published %^{entry-type} in %^{date}: fullcite:%\\1.\"
          :file-name \"references/${citekey}\"
@@ -344,7 +329,7 @@ to t (default). See also `orb-edit-notes' for further details.
 Consult bibtex-completion package for additional information
 about BibTeX field names."
   :type '(repeat :tag "BibTeX field names" string)
-  :group 'org-roam-bibtex)
+  :group 'minaduki-bibtex)
 
 (defcustom orb-process-file-keyword t
   "Whether to treat the file wildcards specially during template preformatting.
@@ -369,33 +354,63 @@ of the file names based on file extensions.
 
 See also `orb-file-field-extensions' for filtering file names
 based on their extension."
-  :group 'org-roam-bibtex
+  :group 'minaduki-bibtex
   :type '(choice
           (const :tag "Yes" t)
           (const :tag "No" nil)
           (string :tag "Custom wildcard keyword")))
 
+(defcustom orb-bibtex-field-aliases
+  '(("=type=" . "entry-type")
+    ("=key=" . "citekey")
+    ("=has-pdf=" . "pdf?")
+    ("=has-note=" . "note?")
+    ("citation-number" . "#"))
+  "Alist of ORB-specific field aliases of the form (FIELD . ALIAS).
+The ALIAS can be used instead of the FIELD anywhere in ORB's
+configuration.  This variable is useful to replace
+`bibtex-completion''s internal '='-embraced virtual fields with
+more casual alternatives."
+  :group 'minaduki-bibtex
+  :type '(repeat
+          (cons (string :tag "Field name")
+                (string :tag "Alias name"))))
+
+(defcustom orb-file-field-extensions '("pdf")
+  "Extensions of file names to keep when retrieving values from the file field.
+This may be a string or a list of strings corresponding to file
+extensions without a dot.
+
+Set it to nil to keep all file names.  You will be prompted to choose one.
+
+The name of the file field is determined by
+  `bibtex-completion-pdf-field' (default \"file\")."
+  :group 'minaduki-bibtex
+  :type '(choice
+          (string)
+          (repeat :tag "List of extensions" (string))))
+
 (defcustom orb-citekey-format "%s"
   "Format string for the citekey when capturing new ref notes."
   :type 'string
-  :group 'org-roam-bibtex)
+  :group 'minaduki-bibtex)
 
 (defcustom orb-slug-source 'citekey
   "What should be used as a source for creating the note's slug.
 Supported values are symbols `citekey' and `title'.
 
 A special variable `${slug}` in `orb-templates' (and
-`org-roam-capture-templates') is used as a placeholder for an
+`minaduki-capture/templates') is used as a placeholder for an
 automatically generated string which is meant to be used in
 filenames. Org Roam uses the note's title to create a slug. ORB
-also allows for the citekey. `kisaragi-notes//title-to-slug' is
+also allows for the citekey. `minaduki//title-to-slug' is
 used to create the slug. This operation typilcally involves
 removing whitespace and converting words to lowercase, among
 possibly other things."
   :type '(choice
           (const citekey)
           (const title))
-  :group 'org-roam-bibtex)
+  :group 'minaduki-bibtex)
 
 (defcustom orb-ignore-bibtex-store-link-functions
   '(org-bibtex-store-link)
@@ -421,7 +436,7 @@ used to store a link to the BibTeX buffer.  See
 `org-capture-templates' on how to use the link in your templates."
   :type '(repeat (function))
   :risky t
-  :group 'org-roam-bibtex)
+  :group 'minaduki-bibtex)
 
 (defcustom orb-insert-link-description 'title
   "What should be used as link description for links created with `orb-insert'.
@@ -443,7 +458,7 @@ The default value set by this variable can be overriden by
 calling `orb-insert' with an appropriated numerical prefix
 argument.  See the docstring of the function for more
 information."
-  :group 'org-roam-bibtex
+  :group 'minaduki-bibtex
   :type '(choice
           (const :tag "Title" title)
           (const :tag "Citation key" citekey)
@@ -459,14 +474,14 @@ information."
 (defcustom orb-insert-generic-candidates-format 'key
   "Format of selection candidates for `orb-insert' with `generic' interface.
 Possible values are `key' and `entry'."
-  :group 'org-roam-bibtex
+  :group 'minaduki-bibtex
   :type '(choice
           (const key)
           (const entry)))
 
 ;;;; Internal Variables
 
-(defvar-local kisaragi-notes//file-name nil
+(defvar-local minaduki//file-name nil
   "The corresponding file for a temp buffer.
 This is set by `org-roam--with-temp-buffer', to allow throwing of
 descriptive warnings when certain operations fail (e.g. parsing).")
@@ -514,7 +529,7 @@ This face is used for links without a destination."
   '((t :inherit (warning org-link)))
   "Face for Org-roam links that are shielded.
 This face is used on the region target by `org-roam-insertion'
-during an `org-roam-capture'."
+during an `minaduki-capture'."
   :group 'org-roam-faces)
 
 (provide 'kisaragi-notes-vars)

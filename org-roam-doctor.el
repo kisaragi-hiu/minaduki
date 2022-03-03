@@ -78,8 +78,7 @@ processing multiple files"
     :name 'org-roam-doctor-broken-links
     :description "Fix broken links."
     :actions '(("d" . ("Unlink" . org-roam-doctor--remove-link))
-               ("r" . ("Replace link" . org-roam-doctor--replace-link))
-               ("R" . ("Replace link (keep label)" . org-roam-doctor--replace-link-keep-label))))
+               ("r" . ("Replace link" . org-roam-doctor--replace-link))))
    (make-org-roam-doctor-checker
     :name 'org-roam-doctor-check-roam-props
     :description "Check #+roam_* properties.")
@@ -221,25 +220,7 @@ CHECKERS is the list of checkers used."
       (condition-case nil
           (save-excursion
             (replace-match "")
-            (org-roam-insert))
-        (quit (progn
-                (replace-buffer-contents orig)
-                (goto-char p)))))))
-
-(defun org-roam-doctor--replace-link-keep-label ()
-  "Replace the current link with a new link, keeping the current link's label."
-  (save-match-data
-    (unless (org-in-regexp org-link-bracket-re 1)
-      (user-error "No link at point"))
-    (let ((orig (buffer-string))
-          (p (point)))
-      (condition-case nil
-          (save-excursion
-            (let ((label (if (match-end 2)
-                             (match-string-no-properties 2)
-                           (org-link-unescape (match-string-no-properties 1)))))
-              (replace-match "")
-              (org-roam-insert nil nil label)))
+            (minaduki/insert))
         (quit (progn
                 (replace-buffer-contents orig)
                 (goto-char p)))))))

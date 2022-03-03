@@ -21,9 +21,9 @@
 (declare-function org-element-citation-reference-parser "org-element")
 (defvar org-element-citation-prefix-re)
 
-(declare-function kisaragi-notes-db//query-title "org-roam-db")
+(declare-function minaduki-db//query-title "org-roam-db")
 
-(defun kisaragi-notes-extract//markdown-props (prop)
+(defun minaduki-extract//markdown-props (prop)
   "Extract PROP in the Markdown front matter."
   (save-excursion
     (goto-char (point-min))
@@ -57,17 +57,17 @@ This is used to extract #+roam_tags."
   ;;     #+prop: a b
   ;;     #+prop: c d
   ;;     -> '(\"a\" \"b\" \"c\" \"d\")
-  (--> (kisaragi-notes//org-props (list prop))
-    ;; so that the returned order is the same as in the buffer
-    nreverse
-    ;; '(("ROAM_TAGS" . "a b") ("ROAM_TAGS" . "c d"))
-    ;; -> '("a b" "c d")
-    (mapcar #'cdr it)
-    (mapcar #'split-string-and-unquote it)
-    ;; We have a list of lists at this point. Join them.
-    (apply #'append it)))
+  (--> (minaduki//org-props (list prop))
+       ;; so that the returned order is the same as in the buffer
+       nreverse
+       ;; '(("ROAM_TAGS" . "a b") ("ROAM_TAGS" . "c d"))
+       ;; -> '("a b" "c d")
+       (mapcar #'cdr it)
+       (mapcar #'split-string-and-unquote it)
+       ;; We have a list of lists at this point. Join them.
+       (apply #'append it)))
 
-(defun kisaragi-notes-extract/citation (file-from)
+(defun minaduki-extract/citation (file-from)
   "Extract Org 9.5+ citations.
 
 Currently citations are treated as links of the `cite' type, from
@@ -86,7 +86,7 @@ FILE-FROM to the key."
                              :point (point)))
                       while (search-forward ";" (line-end-position) t)))))
 
-(defun kisaragi-notes-extract//org-links-context ()
+(defun minaduki-extract//org-links-context ()
   "Return the context around point."
   (let* ((elem-at-point (org-element-at-point))
          (content
@@ -123,20 +123,20 @@ Assume links come from FILE-PATH."
               (goto-char (org-element-property :begin link))
               (let* ((type (org-roam--collate-types (org-element-property :type link)))
                      (path (org-element-property :path link))
-                     (content (kisaragi-notes-extract//org-links-context))
+                     (content (minaduki-extract//org-links-context))
                      (properties (list :outline (org-roam--get-outline-path)
                                        :point (point)
                                        :content content))
                      (names (pcase type
                               ("id"
-                               (when-let ((file-path (org-roam-id-get-file path)))
+                               (when-let ((file-path (minaduki-id/get-file path)))
                                  (list file-path)))
                               ("cite" (list path))
                               ("website" (list path))
                               ("fuzzy" (list path))
                               ("roam" (list path))
                               (_ (if (or (file-remote-p path)
-                                         (org-roam--url-p path))
+                                         (minaduki//url? path))
                                      (list path)
                                    (let ((file-maybe (expand-file-name path (file-name-directory file-path))))
                                      (if (f-exists? file-maybe)
@@ -162,7 +162,7 @@ Assume links come from FILE-PATH."
     (goto-char (point-min))
     (cl-loop while (re-search-forward "\\[\\[\\([^]]+\\)\\]\\]" nil t)
              collect
-             (let* ((target (car (kisaragi-notes-db//query-title
+             (let* ((target (car (minaduki-db//query-title
                                   (match-string-no-properties 1))))
                     (begin-of-block (match-beginning 0))
                     (end-of-block (save-excursion
@@ -251,7 +251,7 @@ This is the format that emacsql expects when inserting into the database.
 FILE-FROM is typically the buffer file path, but this may not exist, for example
 in temp buffers.  In cases where this occurs, we do know the file path, and pass
 it as FILE-PATH."
-  (setq file-path (or file-path kisaragi-notes//file-name (buffer-file-name)))
+  (setq file-path (or file-path minaduki//file-name (buffer-file-name)))
   (cond
    ;; Using `derived-mode-p' maybe adds 3 seconds per call to the
    ;; cache build when there are a million links. At that point 3
@@ -262,7 +262,7 @@ it as FILE-PATH."
      ;; Tracking this as links, as always; we should probably look at
      ;; Org-roam v2 and how it handles Org 9.5 citations.
      (when (featurep 'oc)
-       (kisaragi-notes-extract/citation file-path))))
+       (minaduki-extract/citation file-path))))
    ((derived-mode-p 'markdown-mode)
     (append
      ;; This one depends on the titles cache having been built.
@@ -280,7 +280,7 @@ it as FILE-PATH."
 (defun org-roam--extract-ids (&optional file-path)
   "Extract all IDs within the current buffer.
 If FILE-PATH is nil, use the current file."
-  (setq file-path (or file-path kisaragi-notes//file-name (buffer-file-name)))
+  (setq file-path (or file-path minaduki//file-name (buffer-file-name)))
   (let (result)
     ;; We need to handle the special case of the file property drawer (at outline level 0)
     (org-with-point-at (point-min)
@@ -300,14 +300,14 @@ If FILE-PATH is nil, use the current file."
 
 (cl-defmethod org-roam--extract-titles-title (&context (major-mode org-mode))
   "Return title from \"#+title\" in Org mode."
-  (let* ((prop (kisaragi-notes//org-props '("TITLE")))
+  (let* ((prop (minaduki//org-props '("TITLE")))
          (title (cdr (assoc "TITLE" prop))))
     (when title
       (list title))))
 
 (cl-defmethod org-roam--extract-titles-title (&context (major-mode markdown-mode))
   "Return title from the title front matter property in Markdown."
-  (-some--> (kisaragi-notes-extract//markdown-props "title")
+  (-some--> (minaduki-extract//markdown-props "title")
     (list it)))
 
 (cl-defgeneric org-roam--extract-titles-alias ()
@@ -319,12 +319,12 @@ If FILE-PATH is nil, use the current file."
 
 Reads from the #+alias keyword."
   (condition-case nil
-      (kisaragi-notes//org-prop "ALIAS")
+      (minaduki//org-prop "ALIAS")
     (error
-     (kisaragi-notes//warn
+     (minaduki//warn
       :error
       "Failed to parse aliases for buffer: %s. Skipping"
-      (or kisaragi-notes//file-name
+      (or minaduki//file-name
           (buffer-file-name))))))
 
 (cl-defmethod org-roam--extract-titles-alias (&context (major-mode markdown-mode))
@@ -334,13 +334,13 @@ Reads from the alias prop in the front matter.
 
 alias: [\"alias 1\", \"alias 2\"]"
   (condition-case nil
-      (-some-> (kisaragi-notes-extract//markdown-props "alias")
+      (-some-> (minaduki-extract//markdown-props "alias")
         json-parse-string)
     (json-parse-error
-     (kisaragi-notes//warn
+     (minaduki//warn
       :error
       "Failed to parse aliases for buffer: %s. Skipping"
-      (or kisaragi-notes//file-name
+      (or minaduki//file-name
           (buffer-file-name))))))
 
 (cl-defgeneric org-roam--extract-titles-headline ()
@@ -432,10 +432,10 @@ This also extracts from the #+tags[] property, which is what Hugo expects."
               ;; (The fact that you simply need to change the prop it uses.)
               (org-roam--extract-prop-as-list "TAGS[]"))
     (error
-     (kisaragi-notes//warn
+     (minaduki//warn
       :error
       "Failed to parse tags for buffer: %s. Skipping"
-      (or kisaragi-notes//file-name
+      (or minaduki//file-name
           (buffer-file-name))))))
 
 (defun org-roam--extract-tags-vanilla (_file)
@@ -455,9 +455,9 @@ Tags are obtained via:
    path is considered a tag.
 2. The key #+roam_tags."
   (let* ((file (or file (buffer-file-name (buffer-base-buffer))))
-         (tags (->> kisaragi-notes/tag-sources
-                 (mapcan (lambda (it) (funcall it file)))
-                 -uniq)))
+         (tags (->> minaduki/tag-sources
+                    (mapcan (lambda (it) (funcall it file)))
+                    -uniq)))
     (cond
      ((not org-roam-tag-sort)
       tags)
@@ -467,7 +467,7 @@ Tags are obtained via:
       (cl-sort tags #'string-lessp :key #'downcase)))))
 
 ;; Modified from md-roam's `org-roam--extract-tags-md-buffer'
-(defun kisaragi-notes-extract/tags-hashtag (&optional _file)
+(defun minaduki-extract/tags-hashtag (&optional _file)
   ;; This is referred to "Zettlr style" in `md-roam'; as I've never
   ;; used Zettlr, I should probably not claim that this is like Zettlr.
   "Extracts tags written with hashtags.
@@ -486,7 +486,7 @@ Tags are specified like this:
 ;; Right now this doesn't actually read YAML because there is no YAML
 ;; parser in Emacs Lisp, apart from maybe
 ;; https://github.com/syohex/emacs-libyaml.
-(defun kisaragi-notes-extract/tags-hashtag-frontmatter (&optional _file)
+(defun minaduki-extract/tags-hashtag-frontmatter (&optional _file)
   "Extract hashtags in a YAML frontmatter.
 
 Tags are specified like this at the beginning of the buffer:
@@ -506,7 +506,7 @@ Tags are specified like this at the beginning of the buffer:
                   (re-search-forward "^---$" nil t)))
       (save-restriction
         (narrow-to-region start end)
-        (kisaragi-notes-extract/tags-hashtag)))))
+        (minaduki-extract/tags-hashtag)))))
 
 (defun org-roam--collate-types (type)
   "Collate TYPE into a parent type.
@@ -520,7 +520,7 @@ backlinks."
          "website")
         (t type)))
 
-(defun kisaragi-notes-extract//process-ref (ref)
+(defun minaduki-extract//process-ref (ref)
   "Processes REF into its type and path.
 
 Returns a cons cell '(TYPE . PATH) if ref is a valid ref.
@@ -534,33 +534,33 @@ protocol is treated as the TYPE (after processing through
               (match-string 2 ref))
       (cons "cite" ref))))
 
-(cl-defgeneric kisaragi-notes-extract/refs ()
+(cl-defgeneric minaduki-extract/refs ()
   "Extract all refs statements from the current buffer.
 
 Return value: ((TYPE . KEY) (TYPE . KEY) ...)"
   nil)
 
-(cl-defmethod kisaragi-notes-extract/refs (&context (major-mode org-mode))
+(cl-defmethod minaduki-extract/refs (&context (major-mode org-mode))
   "Extract all refs statements in Org mode."
   (let (refs)
     (pcase-dolist
         (`(,_ . ,roam-key)
-         (kisaragi-notes//org-props '("ROAM_KEY")))
+         (minaduki//org-props '("ROAM_KEY")))
       (pcase roam-key
         ('nil nil)
         ((pred string-empty-p)
          (user-error "Org property #+roam_key cannot be empty"))
         (ref
-         (when-let ((r (kisaragi-notes-extract//process-ref ref)))
+         (when-let ((r (minaduki-extract//process-ref ref)))
            (push r refs)))))
     refs))
 
-(cl-defmethod kisaragi-notes-extract/refs (&context (major-mode markdown-mode))
+(cl-defmethod minaduki-extract/refs (&context (major-mode markdown-mode))
   "Extract all refs statements in Markdown.
 
 Refs are specified in the roam_key: prop in the front matter and
 is always assumed to be a cite key. URL keys are not yet supported."
-  (-some--> (kisaragi-notes-extract//markdown-props "roam_key")
+  (-some--> (minaduki-extract//markdown-props "roam_key")
     (list (cons "cite" it))))
 
 (provide 'org-roam-extract)

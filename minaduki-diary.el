@@ -1,4 +1,4 @@
-;;; kisaragi-diary.el --- My own way of keeping a diary  -*- lexical-binding: t; -*-
+;;; minaduki-diary.el --- My own way of keeping a diary  -*- lexical-binding: t; -*-
 ;;; Commentary:
 ;;
 ;; My alternative to org-roam-dailies, org-journal, or diary.el
@@ -7,10 +7,9 @@
 ;;
 ;; Usage:
 ;;
-;; - M-x `kisaragi-diary/visit-entry-date' to visit entries from today.
-;; - M-x `kisaragi-diary/visit-entry-yesterday' to visit entries from
-;;   yesterday.
-;; - C-u M-x `kisaragi-diary/visit-entry-date' to select a day from
+;; - M-x `minaduki/visit-entry-date' to visit entries from today.
+;; - M-x `minaduki/visit-entry-yesterday' to visit entries from yesterday.
+;; - C-u M-x `minaduki/visit-entry-date' to select a day from
 ;;   the calendar, then visit entries from that day. Days with diary
 ;;   entries are highlighted in the calendar.
 ;;
@@ -28,7 +27,7 @@
 (require 'kisaragi-notes-utils)
 (require 'kisaragi-notes-vars)
 
-(defun kisaragi-diary//read-date (prompt)
+(defun minaduki//read-date (prompt)
   "Like `org-read-date', but also highlight days with diary entries in calendar.
 
 Highlighting is normally enabled by default when running
@@ -40,28 +39,28 @@ PROMPT is passed to `org-read-date'."
   ;; calendar buffer.
   ;;
   ;; These hooks are run when the view changes.
-  (add-hook 'calendar-today-visible-hook #'kisaragi-diary//mark-calendar)
-  (add-hook 'calendar-today-invisible-hook #'kisaragi-diary//mark-calendar)
+  (add-hook 'calendar-today-visible-hook #'minaduki//mark-calendar)
+  (add-hook 'calendar-today-invisible-hook #'minaduki//mark-calendar)
   (let ((org-read-date-prefer-future nil))
     (unwind-protect (org-read-date nil nil nil prompt)
-      (remove-hook 'calendar-today-visible-hook #'kisaragi-diary//mark-calendar)
-      (remove-hook 'calendar-today-invisible-hook #'kisaragi-diary//mark-calendar))))
+      (remove-hook 'calendar-today-visible-hook #'minaduki//mark-calendar)
+      (remove-hook 'calendar-today-invisible-hook #'minaduki//mark-calendar))))
 
-(defun kisaragi-diary//set-calendar-mark-diary-entries-flag-nil (&rest _)
+(defun minaduki//set-calendar-mark-diary-entries-flag-nil (&rest _)
   "Set `calendar-mark-diary-entries-flag' to nil.
 
 This is used as an advice before `org-read-date' to ensure diary
 entries are NOT highlighted in it."
   (setq calendar-mark-diary-entries-flag nil))
 
-(defun kisaragi-diary//set-calendar-mark-diary-entries-flag-t (&rest _)
+(defun minaduki//set-calendar-mark-diary-entries-flag-t (&rest _)
   "Set `calendar-mark-diary-entries-flag' to t.
 
 This is used as an advice after `org-read-date' to reenable diary
 entry highlighting."
   (setq calendar-mark-diary-entries-flag t))
 
-(defun kisaragi-diary//mark-calendar ()
+(defun minaduki//mark-calendar ()
   "In a calendar window, mark days that have diary entries.
 
 This is used as an advice to override `diary-mark-entries' when
@@ -70,7 +69,7 @@ also sets `calendar-mark-diary-entries-flag' to t.
 
 The marker is specified by `diary-entry-marker'."
   (interactive)
-  (cl-loop for file in (directory-files kisaragi-notes/diary-directory)
+  (cl-loop for file in (directory-files minaduki/diary-directory)
            when (>= (length file) 8)
            when (s-match (rx bos
                              (group digit digit digit digit)
@@ -84,7 +83,7 @@ The marker is specified by `diary-entry-marker'."
             (string-to-number (cl-fourth it))
             (string-to-number (cl-second it)))))
 
-(defun kisaragi-diary//find-entry-for-day (day)
+(defun minaduki//find-entry-for-day (day)
   "Find a diary entry written on DAY and return it.
 
 When there are multiple entries, prompt for selection.
@@ -98,7 +97,7 @@ whether an entry is from DAY or not."
   (setq day (s-replace "-" "" day))
   (let ((file-list
          (directory-files
-          kisaragi-notes/diary-directory :full
+          minaduki/diary-directory :full
           (format (rx bos "%s" (0+ any) ".org")
                   day)
           :nosort)))
@@ -108,7 +107,7 @@ whether an entry is from DAY or not."
       (_
        (let* ((title-file-alist
                (--map
-                `(,(or (kisaragi-notes-db//fetch-title it)
+                `(,(or (minaduki-db//fetch-title it)
                        (f-base it))
                   .
                   ,it)
@@ -120,5 +119,5 @@ whether an entry is from DAY or not."
          (cdr
           (assoc selected-key title-file-alist)))))))
 
-(provide 'kisaragi-diary)
-;;; kisaragi-diary.el ends here
+(provide 'minaduki-diary)
+;;; minaduki-diary.el ends here

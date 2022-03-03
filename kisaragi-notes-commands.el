@@ -16,8 +16,8 @@
 
 (require 'bibtex-completion)
 
-(require 'kisaragi-diary)
-(require 'kisaragi-notes-completion)
+(require 'minaduki-diary)
+(require 'minaduki-completion)
 (require 'kisaragi-notes-utils)
 (require 'kisaragi-notes-templates)
 
@@ -29,24 +29,6 @@
 (declare-function org-roam-mode "org-roam")
 
 ;;;; Local commands
-
-;;;###autoload
-(defun kisaragi-notes/remove-markup (&optional beg end)
-  "Remove markup between BEG and END."
-  (interactive
-   (when (region-active-p)
-     (list (region-beginning)
-           (region-end))))
-  (unless (and beg end)
-    (user-error "Please select text to remove markup from"))
-  (save-restriction
-    (narrow-to-region beg end)
-    (let ((parsed (org-element-parse-buffer)))
-      (delete-region beg end)
-      (insert (->> parsed
-                ;; Yes, this works.
-                dom-texts
-                (s-replace-regexp "[ \t]+" " "))))))
 
 (defun minaduki/org-heading-to-file//suffix (&optional dir full? visit?)
   "Write the current heading to a file under DIR.
@@ -80,12 +62,12 @@ Interactively, please use the transient command instead."
          (filename (->> (if full?
                             title
                           (car (s-split " " title)))
-                     (s-replace-regexp (rx (any "-/,:?\"!'\\")) "")
-                     (s-replace-regexp " +" "-")
-                     downcase
-                     (s-replace-regexp (rx (group digit) "t" (group digit))
-                                       "\\1T\\2")
-                     (format "%s.org")))
+                        (s-replace-regexp (rx (any "-/,:?\"!'\\")) "")
+                        (s-replace-regexp " +" "-")
+                        downcase
+                        (s-replace-regexp (rx (group digit) "t" (group digit))
+                                          "\\1T\\2")
+                        (format "%s.org")))
          (path (f-join dir filename))
          (content (save-mark-and-excursion
                     (org-mark-subtree)
@@ -106,76 +88,31 @@ Interactively, please use the transient command instead."
   ["Command"
    ("e" "Export" minaduki/org-heading-to-file//suffix)])
 
-;;;###autoload
-(defun org-roam-insert (&optional lowercase completions filter-fn description type)
-  "Find an Org-roam file, and insert a relative org link to it at point.
-Return selected file if it exists.
-If LOWERCASE is non-nil, downcase the link description.
-TYPE is the type of link to be created. It defaults to \"file\".
-COMPLETIONS is a list of completions to be used instead of
-`org-roam--get-title-path-completions`.
-FILTER-FN is the name of a function to apply on the candidates
-which takes as its argument an alist of path-completions.
-If DESCRIPTION is provided, use this as the link label.  See
-`org-roam--get-title-path-completions' for details."
-  (interactive "P")
-  (unless org-roam-mode (org-roam-mode))
-  ;; Deactivate the mark on quit since `atomic-change-group' prevents it
-  (unwind-protect
-      ;; Group functions together to avoid inconsistent state on quit
-      (atomic-change-group
-        (let* (region-text
-               beg end
-               (_ (when (region-active-p)
-                    (setq beg (set-marker (make-marker) (region-beginning)))
-                    (setq end (set-marker (make-marker) (region-end)))
-                    (setq region-text (org-link-display-format (buffer-substring-no-properties beg end)))))
-               (completions (--> (or completions
-                                     (org-roam--get-title-path-completions))
-                              (if filter-fn
-                                  (funcall filter-fn it)
-                                it)))
-               (title-with-tags (completing-read "File: " completions
-                                                 nil nil region-text))
-               (res (cdr (assoc title-with-tags completions)))
-               (title (or (plist-get res :title)
-                          title-with-tags))
-               (target-file-path (plist-get res :path))
-               (description (or description region-text title))
-               (description (if lowercase
-                                (downcase description)
-                              description)))
-          (cond ((and target-file-path
-                      (file-exists-p target-file-path))
-                 (when region-text
-                   (delete-region beg end)
-                   (set-marker beg nil)
-                   (set-marker end nil))
-                 (insert (org-roam-format-link target-file-path description type)))
-                (t
-                 (let ((org-roam-capture--info `((title . ,title-with-tags)
-                                                 (slug . ,(kisaragi-notes//title-to-slug title-with-tags))))
-                       (org-roam-capture--context 'title))
-                   (setq org-roam-capture-additional-template-props (list :region (org-roam-shield-region beg end)
-                                                                          :insert-at (point-marker)
-                                                                          :link-type type
-                                                                          :link-description description
-                                                                          :finalize 'insert-link))
-                   (org-roam-capture--capture))))
-          res))
-    (deactivate-mark)))
+(cl-defun minaduki/insert (&key entry lowercase?)
+  "Insert a link to a note.
 
-;;;###autoload
-(defun org-roam-insert-immediate (arg &rest args)
-  "Find an Org-roam file, and insert a relative org link to it at point.
-This variant of `org-roam-insert' inserts the link immediately by
-using the template in `org-roam-capture-immediate-template'. The
-interactive ARG and ARGS are passed to `org-roam-insert'.
-See `org-roam-insert' for details."
-  (interactive "P")
-  (let ((args (push arg args))
-        (org-roam-capture-templates (list org-roam-capture-immediate-template)))
-    (apply #'org-roam-insert args)))
+If region is active, the selected text is used as the link description.
+
+ENTRY: the note entry (as returned by `minaduki-completion/read-note')
+LOWERCASE?: if non-nil, the link description will be downcased."
+  (interactive (list :lowercase? current-prefix-arg))
+  (unless entry
+    (setq entry (minaduki-completion//read-note
+                 :prompt "Insert link to note: ")))
+  (let ((desc (plist-get entry :title)))
+    (when (region-active-p)
+      (setq desc
+            (s-trim
+             (buffer-substring-no-properties
+              (region-beginning)
+              (region-end))))
+      (delete-active-region))
+    (insert (minaduki/format-link
+             :target (plist-get entry :path)
+             :desc (--> desc
+                        (if lowercase?
+                            (downcase it)
+                          it))))))
 
 ;;;###autoload
 (defun org-roam-unlinked-references ()
@@ -241,7 +178,7 @@ the executable 'rg' in variable `exec-path'."
                   (let ((rowcol (concat row ":" col)))
                     (insert "- "
                             (org-link-make-string (concat "file:" file "::" rowcol)
-                                                  (format "[%s] %s" rowcol (or (kisaragi-notes-db//fetch-title file)
+                                                  (format "[%s] %s" rowcol (or (minaduki-db//fetch-title file)
                                                                                file))))
                     (when (executable-find "sed") ; insert line contents when sed is available
                       (insert " :: "
@@ -282,7 +219,7 @@ Return added alias."
               (forward-line)
               (beginning-of-line)))
           (insert "#+alias: " alias "\n"))))
-    (org-roam-db--update-file (buffer-file-name (buffer-base-buffer)))
+    (minaduki-db//update-file (buffer-file-name (buffer-base-buffer)))
     alias))
 
 ;;;###autoload
@@ -297,7 +234,7 @@ Return added alias."
             (when (search-forward (concat "#+alias: " alias) (point-max) t)
               (delete-region (line-beginning-position)
                              (1+ (line-end-position))))))
-        (org-roam-db--update-file (buffer-file-name (buffer-base-buffer))))
+        (minaduki-db//update-file (buffer-file-name (buffer-base-buffer))))
     (user-error "No aliases to delete")))
 
 ;;;###autoload
@@ -307,7 +244,7 @@ Return added alias."
 Return added tag."
   (interactive)
   (unless org-roam-mode (org-roam-mode))
-  (let* ((all-tags (kisaragi-notes-db//fetch-all-tags))
+  (let* ((all-tags (minaduki-db//fetch-all-tags))
          (tag (completing-read "Tag: " all-tags))
          (file (buffer-file-name (buffer-base-buffer)))
          (existing-tags (org-roam--extract-tags-prop file)))
@@ -316,7 +253,7 @@ Return added tag."
     (org-roam--set-global-prop
      "roam_tags"
      (combine-and-quote-strings (seq-uniq (cons tag existing-tags))))
-    (org-roam-db--insert-tags 'update)
+    (minaduki-db//insert-tags 'update)
     tag))
 
 ;;;###autoload
@@ -330,7 +267,7 @@ Return added tag."
         (org-roam--set-global-prop
          "roam_tags"
          (combine-and-quote-strings (delete tag tags)))
-        (org-roam-db--insert-tags 'update))
+        (minaduki-db//insert-tags 'update))
     (user-error "No tag to delete")))
 
 ;;;; Global commands
@@ -341,7 +278,7 @@ Return added tag."
   (interactive)
   (let* ((roam-buffers (org-roam--get-roam-buffers))
          (names-and-buffers (mapcar (lambda (buffer)
-                                      (cons (or (kisaragi-notes-db//fetch-title
+                                      (cons (or (minaduki-db//fetch-title
                                                  (buffer-file-name buffer))
                                                 (buffer-name buffer))
                                             buffer))
@@ -353,13 +290,13 @@ Return added tag."
       (switch-to-buffer (cdr (assoc name names-and-buffers))))))
 
 ;;;###autoload
-(defun kisaragi-notes/new-daily-note (&optional day)
+(defun minaduki/new-daily-note (&optional day)
   "Create a new daily note on DAY.
 
 This will create diary/20211129.org on the day 2021-11-29, then
 fill it in with the \"daily\" template."
   (interactive)
-  (let* ((day (or day (kisaragi-notes//today)))
+  (let* ((day (or day (minaduki//today)))
          (now (pcase-let ((`(,y ,m ,d)
                            (mapcar
                             #'string-to-number
@@ -370,7 +307,7 @@ fill it in with the \"daily\" template."
                 (encode-time `(0 0 0 ,d ,m ,y nil nil nil))))
          (filename (s-replace "-" "" day))
          (ext "org"))
-    (find-file (f-join kisaragi-notes/diary-directory
+    (find-file (f-join minaduki/diary-directory
                        (concat filename "." ext)))
     (let (;; This is how you pass arguments to org-capture-fill-templates
           ;; It's either this or `org-capture-put'; this is
@@ -380,14 +317,14 @@ fill it in with the \"daily\" template."
           ;; variable should not be used.
           (org-extend-today-until 0))
       (insert
-       (kisaragi-notes-templates//make-note "daily")))))
+       (minaduki-templates//make-note "daily")))))
 
 ;;;###autoload
-(defun kisaragi-notes/new-diary-entry (&optional time)
-  "Create a new diary entry in `kisaragi-notes/diary-directory'.
+(defun minaduki/new-diary-entry (&optional time)
+  "Create a new diary entry in `minaduki/diary-directory'.
 
 The entry will be stored as a file named after the current time
-under `kisaragi-notes/diary-directory'. Example:
+under `minaduki/diary-directory'. Example:
 
     diary/20211019T233513+0900.org
 
@@ -400,12 +337,12 @@ When TIME is non-nil, create an entry for TIME instead of
          ;; Put this here so if we allow different templates later
          ;; it's easier to change
          (ext "org"))
-    (find-file (f-join kisaragi-notes/diary-directory
+    (find-file (f-join minaduki/diary-directory
                        (concat filename "." ext)))
     (insert (concat "#+title: " title "\n"))))
 
 ;;;###autoload
-(defun kisaragi-notes/open-diary-entry ()
+(defun minaduki/open-diary-entry ()
   "Open a diary entry.
 
 By default, open one from today. With a \\[universal-argument],
@@ -413,9 +350,9 @@ prompt to select a day first.
 
 When there are multiple diary entries, prompt for selection.
 
-Diary entries are files in `kisaragi-notes/diary-directory' that
+Diary entries are files in `minaduki/diary-directory' that
 are named with a YYYYMMDD prefix (optionally with dashes)."
-  (declare (interactive-only kisaragi-diary//visit-entry-for-day))
+  (declare (interactive-only minaduki-diary//find-entry-for-day))
   (interactive)
   (let ((day
          ;; Why not `cond': if we're in the calendar buffer but our cursor
@@ -423,71 +360,72 @@ are named with a YYYYMMDD prefix (optionally with dashes)."
          ;; to fall back to the next case. `cond' doesn't do that.
          (or (and (derived-mode-p 'calendar-mode)
                   (-some-> (calendar-cursor-to-date)
-                    kisaragi-notes//date/calendar.el->ymd))
+                    minaduki//date/calendar.el->ymd))
 
              (and current-prefix-arg
-                  (kisaragi-diary//read-date "Visit diary entry from day:"))
+                  (minaduki//read-date "Visit diary entry from day:"))
 
-             (kisaragi-notes//today))))
-    (if-let ((file (kisaragi-diary//find-entry-for-day day)))
+             (minaduki//today))))
+    (if-let ((file (minaduki//find-entry-for-day day)))
         (find-file file)
       (and (y-or-n-p (format "No entry from %s. Create one? " day))
-           (kisaragi-notes/new-daily-note day)))))
+           (minaduki/new-daily-note day)))))
 
 ;;;###autoload
-(defun kisaragi-notes/open-diary-entry-yesterday ()
+(defun minaduki/open-diary-entry-yesterday ()
   "Open a diary entry from yesterday."
   (interactive)
-  (let ((day (kisaragi-notes//today -1)))
-    (if-let ((file (kisaragi-diary//find-entry-for-day day)))
+  (let ((day (minaduki//today -1)))
+    (if-let ((file (minaduki//find-entry-for-day day)))
         (find-file file)
       (and (y-or-n-p (format "No entry from %s. Create one? " day))
-           (kisaragi-notes/new-daily-note day)))))
+           (minaduki/new-daily-note day)))))
 
 ;;;###autoload
-(defun kisaragi-notes/open-template ()
-  "Open a template in `kisaragi-notes/templates-directory' for edit."
+(defun minaduki/open-template ()
+  "Open a template in `minaduki/templates-directory' for edit."
   (interactive)
   ;; Setting `default-directory' to (a) skip passing the directory to
   ;; `f-relative' and `f-expand', and (b) make sure each entry points
   ;; to the right file as relative links. Without this, we have to
   ;; settle for not setting the category correctly.
-  (org-roam--find-file
-   (kisaragi-notes-templates//read-template "Open template: ")))
+  (minaduki//find-file
+   (minaduki-templates//read-template "Open template: ")))
 
-(defun kisaragi-notes/capture-template ()
+(defun minaduki/capture-template ()
   "Capture a template."
   (interactive)
-  (-> (kisaragi-notes-templates//read-template "Template: ")
-    kisaragi-notes-templates//capture
-    org-roam--find-file))
+  (-> (minaduki-templates//read-template "Template: ")
+      minaduki-templates//capture
+      minaduki//find-file))
 
 ;;;###autoload
-(defun kisaragi-notes/open-non-literature-note (&optional initial-prompt)
+(defun minaduki/open-non-literature-note (&optional initial-prompt)
   ;; `orb-find-non-ref-file'
   "Open a note that isn't a literature note.
 
 INITIAL-PROMPT is the initial title prompt. See
-`org-roam-find-files' and `kisaragi-notes-completion//get-non-literature' for
+`org-roam-find-files' and `minaduki-completion//get-non-literature' for
 details."
   (interactive)
-  (kisaragi-notes/open
-   (kisaragi-notes-completion//read-note
-    initial-prompt
-    (car (kisaragi-notes-completion//get-non-literature)))))
+  (minaduki/open
+   (minaduki-completion//read-note
+    :initial-input initial-prompt
+    :completions (car (minaduki-completion//get-non-literature))
+    :prompt "Open non-literature note: ")))
 
 ;;;###autoload
-(defun kisaragi-notes/open-directory ()
+(defun minaduki/open-directory ()
   "Open `org-directory'."
   (interactive)
   (find-file org-directory))
 
 ;;;###autoload
-(defun kisaragi-notes/open-literature-note (interactive? &optional filter)
+(defun minaduki/open-literature-note (interactive? &optional filter)
   ;; Originally `org-roam-find-ref'
   "Open a literature note, allowing search for their ROAM_KEYs.
 
-INTERACTIVE? is passed to `org-roam--get-ref-path-completions'.
+INTERACTIVE? is passed to `minaduki//get-ref-path-completions'.
 
 FILTER is used to filter results, and can either be a string or a function:
 
@@ -499,21 +437,21 @@ takes three arguments: the type, the ref, and the file of the
 current candidate.  It should return t if that candidate is to be
 included as a candidate."
   (interactive (list t))
-  (let* ((completions (org-roam--get-ref-path-completions interactive? filter))
+  (let* ((completions (minaduki//get-ref-path-completions interactive? filter))
          (ref (completing-read "Literature note: " completions nil t))
          (file (-> (cdr (assoc ref completions))
-                 (plist-get :path))))
-    (org-roam--find-file file)))
+                   (plist-get :path))))
+    (minaduki//find-file file)))
 
 ;;;###autoload
-(defun kisaragi-notes/open-random-note ()
+(defun minaduki/open-random-note ()
   ;; Originally `org-roam-random-note'
   "Open a random note."
   (interactive)
   (find-file (seq-random-elt (org-roam--list-all-files))))
 
 ;;;###autoload
-(defun kisaragi-notes/open-index ()
+(defun minaduki/open-index ()
   ;; originally `org-roam-jump-to-index'
   "Open the index file.
 
@@ -529,18 +467,18 @@ The index file is specified in this order:
                 ((stringp org-roam-index-file)
                  (f-expand org-roam-index-file))
                 (t
-                 (car (kisaragi-notes-db//query-title "Index"))))))
+                 (car (minaduki-db//query-title "Index"))))))
     (if (and index (f-exists? index))
-        (org-roam--find-file index)
+        (minaduki//find-file index)
       (when (y-or-n-p "Index file does not exist.  Would you like to create it? ")
-        (kisaragi-notes/open "Index")))))
+        (minaduki/open "Index")))))
 
 ;;;###autoload
-(defun kisaragi-notes/open (&optional entry)
+(defun minaduki/open (&optional entry)
   ;; Some usages:
-  ;; (kisaragi-notes/open title)
-  ;; (kisaragi-notes/open
-  ;;   (kisaragi-notes-completion//read-note initial-input))
+  ;; (minaduki/open title)
+  ;; (minaduki/open
+  ;;   (minaduki-completion//read-note :initial-input initial-input))
   "Find and open the note ENTRY.
 
 ENTRY is a plist (:path PATH :title TITLE). It can also be a
@@ -551,21 +489,21 @@ Interactively, provide a list of notes to search and select from.
 If a note with the entered title does not exist, create a new
 one."
   (interactive
-   (list (kisaragi-notes-completion//read-note)))
+   (list (minaduki-completion//read-note)))
   (unless org-roam-mode (org-roam-mode))
   (when (stringp entry)
     (setq entry
-          (list :path (car (kisaragi-notes-db//query-title entry))
+          (list :path (car (minaduki-db//query-title entry))
                 :title entry)))
   (let ((file-path (plist-get entry :path))
         (title (plist-get entry :title)))
     (if file-path
-        (org-roam--find-file file-path)
+        (minaduki//find-file file-path)
       ;; FIXME: Hardcodes choice of Org
       (with-current-buffer (find-file-noselect
-                            (-> (kisaragi-notes//title-to-slug title)
-                              (f-expand org-directory)
-                              (concat ".org")))
+                            (-> (minaduki//title-to-slug title)
+                                (f-expand org-directory)
+                                (concat ".org")))
         (insert "#+TITLE: " title "\n")
         (pop-to-buffer-same-window (current-buffer))))))
 
@@ -580,34 +518,34 @@ CITEKEY is a list whose car is a citation key."
 
 ;;;; Actions
 
-(defvar kisaragi-notes/global-commands
-  '(("Open or create a note"              . kisaragi-notes/open)
-    ("Open notes directory"               . kisaragi-notes/open-directory)
-    ("Open or create a template"          . kisaragi-notes/open-template)
-    ("Create a new diary entry"           . kisaragi-notes/new-diary-entry)
-    ("Create a new note from a template" . kisaragi-notes/capture-template)
-    ("Create a new note with the \"daily\" template" . kisaragi-notes/new-daily-note)
-    ("Open the index file"                . kisaragi-notes/open-index)
-    ("Open a literature note"             . kisaragi-notes/open-literature-note)
-    ("Open a non-literature note"         . kisaragi-notes/open-non-literature-note)
-    ("Open a random note"                 . kisaragi-notes/open-random-note)
+(defvar minaduki/global-commands
+  '(("Open or create a note"              . minaduki/open)
+    ("Open notes directory"               . minaduki/open-directory)
+    ("Open or create a template"          . minaduki/open-template)
+    ("Create a new diary entry"           . minaduki/new-diary-entry)
+    ("Create a new note from a template" . minaduki/capture-template)
+    ("Create a new note with the \"daily\" template" . minaduki/new-daily-note)
+    ("Open the index file"                . minaduki/open-index)
+    ("Open a literature note"             . minaduki/open-literature-note)
+    ("Open a non-literature note"         . minaduki/open-non-literature-note)
+    ("Open a random note"                 . minaduki/open-random-note)
     ("Switch to a buffer visiting a note" . org-roam-switch-to-buffer)
-    ("Refresh cache"                      . org-roam-db-build-cache))
-  "Global commands shown in `kisaragi-notes/command-palette'.
+    ("Refresh cache"                      . minaduki-db/build-cache))
+  "Global commands shown in `minaduki/command-palette'.
 
 List of (DISPLAY-NAME . COMMAND) pairs.")
 
-(defun kisaragi-notes/command-palette ()
+(defun minaduki/command-palette ()
   "Command palette."
   (declare (interactive-only command-execute))
   (interactive)
-  (let* ((candidates kisaragi-notes/global-commands)
-         (selection (completing-read "Kisaragi-Notes Global Command: " candidates))
+  (let* ((candidates minaduki/global-commands)
+         (selection (completing-read "Minaduki Global Command: " candidates))
          (func (cdr (assoc selection candidates)))
          (prefix-arg current-prefix-arg))
     (command-execute func)))
 
-(defvar kisaragi-notes/literature-note-actions
+(defvar minaduki/literature-note-actions
   '(("Open PDF file(s)" . bibtex-completion-open-pdf)
     ("Add PDF to library" . bibtex-completion-add-pdf-to-library)
     ("Open URL or DOI in browser" . bibtex-completion-open-url-or-doi)
@@ -621,15 +559,15 @@ one argument, a list of cite keys.
 
 Equivalent to `orb-note-actions-default'.")
 
-(defun kisaragi-notes/literature-note-actions (&optional citekey)
+(defun minaduki/literature-note-actions (&optional citekey)
   ;; `orb-note-actions'
   "Prompt for note-related actions on CITEKEY.
 
 CITEKEY is, by default, the first ROAM_KEY in the buffer.
 
-Actions are defined in `kisaragi-notes/literature-note-actions'."
+Actions are defined in `minaduki/literature-note-actions'."
   (interactive)
-  (-if-let* ((citekey (or citekey (cdar (kisaragi-notes-extract/refs)))))
+  (-if-let* ((citekey (or citekey (cdar (minaduki-extract/refs)))))
       (let* ((prompt (let ((bibtex-completion-display-formats
                             '((t . "Act on ${author} - ${title} (${year}): ")))
                            ;; This should be local to the `let'.
@@ -638,7 +576,7 @@ Actions are defined in `kisaragi-notes/literature-note-actions'."
                        (bibtex-completion-format-entry
                         (bibtex-completion-get-entry citekey)
                         0)))
-             (candidates kisaragi-notes/literature-note-actions)
+             (candidates minaduki/literature-note-actions)
              (selection (completing-read prompt candidates))
              (func (cdr (assoc selection candidates))))
         (funcall func (list citekey)))

@@ -1,4 +1,4 @@
-;;; org-roam-bibtex.el --- Org Roam meets BibTeX -*- lexical-binding: t -*-
+;;; minaduki-bibtex.el --- BibTeX integration -*- lexical-binding: t -*-
 
 ;; Copyright © 2020 Jethro Kuan <jethrokuan95@gmail.com>
 ;; Copyright © 2020 Mykhailo Shevchuk <mail@mshevchuk.com>
@@ -7,10 +7,6 @@
 ;; Author: Leo Vivier <leo.vivier+dev@gmail.com>
 ;; 	Mykhailo Shevchuk <mail@mshevchuk.com>
 ;; 	Jethro Kuan <jethrokuan95@gmail.com>
-;; URL: https://github.com/org-roam/org-roam-bibtex
-;; Keywords: bib, hypermedia, outlines, wp
-;; Verstion 0.4.0
-;; Package-Requires: ((emacs "27.1") (bibtex-completion "2.0.0"))
 
 ;; Soft dependencies: projectile, persp-mode
 
@@ -40,14 +36,14 @@
 ;;
 ;; To use it:
 ;;
-;; call interactively `org-roam-bibtex-mode' or
-;; call (org-roam-bibtex-mode +1) from Lisp.
+;; call interactively `minaduki-bibtex-mode' or
+;; call (minaduki-bibtex-mode +1) from Lisp.
 ;;
-;; After enabling `org-roam-bibtex-mode', the function
+;; After enabling `minaduki-bibtex-mode', the function
 ;; `orb-edit-notes' will shadow `bibtex-completion-edit-notes' in
 ;; Helm-bibtex, Ivy-bibtex.
 ;;
-;; As a user option, `org-roam-capture-templates' can be dynamically
+;; As a user option, `minaduki-capture/templates' can be dynamically
 ;; preformatted with bibtex field values.  See
 ;; `orb-preformat-keywords' for more details.
 
@@ -57,7 +53,6 @@
 ;;;; Dependencies
 ;; ============================================================================
 
-(require 'orb-core)
 (require 'kisaragi-notes-utils)
 (require 'kisaragi-notes-vars)
 
@@ -85,8 +80,42 @@
 (declare-function persp-names "persp-mode")
 
 ;; ============================================================================
-;;;; Customize definitions
+;;;; Utils
 ;; ============================================================================
+
+;;;###autoload
+(defun orb-process-file-field (citekey)
+  "Process the 'file' BibTeX field and resolve if there are multiples.
+Search the disk for the document associated with this BibTeX
+entry.  The disk matching is based on looking in the
+`bibtex-completion-library-path' for a file with the
+CITEKEY.
+
+If variable `orb-file-field-extensions' is non-nil, return only
+the file paths with the respective extensions.
+
+\(Mendeley, Zotero, normal paths) are all supported.  If there
+are multiple files found the user is prompted to select which one
+to enter."
+  ;; ignore any errors that may be thrown by `bibtex-completion-find-pdf'
+  ;; don't stop the capture process
+  (ignore-errors
+    (when-let* ((entry (bibtex-completion-get-entry citekey))
+                (paths (bibtex-completion-find-pdf entry)))
+      (when-let ((extensions orb-file-field-extensions))
+        (unless (listp extensions)
+          (setq extensions (list extensions)))
+        (setq paths (--filter
+                     (lambda ()
+                       (when-let ((extension (file-name-extension it)))
+                         (member-ignore-case extension extensions)))
+                     paths)))
+      (when paths
+        (if (= (length paths) 1)
+            (car paths)
+          (completing-read "File to use: "
+                           (minaduki-completion//mark-category
+                            paths 'file)))))))
 
 ;; ============================================================================
 ;;;; Orb plist
@@ -201,10 +230,10 @@ symbols is implied."
   (let* ((targets (--> (if (and targets (not (listp targets)))
                            (listp targets)
                          targets)
-                    ;; filter irrelevant symbols,
-                    ;; or if targets were nil, make all targets
-                    (or (-intersection it '(prepare before after))
-                        '(prepare before after)))))
+                       ;; filter irrelevant symbols,
+                       ;; or if targets were nil, make all targets
+                       (or (-intersection it '(prepare before after))
+                           '(prepare before after)))))
     (dolist (target targets)
       (let ((functions (sort (orb-plist-get
                               (intern (format ":%s-functions" target)))
@@ -235,9 +264,9 @@ is the function `ignore', it is added as `:override'."
 
 (defun orb--preformat-template (template entry)
   "Helper function for `orb--preformat-templates'.
-TEMPLATE is an element of `org-roam-capture-templates' and ENTRY
+TEMPLATE is an element of `minaduki-capture/templates' and ENTRY
 is a BibTeX entry as returned by `bibtex-completion-get-entry'."
-  ;; Handle org-roam-capture part
+  ;; Handle minaduki-capture part
   (let* (;; Org-capture templates: handle different types of
          ;; org-capture-templates: string, file and function; this is
          ;; a stripped down version of `org-capture-get-template'
@@ -265,7 +294,7 @@ is a BibTeX entry as returned by `bibtex-completion-get-entry'."
     ;; First run:
     ;; 1) Make a list of (rplc-s field-value match-position) for the
     ;; second run
-    ;; 2) replace org-roam-capture wildcards
+    ;; 2) replace minaduki-capture wildcards
     (dolist (keyword orb-preformat-keywords)
       (let* (;; prompt wildcard keyword
              ;; bibtex field name
@@ -289,11 +318,11 @@ is a BibTeX entry as returned by `bibtex-completion-get-entry'."
                   ""))
              ;; org-capture prompt wildcard
              (rplc-s (concat "%^{" (or keyword "citekey") "}"))
-             ;; org-roam-capture prompt wildcard
+             ;; minaduki-capture prompt wildcard
              (rplc-s2 (concat "${" (or keyword "citekey") "}"))
-             ;; org-roam-capture :head template
+             ;; minaduki-capture :head template
              (head (plist-get plst :head))
-             ;; org-roam-capture :file-name template
+             ;; minaduki-capture :file-name template
              (fl-nm (plist-get plst :file-name))
              (i 1)                        ; match counter
              pos)
@@ -306,7 +335,7 @@ is a BibTeX entry as returned by `bibtex-completion-get-entry'."
                   (cl-pushnew (list rplc-s field-value i) lst))
               (setq pos (match-end 1)
                     i (1+ i)))))
-        ;; Replace org-roam-capture prompt wildcards
+        ;; Replace minaduki-capture prompt wildcards
         (when head
           (plist-put plst :head (s-replace rplc-s2 field-value head)))
         (when fl-nm
@@ -324,21 +353,21 @@ is a BibTeX entry as returned by `bibtex-completion-get-entry'."
     template))
 
 (defun orb--edit-notes (citekey)
-  "Process templates and run `org-roam-capture--capture'.
+  "Process templates and run `minaduki-capture//capture'.
 CITEKEY is a citation key.
 Helper function for `orb-edit-notes', which abstracts initiating
 a capture session."
   ;; Check if the requested BibTeX entry actually exists and fail
   ;; gracefully otherwise
   (if-let* ((entry (or (bibtex-completion-get-entry citekey)
-                       (kisaragi-notes//warn
+                       (minaduki//warn
                         :warning
                         "%s: Could not find the BibTeX entry" citekey)))
             ;; Depending on the templates used: run
-            ;; `org-roam-capture--capture' or call `org-roam-find-file'
+            ;; `minaduki-capture//capture' or call `org-roam-find-file'
             (org-capture-templates
-             (or orb-templates org-roam-capture-templates
-                 (kisaragi-notes//warn
+             (or orb-templates minaduki-capture/templates
+                 (minaduki//warn
                   :warning
                   "Could not find the requested templates")))
             ;; hijack org-capture-templates
@@ -348,29 +377,29 @@ a capture session."
                                ;; if only one template is defined, use it
                                (car org-capture-templates)
                              (org-capture-select-template))
-                        (copy-tree it)
-                        ;; optionally preformat templates
-                        (if orb-preformat-templates
-                            (orb--preformat-template it entry)
-                          it)))
+                           (copy-tree it)
+                           ;; optionally preformat templates
+                           (if orb-preformat-templates
+                               (orb--preformat-template it entry)
+                             it)))
             ;; pretend we had only one template
-            ;; `org-roam-capture--capture' behaves specially in this case
+            ;; `minaduki-capture//capture' behaves specially in this case
             ;; NOTE: this circumvents using functions other than
-            ;; `org-capture', see `org-roam-capture-function'.
+            ;; `org-capture', see `minaduki-capture/function'.
             ;; If the users start complaining, we may revert previous
             ;; implementation
-            (org-roam-capture-templates (list template))
+            (minaduki-capture/templates (list template))
             ;; Org-roam coverts the templates to its own syntax;
             ;; since we are telling `org-capture' to use the template entry
             ;; (by setting `org-capture-entry'), and Org-roam converts the
             ;; whole template list, we must do the conversion of the entry
             ;; ourselves
             (org-capture-entry
-             (org-roam-capture--convert-template template))
+             (minaduki-capture//convert-template template))
             (citekey-formatted (format (or orb-citekey-format "%s") citekey))
             (title
              (or (bibtex-completion-get-value "title" entry)
-                 (kisaragi-notes//warn
+                 (minaduki//warn
                   :warning
                   "Title not found for this entry")
                  ;; this is not critical, the user may input their own
@@ -385,25 +414,25 @@ a capture session."
               ;; install capture hook functions
               (orb-do-hook-functions 'add)
               ;; Depending on the templates used: run
-              ;; `org-roam-capture--capture' with ORB-predefined
+              ;; `minaduki-capture//capture' with ORB-predefined
               ;; settings or call vanilla `org-roam-find-file'
               (if orb-templates
-                  (let* ((org-roam-capture--context 'ref)
+                  (let* ((minaduki-capture//context 'ref)
                          (slug-source (cl-case orb-slug-source
                                         (citekey citekey)
                                         (title title)
                                         (t (user-error "Only `citekey' \
 or `title' should be used for slug: %s not supported" orb-slug-source))))
-                         (org-roam-capture--info
+                         (minaduki-capture//info
                           `((title . ,title)
                             (ref . ,citekey-formatted)
                             ,@(when-let (url (bibtex-completion-get-value "url" entry))
                                 `((url . ,url)))
-                            (slug . ,(kisaragi-notes//title-to-slug slug-source)))))
-                    (setq org-roam-capture-additional-template-props
+                            (slug . ,(minaduki//title-to-slug slug-source)))))
+                    (setq minaduki-capture/additional-template-props
                           (list :finalize 'find-file))
-                    (org-roam-capture--capture))
-                (kisaragi-notes/open title)))
+                    (minaduki-capture//capture))
+                (minaduki/open title)))
           (orb--store-link-functions-advice 'remove)))
     (message "ORB: Something went wrong. Check the *Warnings* buffer")))
 
@@ -434,7 +463,7 @@ pre-populated with the record title.
 
 3. The template used to create the note is stored in
 `orb-templates'.  If the variable is not defined, revert to using
-`org-roam-capture-templates'.  In the former case, a new file
+`minaduki-capture/templates'.  In the former case, a new file
 will be created and filled according to the template, possibly
 preformatted (see below) without additional user interaction.  In
 the latter case, an interactive `org-capture' process will be
@@ -442,10 +471,10 @@ run.
 
 4. Optionally, when `orb-preformat-templates' is non-nil, any
 prompt wildcards in `orb-templates' or
-`org-roam-capture-templates', associated with the bibtex record
+`minaduki-capture/templates', associated with the bibtex record
 fields as specified in `orb-preformat-templates', will be
 preformatted.  Both `org-capture-templates' (%^{}) and
-`org-roam-capture-templates' (`s-format', ${}) prompt syntaxes
+`minaduki-capture/templates' (`s-format', ${}) prompt syntaxes
 are supported.
 
 See `orb-preformat-keywords' for more details on how
@@ -459,7 +488,7 @@ wildcards will be replace with the BibTeX field value."
   (when (consp citekey)
     (setq citekey (car citekey)))
   (unless org-roam-mode (org-roam-mode))
-  (let ((note-data (kisaragi-notes-db//query-ref citekey)))
+  (let ((note-data (minaduki-db//query-ref citekey)))
     ;; Find org-roam reference with the CITEKEY and collect data into
     ;; `orb-plist'
     (orb-plist-put :note-existed (and note-data t))
@@ -468,7 +497,7 @@ wildcards will be replace with the BibTeX field value."
       (orb-plist-put :title (elt note-data 0)
                      :file (elt note-data 1))
       (apply #'orb-plist-put (cdr note-data))
-      (ignore-errors (org-roam--find-file (orb-plist-get :file))))
+      (ignore-errors (minaduki//find-file (orb-plist-get :file))))
      ;; we need to clean up if the capture process was aborted signaling
      ;; user-error
      (t (condition-case nil
@@ -514,7 +543,8 @@ Return the filename if it exists."
                 (let ((description (if lowercase
                                        (downcase description)
                                      description)))
-                  (insert (org-roam-format-link file description)))
+                  (insert (minaduki/format-link :target file
+                                                :desc description)))
               (let ((cite-link (if (boundp 'org-ref-default-citation-link)
                                    (concat org-ref-default-citation-link ":")
                                  "cite:")))
@@ -575,8 +605,8 @@ If ARG is non-nil, rebuild `bibtex-completion-cache'."
          (citekey (if (eq orb-insert-generic-candidates-format 'key)
                       selection
                     (--> (alist-get selection candidates nil nil #'equal)
-                      (cdr it)
-                      (alist-get "=key=" it  nil nil #'equal)))))
+                         (cdr it)
+                         (alist-get "=key=" it  nil nil #'equal)))))
     (orb-insert-edit-notes (list citekey))))
 
 (defun orb-insert-edit-notes (citekey)
@@ -595,7 +625,7 @@ newly created note."
   ;; still exists.  But if the capture process was killed, our before hook
   ;; function did not run and therefore title is nil on `orb-plist'.
   (orb-register-hook-function get-title before nil
-    (orb-plist-put :title (cdar (kisaragi-notes//org-props '("title")))
+    (orb-plist-put :title (cdar (minaduki//org-props '("title")))
                    :immediate-finish
                    (plist-get org-capture-plist :immediate-finish)))
 
@@ -623,86 +653,26 @@ newly created note."
     ;; we call the hook function so that the hook is removed
     (orb-call-hook-function 'insert-link)))
 
-;;;###autoload
-(defun orb-insert (&optional arg)
-  "Insert a link to an Org-roam bibliography note.
-
-If the note does not exist, create it using `orb-insert-generic'.
-
-A simple list of available citation keys will be presented using
-`completion-read' and after choosing a candidate the appropriate
-link will be inserted.
-
-If the note does not exist yet, it will be created using
-`orb-edit-notes' function.
-
-\\<universal-argument-map>\\<org-roam-bibtex-mode-map> The
-customization option `orb-insert-link-description' determines
-what will be used as the link's description.  It is possible to
-override the default value with numerical prefix ARG:
-
-`C-1' \\[orb-insert] will force `title'
-`C-2' \\[orb-insert] will force `citekey'
-`C-0' \\[orb-insert] will force `citation'
-
-If a region of text is active (selected) when calling `orb-insert',
-the text in the region will be replaced with the link and the
-text string will be used as the link's description — similar to
-`org-roam-insert'.
-
-Normally, the case of the link description will be preserved.  It
-is possible to force lowercase by supplying either one or three
-universal arguments `\\[universal-argument]'.
-
-Finally, `bibtex-completion-cache' will be re-populated if either
-two or three universal arguments `\\[universal-argument]' are supplied."
-  (interactive "P")
-  ;; parse arg
-  ;; C-u or C-u C-u C-u => force lowercase
-  ;; C-u C-u or C-u C-u C-u => force `bibtex-completion-clear-cache'
-  ;; C-1 force title in description
-  ;; C-2 force citekey in description
-  ;; C-3 force inserting the link as Org-ref citation
-  (let* ((lowercase (or (equal arg '(4))
-                        (equal arg '(64))))
-         (description (cl-case arg
-                        (1 'title)
-                        (2 'citekey)
-                        (0 'citation)))
-         (clear-cache (or (equal arg '(16))
-                          (equal arg '(64)))))
-    (orb-plist-put :link-description
-                   (or description orb-insert-link-description)
-                   :link-lowercase
-                   (or lowercase orb-insert-lowercase))
-    (unless org-roam-mode (org-roam-mode))
-    ;; execution chain:
-    ;; 1. interface function
-    ;; 2. orb-insert-edit-notes
-    ;; 3. orb-edit-notes
-    ;; 4. orb-insert--link-h
-    ;; if the note exists or a new note was created and capture not cancelled
-    ;; 5. orb-insert--link
-    (orb-insert-generic clear-cache)))
-
 ;; ============================================================================
 ;;;; Non-ref functions
 ;; ============================================================================
 
 ;;;###autoload
-(defun orb-insert-non-ref (prefix)
+(defun orb-insert-non-ref (lowercase?)
   "Find a non-ref Org-roam file, and insert a relative org link to it at point.
-If PREFIX, downcase the title before insertion.  See
-`org-roam-insert' and `kisaragi-notes-completion//get-non-literature' for
+If LOWERCASE?, downcase the title before insertion.  See
+`minaduki/insert' and `minaduki-completion//get-non-literature' for
 details."
   (interactive "P")
-  (org-roam-insert prefix (kisaragi-notes-completion//get-non-literature)))
+  (minaduki/insert :lowercase? lowercase?
+                   :entry (minaduki-completion//read-note
+                           :completions (minaduki-completion//get-non-literature))))
 
 ;; ============================================================================
 ;;;; Orb note actions
 ;; ============================================================================
 ;; ============================================================================
-;;;; Org-roam-bibtex minor mode
+;;;; minaduki-bibtex minor mode
 ;; ============================================================================
 
 (defun orb-edit-notes-ad (keys)
@@ -715,9 +685,54 @@ first key from KEYS will actually be used."
   "Update `orb-notes-cache' before `bibtex-completion-parse-bibliography'."
   (orb-make-notes-cache))
 
-(provide 'org-roam-bibtex)
+;;;; Cache all refs.
+;; This is because `orb-find-note-file' is called on every existing
+;; cite key when `bibtex-completion' is preparing to display entries.
+;;
+;; Rapidly querying the DB is slower than `gethash' on a hash table.
+;; It's about an order of magnitude slower on my device. Try it:
+;;
+;;     ;; Fetch a list of citekeys
+;;     (let ((cite-refs (->> (minaduki//get-ref-path-completions nil "cite")
+;;                        (--map (plist-get (cdr it) :ref)))))
+;;       (list
+;;        (benchmark-run 10
+;;          (progn
+;;            (setq orb-notes-cache nil)
+;;            (mapc #'orb-find-note-file cite-refs)))
+;;        (benchmark-run 10
+;;          (mapc (lambda (key)
+;;                  (minaduki-db/query
+;;                   [:select [file] :from refs
+;;                    :where (= ref $s1)]
+;;                   key))
+;;                cite-refs))))
+;;
+;; -> ((0.24450254200000002 0 0.0) (3.7526077939999998 0 0.0))
 
-;;; org-roam-bibtex.el ends here
+(defvar orb-notes-cache nil
+  "Cache of ORB notes.")
+
+(defun orb-make-notes-cache ()
+  "Update ORB notes hash table `orb-notes-cache'."
+  (let* ((db-entries (minaduki//get-ref-path-completions nil "cite"))
+         (size (round (/ (length db-entries) 0.8125))) ;; ht oversize
+         (ht (make-hash-table :test #'equal :size size)))
+    (dolist (entry db-entries)
+      (let* ((key (car entry))
+             (value (plist-get (cdr (assoc key db-entries)) :path)))
+        (puthash key value ht)))
+    (setq orb-notes-cache ht)))
+
+(defun orb-find-note-file (citekey)
+  "Find note file associated with CITEKEY.
+Returns the path to the note file, or nil if it doesn’t exist."
+  (gethash citekey (or orb-notes-cache
+                       (orb-make-notes-cache))))
+
+(provide 'minaduki-bibtex)
+
+;;; minaduki-bibtex.el ends here
 ;; Local Variables:
 ;; coding: utf-8
 ;; fill-column: 79

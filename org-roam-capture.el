@@ -38,26 +38,25 @@
 (require 'kisaragi-notes-utils)
 (require 'org-roam-db)
 (require 'org-roam-extract)
-(require 'kisaragi-notes-completion)
+(require 'minaduki-completion)
 (require 'kisaragi-notes-vars)
 
 ;; Declarations
 (defvar org-roam-mode)
 
-(declare-function  org-roam--find-file                  "org-roam")
-(declare-function  org-roam-format-link                 "org-roam")
+(declare-function  minaduki//find-file                  "org-roam")
 (declare-function  org-roam-mode                        "org-roam")
 
-(defvar org-roam-capture--file-path nil
+(defvar minaduki-capture//file-path nil
   "The file path for the Org-roam capture.
 This variable is set during the Org-roam capture process.")
 
-(defvar org-roam-capture--info nil
+(defvar minaduki-capture//info nil
   "An alist of additional information passed to the Org-roam template.
 This variable is populated dynamically, and is only non-nil
 during the Org-roam capture process.")
 
-(defvar org-roam-capture--context nil
+(defvar minaduki-capture//context nil
   "A symbol, that reflects the context for obtaining the exact point in a file.
 This variable is populated dynamically, and is only active during
 an Org-roam capture process.
@@ -70,14 +69,14 @@ The `ref' context is used by `org-roam-protocol', where the
 capture process is triggered upon trying to find or create a new
 note with the given `ref'.")
 
-(defvar org-roam-capture-additional-template-props nil
+(defvar minaduki-capture/additional-template-props nil
   "Additional props to be added to the Org-roam template.")
 
-(defconst org-roam-capture--template-keywords '(:file-name :head :olp)
-  "Keywords used in `org-roam-capture-templates' specific to Org-roam.")
+(defconst minaduki-capture//template-keywords '(:file-name :head :olp)
+  "Keywords used in `minaduki-capture/templates' specific to Org-roam.")
 
-(defcustom org-roam-capture-templates
-  `(("d" "default" plain (function org-roam-capture--get-point)
+(defcustom minaduki-capture/templates
+  `(("d" "default" plain (function minaduki-capture//get-point)
      "%?"
      :file-name "%<%Y%m%d%H%M%S>-${slug}"
      :head "#+title: ${title}\n"
@@ -87,7 +86,7 @@ The Org-roam capture-templates  builds on the default behaviours of
 `org-capture-templates' by expanding them in 3 areas:
 
 1. Template-expansion capabilities are extended with additional
-   custom syntax. See `org-roam-capture--fill-template' for more
+   custom syntax. See `minaduki-capture//fill-template' for more
    details.
 
 2. The `:file-name' key is added, which defines the naming format
@@ -100,7 +99,7 @@ The Org-roam capture-templates  builds on the default behaviours of
 
 Each template should have the following structure:
 
-\(KEY DESCRIPTION `plain' `(function org-roam-capture--get-point)'
+\(KEY DESCRIPTION `plain' `(function minaduki-capture//get-point)'
   TEMPLATE
   `:file-name' FILENAME-FORMAT
   `:head' HEADER-FORMAT
@@ -110,7 +109,7 @@ Each template should have the following structure:
 The elements of a template-entry and their placement are the same
 as in `org-capture-templates', except that the entry type must
 always be the symbol `plain', and that the target must always be
-the list `(function org-roam-capture--get-point)'.
+the list `(function minaduki-capture//get-point)'.
 
 Org-roam requires the plist elements `:file-name' and `:head' to
 be present, and it’s recommended that `:unnarrowed' be set to t."
@@ -118,7 +117,7 @@ be present, and it’s recommended that `:unnarrowed' be set to t."
   ;; Adapted from `org-capture-templates'
   :type
   '(repeat
-    (choice :value ("d" "default" plain (function org-roam-capture--get-point)
+    (choice :value ("d" "default" plain (function minaduki-capture//get-point)
                     "%?"
                     :file-name "%<%Y%m%d%H%M%S>-${slug}"
                     :head "#+title: ${title}\n"
@@ -130,7 +129,7 @@ be present, and it’s recommended that `:unnarrowed' be set to t."
                   (string :tag "Keys              ")
                   (string :tag "Description       ")
                   (const :format "" plain)
-                  (const :format "" (function org-roam-capture--get-point))
+                  (const :format "" (function minaduki-capture//get-point))
                   (choice :tag "Template          "
                           (string :tag "String"
                                   :format "String:\n            \
@@ -164,16 +163,16 @@ Template string   :\n%v")
                           ((const :format "%v " :table-line-pos) (string))
                           ((const :format "%v " :kill-buffer) (const t))))))))
 
-(defcustom org-roam-capture-immediate-template
-  (append (car org-roam-capture-templates) '(:immediate-finish t))
+(defcustom minaduki-capture/immediate-template
+  (append (car minaduki-capture/templates) '(:immediate-finish t))
   "Capture template to use for immediate captures in Org-roam.
 This is a single template, so do not enclose it into a list.
-See `org-roam-capture-templates' for details on templates."
+See `minaduki-capture/templates' for details on templates."
   :group 'org-roam
   ;; Adapted from `org-capture-templates'
   :type
   '(list :tag "Template entry"
-         :value ("d" "default" plain (function org-roam-capture--get-point)
+         :value ("d" "default" plain (function minaduki-capture//get-point)
                  "%?"
                  :file-name "%<%Y%m%d%H%M%S>-${slug}"
                  :head "#+title: ${title}\n"
@@ -182,7 +181,7 @@ See `org-roam-capture-templates' for details on templates."
          (string :tag "Keys              ")
          (string :tag "Description       ")
          (const :format "" plain)
-         (const :format "" (function org-roam-capture--get-point))
+         (const :format "" (function minaduki-capture//get-point))
          (choice :tag "Template          "
                  (string :tag "String"
                          :format "String:\n            \
@@ -216,20 +215,20 @@ Template string   :\n%v")
                  ((const :format "%v " :table-line-pos) (string))
                  ((const :format "%v " :kill-buffer) (const t))))))
 
-(defcustom org-roam-capture-ref-templates
-  '(("r" "ref" plain #'org-roam-capture--get-point
+(defcustom minaduki-capture/ref-templates
+  '(("r" "ref" plain #'minaduki-capture//get-point
      "%?"
      :file-name "${slug}"
      :head "#+title: ${title}\n#+roam_key: ${ref}"
      :unnarrowed t))
   "The Org-roam templates used during a capture from the roam-ref protocol.
 Details on how to specify for the template is given in
-`org-roam-capture-templates'."
+`minaduki-capture/templates'."
   :group 'org-roam
   ;; Adapted from `org-capture-templates'
   :type
   '(repeat
-    (choice :value ("d" "default" plain (function org-roam-capture--get-point)
+    (choice :value ("d" "default" plain (function minaduki-capture//get-point)
                     "%?"
                     :file-name "${slug}"
                     :head "#+title: ${title}\n#+roam_key: ${ref}\n"
@@ -241,7 +240,7 @@ Details on how to specify for the template is given in
                   (string :tag "Keys              ")
                   (string :tag "Description       ")
                   (const :format "" plain)
-                  (const :format "" (function org-roam-capture--get-point))
+                  (const :format "" (function minaduki-capture//get-point))
                   (choice :tag "Template          "
                           (string :tag "String"
                                   :format "String:\n            \
@@ -275,19 +274,19 @@ Template string   :\n%v")
                           ((const :format "%v " :table-line-pos) (string))
                           ((const :format "%v " :kill-buffer) (const t))))))))
 
-(defun org-roam-capture-p ()
+(defun minaduki-capture/p ()
   "Return t if the current capture process is an Org-roam capture.
 This function is to only be called when org-capture-plist is
 valid for the capture (i.e. initialization, and finalization of
 the capture)."
   (plist-get org-capture-plist :org-roam))
 
-(defun org-roam-capture--get (keyword)
-  "Get the value for KEYWORD from the `org-roam-capture-template'."
+(defun minaduki-capture//get (keyword)
+  "Get the value for KEYWORD from the `minaduki-capture/template'."
   (plist-get (plist-get org-capture-plist :org-roam) keyword))
 
-(defun org-roam-capture--put (&rest stuff)
-  "Put properties from STUFF into the `org-roam-capture-template'."
+(defun minaduki-capture//put (&rest stuff)
+  "Put properties from STUFF into the `minaduki-capture/template'."
   (let ((p (plist-get org-capture-plist :org-roam)))
     (while stuff
       (setq p (plist-put p (pop stuff) (pop stuff))))
@@ -307,35 +306,35 @@ the capture)."
 ;; This advice restores the global `org-capture-plist' during finalization, so
 ;; the plist is valid during both initialization and finalization of the
 ;; capture.
-(defun org-roam-capture--update-plist (&optional _)
+(defun minaduki-capture//update-plist (&optional _)
   "Update global plist from local var."
   (setq org-capture-plist org-capture-current-plist))
 
-(advice-add 'org-capture-finalize :before #'org-roam-capture--update-plist)
+(advice-add 'org-capture-finalize :before #'minaduki-capture//update-plist)
 
-(defun org-roam-capture--finalize ()
-  "Finalize the `org-roam-capture' process."
-  (let* ((finalize (org-roam-capture--get :finalize))
+(defun minaduki-capture//finalize ()
+  "Finalize the `minaduki-capture' process."
+  (let* ((finalize (minaduki-capture//get :finalize))
          ;; In case any regions were shielded before, unshield them
-         (region (when-let ((region (org-roam-capture--get :region)))
+         (region (when-let ((region (minaduki-capture//get :region)))
                    (org-roam-unshield-region (car region) (cdr region))))
          (beg (car region))
          (end (cdr region)))
     (unless org-note-abort
       (pcase finalize
         ('find-file
-         (when-let ((file-path (org-roam-capture--get :file-path)))
-           (org-roam--find-file file-path)
-           (run-hooks 'org-roam-capture-after-find-file-hook)))
+         (when-let ((file-path (minaduki-capture//get :file-path)))
+           (minaduki//find-file file-path)
+           (run-hooks 'minaduki-capture/after-find-file-hook)))
         ('insert-link
-         (when-let* ((mkr (org-roam-capture--get :insert-at))
+         (when-let* ((mkr (minaduki-capture//get :insert-at))
                      (buf (marker-buffer mkr)))
            (with-current-buffer buf
              (when region
                (delete-region (car region) (cdr region)))
-             (let ((path (org-roam-capture--get :file-path))
-                   (type (org-roam-capture--get :link-type))
-                   (desc (org-roam-capture--get :link-description)))
+             (let ((path (minaduki-capture//get :file-path))
+                   (type (minaduki-capture//get :link-type))
+                   (desc (minaduki-capture//get :link-description)))
                (if (eq (point) (marker-position mkr))
                    (insert (org-roam-format-link path desc type))
                  (org-with-point-at mkr
@@ -343,21 +342,21 @@ the capture)."
     (when region
       (set-marker beg nil)
       (set-marker end nil))
-    (org-roam-capture--save-file-maybe)
-    (remove-hook 'org-capture-after-finalize-hook #'org-roam-capture--finalize)))
+    (minaduki-capture//save-file-maybe)
+    (remove-hook 'org-capture-after-finalize-hook #'minaduki-capture//finalize)))
 
-(defun org-roam-capture--install-finalize ()
-  "Install `org-roam-capture--finalize' if the capture is an Org-roam capture."
-  (when (org-roam-capture-p)
-    (add-hook 'org-capture-after-finalize-hook #'org-roam-capture--finalize)))
+(defun minaduki-capture//install-finalize ()
+  "Install `minaduki-capture//finalize' if the capture is an Org-roam capture."
+  (when (minaduki-capture/p)
+    (add-hook 'org-capture-after-finalize-hook #'minaduki-capture//finalize)))
 
-(add-hook 'org-capture-prepare-finalize-hook #'org-roam-capture--install-finalize)
+(add-hook 'org-capture-prepare-finalize-hook #'minaduki-capture//install-finalize)
 
-(defun org-roam-capture--fill-template (str)
+(defun minaduki-capture//fill-template (str)
   "Expand the template STR, returning the string.
 This is an extension of org-capture's template expansion.
 
-First, it expands ${var} occurrences in STR, using `org-roam-capture--info'.
+First, it expands ${var} occurrences in STR, using `minaduki-capture//info'.
 If there is a ${var} with no matching var in the alist, the value
 of var is prompted for via `completing-read'.
 
@@ -365,29 +364,29 @@ Next, it expands the remaining template string using
 `org-capture-fill-template'."
   (-> str
       (s-format (lambda (key)
-                  (or (s--aget org-roam-capture--info key)
+                  (or (s--aget minaduki-capture//info key)
                       (when-let ((val (completing-read (format "%s: " key) nil)))
-                        (push (cons key val) org-roam-capture--info)
+                        (push (cons key val) minaduki-capture//info)
                         val))) nil)
       (org-capture-fill-template)))
 
-(defun org-roam-capture--save-file-maybe ()
+(defun minaduki-capture//save-file-maybe ()
   "Save the file conditionally.
 The file is saved if the original value of :no-save is not t and
 `org-note-abort' is not t. It is added to
 `org-capture-after-finalize-hook'."
   (cond
-   ((and (org-roam-capture--get :new-file)
+   ((and (minaduki-capture//get :new-file)
          org-note-abort)
     (with-current-buffer (org-capture-get :buffer)
       (set-buffer-modified-p nil)
       (kill-buffer)))
-   ((and (not (org-roam-capture--get :orig-no-save))
+   ((and (not (minaduki-capture//get :orig-no-save))
          (not org-note-abort))
     (with-current-buffer (org-capture-get :buffer)
       (save-buffer)))))
 
-(defun org-roam-capture--get-file-path (basename)
+(defun minaduki-capture//get-file-path (basename)
   "Return path for Org-roam file with BASENAME."
   (let* ((ext (or (car org-roam-file-extensions)
                   "org"))
@@ -398,7 +397,7 @@ The file is saved if the original value of :no-save is not t and
        file)
      org-directory)))
 
-(defun org-roam-capture--new-file (&optional allow-existing-file-p)
+(defun minaduki-capture//new-file (&optional allow-existing-file-p)
   "Return the path to file during an Org-roam capture.
 
 This function reads the file-name attribute of the currently
@@ -418,27 +417,27 @@ aborted, we do the following:
 3. Add a function on `org-capture-before-finalize-hook' that saves
 the file if the original value of :no-save is not t and
 `org-note-abort' is not t."
-  (let* ((name-templ (or (org-roam-capture--get :file-name)
+  (let* ((name-templ (or (minaduki-capture//get :file-name)
                          (user-error "Template needs to specify `:file-name'")))
-         (new-id (s-trim (org-roam-capture--fill-template
+         (new-id (s-trim (minaduki-capture//fill-template
                           name-templ)))
-         (file-path (org-roam-capture--get-file-path new-id))
-         (roam-head (or (org-roam-capture--get :head)
+         (file-path (minaduki-capture//get-file-path new-id))
+         (roam-head (or (minaduki-capture//get :head)
                         ""))
          (org-template (org-capture-get :template))
          (roam-template (concat roam-head org-template)))
     (if (or (file-exists-p file-path)
             (find-buffer-visiting file-path))
         (unless allow-existing-file-p
-          (kisaragi-notes//warn
+          (minaduki//warn
            :warning
            "Attempted to recreate existing file: %s.
 This can happen when your org-roam db is not in sync with your notes.
 Using existing file..." file-path))
       (make-directory (file-name-directory file-path) t)
-      (org-roam-capture--put :orig-no-save (org-capture-get :no-save)
+      (minaduki-capture//put :orig-no-save (org-capture-get :no-save)
                              :new-file t)
-      (pcase org-roam-capture--context
+      (pcase minaduki-capture//context
         ('dailies
          ;; Populate the header of the daily file before capture to prevent it
          ;; from appearing in the buffer-restriction
@@ -454,7 +453,7 @@ Using existing file..." file-path))
       (org-capture-put :no-save t))
     file-path))
 
-(defun org-roam-capture-find-or-create-olp (olp)
+(defun minaduki-capture/find-or-create-olp (olp)
   "Return a marker pointing to the entry at OLP in the current buffer.
 If OLP does not exist, create it. If anything goes wrong, throw
 an error, and if you need to do something based on this error,
@@ -498,9 +497,9 @@ you can catch it with `condition-case'."
              end (save-excursion (org-end-of-subtree t t))))
      (point-marker))))
 
-(defun org-roam-capture--get-ref-path (type path)
+(defun minaduki-capture//get-ref-path (type path)
   "Get the file path to the ref with TYPE and PATH."
-  (caar (org-roam-db-query
+  (caar (minaduki-db/query
          [:select [file]
           :from refs
           :where (= type $s1)
@@ -508,7 +507,7 @@ you can catch it with `condition-case'."
           :limit 1]
          type path)))
 
-(defun org-roam-capture--get-point ()
+(defun minaduki-capture//get-point ()
   "Return exact point to file for org-capture-template.
 The file to use is dependent on the context:
 
@@ -516,55 +515,55 @@ If the search is via title, it is assumed that the file does not
 yet exist, and Org-roam will attempt to create new file.
 
 If the search is via daily notes, 'time will be passed via
-`org-roam-capture--info'. This is used to alter the default time
+`minaduki-capture//info'. This is used to alter the default time
 in `org-capture-templates'.
 
 If the search is via ref, it is matched against the Org-roam database.
 If there is no file with that ref, a file with that ref is created.
 
 This function is used solely in Org-roam's capture templates: see
-`org-roam-capture-templates'."
-  (let* ((file-path (pcase org-roam-capture--context
+`minaduki-capture/templates'."
+  (let* ((file-path (pcase minaduki-capture//context
                       ('capture
-                       (or (cdr (assoc 'file org-roam-capture--info))
-                           (org-roam-capture--new-file)))
+                       (or (cdr (assoc 'file minaduki-capture//info))
+                           (minaduki-capture//new-file)))
                       ('title
-                       (org-roam-capture--new-file))
+                       (minaduki-capture//new-file))
                       ('dailies
-                       (org-capture-put :default-time (cdr (assoc 'time org-roam-capture--info)))
-                       (org-roam-capture--new-file 'allow-existing))
+                       (org-capture-put :default-time (cdr (assoc 'time minaduki-capture//info)))
+                       (minaduki-capture//new-file 'allow-existing))
                       ('ref
-                       (if-let ((ref (cdr (assoc 'ref org-roam-capture--info))))
-                           (pcase (kisaragi-notes-extract//process-ref ref)
+                       (if-let ((ref (cdr (assoc 'ref minaduki-capture//info))))
+                           (pcase (minaduki-extract//process-ref ref)
                              (`(,type . ,path)
-                              (or (org-roam-capture--get-ref-path type path)
-                                  (org-roam-capture--new-file)))
+                              (or (minaduki-capture//get-ref-path type path)
+                                  (minaduki-capture//new-file)))
                              (_ (user-error "%s is not a valid ref" ref)))
-                         (error "Ref not found in `org-roam-capture--info'")))
-                      (_ (error "Invalid org-roam-capture-context")))))
+                         (error "Ref not found in `minaduki-capture//info'")))
+                      (_ (error "Invalid minaduki-capture/context")))))
     (org-capture-put :template
-                     (org-roam-capture--fill-template (org-capture-get :template)))
-    (org-roam-capture--put :file-path file-path
+                     (minaduki-capture//fill-template (org-capture-get :template)))
+    (minaduki-capture//put :file-path file-path
                            :finalize (or (org-capture-get :finalize)
-                                         (org-roam-capture--get :finalize)))
-    (while org-roam-capture-additional-template-props
-      (let ((prop (pop org-roam-capture-additional-template-props))
-            (val (pop org-roam-capture-additional-template-props)))
-        (org-roam-capture--put prop val)))
+                                         (minaduki-capture//get :finalize)))
+    (while minaduki-capture/additional-template-props
+      (let ((prop (pop minaduki-capture/additional-template-props))
+            (val (pop minaduki-capture/additional-template-props)))
+        (minaduki-capture//put prop val)))
     (set-buffer (org-capture-target-buffer file-path))
     (widen)
-    (if-let* ((olp (org-roam-capture--get :olp)))
+    (if-let* ((olp (minaduki-capture//get :olp)))
         (condition-case err
-            (when-let ((marker (org-roam-capture-find-or-create-olp olp)))
+            (when-let ((marker (minaduki-capture/find-or-create-olp olp)))
               (goto-char marker)
               (set-marker marker nil))
           (error
-           (when (org-roam-capture--get :new-file)
+           (when (minaduki-capture//get :new-file)
              (kill-buffer))
            (signal (car err) (cdr err))))
       (goto-char (point-max)))))
 
-(defun org-roam-capture--convert-template (template)
+(defun minaduki-capture//convert-template (template)
   "Convert TEMPLATE from Org-roam syntax to `org-capture-templates' syntax."
   (pcase template
     (`(,_key ,_description) template)
@@ -576,7 +575,7 @@ This function is used solely in Org-roam's capture templates: see
        (while rest
          (let* ((key (pop rest))
                 (val (pop rest))
-                (custom (member key org-roam-capture--template-keywords)))
+                (custom (member key minaduki-capture//template-keywords)))
            (when (and custom
                       (not val))
              (user-error "Invalid capture template format: %s\nkey %s cannot be nil" template key))
@@ -585,36 +584,36 @@ This function is used solely in Org-roam's capture templates: see
        (append converted options `(:org-roam ,org-roam-plist))))
     (_ (user-error "Invalid capture template format: %s" template))))
 
-(defcustom org-roam-capture-after-find-file-hook nil
+(defcustom minaduki-capture/after-find-file-hook nil
   "Hook that is run right after an Org-roam capture process is finalized.
 Suitable for moving point."
   :group 'org-roam
   :type 'hook)
 
-(defcustom org-roam-capture-function #'org-capture
+(defcustom minaduki-capture/function #'org-capture
   "Function that is invoked to start the `org-capture' process."
   :group 'org-roam
   :type 'function)
 
-(defun org-roam-capture--capture (&optional goto keys)
+(defun minaduki-capture//capture (&optional goto keys)
   "Create a new file, and return the path to the edited file.
-The templates are defined at `org-roam-capture-templates'.  The
+The templates are defined at `minaduki-capture/templates'.  The
 GOTO and KEYS argument have the same functionality as
 `org-capture'."
-  (let* ((org-capture-templates (mapcar #'org-roam-capture--convert-template org-roam-capture-templates))
+  (let* ((org-capture-templates (mapcar #'minaduki-capture//convert-template minaduki-capture/templates))
          (one-template-p (= (length org-capture-templates) 1))
          org-capture-templates-contexts)
     (when one-template-p
       (setq keys (caar org-capture-templates)))
     (if (or one-template-p
-            (eq org-roam-capture-function 'org-capture))
+            (eq minaduki-capture/function 'org-capture))
         (org-capture goto keys)
-      (funcall-interactively org-roam-capture-function))))
+      (funcall-interactively minaduki-capture/function))))
 
 ;;;###autoload
-(defun org-roam-capture (&optional goto keys)
+(defun minaduki-capture (&optional goto keys)
   "Launches an `org-capture' process for a new or existing note.
-This uses the templates defined at `org-roam-capture-templates'.
+This uses the templates defined at `minaduki-capture/templates'.
 Arguments GOTO and KEYS see `org-capture'."
   (interactive "P")
   (unless org-roam-mode (org-roam-mode))
@@ -623,13 +622,13 @@ Arguments GOTO and KEYS see `org-capture'."
          (res (cdr (assoc title-with-keys completions)))
          (title (or (plist-get res :title) title-with-keys))
          (file-path (plist-get res :path)))
-    (let ((org-roam-capture--info (list (cons 'title title)
-                                        (cons 'slug (kisaragi-notes//title-to-slug title))
+    (let ((minaduki-capture//info (list (cons 'title title)
+                                        (cons 'slug (minaduki//title-to-slug title))
                                         (cons 'file file-path)))
-          (org-roam-capture--context 'capture))
+          (minaduki-capture//context 'capture))
       (condition-case err
-          (org-roam-capture--capture goto keys)
-        (error (user-error "%s.  Please adjust `org-roam-capture-templates'"
+          (minaduki-capture//capture goto keys)
+        (error (user-error "%s.  Please adjust `minaduki-capture/templates'"
                            (error-message-string err)))))))
 
 (provide 'org-roam-capture)
