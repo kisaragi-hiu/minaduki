@@ -64,8 +64,8 @@ entry highlighting."
   "In a calendar window, mark days that have diary entries.
 
 This is used as an advice to override `diary-mark-entries' when
-`org-roam-mode' (in this version) is enabled. My `org-roam-mode'
-also sets `calendar-mark-diary-entries-flag' to t.
+`minaduki-mode' is enabled; it also sets
+`calendar-mark-diary-entries-flag' to t.
 
 The marker is specified by `diary-entry-marker'."
   (interactive)

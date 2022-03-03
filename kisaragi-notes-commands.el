@@ -25,9 +25,6 @@
 (require 'org-roam-extract)
 (require 'org-roam-capture)
 
-(defvar org-roam-mode)
-(declare-function org-roam-mode "org-roam")
-
 ;;;; Local commands
 
 (defun minaduki/org-heading-to-file//suffix (&optional dir full? visit?)
@@ -201,7 +198,6 @@ the executable 'rg' in variable `exec-path'."
 
 Return added alias."
   (interactive)
-  (unless org-roam-mode (org-roam-mode))
   (let ((alias (read-string "Alias: ")))
     (when (string-empty-p alias)
       (user-error "Alias can't be empty"))
@@ -226,7 +222,6 @@ Return added alias."
 (defun org-roam-alias-delete ()
   "Delete an alias from Org-roam file."
   (interactive)
-  (unless org-roam-mode (org-roam-mode))
   (if-let ((aliases (org-roam--extract-titles-alias)))
       (let ((alias (completing-read "Alias: " aliases nil 'require-match)))
         (org-with-point-at 1
@@ -243,7 +238,6 @@ Return added alias."
 
 Return added tag."
   (interactive)
-  (unless org-roam-mode (org-roam-mode))
   (let* ((all-tags (minaduki-db//fetch-all-tags))
          (tag (completing-read "Tag: " all-tags))
          (file (buffer-file-name (buffer-base-buffer)))
@@ -260,7 +254,6 @@ Return added tag."
 (defun org-roam-tag-delete ()
   "Delete a tag from Org-roam file."
   (interactive)
-  (unless org-roam-mode (org-roam-mode))
   (if-let* ((file (buffer-file-name (buffer-base-buffer)))
             (tags (org-roam--extract-tags-prop file)))
       (let ((tag (completing-read "Tag: " tags nil 'require-match)))
@@ -490,7 +483,6 @@ If a note with the entered title does not exist, create a new
 one."
   (interactive
    (list (minaduki-completion//read-note)))
-  (unless org-roam-mode (org-roam-mode))
   (when (stringp entry)
     (setq entry
           (list :path (car (minaduki-db//query-title entry))

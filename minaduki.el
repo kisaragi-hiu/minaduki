@@ -143,18 +143,6 @@ file."
              'org-link)))))
 
 ;;;; Hooks and Advices
-(defun minaduki//find-file-hook-function ()
-  "Called by `find-file-hook' when mode symbol `org-roam-mode' is on."
-  (when (org-roam--org-roam-file-p)
-    (setq org-roam-last-window (get-buffer-window))
-    (run-hooks 'minaduki/file-setup-hook) ; Run user hooks
-    (add-hook 'post-command-hook #'minaduki-buffer//update-maybe nil t)
-    (add-hook 'before-save-hook #'org-roam-link--replace-link-on-save nil t)
-    (add-hook 'after-save-hook #'minaduki-db/update nil t)
-    (dolist (fn '(minaduki-completion/tags-at-point
-                  minaduki-completion/everywhere))
-      (add-hook 'completion-at-point-functions fn nil t))
-    (minaduki-buffer//update-maybe :redisplay t)))
 
 (defun minaduki//delete-file-advice (file &optional _trash)
   "Advice for maintaining cache consistency when FILE is deleted."
@@ -265,7 +253,123 @@ When NEW-FILE-OR-DIR is a directory, we use it to compute the new file path."
       (move-to-column (- col 1))
       t)))
 
+(define-minor-mode minaduki-local-mode
+  "Minor mode active in files tracked by minaduki."
+  :global nil
+  (setq org-roam-last-window (get-buffer-window))
+  ;; TODO: use minaduki-local-mode-hook
+  (run-hooks 'minaduki/file-setup-hook) ; Run user hooks
+  (add-hook 'post-command-hook #'minaduki-buffer//update-maybe nil t)
+  (add-hook 'before-save-hook #'org-roam-link--replace-link-on-save nil t)
+  (add-hook 'after-save-hook #'minaduki-db/update nil t)
+  (dolist (fn '(minaduki-completion/tags-at-point
+                minaduki-completion/everywhere))
+    (add-hook 'completion-at-point-functions fn nil t))
+  (minaduki-buffer//update-maybe :redisplay t))
+
+(defun minaduki-initialize ()
+  "Initialize minaduki for this buffer."
+  (when (org-roam--org-roam-file-p)
+    (minaduki-local-mode)))
+
+(define-minor-mode minaduki-mode
+  "Toggle Minaduki-Local mode in all buffers.
+
+With prefix ARG, enable Minaduki mode if ARG is positive;
+otherwise, disable it.  If called from Lisp, enable the mode if
+ARG is omitted or nil.
+
+Minaduki-Local mode is enabled in all buffers where
+`minaduki-initialize' would do it.
+See `minaduki-local-mode' for more information on Minaduki-Local mode."
+  :global t
+  :group 'minaduki
+  :keymap (let ((map (make-sparse-keymap)))
+            (define-key map (kbd "C-c ) a") #'minaduki/literature-note-actions)
+            (define-key map (kbd "C-c ) i") #'orb-insert)
+            (define-key map (kbd "C-c ) C-f") #'minaduki/open-non-literature-note)
+            (define-key map (kbd "C-c ) C-i") #'orb-insert-non-ref)
+            map)
+  :require 'minaduki
+  (unless (or (and (bound-and-true-p emacsql-sqlite3-executable)
+                   (file-executable-p emacsql-sqlite3-executable))
+              (executable-find "sqlite3"))
+    (minaduki//warn :error "Cannot find executable 'sqlite3'. \
+Ensure it is installed and can be found within `exec-path'."))
+  (if minaduki-mode
+      (progn
+        (add-hook 'after-change-major-mode-hook 'minaduki-initialize)
+        (add-hook 'find-file-hook 'minaduki-initialize)
+        (add-hook 'kill-emacs-hook #'minaduki-db//close)
+        (when (and (not minaduki-db/file-update-timer)
+                   (eq minaduki-db/update-method 'idle-timer))
+          (setq minaduki-db/file-update-timer (run-with-idle-timer minaduki-db/update-idle-seconds t #'minaduki-db/update-cache-on-timer)))
+        (advice-add 'rename-file :after #'org-roam--rename-file-advice)
+        (advice-add 'delete-file :before #'minaduki//delete-file-advice)
+        (add-to-list 'org-execute-file-search-functions 'org-roam--execute-file-row-col)
+        (add-hook 'org-open-at-point-functions #'minaduki-id/open-id-at-point)
+        (advice-add 'org-id-new :after #'org-roam--id-new-advice)
+        (add-to-list 'bibtex-completion-find-note-functions #'orb-find-note-file)
+        (advice-add 'bibtex-completion-edit-notes :override #'orb-edit-notes-ad)
+        (advice-add 'bibtex-completion-parse-bibliography :before #'orb-bibtex-completion-parse-bibliography-ad)
+        (setq calendar-mark-diary-entries-flag t)
+        (advice-add 'diary-mark-entries :override #'minaduki//mark-calendar)
+        (advice-add 'org-read-date :before #'minaduki//set-calendar-mark-diary-entries-flag-nil)
+        (advice-add 'org-read-date :after #'minaduki//set-calendar-mark-diary-entries-flag-t)
+        (when (fboundp 'org-link-set-parameters)
+          (org-link-set-parameters "file" :face 'minaduki//file-link-face)
+          (org-link-set-parameters "id" :face 'minaduki//id-link-face))
+        (dolist (buf (buffer-list))
+          (with-current-buffer buf
+            (minaduki-initialize))))
+    (remove-hook 'after-change-major-mode-hook 'minaduki-initialize)
+    (remove-hook 'find-file-hook 'minaduki-initialize)
+    (remove-hook 'kill-emacs-hook #'minaduki-db//close)
+    (remove-hook 'org-open-at-point-functions #'minaduki-id/open-id-at-point)
+    (when minaduki-db/file-update-timer
+      (cancel-timer minaduki-db/file-update-timer))
+    (advice-remove 'rename-file #'org-roam--rename-file-advice)
+    (advice-remove 'delete-file #'minaduki//delete-file-advice)
+    (advice-remove 'org-id-new #'org-roam--id-new-advice)
+    (when (fboundp 'org-link-set-parameters)
+      (dolist (face '("file" "id"))
+        (org-link-set-parameters face :face 'org-link)))
+    (minaduki-db//close)
+    (setq bibtex-completion-find-note-functions
+          (delq #'orb-find-note-file
+                bibtex-completion-find-note-functions))
+    (advice-remove 'bibtex-completion-edit-notes
+                   #'orb-edit-notes-ad)
+    (advice-remove 'bibtex-completion-parse-bibliography
+                   #'orb-bibtex-completion-parse-bibliography-ad)
+    (setq calendar-mark-diary-entries-flag nil)
+    (advice-remove 'diary-mark-entries
+                   #'minaduki//mark-calendar)
+    (advice-remove 'org-read-date
+                   #'minaduki//set-calendar-mark-diary-entries-flag-nil)
+    (advice-remove 'org-read-date
+                   #'minaduki//set-calendar-mark-diary-entries-flag-t)
+    ;; TODO: we could keep track of the buffers with
+    ;; minaduki-local-mode on so we don't have to iterate through
+    ;; every open buffer.
+    (dolist (buf (buffer-list))
+      (with-current-buffer buf
+        (when minaduki-local-mode
+          (minaduki-local-mode -1))))))
+
 ;;;; org-roam-mode
+(defun minaduki//find-file-hook-function ()
+  "Called by `find-file-hook' when mode symbol `org-roam-mode' is on."
+  (when (org-roam--org-roam-file-p)
+    (setq org-roam-last-window (get-buffer-window))
+    (run-hooks 'minaduki/file-setup-hook) ; Run user hooks
+    (add-hook 'post-command-hook #'minaduki-buffer//update-maybe nil t)
+    (add-hook 'before-save-hook #'org-roam-link--replace-link-on-save nil t)
+    (add-hook 'after-save-hook #'minaduki-db/update nil t)
+    (dolist (fn '(minaduki-completion/tags-at-point
+                  minaduki-completion/everywhere))
+      (add-hook 'completion-at-point-functions fn nil t))
+    (minaduki-buffer//update-maybe :redisplay t)))
 
 ;;;###autoload
 (define-minor-mode org-roam-mode
@@ -391,6 +495,7 @@ M-x info for more information at Org-roam > Installation > Post-Installation Tas
                    #'minaduki//set-calendar-mark-diary-entries-flag-t))))
 
 (add-hook 'org-roam-mode-hook #'minaduki-db/build-cache)
+(add-hook 'minaduki-mode-hook #'minaduki-db/build-cache)
 
 ;;; Interactive Commands
 ;;;###autoload

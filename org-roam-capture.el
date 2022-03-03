@@ -42,10 +42,8 @@
 (require 'minaduki-vars)
 
 ;; Declarations
-(defvar org-roam-mode)
 
 (declare-function  minaduki//find-file                  "org-roam")
-(declare-function  org-roam-mode                        "org-roam")
 
 (defvar minaduki-capture//file-path nil
   "The file path for the Org-roam capture.
@@ -616,7 +614,6 @@ GOTO and KEYS argument have the same functionality as
 This uses the templates defined at `minaduki-capture/templates'.
 Arguments GOTO and KEYS see `org-capture'."
   (interactive "P")
-  (unless org-roam-mode (org-roam-mode))
   (let* ((completions (org-roam--get-title-path-completions))
          (title-with-keys (completing-read "File: " completions))
          (res (cdr (assoc title-with-keys completions)))

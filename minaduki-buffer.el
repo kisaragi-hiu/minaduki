@@ -56,9 +56,7 @@
 
 (defvar org-link-frame-setup)
 (defvar org-return-follows-link)
-(defvar org-roam-mode)
 
-(declare-function org-roam-mode               "org-roam")
 (declare-function minaduki//find-file         "org-roam")
 (declare-function org-roam-link-get-path      "kisaragi-notes-wikilink")
 

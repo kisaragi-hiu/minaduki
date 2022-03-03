@@ -36,10 +36,6 @@
   (require 'kisaragi-notes-utils))
 (require 'org-roam-db)
 
-;;;; Declarations
-(defvar org-roam-mode)
-(declare-function org-roam-mode              "org-roam")
-
 ;;;; Options
 (defcustom org-roam-graph-viewer (executable-find "firefox")
   "Method to view the org-roam graph.
@@ -292,7 +288,6 @@ ARG may be any of the following values:
   - `\\[universal-argument]' -   build the graph for FILE.
   - `\\[universal-argument]' -N  build the graph for FILE limiting nodes to N steps."
   (interactive "P")
-  (unless org-roam-mode (org-roam-mode))
   (let ((file (or file (buffer-file-name (buffer-base-buffer)))))
     (unless (or (not arg) (equal arg '(16)))
       (unless file

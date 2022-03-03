@@ -487,7 +487,6 @@ template expansions will have taken place by then.  All the title
 wildcards will be replace with the BibTeX field value."
   (when (consp citekey)
     (setq citekey (car citekey)))
-  (unless org-roam-mode (org-roam-mode))
   (let ((note-data (minaduki-db//query-ref citekey)))
     ;; Find org-roam reference with the CITEKEY and collect data into
     ;; `orb-plist'

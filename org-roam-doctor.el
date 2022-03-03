@@ -52,11 +52,8 @@
 (declare-function org-roam-insert "org-roam")
 (declare-function org-roam--get-roam-buffers "org-roam")
 (declare-function org-roam--list-all-files "org-roam")
-(declare-function org-roam-mode "org-roam")
 
 (require 'minaduki-vars)
-
-(defvar org-roam-mode)
 
 (defcustom org-roam-doctor-inhibit-startup t
   "Inhibit `org-mode' startup when processing files with `org-doctor'.
@@ -272,7 +269,6 @@ CHECKER is a org-roam-doctor checker instance."
   "Perform a check on the current buffer to ensure cleanliness.
 If CHECKALL, run the check for all Org-roam files."
   (interactive "P")
-  (unless org-roam-mode (org-roam-mode))
   (let ((files (if checkall
                    (org-roam--list-all-files)
                  (unless (org-roam--org-roam-file-p)
