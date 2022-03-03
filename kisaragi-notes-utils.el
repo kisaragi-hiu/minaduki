@@ -511,10 +511,6 @@ If BUFFER is not specified, use the current buffer."
   (--filter (org-roam--org-roam-buffer-p it)
             (buffer-list)))
 
-(defun org-roam--in-buffer-p ()
-  "Return t if in the Org-roam backlinks buffer."
-  (bound-and-true-p org-roam-backlinks-mode))
-
 (provide 'kisaragi-notes-utils)
 
 ;;; kisaragi-notes-utils.el ends here

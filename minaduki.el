@@ -110,7 +110,7 @@ file."
                   (not (file-remote-p path)) ;; Prevent lockups opening Tramp links
                   (not (file-exists-p path)))
              'org-roam-link-invalid)
-            ((and (org-roam--in-buffer-p)
+            ((and (bound-and-true-p minaduki-buffer/mode)
                   (minaduki//backlink-to-current-p))
              'org-roam-link-current)
             ((and custom
@@ -130,7 +130,7 @@ file."
                         (org-roam--org-roam-file-p)))
            (custom (or (and in-note org-roam-link-use-custom-faces)
                        (eq org-roam-link-use-custom-faces 'everywhere))))
-      (cond ((and (org-roam--in-buffer-p)
+      (cond ((and (bound-and-true-p minaduki-buffer/mode)
                   (minaduki//backlink-to-current-p))
              'org-roam-link-current)
             ((and custom

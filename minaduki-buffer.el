@@ -156,11 +156,10 @@ This function hooks into `org-open-at-point' via `org-open-at-point-functions'."
    ;; If called via `org-open-at-point', fall back to default behavior.
    (t nil)))
 
-;;; org-roam-backlinks-mode
 (define-minor-mode minaduki-buffer/mode
-  "Set up code for the metadata buffer.
+  "Minor mode for a local keymap in the backlinks buffer.
 
-\\{org-roam-backlinks-mode-map}"
+\\{minaduki-buffer/mode-map}"
   :lighter " Backlinks"
   :keymap (let ((map (make-sparse-keymap)))
             (define-key map [mouse-1] 'org-open-at-point)
@@ -447,7 +446,7 @@ what."
   ;; Set up the buffer
   (with-current-buffer minaduki-buffer/name
     (org-mode)
-    (org-roam-backlinks-mode)))
+    (minaduki-buffer/mode)))
 
 (defun minaduki-buffer/deactivate ()
   "Deactivate display of the `minaduki-buffer'."
