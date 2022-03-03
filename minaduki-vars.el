@@ -10,41 +10,40 @@
 (require 'org)
 
 ;;;; User Options
-(defgroup org-roam nil
+(defgroup minaduki nil
   "Roam Research replica in Org-mode."
   :group 'org
-  :prefix "org-roam-"
-  :link '(url-link :tag "Github" "https://github.com/org-roam/org-roam")
-  :link '(url-link :tag "Online Manual" "https://www.orgroam.com/manual.html"))
+  :prefix "minaduki-"
+  :link '(url-link :tag "GitHub" "https://github.com/kisaragi-hiu/minaduki"))
 
 (defgroup minaduki-bibtex nil
   "Bibtex-completion integration for Org-roam."
-  :group 'org-roam
+  :group 'minaduki
   :prefix "orb-")
 
 (defgroup org-roam-faces nil
   "Faces used by Org-roam."
-  :group 'org-roam
+  :group 'minaduki
   :group 'faces)
 
 (defcustom minaduki/templates-directory (f-slash
                                          (f-join
                                           org-directory "templates"))
   "Where to look for templates."
-  :group 'org-roam
+  :group 'minaduki
   :type 'string)
 
 (defcustom minaduki/diary-directory (f-slash
                                      (f-join
                                       org-directory "diary"))
   "Where to store diary entries."
-  :group 'org-roam
+  :group 'minaduki
   :type 'string)
 
 (defcustom org-roam-encrypt-files nil
   "Whether to encrypt new files.  If true, create files with .gpg extension."
   :type 'boolean
-  :group 'org-roam)
+  :group 'minaduki)
 
 (defcustom org-roam-file-extensions '("org" "md")
   "Only files with these extensions are indexed.
@@ -54,27 +53,27 @@ The first item in the list is used as the default file extension.
 While the file extensions may be different, the only supported
 file formats are Org-mode and Markdown (partially)."
   :type '(repeat string)
-  :group 'org-roam)
+  :group 'minaduki)
 
 (defcustom org-roam-file-exclude-regexp nil
   "Files matching this regular expression are excluded from the Org-roam."
   :type '(choice
           (string :tag "Regular expression matching files to ignore")
           (const :tag "Include everything" nil))
-  :group 'org-roam)
+  :group 'minaduki)
 
 (defcustom org-roam-find-file-function nil
   "Function called when visiting files in Org-roam commands.
 If nil, `find-file' is used."
   :type 'function
-  :group 'org-roam)
+  :group 'minaduki)
 
 (defcustom org-roam-include-type-in-ref-path-completions nil
   "When t, include the type in ref-path completions.
 Note that this only affects interactive calls.
 See `minaduki//get-ref-path-completions' for details."
   :type 'boolean
-  :group 'org-roam)
+  :group 'minaduki)
 
 (defcustom org-roam-index-file "index.org"
   "Path to the Org-roam index file.
@@ -91,17 +90,17 @@ whose title is 'Index'."
   :type '(choice
           (string :tag "Path to index" "%s")
           (function :tag "Function to generate the path"))
-  :group 'org-roam)
+  :group 'minaduki)
 
 (defcustom org-roam-completion-everywhere nil
   "If non-nil, provide completions from the current word at point."
-  :group 'org-roam
+  :group 'minaduki
   :type 'boolean)
 
 (defcustom org-roam-tag-separator ","
   "String to use to separate tags when `minaduki/tag-sources' is non-nil."
   :type 'string
-  :group 'org-roam)
+  :group 'minaduki)
 
 (defcustom minaduki/slug-replacements
   '(("[^[:alnum:][:digit:]]" . "_") ; convert anything not alphanumeric
@@ -116,7 +115,7 @@ which will then be replaced with a single underscore (\"_\")."
   :type '(alist
           :key-type (string :tag "From (regexp)")
           :value-type (string :tag "To"))
-  :group 'org-roam)
+  :group 'minaduki)
 
 (defcustom org-roam-title-sources '((title headline) alias)
   "The list of sources from which to retrieve a note title.
@@ -151,14 +150,14 @@ The currently supported symbols are:
           (choice
            (repeat symbol)
            (symbol)))
-  :group 'org-roam)
+  :group 'minaduki)
 
 (defcustom org-roam-file-completion-tag-position 'prepend
   "Prepend, append, or omit tags from the file titles during completion."
   :type '(choice (const :tag "Prepend" prepend)
                  (const :tag "Append" append)
                  (const :tag "Omit" omit))
-  :group 'org-roam)
+  :group 'minaduki)
 
 (defcustom org-roam-link-use-custom-faces t
   "Define where to apply custom faces to Org-roam links.
@@ -175,7 +174,7 @@ Otherwise, do not apply custom faces to Org-roam links."
           (const :tag "Use custom faces inside Org-roam notes" t)
           (const :tag "Apply custom faces everywhere" everywhere)
           (const :tag "Do not apply custom faces" nil))
-  :group 'org-roam)
+  :group 'minaduki)
 
 (defcustom minaduki/tag-sources
   '(org-roam--extract-tags-prop)
@@ -209,7 +208,7 @@ Currently available sources:
     Extract the first directory relative to `org-directory'.
     That is, if a file is located at relative path foo/bar/file.org,
     the file will have tag \"foo\"."
-  :group 'org-roam
+  :group 'minaduki
   :type '(set (const :tag "#+roam_tags"
                      org-roam--extract-tags-prop)
               (const :tag "buffer org tags"
@@ -231,21 +230,21 @@ which case the list is passed to `cl-sort' as arguments."
   :type '(choice
           (boolean)
           (list :tag "Arguments to cl-loop"))
-  :group 'org-roam)
+  :group 'minaduki)
 
 (defcustom org-roam-completion-ignore-case t
   "Whether to ignore case in Org-roam `completion-at-point' completions."
-  :group 'org-roam
+  :group 'minaduki
   :type 'boolean)
 
 (defcustom minaduki-verbose t
   "Echo messages that are not errors."
   :type 'boolean
-  :group 'org-roam)
+  :group 'minaduki)
 
 (defcustom org-roam-link-auto-replace t
   "When non-nil, replace Org-roam's roam links with file/id equivalents."
-  :group 'org-roam
+  :group 'minaduki
   :type 'boolean)
 
 (defcustom org-roam-link-file-path-type 'relative
@@ -256,7 +255,7 @@ relative  Relative to the current directory, i.e. the directory of the file
           into which the link is being inserted.
 absolute  Absolute path, if possible with ~ for home directory.
 noabbrev  Absolute path, no abbreviation of home directory."
-  :group 'org-roam
+  :group 'minaduki
   :type '(choice
           (const relative)
           (const absolute)
@@ -507,30 +506,30 @@ descriptive warnings when certain operations fail (e.g. parsing).")
 (defface org-roam-link
   '((t :inherit org-link))
   "Face for Org-roam links."
-  :group 'org-roam-faces)
+  :group 'minaduki-faces)
 
 (defface org-roam-tag
   '((t :weight bold))
   "Face for Org-roam tags in minibuffer commands."
-  :group 'org-roam-faces)
+  :group 'minaduki-faces)
 
 (defface org-roam-link-current
   '((t :inherit org-link))
   "Face for Org-roam links pointing to the current buffer."
-  :group 'org-roam-faces)
+  :group 'minaduki-faces)
 
 (defface org-roam-link-invalid
   '((t :inherit (error org-link)))
   "Face for Org-roam links that are not valid.
 This face is used for links without a destination."
-  :group 'org-roam-faces)
+  :group 'minaduki-faces)
 
 (defface org-roam-link-shielded
   '((t :inherit (warning org-link)))
   "Face for Org-roam links that are shielded.
 This face is used on the region target by `org-roam-insertion'
 during an `minaduki-capture'."
-  :group 'org-roam-faces)
+  :group 'minaduki-faces)
 
 (provide 'minaduki-vars)
 

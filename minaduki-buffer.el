@@ -67,48 +67,48 @@ a function returning one of the above."
                  (const top)
                  (const bottom)
                  function)
-  :group 'org-roam)
+  :group 'minaduki)
 
 (defcustom minaduki-buffer/width 0.33
   "Width of the metadata buffer.
 
 Has an effect if and only if `minaduki-buffer/position' is `left' or `right'."
   :type 'number
-  :group 'org-roam)
+  :group 'minaduki)
 
 (defcustom minaduki-buffer/height 0.27
   "Height of the metadata buffer.
 
 Has an effect if and only if `minaduki-buffer/position' is `top' or `bottom'."
   :type 'number
-  :group 'org-roam)
+  :group 'minaduki)
 
 (defcustom minaduki-buffer/hidden-tags nil
   "Tags that should not be inserted into the metadata buffer."
   :type '(repeat string)
-  :group 'org-roam)
+  :group 'minaduki)
 
 (defcustom minaduki-buffer/name "*minaduki*"
   "Name of the metadata buffer."
   :type 'string
-  :group 'org-roam)
+  :group 'minaduki)
 
 (defcustom minaduki-buffer/before-insert-hook nil
   "Hook run in the metadata buffer before new content is inserted."
   :type 'hook
-  :group 'org-roam)
+  :group 'minaduki)
 
 (defcustom minaduki-buffer/after-insert-hook
   '(minaduki-buffer//restore-point)
   "Hook run in the metadata buffer after new content is inserted."
   :type 'hook
-  :group 'org-roam)
+  :group 'minaduki)
 
 (defcustom minaduki-buffer/window-parameters nil
   "Additional window parameters for the `minaduki-buffer' side window.
 For example: (setq minaduki-buffer/window-parameters '((no-other-window . t)))"
   :type '(alist)
-  :group 'org-roam)
+  :group 'minaduki)
 
 (defvar minaduki-buffer//current nil
   "Currently displayed file in `org-roam' buffer.")

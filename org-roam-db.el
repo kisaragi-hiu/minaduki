@@ -64,7 +64,7 @@ All cache will be saved here regardless of which project a note
 file might belong to, and there is no need to change this
 per-project."
   :type 'string
-  :group 'org-roam)
+  :group 'minaduki)
 
 (defcustom minaduki-db/gc-threshold gc-cons-threshold
   "The value to temporarily set the `gc-cons-threshold' threshold to.
@@ -79,7 +79,7 @@ tweaking this number may lead to better overall performance. For
 example, to reduce the number of GCs, one may set it to a large
 value like `most-positive-fixnum'."
   :type 'int
-  :group 'org-roam)
+  :group 'minaduki)
 
 (defconst minaduki-db//version 10)
 
@@ -100,12 +100,12 @@ value like `most-positive-fixnum'."
   `minaduki-db/update-idle-seconds'."
   :type '(choice (const :tag "idle-timer" idle-timer)
                  (const :tag "immediate" immediate))
-  :group 'org-roam)
+  :group 'minaduki)
 
 (defcustom minaduki-db/update-idle-seconds 2
   "Number of idle seconds before triggering an Org-roam database update."
   :type 'integer
-  :group 'org-roam)
+  :group 'minaduki)
 
 ;;;; Core Functions
 

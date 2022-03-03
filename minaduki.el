@@ -145,7 +145,7 @@ file."
 ;;;; Hooks and Advices
 (defcustom minaduki/file-setup-hook nil
   "Hook that is run on setting up an Org-roam file."
-  :group 'org-roam
+  :group 'minaduki
   :type 'hook)
 
 (defun minaduki//find-file-hook-function ()
@@ -218,7 +218,7 @@ replaced links are made relative to the current buffer."
 The new title is converted into a slug using
 `minaduki//title-to-slug', and compared with the current
 filename."
-  :group 'org-roam
+  :group 'minaduki
   :type 'boolean)
 
 (defcustom org-roam-title-change-hook '(org-roam--update-file-name-on-title-change
@@ -226,7 +226,7 @@ filename."
   "Hook run after detecting a title change.
 Each hook is passed two arguments: the old title, and new title
 respectively."
-  :group 'org-roam
+  :group 'minaduki
   :type 'hook)
 
 (defvar-local org-roam-current-title nil
@@ -369,7 +369,7 @@ Otherwise, behave as if called interactively."
             (define-key map (kbd "C-c ) C-f") #'minaduki/open-non-literature-note)
             (define-key map (kbd "C-c ) C-i") #'orb-insert-non-ref)
             map)
-  :group 'org-roam
+  :group 'minaduki
   :require 'org-roam
   :global t
   (cond

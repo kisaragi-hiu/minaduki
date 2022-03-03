@@ -113,7 +113,7 @@ the list `(function minaduki-capture//get-point)'.
 
 Org-roam requires the plist elements `:file-name' and `:head' to
 be present, and it’s recommended that `:unnarrowed' be set to t."
-  :group 'org-roam
+  :group 'minaduki
   ;; Adapted from `org-capture-templates'
   :type
   '(repeat
@@ -168,7 +168,7 @@ Template string   :\n%v")
   "Capture template to use for immediate captures in Org-roam.
 This is a single template, so do not enclose it into a list.
 See `minaduki-capture/templates' for details on templates."
-  :group 'org-roam
+  :group 'minaduki
   ;; Adapted from `org-capture-templates'
   :type
   '(list :tag "Template entry"
@@ -224,7 +224,7 @@ Template string   :\n%v")
   "The Org-roam templates used during a capture from the roam-ref protocol.
 Details on how to specify for the template is given in
 `minaduki-capture/templates'."
-  :group 'org-roam
+  :group 'minaduki
   ;; Adapted from `org-capture-templates'
   :type
   '(repeat
@@ -587,12 +587,12 @@ This function is used solely in Org-roam's capture templates: see
 (defcustom minaduki-capture/after-find-file-hook nil
   "Hook that is run right after an Org-roam capture process is finalized.
 Suitable for moving point."
-  :group 'org-roam
+  :group 'minaduki
   :type 'hook)
 
 (defcustom minaduki-capture/function #'org-capture
   "Function that is invoked to start the `org-capture' process."
-  :group 'org-roam
+  :group 'minaduki
   :type 'function)
 
 (defun minaduki-capture//capture (&optional goto keys)

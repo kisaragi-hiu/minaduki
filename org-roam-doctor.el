@@ -65,7 +65,7 @@ tables will not be aligned, and headlines will not respect
 startup visability. This significantly improves performance when
 processing multiple files"
   :type 'boolean
-  :group 'org-roam)
+  :group 'minaduki)
 
 (cl-defstruct (org-roam-doctor-checker (:copier nil))
   (name 'missing-checker-name)

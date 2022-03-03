@@ -51,17 +51,17 @@ It may be one of the following:
           (string   :tag "Path to executable")
           (function :tag "Function to display graph" eww-open-file)
           (const    :tag "view-file"))
-  :group 'org-roam)
+  :group 'minaduki)
 
 (defcustom org-roam-graph-executable "dot"
   "Path to graphing executable, or its name."
   :type 'string
-  :group 'org-roam)
+  :group 'minaduki)
 
 (defcustom org-roam-graph-filetype "svg"
   "File type to generate when producing graphs."
   :type 'string
-  :group 'org-roam)
+  :group 'minaduki)
 
 
 (defcustom org-roam-graph-extra-config nil
@@ -69,7 +69,7 @@ It may be one of the following:
 Example:
  '((\"rankdir\" . \"LR\"))"
   :type '(alist)
-  :group 'org-roam)
+  :group 'minaduki)
 
 (defcustom org-roam-graph-node-extra-config
   '(("shape"      . "underline")
@@ -81,7 +81,7 @@ Example:
 Example:
  '((\"color\" . \"skyblue\"))"
   :type '(alist)
-  :group 'org-roam)
+  :group 'minaduki)
 
 (defcustom org-roam-graph-edge-extra-config
   '(("color" . "#333333"))
@@ -89,19 +89,19 @@ Example:
 Example:
  '((\"dir\" . \"back\"))"
   :type '(alist)
-  :group 'org-roam)
+  :group 'minaduki)
 
 (defcustom org-roam-graph-edge-cites-extra-config '(("color" . "red"))
   "Extra options for graphviz edges for citation links.
 Example:
  '((\"dir\" . \"back\"))"
   :type '(alist)
-  :group 'org-roam)
+  :group 'minaduki)
 
 (defcustom org-roam-graph-max-title-length 100
   "Maximum length of titles in graph nodes."
   :type 'number
-  :group 'org-roam)
+  :group 'minaduki)
 
 (defcustom org-roam-graph-shorten-titles 'truncate
   "Determines how long titles appear in graph nodes.
@@ -114,7 +114,7 @@ All other values including nil will have no effect."
           (const :tag "truncate" truncate)
           (const :tag "wrap" wrap)
           (const :tag "no" nil))
-  :group 'org-roam)
+  :group 'minaduki)
 
 (defcustom org-roam-graph-exclude-matcher nil
   "Matcher for excluding nodes from the generated graph.
@@ -128,7 +128,7 @@ are excluded."
   :type '(choice
           (string :tag "Matcher")
           (list :tag "Matchers"))
-  :group 'org-roam)
+  :group 'minaduki)
 
 ;;;; Functions
 (defun org-roam-graph--expand-matcher (col &optional negate where)
