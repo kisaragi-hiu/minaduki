@@ -22,7 +22,7 @@
 ;;; Code:
 
 (require 'buttercup)
-(require 'kisaragi-notes)
+(require 'minaduki)
 
 (setq minaduki-verbose t)
 

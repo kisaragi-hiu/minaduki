@@ -21,7 +21,7 @@
 ;;; Code:
 
 (require 'buttercup)
-(require 'kisaragi-notes)
+(require 'minaduki)
 (require 'seq)
 (require 'dash)
 
