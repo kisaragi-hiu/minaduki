@@ -31,6 +31,36 @@ This is a convenience wrapper around `lwarn'. Difference:
   (prog1 nil
     (apply #'lwarn '(org-roam) level message args)))
 
+(defun minaduki//truncate-string (len str &optional ellipsis)
+  "Truncate STR to LEN, adding ELLIPSIS (default `...').
+
+Like `s-truncate', except we use the display
+width (`string-width') to determine whether to truncate."
+  (declare (pure t) (side-effect-free t))
+  (unless ellipsis
+    (setq ellipsis "..."))
+  (if (<= (string-width str) len)
+      str
+    (condition-case nil
+        (format "%s%s"
+                (substring str 0 (- len (string-width ellipsis)))
+                ellipsis)
+      ;; There is no version of `substring' that is based on the
+      ;; display width, so this is the hack around it. We only run
+      ;; this if `substring' barfs.
+      (args-out-of-range
+       (cl-loop until (<= (string-width str)
+                          (- len (string-width ellipsis)))
+                do (setq str (substring str 0 (1- (length str))))
+                finally return (format "%s%s" str ellipsis))))))
+
+(defun minaduki//remove-curly (str)
+  "Remove curly braces from STR."
+  (when str
+    (save-match-data
+      (replace-regexp-in-string "[{}]" "" str))))
+
+
 ;;; org-link-abbrev
 
 (defun minaduki//apply-link-abbrev (path)

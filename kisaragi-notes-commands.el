@@ -18,6 +18,8 @@
 
 (require 'minaduki-diary)
 (require 'minaduki-completion)
+(require 'minaduki-lit)
+
 (require 'kisaragi-notes-utils)
 (require 'kisaragi-notes-templates)
 
@@ -281,6 +283,25 @@ Return added tag."
     (when-let ((name (completing-read "Buffer: " names-and-buffers
                                       nil t)))
       (switch-to-buffer (cdr (assoc name names-and-buffers))))))
+
+;;;###autoload
+(defun minaduki/literature-sources ()
+  "List all sources for browsing interactively."
+  (interactive)
+  (let ((key->formatted
+         ;; Use an alist here so that we can retrieve the key from the
+         ;; selected item
+         (cl-loop for s being the elements of (minaduki-lit/parse minaduki-lit/source-json)
+                  collect
+                  (cons
+                   (gethash "key" s)
+                   (minaduki-lit/format-source s))))
+        key)
+    (setq key (car (rassoc (completing-read "Source: "
+                                            (mapcar #'cdr key->formatted)
+                                            nil t)
+                           key->formatted)))
+    (minaduki/literature-note-actions key)))
 
 ;;;###autoload
 (defun minaduki/new-daily-note (&optional day)
