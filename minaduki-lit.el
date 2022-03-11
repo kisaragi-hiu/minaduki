@@ -53,7 +53,7 @@ sources managed by Minaduki."
 
 ;;;; Type definition
 
-(cl-defun minaduki-lit/source (&key author type title key sources tags)
+(cl-defun minaduki-lit/source (&key author type title key sources tags others)
   "Return a hash table representing a source.
 
 AUTHOR: the main entity responsible for the source.
@@ -62,7 +62,9 @@ TITLE: the name or title of the source.
 KEY: the identifying string, like bibtex's ID.
 SOURCES: a list of paths or urls that can be used to visit the
 source.
-TAGS: a list of tags."
+TAGS: a list of tags.
+
+OTHERS: other key -> value pairs."
   (let ((obj (make-hash-table :test #'equal)))
     (when author
       (puthash "author" author obj))
@@ -76,6 +78,10 @@ TAGS: a list of tags."
       (puthash "sources" (cl-coerce sources 'vector) obj))
     (when tags
       (puthash "tags" (cl-coerce tags 'vector) obj))
+    (map-do
+     (lambda (k v)
+       (puthash (symbol-name k) v obj))
+     others)
     obj))
 
 ;;;; JSON <-> vector of hash tables
@@ -98,6 +104,39 @@ TAGS: a list of tags."
     ;; pretty printed because Emacs chokes on long lines and (b) this
     ;; function should not on a hot path anyways. I think.
     (json-pretty-print-buffer)))
+
+(defun minaduki-lit/read-sources-from-org (org-file)
+  "Read sources from an ORG-FILE."
+  (org-roam-with-file org-file nil
+    (let ((case-fold-search t))
+      (save-excursion
+        (goto-char (point-min))
+        (cl-loop while (re-search-forward "^:bibtex_id:" nil t)
+                 collect
+                 (let ((props (org-entry-properties)))
+                   (setq props
+                         (--remove
+                          (member (car it)
+                                  (->> org-special-properties
+                                       (remove "ITEM")
+                                       (remove "TODO")))
+                          props)
+                         props
+                         (--map (cons (downcase (car it))
+                                      (cdr it))
+                                props)
+                         props
+                         (--map (cons (or (cdr
+                                           ;; Key replacements
+                                           ;; (ORG_PROP . KEY)
+                                           (assoc (car it)
+                                                  '(("category" . "type")
+                                                    ("bibtex_id" . "key")
+                                                    ("item" . "title"))))
+                                          (car it))
+                                      (cdr it))
+                                props))
+                   (map-into props '(hash-table :test equal))))))))
 
 ;;;; Migration
 (defun minaduki-lit/read-sources-from-bibtex (bibtex-file)
@@ -123,7 +162,12 @@ TAGS: a list of tags."
                             (s-split ",")
                             (-map #'s-trim))
                           :sources (-non-nil
-                                    (mapcar #'minaduki//remove-curly (list .url)))))))))
+                                    (mapcar #'minaduki//remove-curly
+                                            (list .link .url)))
+                          :others
+                          (cl-loop for (k . v) in entry
+                                   unless (member k '(author =type= =key= title keywords url link))
+                                   collect (cons k (minaduki//remove-curly v)))))))))
 
 (defun minaduki-lit/migrate-from-bibtex ()
   "Migrate from .bib files."
@@ -136,7 +180,7 @@ TAGS: a list of tags."
 
 (defun minaduki-lit/format-source (source)
   "Format SOURCE for display."
-  (s-format "${type:10} ${tags:50} ${author} - ${title}"
+  (s-format "${todo:4}${title:100}\t(${type}) ${author} ${tags}"
             (lambda (key table)
               (let* ((split (s-split ":" key))
                      (width (cadr split))

@@ -291,7 +291,10 @@ Return added tag."
   (let ((key->formatted
          ;; Use an alist here so that we can retrieve the key from the
          ;; selected item
-         (cl-loop for s being the elements of (minaduki-lit/parse minaduki-lit/source-json)
+         (cl-loop for s being the elements of
+                  (cl-loop for (k . v) in bibtex-completion-bibliography
+                           vconcat (minaduki-lit/read-sources-from-org k))
+                  ;; (minaduki-lit/read-sources minaduki-lit/source-json)
                   collect
                   (cons
                    (gethash "key" s)
@@ -533,6 +536,7 @@ CITEKEY is a list whose car is a citation key."
 
 (defvar minaduki/global-commands
   '(("Open or create a note"              . minaduki/open)
+    ("Browse literature sources"          . minaduki/literature-sources)
     ("Open notes directory"               . minaduki/open-directory)
     ("Open or create a template"          . minaduki/open-template)
     ("Create a new diary entry"           . minaduki/new-diary-entry)
