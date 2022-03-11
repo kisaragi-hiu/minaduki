@@ -112,9 +112,10 @@ OTHERS: other key -> value pairs."
                                   (->> org-special-properties
                                        ;; But keep these
                                        (remove "ITEM")
-                                       (remove "TODO")
-                                       (remove "TAGS")))
+                                       (remove "TODO")))
                           props))
+                   (when-let (tags (org-get-tags))
+                     (push (cons "tags" tags) props))
                    (setq props
                          (--map
                           (let ((key (car it))
@@ -129,8 +130,6 @@ OTHERS: other key -> value pairs."
                                                     ("bibtex_id" . "key")
                                                     ("item" . "title"))))
                                           key))
-                            (when (equal key "tags")
-                              (setq value (vconcat (s-split ":" value t))))
                             (cons key value))
                           props))
                    (map-into props '(hash-table :test equal))))))))
