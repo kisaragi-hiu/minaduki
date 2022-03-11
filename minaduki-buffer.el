@@ -64,11 +64,13 @@
   "Where the metadata buffer should be placed.
 
 Valid values are
-`left',
-`right',
-`top',
-`bottom', or
-a function returning one of the above."
+
+- `left',
+- `right',
+- `top',
+- `bottom',
+
+or a function returning one of the above."
   :type '(choice (const left)
                  (const right)
                  (const top)
