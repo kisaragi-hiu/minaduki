@@ -37,19 +37,10 @@
 (require 'dash)
 
 (require 'kisaragi-notes-utils)
+(require 'minaduki-vars)
 
-(defcustom minaduki-lit/source-json (f-join org-directory "sources.json")
-  "Path to the JSON file that stores sources."
-  :group 'minaduki
-  :type 'string)
-
-(defcustom minaduki-lit/extra-source-json nil
-  "A list of extra JSON files storing sources.
-
-This is useful for having both sources managed in Org mode and
-sources managed by Minaduki."
-  :group 'minaduki
-  :type '(repeat string))
+(declare-function parsebib-find-next-item "parsebib")
+(declare-function parsebib-read-entry "parsebib")
 
 ;;;; Type definition
 
@@ -114,28 +105,34 @@ OTHERS: other key -> value pairs."
         (cl-loop while (re-search-forward "^:bibtex_id:" nil t)
                  collect
                  (let ((props (org-entry-properties)))
+                   ;; Remove properties that I'm not interested in
                    (setq props
                          (--remove
                           (member (car it)
                                   (->> org-special-properties
+                                       ;; But keep these
                                        (remove "ITEM")
-                                       (remove "TODO")))
-                          props)
-                         props
-                         (--map (cons (downcase (car it))
-                                      (cdr it))
-                                props)
-                         props
-                         (--map (cons (or (cdr
-                                           ;; Key replacements
-                                           ;; (ORG_PROP . KEY)
-                                           (assoc (car it)
+                                       (remove "TODO")
+                                       (remove "TAGS")))
+                          props))
+                   (setq props
+                         (--map
+                          (let ((key (car it))
+                                (value (cdr it)))
+                            ;; Downcase all keys
+                            (setq key (downcase key))
+                            ;; Key replacements
+                            ;; (ORG_PROP . KEY)
+                            (setq key (or (cdr
+                                           (assoc key
                                                   '(("category" . "type")
                                                     ("bibtex_id" . "key")
                                                     ("item" . "title"))))
-                                          (car it))
-                                      (cdr it))
-                                props))
+                                          key))
+                            (when (equal key "tags")
+                              (setq value (vconcat (s-split ":" value t))))
+                            (cons key value))
+                          props))
                    (map-into props '(hash-table :test equal))))))))
 
 ;;;; Migration
@@ -180,7 +177,7 @@ OTHERS: other key -> value pairs."
 
 (defun minaduki-lit/format-source (source)
   "Format SOURCE for display."
-  (s-format "${todo:4}${title:100}\t(${type}) ${author} ${tags}"
+  (s-format "${todo:4} ${title:100}\t(${type}) ${author} ${tags}"
             (lambda (key table)
               (let* ((split (s-split ":" key))
                      (width (cadr split))
@@ -188,7 +185,7 @@ OTHERS: other key -> value pairs."
                 (let ((value (format "%s" (gethash real-key table ""))))
                   (when width
                     (setq width (string-to-number width))
-                    (setq value (concat (minaduki//truncate-string width value)
+                    (setq value (concat (minaduki//truncate-string width value "")
                                         (make-string
                                          (max 0
                                               (- width

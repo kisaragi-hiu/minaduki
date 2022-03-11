@@ -292,7 +292,7 @@ Return added tag."
          ;; Use an alist here so that we can retrieve the key from the
          ;; selected item
          (cl-loop for s being the elements of
-                  (cl-loop for (k . v) in bibtex-completion-bibliography
+                  (cl-loop for (k . v) in minaduki-lit/bibliography
                            vconcat (minaduki-lit/read-sources-from-org k))
                   ;; (minaduki-lit/read-sources minaduki-lit/source-json)
                   collect

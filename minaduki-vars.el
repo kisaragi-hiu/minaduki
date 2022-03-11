@@ -84,6 +84,16 @@ value like `most-positive-fixnum'."
   :group 'minaduki
   :type 'string)
 
+(defcustom minaduki-lit/source-json (f-join org-directory "sources.json")
+  "Path to the JSON file that stores sources."
+  :group 'minaduki
+  :type 'string)
+
+(defcustom minaduki-lit/bibliography (f-join org-directory "sources.org")
+  "Path to the Org file that stores sources."
+  :group 'minaduki
+  :type 'string)
+
 (defcustom org-roam-encrypt-files nil
   "Whether to encrypt new files.  If true, create files with .gpg extension."
   :type 'boolean
