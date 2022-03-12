@@ -47,14 +47,9 @@
 
 (require 'kisaragi-notes-utils)
 (require 'minaduki-vars)
+(require 'minaduki-extract)
 
 (defvar org-agenda-files)
-(declare-function org-roam--extract-titles                 "minaduki-extract")
-(declare-function minaduki-extract/refs              "minaduki-extract")
-(declare-function org-roam--extract-tags                   "minaduki-extract")
-(declare-function org-roam--extract-ids                    "minaduki-extract")
-(declare-function org-roam--extract-links                  "minaduki-extract")
-(declare-function org-roam--list-all-files                 "org-roam")
 
 ;;;; Options
 

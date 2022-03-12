@@ -303,99 +303,71 @@ If FILE-PATH is nil, use the current file."
      (point-min) (point-max))
     result))
 
-(cl-defgeneric org-roam--extract-titles-title ()
-  "Return title from \"#+title\" of the current buffer."
-  nil)
+(defun minaduki-extract/main-title ()
+  "Return the title of the current buffer."
+  (cond
+   ((derived-mode-p 'org-mode)
+    (-some-> (cdr (assoc "TITLE" (minaduki//org-props '("TITLE"))))
+      list))
+   ((derived-mode-p 'markdown-mode)
+    (-some-> (minaduki-extract//markdown-props "title")
+      list))))
 
-(cl-defmethod org-roam--extract-titles-title (&context (major-mode org-mode))
-  "Return title from \"#+title\" in Org mode."
-  (let* ((prop (minaduki//org-props '("TITLE")))
-         (title (cdr (assoc "TITLE" prop))))
-    (when title
-      (list title))))
+(defun minaduki-extract/aliases ()
+  "Return a list of aliases from the current buffer."
+  (cond
+   ((derived-mode-p 'org-mode)
+    (minaduki//org-prop "ALIAS"))
+   ((derived-mode-p 'markdown-mode)
+    (condition-case nil
+        (-some-> (minaduki-extract//markdown-props "alias")
+          json-parse-string)
+      (json-parse-error
+       (minaduki//warn
+        :error
+        "Failed to parse aliases for buffer: %s. Skipping"
+        (or minaduki//file-name
+            (buffer-file-name))))))))
 
-(cl-defmethod org-roam--extract-titles-title (&context (major-mode markdown-mode))
-  "Return title from the title front matter property in Markdown."
-  (-some--> (minaduki-extract//markdown-props "title")
-    (list it)))
-
-(cl-defgeneric org-roam--extract-titles-alias ()
-  "Return the aliases from the current buffer."
-  nil)
-
-(cl-defmethod org-roam--extract-titles-alias (&context (major-mode org-mode))
-  "Return a list of aliases in Org mode.
-
-Reads from the #+alias keyword."
-  (condition-case nil
-      (minaduki//org-prop "ALIAS")
-    (error
-     (minaduki//warn
-      :error
-      "Failed to parse aliases for buffer: %s. Skipping"
-      (or minaduki//file-name
-          (buffer-file-name))))))
-
-(cl-defmethod org-roam--extract-titles-alias (&context (major-mode markdown-mode))
-  "Return the aliases in Markdown.
-
-Reads from the alias prop in the front matter.
-
-alias: [\"alias 1\", \"alias 2\"]"
-  (condition-case nil
-      (-some-> (minaduki-extract//markdown-props "alias")
-        json-parse-string)
-    (json-parse-error
-     (minaduki//warn
-      :error
-      "Failed to parse aliases for buffer: %s. Skipping"
-      (or minaduki//file-name
-          (buffer-file-name))))))
-
-(cl-defgeneric org-roam--extract-titles-headline ()
-  "Extract the first headline as the document title."
-  nil)
-
-;; Function body from md-roam's `org-roam--extract-titles-mdheadline'
-(cl-defmethod org-roam--extract-titles-headline (&context (major-mode markdown-mode))
-  "Extract the first headline as a title in Markdown mode."
-  (save-excursion
-    (goto-char (point-min))
-    (when (re-search-forward
-           ;; Converted from md-roam's `md-roam-regex-headline'
-           (rx (or
-                ;; Case 1:
-                ;;
-                ;; foo-bar    or    foo-bar
-                ;; =======          -------
-                ;;
-                ;; Ensure the line before the heading text consists of
-                ;; only whitespaces to exclude front matter openers
-                ;; (md-roam uses "\s" which actually stands for a
-                ;; space; I'm guessing that's a mistake)
-                (seq bol (zero-or-more whitespace) "\n"
-                     (group (zero-or-more nonl) eol) "\n"
-                     (group bol (one-or-more (any "=-")) eol))
-                ;; Case 2: "# Heading" style
-                (seq (group bol (one-or-more "#") " ")
-                     (group (zero-or-more nonl) eol))))
-           nil t)
-      (list (or (match-string-no-properties 1)
-                (match-string-no-properties 4))))))
-
-(cl-defmethod org-roam--extract-titles-headline (&context (major-mode org-mode))
-  "Extract the first headline as a title in Org mode."
-  (let ((headline (save-excursion
-                    (goto-char (point-min))
-                    ;; "What happens if a heading star was quoted
-                    ;; before the first heading?"
-                    ;; - `org-map-region' also does this
-                    ;; - Org already breaks badly when you do that;
-                    ;; precede the heading star with a ",".
-                    (re-search-forward org-outline-regexp-bol nil t)
-                    (org-entry-get nil "ITEM"))))
-    (when headline
-      (list headline))))
+(defun minaduki-extract/first-headline ()
+  "Extract the first headline."
+  (cond
+   ((derived-mode-p 'org-mode)
+    (save-excursion
+      (goto-char (point-min))
+      ;; "What happens if a heading star was quoted
+      ;; before the first heading?"
+      ;; - `org-map-region' also does this
+      ;; - Org already breaks badly when you do that;
+      ;; precede the heading star with a ",".
+      (re-search-forward org-outline-regexp-bol nil t)
+      (-some-> (org-entry-get nil "ITEM")
+        list)))
+   ((derived-mode-p 'markdown-mode)
+    ;; from md-roam's `org-roam--extract-titles-mdheadline'
+    (save-excursion
+      (goto-char (point-min))
+      (when (re-search-forward
+             ;; Converted from md-roam's `md-roam-regex-headline'
+             (rx (or
+                  ;; Case 1:
+                  ;;
+                  ;; foo-bar    or    foo-bar
+                  ;; =======          -------
+                  ;;
+                  ;; Ensure the line before the heading text consists of
+                  ;; only whitespaces to exclude front matter openers
+                  ;; (md-roam uses "\s" which actually stands for a
+                  ;; space; I'm guessing that's a mistake)
+                  (seq bol (zero-or-more whitespace) "\n"
+                       (group (zero-or-more nonl) eol) "\n"
+                       (group bol (one-or-more (any "=-")) eol))
+                  ;; Case 2: "# Heading" style
+                  (seq (group bol (one-or-more "#") " ")
+                       (group (zero-or-more nonl) eol))))
+             nil t)
+        (list (or (match-string-no-properties 1)
+                  (match-string-no-properties 4))))))))
 
 (defun org-roam--extract-titles ()
   "Extract the titles from current buffer.
@@ -403,9 +375,9 @@ alias: [\"alias 1\", \"alias 2\"]"
 This extracts the aliases plus either the title or the first
 headline."
   (org-with-wide-buffer
-   (-uniq (append (or (org-roam--extract-titles-title)
-                      (org-roam--extract-titles-headline))
-                  (org-roam--extract-titles-alias)))))
+   (-uniq (append (or (minaduki-extract/main-title)
+                      (minaduki-extract/first-headline))
+                  (minaduki-extract/aliases)))))
 
 ;; TODO: use project root
 (defun org-roam--extract-tags-all-directories (file)

@@ -224,7 +224,7 @@ Return added alias."
 (defun org-roam-alias-delete ()
   "Delete an alias from Org-roam file."
   (interactive)
-  (if-let ((aliases (org-roam--extract-titles-alias)))
+  (if-let ((aliases (minaduki-extract/aliases)))
       (let ((alias (completing-read "Alias: " aliases nil 'require-match)))
         (org-with-point-at 1
           (let ((case-fold-search t))
