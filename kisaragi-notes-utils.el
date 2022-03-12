@@ -473,8 +473,12 @@ If FILE, set `org-roam-temp-file-name' to file and insert its contents."
            (when ,file
              (insert-file-contents ,file)
              (setq-local minaduki//file-name ,file)
-             (setq-local default-directory (file-name-directory ,file)))
-           ,@body)))))
+             (setq-local default-directory (file-name-directory ,file))
+             (setq-local buffer-file-name ,file))
+           ,@body
+           ;; Otherwise `kill-buffer' sees a "modified" buffer and
+           ;; prompts to confirm.
+           (setq-local buffer-file-name nil))))))
 
 (defun org-roam-message (format-string &rest args)
   "Pass FORMAT-STRING and ARGS to `message' when `minaduki-verbose' is t."
