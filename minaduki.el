@@ -76,7 +76,9 @@
 (require 'org-roam-graph)
 (require 'kisaragi-notes-wikilink)
 
-;;; Org-roam-mode
+;;;; Function Faces
+;; These faces are used by `org-link-set-parameters', which take one argument,
+;; which is the path.
 
 (defun minaduki//backlink-to-current-p ()
   "Return t if the link at point is to the current Org-roam file."
@@ -90,10 +92,6 @@
                                ("id" (minaduki-db//fetch-id-file dest))
                                (_ dest))))))
       (string= current-file backlink-dest))))
-
-;;;; Function Faces
-;; These faces are used by `org-link-set-parameters', which take one argument,
-;; which is the path.
 
 (defun minaduki//file-link-face (path)
   "Conditional face for file: links.
@@ -255,6 +253,42 @@ When NEW-FILE-OR-DIR is a directory, we use it to compute the new file path."
       (move-to-column (- col 1))
       t)))
 
+;;;; minaduki-mode and minaduki-local-mode
+
+(defun minaduki/open-id-at-point ()
+  "Open the ID link at point.
+
+We try to open consult the cache database for the ID. If it's not
+found there, we ask whether to allow Org to search using
+`org-id-files', as it is slow. If not, we pretend we've found
+something and return t to stop Org from going further.
+
+This function hooks into `org-open-at-point' via
+`org-open-at-point-functions'."
+  (let* ((context (org-element-context))
+         (type (org-element-property :type context))
+         (id (org-element-property :path context)))
+    (when (string= type "id")
+      ;; `org-open-at-point-functions' expects member functions to
+      ;; return t if we visited a link, and nil if we haven't (to move
+      ;; onto the next method or onto the default).
+      (or (and
+           (when-let ((marker
+                       ;; Locate ID's location in FILE
+                       ;; TODO: ID location should be stored in the
+                       ;; cache instead of extracted on the fly
+                       (let ((file (minaduki-db//fetch-id-file id)))
+                         (when file
+                           (org-roam-with-file file t
+                             (org-id-find-id-in-file id file t))))))
+             (org-mark-ring-push)
+             (org-goto-marker-or-bmk marker)
+             (set-marker marker nil))
+           t)
+          ;; No = stop here = return t
+          (and (not (y-or-n-p "ID not found in the cache. Search with `org-id-files' (may be slow)? "))
+               t)))))
+
 (define-minor-mode minaduki-local-mode
   "Minor mode active in files tracked by minaduki."
   :global nil
@@ -359,178 +393,6 @@ Ensure it is installed and can be found within `exec-path'."))
         (when minaduki-local-mode
           (minaduki-local-mode -1))))))
 
-;;;; org-roam-mode
-(defun minaduki//find-file-hook-function ()
-  "Called by `find-file-hook' when mode symbol `org-roam-mode' is on."
-  (when (org-roam--org-roam-file-p)
-    (setq org-roam-last-window (get-buffer-window))
-    (run-hooks 'minaduki/file-setup-hook) ; Run user hooks
-    (add-hook 'post-command-hook #'minaduki-buffer//update-maybe nil t)
-    (add-hook 'before-save-hook #'org-roam-link--replace-link-on-save nil t)
-    (add-hook 'after-save-hook #'minaduki-db/update nil t)
-    (dolist (fn '(minaduki-completion/tags-at-point
-                  minaduki-completion/everywhere))
-      (add-hook 'completion-at-point-functions fn nil t))
-    (minaduki-buffer//update-maybe :redisplay t)))
-
-(defun minaduki/open-id-at-point ()
-  "Open the ID link at point.
-
-We try to open consult the cache database for the ID. If it's not
-found there, we ask whether to allow Org to search using
-`org-id-files', as it is slow. If not, we pretend we've found
-something and return t to stop Org from going further.
-
-This function hooks into `org-open-at-point' via
-`org-open-at-point-functions'."
-  (let* ((context (org-element-context))
-         (type (org-element-property :type context))
-         (id (org-element-property :path context)))
-    (when (string= type "id")
-      ;; `org-open-at-point-functions' expects member functions to
-      ;; return t if we visited a link, and nil if we haven't (to move
-      ;; onto the next method or onto the default).
-      (or (and
-           (when-let ((marker
-                       ;; Locate ID's location in FILE
-                       ;; TODO: ID location should be stored in the
-                       ;; cache instead of extracted on the fly
-                       (let ((file (minaduki-db//fetch-id-file id)))
-                         (when file
-                           (org-roam-with-file file t
-                             (org-id-find-id-in-file id file t))))))
-             (org-mark-ring-push)
-             (org-goto-marker-or-bmk marker)
-             (set-marker marker nil))
-           t)
-          ;; No = stop here = return t
-          (and (not (y-or-n-p "ID not found in the cache. Search with `org-id-files' (may be slow)? "))
-               t)))))
-
-;;;###autoload
-(define-minor-mode org-roam-mode
-  "Minor mode for Org-roam.
-
-This mode sets up several hooks, to ensure that the cache is updated on file
-changes, renames and deletes. It is also in charge of graceful termination of
-the database connection.
-
-This also sets `orb-edit-notes' as a function for editing
-literature notes, as well as setting up Bibtex-completion.
-
-When called interactively, toggle `org-roam-mode'. with prefix
-ARG, enable `org-roam-mode' if ARG is positive, otherwise disable
-it.
-
-When called from Lisp, enable `org-roam-mode' if ARG is omitted,
-nil, or positive. If ARG is `toggle', toggle `org-roam-mode'.
-Otherwise, behave as if called interactively."
-  :lighter " Org-roam"
-  :keymap (let ((map (make-sparse-keymap)))
-            (define-key map (kbd "C-c ) a") #'minaduki/literature-note-actions)
-            (define-key map (kbd "C-c ) i") #'orb-insert)
-            (define-key map (kbd "C-c ) C-f") #'minaduki/open-non-literature-note)
-            (define-key map (kbd "C-c ) C-i") #'orb-insert-non-ref)
-            map)
-  :group 'minaduki
-  :require 'org-roam
-  :global t
-  (cond
-
-   (org-roam-mode
-    (add-hook 'find-file-hook #'minaduki//find-file-hook-function)
-
-    ;; DB
-    (unless (or (and (bound-and-true-p emacsql-sqlite3-executable)
-                     (file-executable-p emacsql-sqlite3-executable))
-                (executable-find "sqlite3"))
-      (minaduki//warn :error "Cannot find executable 'sqlite3'. \
-Ensure it is installed and can be found within `exec-path'. \
-M-x info for more information at Org-roam > Installation > Post-Installation Tasks."))
-    (add-hook 'kill-emacs-hook #'minaduki-db//close)
-    (when (and (not minaduki-db/file-update-timer)
-               (eq minaduki-db/update-method 'idle-timer))
-      (setq minaduki-db/file-update-timer (run-with-idle-timer minaduki-db/update-idle-seconds t #'minaduki-db/update-cache-on-timer)))
-    (advice-add 'rename-file :after #'org-roam--rename-file-advice)
-    (advice-add 'delete-file :before #'minaduki//delete-file-advice)
-
-    ;; Link
-    (add-to-list 'org-execute-file-search-functions 'org-roam--execute-file-row-col)
-    (add-hook 'org-open-at-point-functions #'minaduki/open-id-at-point)
-    (advice-add 'org-id-new :after #'org-roam--id-new-advice)
-    (when (fboundp 'org-link-set-parameters)
-      (org-link-set-parameters "file" :face 'minaduki//file-link-face)
-      (org-link-set-parameters "id" :face 'minaduki//id-link-face))
-
-    ;; Apply these now. New buffers get this in the find-file hook.
-    (dolist (buf (org-roam--get-roam-buffers))
-      (with-current-buffer buf
-        (add-hook 'post-command-hook #'minaduki-buffer//update-maybe nil t)
-        (add-hook 'before-save-hook #'org-roam-link--replace-link-on-save nil t)
-        (add-hook 'after-save-hook #'minaduki-db/update nil t)))
-
-    ;; Bibtex
-    (add-to-list 'bibtex-completion-find-note-functions
-                 #'orb-find-note-file)
-    (advice-add 'bibtex-completion-edit-notes
-                :override #'orb-edit-notes-ad)
-    (advice-add 'bibtex-completion-parse-bibliography
-                :before #'orb-bibtex-completion-parse-bibliography-ad)
-
-    ;; Calendar
-    (setq calendar-mark-diary-entries-flag t)
-    (advice-add 'diary-mark-entries :override #'minaduki//mark-calendar)
-    (advice-add 'org-read-date
-                :before #'minaduki//set-calendar-mark-diary-entries-flag-nil)
-    (advice-add 'org-read-date
-                :after #'minaduki//set-calendar-mark-diary-entries-flag-t))
-
-   (t
-
-    (remove-hook 'find-file-hook #'minaduki//find-file-hook-function)
-
-    ;; DB
-    (setq org-execute-file-search-functions (delete 'org-roam--execute-file-row-col org-execute-file-search-functions))
-    (remove-hook 'kill-emacs-hook #'minaduki-db//close)
-    (when minaduki-db/file-update-timer
-      (cancel-timer minaduki-db/file-update-timer))
-    (advice-remove 'rename-file #'org-roam--rename-file-advice)
-    (advice-remove 'delete-file #'minaduki//delete-file-advice)
-    (minaduki-db//close)
-
-    ;; Link
-    (remove-hook 'org-open-at-point-functions #'minaduki/open-id-at-point)
-    (advice-remove 'org-id-new #'org-roam--id-new-advice)
-    (when (fboundp 'org-link-set-parameters)
-      (dolist (face '("file" "id"))
-        (org-link-set-parameters face :face 'org-link)))
-
-    ;; Disable local hooks for all org-roam buffers
-    (dolist (buf (org-roam--get-roam-buffers))
-      (with-current-buffer buf
-        (remove-hook 'post-command-hook #'minaduki-buffer//update-maybe t)
-        (remove-hook 'before-save-hook #'org-roam-link--replace-link-on-save t)
-        (remove-hook 'after-save-hook #'minaduki-db/update t)))
-
-    ;; Bibtex
-    (setq bibtex-completion-find-note-functions
-          (delq #'orb-find-note-file
-                bibtex-completion-find-note-functions))
-    (advice-remove 'bibtex-completion-edit-notes
-                   #'orb-edit-notes-ad)
-    (advice-remove 'bibtex-completion-parse-bibliography
-                   #'orb-bibtex-completion-parse-bibliography-ad)
-
-    ;; Calendar
-    (setq calendar-mark-diary-entries-flag nil)
-    (advice-remove 'diary-mark-entries
-                   #'minaduki//mark-calendar)
-    (advice-remove 'org-read-date
-                   #'minaduki//set-calendar-mark-diary-entries-flag-nil)
-    (advice-remove 'org-read-date
-                   #'minaduki//set-calendar-mark-diary-entries-flag-t))))
-
-(add-hook 'org-roam-mode-hook #'minaduki-db/build-cache)
 (add-hook 'minaduki-mode-hook #'minaduki-db/build-cache)
 
 ;;; Interactive Commands
