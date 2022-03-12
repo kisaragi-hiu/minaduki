@@ -1,4 +1,4 @@
-;;; org-roam-extract.el --- Extraction functions  -*- lexical-binding: t; -*-
+;;; minaduki-extract.el --- Extraction functions  -*- lexical-binding: t; -*-
 
 ;;; Commentary:
 
@@ -563,5 +563,5 @@ is always assumed to be a cite key. URL keys are not yet supported."
   (-some--> (minaduki-extract//markdown-props "roam_key")
     (list (cons "cite" it))))
 
-(provide 'org-roam-extract)
-;;; org-roam-extract.el ends here
+(provide 'minaduki-extract)
+;;; minaduki-extract.el ends here

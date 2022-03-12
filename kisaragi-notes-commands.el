@@ -24,7 +24,7 @@
 (require 'kisaragi-notes-templates)
 
 
-(require 'org-roam-extract)
+(require 'minaduki-extract)
 (require 'org-roam-capture)
 
 ;;;; Local commands

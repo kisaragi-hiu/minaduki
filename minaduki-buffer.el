@@ -52,7 +52,7 @@
 (require 'org-roam-db)
 (require 'kisaragi-notes-utils)
 (require 'minaduki-vars)
-(require 'org-roam-extract)
+(require 'minaduki-extract)
 
 (defvar org-link-frame-setup)
 (defvar org-return-follows-link)

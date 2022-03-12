@@ -70,7 +70,7 @@
 (require 'minaduki-buffer)
 (require 'minaduki-bibtex)
 (require 'org-roam-capture)
-(require 'org-roam-extract)
+(require 'minaduki-extract)
 (require 'org-roam-db)
 (require 'org-roam-doctor)
 (require 'org-roam-graph)
