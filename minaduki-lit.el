@@ -150,7 +150,7 @@ OTHERS: other key -> value pairs."
                        (push (concat "https://doi.org/" (cdr pair))
                              sources))
                      (when sources
-                       (push sources props)))
+                       (push (cons "sources" sources) props)))
                    (let ((ret (map-into props '(hash-table :test equal))))
                      (push ret minaduki-lit//cache)
                      ret)))))))
