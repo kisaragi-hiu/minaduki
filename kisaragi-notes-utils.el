@@ -1,9 +1,10 @@
-;;; kisaragi-notes-utils.el --- Utilities -*- lexical-binding: t; -*-
+;;; kisaragi-notes-utils.el --- Low level utilities -*- lexical-binding: t; -*-
 
 ;;; Commentary:
-;;
-;; Miscellaneous macros and utility functions.
-;;
+
+;; Miscellaneous macros and utility functions. These cannot depend on
+;; the cache.
+
 ;;; Code:
 
 (require 'dash)
@@ -16,8 +17,6 @@
 ;; `org-mode-hook' and `org-inhibit-startup' as dynamic variables,
 ;; regardless of whether Org is loaded before their compilation.
 (require 'org)
-
-(declare-function minaduki-db/query "minaduki-db")
 
 (defun minaduki//warn (level message &rest args)
   "Display a warning for minaduki at LEVEL.
