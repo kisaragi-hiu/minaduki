@@ -156,37 +156,6 @@ Assume links come from FILE-PATH."
                     (push (vector file-path name type properties) links))))))))
       links)))
 
-;; Modified from md-roam's `md-roam--extract-wiki-links'
-;;
-;; This now depends on the title cache having been established, which
-;; is problematic. db.el has be adapted to make sure titles are
-;; available before this is run.
-(defun org-roam--extract-links-wiki (file-path)
-  "Extract links in current buffer in this format: [[foo]].
-
-This link will point to a page titled \"foo\".
-
-Assume links come from FILE-PATH."
-  (save-excursion
-    (goto-char (point-min))
-    (cl-loop while (re-search-forward "\\[\\[\\([^]]+\\)\\]\\]" nil t)
-             collect
-             (let* ((target (car (minaduki-db//query-title
-                                  (match-string-no-properties 1))))
-                    (begin-of-block (match-beginning 0))
-                    (end-of-block (save-excursion
-                                    (unless (eobp)
-                                      (forward-sentence))
-                                    (point)))
-                    ;; get the text block = content around the link as context
-                    (content
-                     (buffer-substring-no-properties
-                      begin-of-block end-of-block)))
-               (vector file-path ; file-from
-                       target ; file-to
-                       "file" ; link-type
-                       (list :content content :point begin-of-block))))))
-
 ;; Modified from md-roam's `md-roam--extract-file-links'
 (defun org-roam--extract-links-markdown (file-path)
   "Extract Markdown links from current buffer.
@@ -274,14 +243,6 @@ it as FILE-PATH."
        (minaduki-extract/citation file-path))))
    ((derived-mode-p 'markdown-mode)
     (append
-     ;; This one depends on the titles cache having been built.
-     ;;
-     ;; This comes from how org-roam expects links to contain file
-     ;; path information, as that is how it is in Org. When working
-     ;; with wiki links, however, that's simply not the case.
-     ;;
-     ;; (org-roam--extract-links-wiki file-path)
-
      ;; I won't bother to support Org links in Markdown.
      (org-roam--extract-links-markdown file-path)
      (org-roam--extract-links-pandoc-cite file-path)))))
