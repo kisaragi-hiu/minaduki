@@ -555,6 +555,7 @@ CITEKEY is a list whose car is a citation key."
                                  (if link
                                      (org-element-property :raw-link link)
                                    source))))))
+    (setq minaduki-lit//cache nil)
     (cl-case (length sources)
       (0 (message "%s has no associated source" citekey))
       (1 (browse-url (car sources)))

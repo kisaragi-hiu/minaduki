@@ -106,7 +106,6 @@ OTHERS: other key -> value pairs."
   "Read sources from an ORG-FILE."
   (org-roam-with-file org-file nil
     (let ((case-fold-search t))
-      (setq minaduki-lit//cache nil)
       (save-excursion
         (goto-char (point-min))
         (cl-loop while (re-search-forward "^:bibtex_id:" nil t)
