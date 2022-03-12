@@ -6,6 +6,9 @@
 ;; bibtex-completion, but with more of a focus on managing and easily
 ;; adding sources. Sources are articles, books, etc., or just anything
 ;; you'd like to have a literature note for.
+;;
+;; TODO: we should save the parsed result into the cache. Maybe even
+;; do this as just another part of extraction.
 
 ;; - sources.json
 ;;   - parsed into something
@@ -103,6 +106,7 @@ OTHERS: other key -> value pairs."
   "Read sources from an ORG-FILE."
   (org-roam-with-file org-file nil
     (let ((case-fold-search t))
+      (setq minaduki-lit//cache nil)
       (save-excursion
         (goto-char (point-min))
         (cl-loop while (re-search-forward "^:bibtex_id:" nil t)
@@ -135,8 +139,22 @@ OTHERS: other key -> value pairs."
                                           key))
                             (cons key value))
                           props))
-                   (push (map-into props '(hash-table :test equal))
-                         minaduki-lit//cache)))))))
+                   ;; FIXME: this overwrites preexisting :sources:... values
+                   (let (sources)
+                     (when-let (pair (assoc "link" props))
+                       (push (cdr pair)
+                             sources))
+                     (when-let (pair (assoc "url" props))
+                       (push (cdr pair)
+                             sources))
+                     (when-let (pair (assoc "doi" props))
+                       (push (concat "https://doi.org/" (cdr pair))
+                             sources))
+                     (when sources
+                       (push sources props)))
+                   (let ((ret (map-into props '(hash-table :test equal))))
+                     (push ret minaduki-lit//cache)
+                     ret)))))))
 
 ;;;; Migration
 ;; (defun minaduki-lit/read-sources-from-bibtex (bibtex-file)

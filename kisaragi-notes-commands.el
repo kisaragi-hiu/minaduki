@@ -532,6 +532,35 @@ CITEKEY is a list whose car is a citation key."
     (insert (car citekey))
     (copy-region-as-kill (point-min) (point-max))))
 
+(defun minaduki/visit-source (citekey)
+  "Visit the source (URL, file path, DOI...) of CITEKEY."
+  (when (listp citekey)
+    (setq citekey (car citekey)))
+  ;; HACK: HOPEFULLY WE STOP DOING THIS
+  (unless minaduki-lit//cache
+    (cl-loop for file in minaduki-lit/bibliography
+             do (minaduki-lit/read-sources-from-org file)))
+  (let ((entry (--first (equal citekey (gethash "key" it))
+                        minaduki-lit//cache))
+        sources
+        target)
+    (with-temp-buffer
+      (setq sources (cl-loop for source in (gethash "sources" entry)
+                             collect
+                             (progn
+                               (erase-buffer)
+                               (insert source)
+                               (goto-char (point-min))
+                               (let ((link (org-element-link-parser)))
+                                 (if link
+                                     (org-element-property :raw-link link)
+                                   source))))))
+    (cl-case (length sources)
+      (0 (message "%s has no associated source" citekey))
+      (1 (browse-url (car sources)))
+      (t (browse-url
+          (completing-read "Which one: " sources nil t))))))
+
 ;;;; Actions
 
 (defvar minaduki/global-commands
@@ -563,7 +592,7 @@ List of (DISPLAY-NAME . COMMAND) pairs.")
     (command-execute func)))
 
 (defvar minaduki/literature-note-actions
-  '(("Open URL, DOI, or PDF" . bibtex-completion-open-url-or-doi)
+  '(("Open URL, DOI, or PDF" . minaduki/visit-source)
     ("Show entry in the bibliography file" . bibtex-completion-show-entry)
     ("Edit notes" . orb-edit-notes)
     ("Save citekey to kill-ring and clipboard" . minaduki/copy-citekey))
