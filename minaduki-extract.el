@@ -8,9 +8,9 @@
 (require 'f)
 
 (require 'org-element)
+(require 'org-id)
 (require 'org)
 
-(require 'org-roam-id)
 (require 'kisaragi-notes-utils)
 (require 'minaduki-vars)
 
@@ -104,6 +104,14 @@ FILE-FROM to the key."
      (t
       (s-trim content)))))
 
+(defun minaduki-extract//id-file (id)
+  "Find the file containing ID."
+  (unless org-id-locations
+    (org-id-locations-load))
+  (or (and org-id-locations
+           (hash-table-p org-id-locations)
+           (gethash id org-id-locations))))
+
 (defun org-roam--extract-links-org (file-path)
   "Extract links in current buffer in Org mode format ([[target][desc]]).
 
@@ -129,7 +137,8 @@ Assume links come from FILE-PATH."
                                        :content content))
                      (names (pcase type
                               ("id"
-                               (when-let ((file-path (minaduki-id/get-file path)))
+                               ;; The cache is not available yet
+                               (when-let ((file-path (minaduki-extract//id-file path)))
                                  (list file-path)))
                               ("cite" (list path))
                               ("website" (list path))

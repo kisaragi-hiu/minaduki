@@ -343,6 +343,14 @@ Return the number of rows inserted."
                               file))
      0))
 
+(defun minaduki-db//fetch-id-file (id)
+  "Return the file containing ID."
+  (caar (minaduki-db/query [:select [file]
+                            :from ids
+                            :where (= id $s1)
+                            :limit 1]
+                           id)))
+
 (defun minaduki-db//query-title (title)
   "Return files matching TITLE in the DB."
   (->> (minaduki-db/query

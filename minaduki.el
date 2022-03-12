@@ -87,7 +87,7 @@
                                   (type (org-element-property :type context))
                                   (dest (org-element-property :path context)))
                              (pcase type
-                               ("id" (minaduki-id/get-file dest))
+                               ("id" (minaduki-db//fetch-id-file dest))
                                (_ dest))))))
       (string= current-file backlink-dest))))
 
@@ -134,10 +134,12 @@ file."
                   (minaduki//backlink-to-current-p))
              'org-roam-link-current)
             ((and custom
-                  (minaduki-id/get-file id t))
+                  (minaduki-db//fetch-id-file id))
              'org-roam-link)
+            ;; FIXME: this breaks the display of ID links to untracked
+            ;; files.
             ((and custom
-                  (not (minaduki-id/get-file id)))
+                  (not (minaduki-db//fetch-id-file id)))
              'org-roam-link-invalid)
             (t
              'org-link)))))
@@ -307,7 +309,7 @@ Ensure it is installed and can be found within `exec-path'."))
         (advice-add 'rename-file :after #'org-roam--rename-file-advice)
         (advice-add 'delete-file :before #'minaduki//delete-file-advice)
         (add-to-list 'org-execute-file-search-functions 'org-roam--execute-file-row-col)
-        (add-hook 'org-open-at-point-functions #'minaduki-id/open-id-at-point)
+        (add-hook 'org-open-at-point-functions #'minaduki/open-id-at-point)
         (advice-add 'org-id-new :after #'org-roam--id-new-advice)
         (add-to-list 'bibtex-completion-find-note-functions #'orb-find-note-file)
         (advice-add 'bibtex-completion-edit-notes :override #'orb-edit-notes-ad)
@@ -325,7 +327,7 @@ Ensure it is installed and can be found within `exec-path'."))
     (remove-hook 'after-change-major-mode-hook 'minaduki-initialize)
     (remove-hook 'find-file-hook 'minaduki-initialize)
     (remove-hook 'kill-emacs-hook #'minaduki-db//close)
-    (remove-hook 'org-open-at-point-functions #'minaduki-id/open-id-at-point)
+    (remove-hook 'org-open-at-point-functions #'minaduki/open-id-at-point)
     (when minaduki-db/file-update-timer
       (cancel-timer minaduki-db/file-update-timer))
     (advice-remove 'rename-file #'org-roam--rename-file-advice)
@@ -370,6 +372,40 @@ Ensure it is installed and can be found within `exec-path'."))
                   minaduki-completion/everywhere))
       (add-hook 'completion-at-point-functions fn nil t))
     (minaduki-buffer//update-maybe :redisplay t)))
+
+(defun minaduki/open-id-at-point ()
+  "Open the ID link at point.
+
+We try to open consult the cache database for the ID. If it's not
+found there, we ask whether to allow Org to search using
+`org-id-files', as it is slow. If not, we pretend we've found
+something and return t to stop Org from going further.
+
+This function hooks into `org-open-at-point' via
+`org-open-at-point-functions'."
+  (let* ((context (org-element-context))
+         (type (org-element-property :type context))
+         (id (org-element-property :path context)))
+    (when (string= type "id")
+      ;; `org-open-at-point-functions' expects member functions to
+      ;; return t if we visited a link, and nil if we haven't (to move
+      ;; onto the next method or onto the default).
+      (or (and
+           (when-let ((marker
+                       ;; Locate ID's location in FILE
+                       ;; TODO: ID location should be stored in the
+                       ;; cache instead of extracted on the fly
+                       (let ((file (minaduki-db//fetch-id-file id)))
+                         (when file
+                           (org-roam-with-file file t
+                             (org-id-find-id-in-file id file t))))))
+             (org-mark-ring-push)
+             (org-goto-marker-or-bmk marker)
+             (set-marker marker nil))
+           t)
+          ;; No = stop here = return t
+          (and (not (y-or-n-p "ID not found in the cache. Search with `org-id-files' (may be slow)? "))
+               t)))))
 
 ;;;###autoload
 (define-minor-mode org-roam-mode
@@ -420,7 +456,7 @@ M-x info for more information at Org-roam > Installation > Post-Installation Tas
 
     ;; Link
     (add-to-list 'org-execute-file-search-functions 'org-roam--execute-file-row-col)
-    (add-hook 'org-open-at-point-functions #'minaduki-id/open-id-at-point)
+    (add-hook 'org-open-at-point-functions #'minaduki/open-id-at-point)
     (advice-add 'org-id-new :after #'org-roam--id-new-advice)
     (when (fboundp 'org-link-set-parameters)
       (org-link-set-parameters "file" :face 'minaduki//file-link-face)
@@ -463,7 +499,7 @@ M-x info for more information at Org-roam > Installation > Post-Installation Tas
     (minaduki-db//close)
 
     ;; Link
-    (remove-hook 'org-open-at-point-functions #'minaduki-id/open-id-at-point)
+    (remove-hook 'org-open-at-point-functions #'minaduki/open-id-at-point)
     (advice-remove 'org-id-new #'org-roam--id-new-advice)
     (when (fboundp 'org-link-set-parameters)
       (dolist (face '("file" "id"))
