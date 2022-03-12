@@ -480,34 +480,29 @@ protocol is treated as the TYPE (after processing through
               (match-string 2 ref))
       (cons "cite" ref))))
 
-(cl-defgeneric minaduki-extract/refs ()
-  "Extract all refs statements from the current buffer.
+(defun minaduki-extract/refs ()
+  "Extract the citekeys this buffer corresponds with.
 
-Return value: ((TYPE . KEY) (TYPE . KEY) ...)"
-  nil)
+Return value: ((TYPE . KEY) (TYPE . KEY) ...)
 
-(cl-defmethod minaduki-extract/refs (&context (major-mode org-mode))
-  "Extract all refs statements in Org mode."
-  (let (refs)
-    (pcase-dolist
-        (`(,_ . ,roam-key)
-         (minaduki//org-props '("ROAM_KEY")))
-      (pcase roam-key
-        ('nil nil)
-        ((pred string-empty-p)
-         (user-error "Org property #+roam_key cannot be empty"))
-        (ref
-         (when-let ((r (minaduki-extract//process-ref ref)))
-           (push r refs)))))
-    refs))
-
-(cl-defmethod minaduki-extract/refs (&context (major-mode markdown-mode))
-  "Extract all refs statements in Markdown.
-
-Refs are specified in the roam_key: prop in the front matter and
-is always assumed to be a cite key. URL keys are not yet supported."
-  (-some--> (minaduki-extract//markdown-props "roam_key")
-    (list (cons "cite" it))))
+In Org mode, the keys are specified with the #+ROAM_KEY keyword."
+  (cond
+   ((derived-mode-p 'org-mode)
+    (let (refs)
+      (pcase-dolist
+          (`(,_ . ,roam-key)
+           (minaduki//org-props '("ROAM_KEY")))
+        (pcase roam-key
+          ('nil nil)
+          ((pred string-empty-p)
+           (user-error "Org property #+roam_key cannot be empty"))
+          (ref
+           (when-let ((r (minaduki-extract//process-ref ref)))
+             (push r refs)))))
+      refs))
+   ((derived-mode-p 'markdown-mode)
+    (-some--> (minaduki-extract//markdown-props "roam_key")
+      (list (cons "cite" it))))))
 
 (provide 'minaduki-extract)
 ;;; minaduki-extract.el ends here
