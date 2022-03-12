@@ -294,7 +294,7 @@ Returns the number of rows inserted."
       (minaduki-db/query [:delete :from ids
                           :where (= file $s1)]
                          file))
-    (if-let ((ids (org-roam--extract-ids file)))
+    (if-let ((ids (minaduki-extract/ids file)))
         (condition-case nil
             (progn
               (minaduki-db/query

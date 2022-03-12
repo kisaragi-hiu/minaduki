@@ -275,8 +275,6 @@ This function hooks into `org-open-at-point' via
       (or (and
            (when-let ((marker
                        ;; Locate ID's location in FILE
-                       ;; TODO: ID location should be stored in the
-                       ;; cache instead of extracted on the fly
                        (let ((file (minaduki-db//fetch-id-file id)))
                          (when file
                            (org-roam-with-file file t

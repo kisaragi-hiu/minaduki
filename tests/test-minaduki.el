@@ -415,7 +415,7 @@
                (with-current-buffer buf
                  (funcall fn fname)))))
     (it "extracts ids"
-      (expect (test #'org-roam--extract-ids
+      (expect (test #'minaduki-extract/ids
                     "headlines/headline.org")
               :to-have-same-items-as
               `(["e84d0630-efad-4017-9059-5ef917908823" ,(test-minaduki--abs-path "headlines/headline.org") 1]

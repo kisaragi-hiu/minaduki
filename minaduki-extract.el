@@ -247,20 +247,24 @@ it as FILE-PATH."
      (org-roam--extract-links-markdown file-path)
      (org-roam--extract-links-pandoc-cite file-path)))))
 
-(defun org-roam--extract-ids (&optional file-path)
+(defun minaduki-extract/ids (&optional file-path)
   "Extract all IDs within the current buffer.
-If FILE-PATH is nil, use the current file."
+If FILE-PATH is nil, use the current file.
+Return a list of [ID FILE LEVEL] vectors."
   (setq file-path (or file-path minaduki//file-name (buffer-file-name)))
   (let (result)
-    ;; We need to handle the special case of the file property drawer (at outline level 0)
+    ;; Handle the file property drawer (outline level 0)
     (org-with-point-at (point-min)
       (when-let ((before-first-heading (= 0 (org-outline-level)))
                  (id (org-entry-get nil "ID")))
-        (push (vector id file-path 0) result)))
+        (push (vector id file-path 0)
+              result)))
+    ;; Extract every other ID
     (org-map-region
      (lambda ()
        (when-let ((id (org-entry-get nil "ID")))
-         (push (vector id file-path (org-outline-level)) result)))
+         (push (vector id file-path (org-outline-level))
+               result)))
      (point-min) (point-max))
     result))
 
