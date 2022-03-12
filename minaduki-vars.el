@@ -583,13 +583,6 @@ descriptive warnings when certain operations fail (e.g. parsing).")
 This face is used for links without a destination."
   :group 'minaduki-faces)
 
-(defface org-roam-link-shielded
-  '((t :inherit (warning org-link)))
-  "Face for Org-roam links that are shielded.
-This face is used on the region target by `org-roam-insertion'
-during an `minaduki-capture'."
-  :group 'minaduki-faces)
-
 (provide 'minaduki-vars)
 
 ;;; minaduki-vars.el ends here

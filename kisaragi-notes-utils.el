@@ -487,26 +487,6 @@ If FILE, set `org-roam-temp-file-name' to file and insert its contents."
        (s-replace "\\" "\\\\")
        (s-replace "\"" "\\\"")))
 
-;;; Shielding regions
-(defun org-roam-shield-region (beg end)
-  "Shield region between BEG and END against modifications."
-  (when (and beg end)
-    (add-text-properties beg end
-                         '(font-lock-face org-roam-link-shielded
-                                          read-only t)
-                         (marker-buffer beg))
-    (cons beg end)))
-
-(defun org-roam-unshield-region (beg end)
-  "Unshield the shielded region between BEG and END."
-  (when (and beg end)
-    (let ((inhibit-read-only t))
-      (remove-text-properties beg end
-                              '(font-lock-face org-roam-link-shielded
-                                               read-only t)
-                              (marker-buffer beg)))
-    (cons beg end)))
-
 ;;;; dealing with file-wide properties
 (defun org-roam--set-global-prop (name value)
   "Set a file property called NAME to VALUE.

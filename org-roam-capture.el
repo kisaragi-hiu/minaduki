@@ -313,9 +313,7 @@ the capture)."
 (defun minaduki-capture//finalize ()
   "Finalize the `minaduki-capture' process."
   (let* ((finalize (minaduki-capture//get :finalize))
-         ;; In case any regions were shielded before, unshield them
-         (region (when-let ((region (minaduki-capture//get :region)))
-                   (org-roam-unshield-region (car region) (cdr region))))
+         (region (minaduki-capture//get :region))
          (beg (car region))
          (end (cdr region)))
     (unless org-note-abort
