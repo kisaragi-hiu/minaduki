@@ -39,10 +39,12 @@
 (require 'kisaragi-notes-utils)
 (require 'minaduki-vars)
 
-(declare-function parsebib-find-next-item "parsebib")
-(declare-function parsebib-read-entry "parsebib")
+;; (declare-function parsebib-find-next-item "parsebib")
+;; (declare-function parsebib-read-entry "parsebib")
 
 ;;;; Type definition
+
+(defvar minaduki-lit//cache nil)
 
 (cl-defun minaduki-lit/source (&key author type title key sources tags others)
   "Return a hash table representing a source.
@@ -76,26 +78,27 @@ OTHERS: other key -> value pairs."
     obj))
 
 ;;;; JSON <-> vector of hash tables
-(defun minaduki-lit/read-sources (file)
-  "Parse FILE, a JSON file, into a list of sources."
-  (catch 'ret
-    (unless (f-exists? file)
-      (throw 'ret nil))
-    (with-temp-buffer
-      (let ((format-alist nil)
-            (after-insert-file-functions nil))
-        (insert-file-contents file))
-      (json-parse-buffer))))
+;; (defun minaduki-lit/read-sources (file)
+;;   "Parse FILE, a JSON file, into a list of sources."
+;;   (catch 'ret
+;;     (unless (f-exists? file)
+;;       (throw 'ret nil))
+;;     (with-temp-buffer
+;;       (let ((format-alist nil)
+;;             (after-insert-file-functions nil))
+;;         (insert-file-contents file))
+;;       (json-parse-buffer))))
 
-(defun minaduki-lit/write-sources (source-list file)
-  "Write SOURCE-LIST into FILE as JSON."
-  (with-temp-file file
-    (insert (json-serialize source-list))
-    ;; This is re-parsing and re-writing it again, but (a) I want it
-    ;; pretty printed because Emacs chokes on long lines and (b) this
-    ;; function should not on a hot path anyways. I think.
-    (json-pretty-print-buffer)))
+;; (defun minaduki-lit/write-sources (source-list file)
+;;   "Write SOURCE-LIST into FILE as JSON."
+;;   (with-temp-file file
+;;     (insert (json-serialize source-list))
+;;     ;; This is re-parsing and re-writing it again, but (a) I want it
+;;     ;; pretty printed because Emacs chokes on long lines and (b) this
+;;     ;; function should not on a hot path anyways. I think.
+;;     (json-pretty-print-buffer)))
 
+;;;; Reading from Org
 (defun minaduki-lit/read-sources-from-org (org-file)
   "Read sources from an ORG-FILE."
   (org-roam-with-file org-file nil
@@ -132,45 +135,46 @@ OTHERS: other key -> value pairs."
                                           key))
                             (cons key value))
                           props))
-                   (map-into props '(hash-table :test equal))))))))
+                   (push (map-into props '(hash-table :test equal))
+                         minaduki-lit//cache)))))))
 
 ;;;; Migration
-(defun minaduki-lit/read-sources-from-bibtex (bibtex-file)
-  "Parse a BIBTEX-FILE into our format."
-  (with-temp-buffer
-    (insert-file-contents bibtex-file)
-    (goto-char (point-min))
-    (cl-loop for entry-type = (parsebib-find-next-item)
-             while entry-type
-             collect (let ((entry
-                            (--map (cons (intern (car it))
-                                         (cdr it))
-                                   (parsebib-read-entry entry-type (point)))))
-                       (let-alist entry
-                         (minaduki-lit/source
-                          :author (minaduki//remove-curly .author)
-                          :type .=type=
-                          :key .=key=
-                          :title (minaduki//remove-curly .title)
-                          :tags
-                          (-some->> .keywords
-                            minaduki//remove-curly
-                            (s-split ",")
-                            (-map #'s-trim))
-                          :sources (-non-nil
-                                    (mapcar #'minaduki//remove-curly
-                                            (list .link .url)))
-                          :others
-                          (cl-loop for (k . v) in entry
-                                   unless (member k '(author =type= =key= title keywords url link))
-                                   collect (cons k (minaduki//remove-curly v)))))))))
+;; (defun minaduki-lit/read-sources-from-bibtex (bibtex-file)
+;;   "Parse a BIBTEX-FILE into our format."
+;;   (with-temp-buffer
+;;     (insert-file-contents bibtex-file)
+;;     (goto-char (point-min))
+;;     (cl-loop for entry-type = (parsebib-find-next-item)
+;;              while entry-type
+;;              collect (let ((entry
+;;                             (--map (cons (intern (car it))
+;;                                          (cdr it))
+;;                                    (parsebib-read-entry entry-type (point)))))
+;;                        (let-alist entry
+;;                          (minaduki-lit/source
+;;                           :author (minaduki//remove-curly .author)
+;;                           :type .=type=
+;;                           :key .=key=
+;;                           :title (minaduki//remove-curly .title)
+;;                           :tags
+;;                           (-some->> .keywords
+;;                             minaduki//remove-curly
+;;                             (s-split ",")
+;;                             (-map #'s-trim))
+;;                           :sources (-non-nil
+;;                                     (mapcar #'minaduki//remove-curly
+;;                                             (list .link .url)))
+;;                           :others
+;;                           (cl-loop for (k . v) in entry
+;;                                    unless (member k '(author =type= =key= title keywords url link))
+;;                                    collect (cons k (minaduki//remove-curly v)))))))))
 
-(defun minaduki-lit/migrate-from-bibtex ()
-  "Migrate from .bib files."
-  (minaduki-lit/write-sources
-   (cl-loop for (_ . bib) in bibtex-completion-bibliography
-            vconcat (minaduki-lit/read-sources-from-bibtex bib))
-   minaduki-lit/source-json))
+;; (defun minaduki-lit/migrate-from-bibtex ()
+;;   "Migrate from .bib files."
+;;   (minaduki-lit/write-sources
+;;    (cl-loop for (_ . bib) in bibtex-completion-bibliography
+;;             vconcat (minaduki-lit/read-sources-from-bibtex bib))
+;;    minaduki-lit/source-json))
 
 ;;;; The search interface
 

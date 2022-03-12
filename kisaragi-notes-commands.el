@@ -292,8 +292,8 @@ Return added tag."
          ;; Use an alist here so that we can retrieve the key from the
          ;; selected item
          (cl-loop for s being the elements of
-                  (cl-loop for (k . v) in minaduki-lit/bibliography
-                           vconcat (minaduki-lit/read-sources-from-org k))
+                  (cl-loop for file in minaduki-lit/bibliography
+                           vconcat (minaduki-lit/read-sources-from-org file))
                   ;; (minaduki-lit/read-sources minaduki-lit/source-json)
                   collect
                   (cons
@@ -525,7 +525,7 @@ one."
 
 ;;;; Literature note actions
 
-(defun orb-note-actions-copy-citekey (citekey)
+(defun minaduki/copy-citekey (citekey)
   "Save note's citation key to `kill-ring' and copy it to clipboard.
 CITEKEY is a list whose car is a citation key."
   (with-temp-buffer
@@ -563,12 +563,10 @@ List of (DISPLAY-NAME . COMMAND) pairs.")
     (command-execute func)))
 
 (defvar minaduki/literature-note-actions
-  '(("Open PDF file(s)" . bibtex-completion-open-pdf)
-    ("Add PDF to library" . bibtex-completion-add-pdf-to-library)
-    ("Open URL or DOI in browser" . bibtex-completion-open-url-or-doi)
-    ("Show record in the bibtex file" . bibtex-completion-show-entry)
+  '(("Open URL, DOI, or PDF" . bibtex-completion-open-url-or-doi)
+    ("Show entry in the bibliography file" . bibtex-completion-show-entry)
     ("Edit notes" . orb-edit-notes)
-    ("Save citekey to kill-ring and clipboard" . orb-note-actions-copy-citekey))
+    ("Save citekey to kill-ring and clipboard" . minaduki/copy-citekey))
   "Commands useful inside a literature note.
 
 List of (DISPLAY-NAME . FUNCTION) pairs. Each function receives
@@ -585,14 +583,7 @@ CITEKEY is, by default, the first ROAM_KEY in the buffer.
 Actions are defined in `minaduki/literature-note-actions'."
   (interactive)
   (-if-let* ((citekey (or citekey (cdar (minaduki-extract/refs)))))
-      (let* ((prompt (let ((bibtex-completion-display-formats
-                            '((t . "Act on ${author} - ${title} (${year}): ")))
-                           ;; This should be local to the `let'.
-                           bibtex-completion-display-formats-internal)
-                       (bibtex-completion-init)
-                       (bibtex-completion-format-entry
-                        (bibtex-completion-get-entry citekey)
-                        0)))
+      (let* ((prompt (format "Actions for %s: " citekey))
              (candidates minaduki/literature-note-actions)
              (selection (completing-read prompt candidates))
              (func (cdr (assoc selection candidates))))

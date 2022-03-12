@@ -89,7 +89,7 @@ value like `most-positive-fixnum'."
   :group 'minaduki
   :type 'string)
 
-(defcustom minaduki-lit/bibliography (f-join org-directory "sources.org")
+(defcustom minaduki-lit/bibliography (list (f-join org-directory "sources.org"))
   "Path to the Org file that stores sources."
   :group 'minaduki
   :type 'string)
