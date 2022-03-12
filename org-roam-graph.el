@@ -34,7 +34,7 @@
 (require 's)   ;s-truncate, s-replace
 (eval-and-compile
   (require 'kisaragi-notes-utils))
-(require 'org-roam-db)
+(require 'minaduki-db)
 
 ;;;; Options
 (defcustom org-roam-graph-viewer (executable-find "firefox")

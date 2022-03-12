@@ -23,7 +23,7 @@
 (require 'parse-time)
 (require 's)
 
-(require 'org-roam-db)
+(require 'minaduki-db)
 (require 'kisaragi-notes-utils)
 (require 'minaduki-vars)
 

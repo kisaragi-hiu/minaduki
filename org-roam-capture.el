@@ -36,7 +36,7 @@
 (require 'org-capture)
 
 (require 'kisaragi-notes-utils)
-(require 'org-roam-db)
+(require 'minaduki-db)
 (require 'minaduki-extract)
 (require 'minaduki-completion)
 (require 'minaduki-vars)

@@ -17,7 +17,7 @@
 ;; regardless of whether Org is loaded before their compilation.
 (require 'org)
 
-(declare-function minaduki-db/query "org-roam-db")
+(declare-function minaduki-db/query "minaduki-db")
 
 (defun minaduki//warn (level message &rest args)
   "Display a warning for minaduki at LEVEL.

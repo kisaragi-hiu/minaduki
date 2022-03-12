@@ -71,7 +71,7 @@
 (require 'minaduki-bibtex)
 (require 'org-roam-capture)
 (require 'minaduki-extract)
-(require 'org-roam-db)
+(require 'minaduki-db)
 (require 'org-roam-doctor)
 (require 'org-roam-graph)
 (require 'kisaragi-notes-wikilink)

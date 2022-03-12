@@ -36,7 +36,7 @@
 (require 'ol)
 
 (require 'kisaragi-notes-utils)
-(require 'org-roam-db)
+(require 'minaduki-db)
 
 (require 'minaduki-vars)
 (require 'minaduki-completion)

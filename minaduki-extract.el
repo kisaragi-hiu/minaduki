@@ -21,7 +21,7 @@
 (declare-function org-element-citation-reference-parser "org-element")
 (defvar org-element-citation-prefix-re)
 
-(declare-function minaduki-db//query-title "org-roam-db")
+(declare-function minaduki-db//query-title "minaduki-db")
 
 (defun minaduki-extract//markdown-props (prop)
   "Extract PROP in the Markdown front matter."

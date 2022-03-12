@@ -28,7 +28,7 @@
 
 (require 'minaduki-vars)
 (require 'kisaragi-notes-utils)
-(require 'org-roam-db)
+(require 'minaduki-db)
 
 ;;;; Completion utils
 (defun minaduki//get-title-path-completions ()

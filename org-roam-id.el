@@ -6,7 +6,7 @@
 
 (require 'org-id)
 (require 'org-element)
-(require 'org-roam-db)
+(require 'minaduki-db)
 
 (defun minaduki-id/get-file (id &optional strict)
   "Return the file if ID exists.

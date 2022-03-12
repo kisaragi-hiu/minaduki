@@ -1,4 +1,4 @@
-;;; org-roam-db.el --- Org-roam database API -*- coding: utf-8; lexical-binding: t; -*-
+;;; minaduki-db.el --- Org-roam database API -*- coding: utf-8; lexical-binding: t; -*-
 
 ;; Copyright © 2020 Jethro Kuan <jethrokuan95@gmail.com>
 
@@ -618,6 +618,6 @@ FILE-HASH-PAIRS is a list of (file . hash) pairs."
     (_
      (user-error "Invalid `minaduki-db/update-method'"))))
 
-(provide 'org-roam-db)
+(provide 'minaduki-db)
 
-;;; org-roam-db.el ends here
+;;; minaduki-db.el ends here
