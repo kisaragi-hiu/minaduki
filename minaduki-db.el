@@ -514,7 +514,7 @@ If the file exists, update the cache with information."
     (when-let ((buf (find-buffer-visiting file-path)))
       (with-current-buffer buf
         (save-buffer)))
-    (org-roam--with-temp-buffer file-path
+    (minaduki//with-temp-buffer file-path
       (emacsql-with-transaction (minaduki-db)
         (minaduki-db//insert-meta 'update)
         (minaduki-db//insert-tags 'update)
@@ -595,7 +595,7 @@ FILE-HASH-PAIRS is a list of (file . hash) pairs."
              (atime (file-attribute-access-time attr))
              (mtime (file-attribute-modification-time attr)))
         (condition-case nil
-            (org-roam--with-temp-buffer file
+            (minaduki//with-temp-buffer file
               (minaduki-db/query
                [:insert :into files
                 :values $v1]
@@ -612,7 +612,7 @@ FILE-HASH-PAIRS is a list of (file . hash) pairs."
     (minaduki//for "Processing titles and tags (%s/%s)..."
         (file . _) file-hash-pairs
       (condition-case nil
-          (org-roam--with-temp-buffer file
+          (minaduki//with-temp-buffer file
             (setq tag-count (+ tag-count (minaduki-db//insert-tags)))
             (setq title-count (+ title-count (minaduki-db//insert-titles))))
         (file-error
@@ -624,7 +624,7 @@ FILE-HASH-PAIRS is a list of (file . hash) pairs."
     (minaduki//for "Processing lit-entries (%s/%s)..."
         (file . _) file-hash-pairs
       (condition-case nil
-          (org-roam--with-temp-buffer file
+          (minaduki//with-temp-buffer file
             (setq modified-count (1+ modified-count))
             (setq lit-count (+ lit-count (minaduki-db//insert-lit-entries))))
         (file-error
@@ -637,7 +637,7 @@ FILE-HASH-PAIRS is a list of (file . hash) pairs."
     (minaduki//for "Processing links (%s/%s)..."
         (file . _) file-hash-pairs
       (condition-case nil
-          (org-roam--with-temp-buffer file
+          (minaduki//with-temp-buffer file
             (setq modified-count (1+ modified-count))
             (setq ref-count (+ ref-count (minaduki-db//insert-refs)))
             (setq link-count (+ link-count (minaduki-db//insert-links))))

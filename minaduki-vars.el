@@ -541,7 +541,7 @@ Possible values are `key' and `entry'."
 
 (defvar-local minaduki//file-name nil
   "The corresponding file for a temp buffer.
-This is set by `org-roam--with-temp-buffer', to allow throwing of
+This is set by `minaduki//with-temp-buffer', to allow throwing of
 descriptive warnings when certain operations fail (e.g. parsing).")
 
 (defvar org-roam-last-window nil

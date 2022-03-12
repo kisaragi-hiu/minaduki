@@ -456,10 +456,16 @@ Kills the buffer if KEEP-BUF-P is nil, and FILE is not yet visited."
            (kill-buffer (find-buffer-visiting ,file))))
      res))
 
-(defmacro org-roam--with-temp-buffer (file &rest body)
+(defmacro minaduki//with-temp-buffer (file &rest body)
   "Execute BODY within a temp buffer.
+
+Use this for hot paths instead of `org-roam-with-file' as it sets
+up the major mode, which is quite slow.
+
 Like `with-temp-buffer', but propagates `org-directory'.
-If FILE, set `org-roam-temp-file-name' to file and insert its contents."
+
+If FILE, set `minaduki//file-name' and variable
+`buffer-file-name' to FILE and insert its contents."
   (declare (indent 1) (debug t))
   (let ((current-org-directory (make-symbol "current-org-directory")))
     `(let ((,current-org-directory org-directory))
