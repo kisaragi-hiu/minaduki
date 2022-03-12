@@ -469,7 +469,7 @@ If FILE, set `org-roam-temp-file-name' to file and insert its contents."
                (org-inhibit-startup t))
            (funcall (or (-some-> ,file
                           (assoc-default auto-mode-alist #'string-match))
-                        org-mode))
+                        #'org-mode))
            (when ,file
              (insert-file-contents ,file)
              (setq-local minaduki//file-name ,file)
