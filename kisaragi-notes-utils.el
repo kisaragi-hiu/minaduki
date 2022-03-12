@@ -466,19 +466,17 @@ If FILE, set `org-roam-temp-file-name' to file and insert its contents."
        (with-temp-buffer
          (let ((org-directory ,current-org-directory)
                (org-mode-hook nil)
-               (org-inhibit-startup t))
+               (org-inhibit-startup t)
+               ,@(when file
+                   `((minaduki//file-name ,file)
+                     (default-directory (file-name-directory ,file))
+                     (buffer-file-name ,file))))
            (funcall (or (-some-> ,file
                           (assoc-default auto-mode-alist #'string-match))
                         #'org-mode))
-           (when ,file
-             (insert-file-contents ,file)
-             (setq-local minaduki//file-name ,file)
-             (setq-local default-directory (file-name-directory ,file))
-             (setq-local buffer-file-name ,file))
-           ,@body
-           ;; Otherwise `kill-buffer' sees a "modified" buffer and
-           ;; prompts to confirm.
-           (setq-local buffer-file-name nil))))))
+           ,@(when file
+               `((insert-file-contents ,file)))
+           ,@body)))))
 
 (defun org-roam-message (format-string &rest args)
   "Pass FORMAT-STRING and ARGS to `message' when `minaduki-verbose' is t."
