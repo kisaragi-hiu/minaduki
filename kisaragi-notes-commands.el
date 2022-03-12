@@ -291,9 +291,9 @@ Return added tag."
   (let ((key->formatted
          ;; Use an alist here so that we can retrieve the key from the
          ;; selected item
-         (cl-loop for s being the elements of
-                  (cl-loop for file in minaduki-lit/bibliography
-                           vconcat (minaduki-lit/read-sources-from-org file))
+         (cl-loop for (s) in (minaduki-db/query [:select [props] :from keys])
+                  ;; (cl-loop for file in minaduki-lit/bibliography
+                  ;;          vconcat (minaduki-lit/read-sources-from-org file))
                   ;; (minaduki-lit/read-sources minaduki-lit/source-json)
                   collect
                   (cons

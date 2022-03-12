@@ -480,6 +480,59 @@ protocol is treated as the TYPE (after processing through
               (match-string 2 ref))
       (cons "cite" ref))))
 
+(defun minaduki-extract/lit-entries ()
+  "Extract literature entries (sources).
+
+These are like your org-bibtex entries."
+  (let ((case-fold-search t))
+    (save-excursion
+      (goto-char (point-min))
+      (cl-loop
+       while (re-search-forward "^:bibtex_id:" nil t)
+       collect
+       (let ((props (org-entry-properties)))
+         ;; Remove properties that I'm not interested in
+         (setq props
+               (--remove
+                (member (car it)
+                        (->> org-special-properties
+                             ;; But keep these
+                             (remove "ITEM")
+                             (remove "TODO")))
+                props))
+         (when-let (tags (org-get-tags))
+           (push (cons "tags" tags) props))
+         (setq props
+               (--map
+                (let ((key (car it))
+                      (value (cdr it)))
+                  ;; Downcase all keys
+                  (setq key (downcase key))
+                  ;; Key replacements
+                  ;; (ORG_PROP . KEY)
+                  (setq key (or (cdr
+                                 (assoc key
+                                        '(("category" . "type")
+                                          ("bibtex_id" . "key")
+                                          ("item" . "title"))))
+                                key))
+                  (cons key value))
+                props))
+         ;; FIXME: this overwrites preexisting :sources:... values
+         (let (sources)
+           (when-let (pair (assoc "link" props))
+             (push (cdr pair)
+                   sources))
+           (when-let (pair (assoc "url" props))
+             (push (cdr pair)
+                   sources))
+           (when-let (pair (assoc "doi" props))
+             (push (concat "https://doi.org/" (cdr pair))
+                   sources))
+           (when sources
+             (push (cons "sources" sources) props)))
+         (map-into props '(hash-table :test equal)))))))
+
 (defun minaduki-extract/refs ()
   "Extract the citekeys this buffer corresponds with.
 

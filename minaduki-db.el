@@ -53,7 +53,7 @@
 
 ;;;; Options
 
-(defconst minaduki-db//version 10)
+(defconst minaduki-db//version 11)
 
 (defvar minaduki-db//connection nil
   "Database connection to the cache.")
@@ -123,6 +123,11 @@ SQL can be either the emacsql vector representation, or a string."
     (titles
      [(file :not-null)
       title])
+
+    (keys
+     [(key :unique :not-null)
+      (file :not-null)
+      (props :not-null)])
 
     (refs
      [(ref :unique :not-null)
@@ -235,6 +240,31 @@ Returns the number of rows inserted."
       :values $v1]
      rows)
     (length rows)))
+
+(defun minaduki-db//insert-lit-entries (&optional update-p)
+  "Update the lit-entries of the current buffer into the cache.
+If UPDATE-P is non-nil, first remove the entries from the file in the database."
+  (let ((file (or minaduki//file-name (buffer-file-name)))
+        (count 0))
+    (when update-p
+      (minaduki-db/query [:delete :from keys
+                          :where (= file $s1)]
+                         file))
+    (cl-loop for entry in (minaduki-extract/lit-entries)
+             do (condition-case nil
+                    (progn
+                      (minaduki-db/query
+                       [:insert :into keys :values $v1]
+                       (list (vector (gethash "key" entry)
+                                     file
+                                     entry)))
+                      (cl-incf count))
+                  (error
+                   (minaduki//warn
+                    :error
+                    "Inserting entry %s failed. Skipping..."
+                    (gethash "key" entry)))))
+    count))
 
 (defun minaduki-db//insert-refs (&optional update-p)
   "Update the refs of the current buffer into the cache.
@@ -489,6 +519,7 @@ If the file exists, update the cache with information."
         (minaduki-db//insert-meta 'update)
         (minaduki-db//insert-tags 'update)
         (minaduki-db//insert-titles 'update)
+        (minaduki-db//insert-lit-entries 'update)
         (minaduki-db//insert-refs 'update)
         (minaduki-db//insert-ids 'update)
         (minaduki-db//insert-links 'update)))))
@@ -518,7 +549,7 @@ If FORCE, force a rebuild of the cache from scratch."
       (minaduki-db//clear-file file)
       (setq deleted-count (1+ deleted-count)))
     (setq count-plist (minaduki-db//update-files modified-files))
-    (org-roam-message "total: Δ%s, files-modified: Δ%s, ids: Δ%s, links: Δ%s, tags: Δ%s, titles: Δ%s, refs: Δ%s, deleted: Δ%s"
+    (org-roam-message "total: Δ%s, files-modified: Δ%s, ids: Δ%s, links: Δ%s, tags: Δ%s, titles: Δ%s, refs: Δ%s, lit: Δ%s, deleted: Δ%s"
                       (- (length dir-files) (plist-get count-plist :error-count))
                       (plist-get count-plist :modified-count)
                       (plist-get count-plist :id-count)
@@ -526,6 +557,7 @@ If FORCE, force a rebuild of the cache from scratch."
                       (plist-get count-plist :tag-count)
                       (plist-get count-plist :title-count)
                       (plist-get count-plist :ref-count)
+                      (plist-get count-plist :lit-count)
                       deleted-count)))
 
 (defun minaduki-db/update-file (file-path)
@@ -549,6 +581,7 @@ FILE-HASH-PAIRS is a list of (file . hash) pairs."
          (tag-count 0)
          (title-count 0)
          (ref-count 0)
+         (lit-count 0)
          (modified-count 0))
     ;; Clear existing cache entries so that we can put in new versions
     (minaduki//for "Clearing files (%s/%s)..."
@@ -588,6 +621,18 @@ FILE-HASH-PAIRS is a list of (file . hash) pairs."
          (minaduki//warn
           :warning
           "Skipping unreadable file while building cache: %s" file))))
+    (minaduki//for "Processing lit-entries (%s/%s)..."
+        (file . _) file-hash-pairs
+      (condition-case nil
+          (org-roam--with-temp-buffer file
+            (setq modified-count (1+ modified-count))
+            (setq lit-count (+ lit-count (minaduki-db//insert-lit-entries))))
+        (file-error
+         (setq error-count (1+ error-count))
+         (minaduki-db//clear-file file)
+         (minaduki//warn
+          :warning
+          "Skipping unreadable file while building cache: %s" file))))
     ;; Process links and ref / cite links
     (minaduki//for "Processing links (%s/%s)..."
         (file . _) file-hash-pairs
@@ -609,7 +654,8 @@ FILE-HASH-PAIRS is a list of (file . hash) pairs."
           :title-count title-count
           :tag-count tag-count
           :link-count link-count
-          :ref-count ref-count)))
+          :ref-count ref-count
+          :lit-count lit-count)))
 
 (defun minaduki-db/update ()
   "Update the database."
