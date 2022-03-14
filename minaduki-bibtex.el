@@ -359,82 +359,89 @@ Helper function for `orb-edit-notes', which abstracts initiating
 a capture session."
   ;; Check if the requested BibTeX entry actually exists and fail
   ;; gracefully otherwise
-  (if-let* ((entry (or (bibtex-completion-get-entry citekey)
-                       (minaduki//warn
-                        :warning
-                        "%s: Could not find the BibTeX entry" citekey)))
-            ;; Depending on the templates used: run
-            ;; `minaduki-capture//capture' or call `org-roam-find-file'
-            (org-capture-templates
-             (or orb-templates minaduki-capture/templates
-                 (minaduki//warn
-                  :warning
-                  "Could not find the requested templates")))
-            ;; hijack org-capture-templates
-            ;; entry is our bibtex entry, it just happens that
-            ;; `org-capture' calls a single template entry "entry";
-            (template (--> (if (null (cdr org-capture-templates))
-                               ;; if only one template is defined, use it
-                               (car org-capture-templates)
-                             (org-capture-select-template))
-                           (copy-tree it)
-                           ;; optionally preformat templates
-                           (if orb-preformat-templates
-                               (orb--preformat-template it entry)
-                             it)))
-            ;; pretend we had only one template
-            ;; `minaduki-capture//capture' behaves specially in this case
-            ;; NOTE: this circumvents using functions other than
-            ;; `org-capture', see `minaduki-capture/function'.
-            ;; If the users start complaining, we may revert previous
-            ;; implementation
-            (minaduki-capture/templates (list template))
-            ;; Org-roam coverts the templates to its own syntax;
-            ;; since we are telling `org-capture' to use the template entry
-            ;; (by setting `org-capture-entry'), and Org-roam converts the
-            ;; whole template list, we must do the conversion of the entry
-            ;; ourselves
-            (org-capture-entry
-             (minaduki-capture//convert-template template))
-            (citekey-formatted (format (or orb-citekey-format "%s") citekey))
-            (title
-             (or (bibtex-completion-get-value "title" entry)
-                 (minaduki//warn
-                  :warning
-                  "Title not found for this entry")
-                 ;; this is not critical, the user may input their own
-                 ;; title
-                 "Title not found")))
-      (progn
-        ;; fix some Org-ref related stuff
-        (orb--store-link-functions-advice 'add)
-        (unwind-protect
-            ;; data collection hooks functions: remove themselves once run
-            (progn
-              ;; install capture hook functions
-              (orb-do-hook-functions 'add)
-              ;; Depending on the templates used: run
-              ;; `minaduki-capture//capture' with ORB-predefined
-              ;; settings or call vanilla `org-roam-find-file'
-              (if orb-templates
-                  (let* ((minaduki-capture//context 'ref)
-                         (slug-source (cl-case orb-slug-source
-                                        (citekey citekey)
-                                        (title title)
-                                        (t (user-error "Only `citekey' \
+  (let ((entry (or (caar (minaduki-db/query [:select [props] :from keys
+                                             :where (= key $s1)]
+                                            citekey))
+                   (minaduki//warn
+                    :warning
+                    "%s: Could not find the literature entry" citekey))))
+    (puthash "=key=" (gethash "key" entry) entry)
+    (remhash "key" entry)
+    (puthash "=type=" (gethash "type" entry) entry)
+    (remhash "type" entry)
+    (setq entry (map-into entry 'alist))
+    (if-let* (;; Depending on the templates used: run
+              ;; `minaduki-capture//capture' or call `org-roam-find-file'
+              (org-capture-templates
+               (or orb-templates minaduki-capture/templates
+                   (minaduki//warn
+                    :warning
+                    "Could not find the requested templates")))
+              ;; hijack org-capture-templates
+              ;; entry is our bibtex entry, it just happens that
+              ;; `org-capture' calls a single template entry "entry";
+              (template (--> (if (null (cdr org-capture-templates))
+                                 ;; if only one template is defined, use it
+                                 (car org-capture-templates)
+                               (org-capture-select-template))
+                          (copy-tree it)
+                          ;; optionally preformat templates
+                          (if orb-preformat-templates
+                              (orb--preformat-template it entry)
+                            it)))
+              ;; pretend we had only one template
+              ;; `minaduki-capture//capture' behaves specially in this case
+              ;; NOTE: this circumvents using functions other than
+              ;; `org-capture', see `minaduki-capture/function'.
+              ;; If the users start complaining, we may revert previous
+              ;; implementation
+              (minaduki-capture/templates (list template))
+              ;; Org-roam coverts the templates to its own syntax;
+              ;; since we are telling `org-capture' to use the template entry
+              ;; (by setting `org-capture-entry'), and Org-roam converts the
+              ;; whole template list, we must do the conversion of the entry
+              ;; ourselves
+              (org-capture-entry
+               (minaduki-capture//convert-template template))
+              (citekey-formatted (format (or orb-citekey-format "%s") citekey))
+              (title
+               (or (cdr (assoc "title" entry))
+                   (minaduki//warn
+                    :warning
+                    "Title not found for this entry")
+                   ;; this is not critical, the user may input their own
+                   ;; title
+                   "Title not found")))
+        (progn
+          ;; fix some Org-ref related stuff
+          (orb--store-link-functions-advice 'add)
+          (unwind-protect
+              ;; data collection hooks functions: remove themselves once run
+              (progn
+                ;; install capture hook functions
+                (orb-do-hook-functions 'add)
+                ;; Depending on the templates used: run
+                ;; `minaduki-capture//capture' with ORB-predefined
+                ;; settings or call vanilla `org-roam-find-file'
+                (if orb-templates
+                    (let* ((minaduki-capture//context 'ref)
+                           (slug-source (cl-case orb-slug-source
+                                          (citekey citekey)
+                                          (title title)
+                                          (t (user-error "Only `citekey' \
 or `title' should be used for slug: %s not supported" orb-slug-source))))
-                         (minaduki-capture//info
-                          `((title . ,title)
-                            (ref . ,citekey-formatted)
-                            ,@(when-let (url (bibtex-completion-get-value "url" entry))
-                                `((url . ,url)))
-                            (slug . ,(minaduki//title-to-slug slug-source)))))
-                    (setq minaduki-capture/additional-template-props
-                          (list :finalize 'find-file))
-                    (minaduki-capture//capture))
-                (minaduki/open title)))
-          (orb--store-link-functions-advice 'remove)))
-    (message "ORB: Something went wrong. Check the *Warnings* buffer")))
+                           (minaduki-capture//info
+                            `((title . ,title)
+                              (ref . ,citekey-formatted)
+                              ,@(when-let (url (cdr (assoc  "url" entry)))
+                                  `((url . ,url)))
+                              (slug . ,(minaduki//title-to-slug slug-source)))))
+                      (setq minaduki-capture/additional-template-props
+                            (list :finalize 'find-file))
+                      (minaduki-capture//capture))
+                  (minaduki/open title)))
+            (orb--store-link-functions-advice 'remove)))
+      (message "ORB: Something went wrong. Check the *Warnings* buffer"))))
 
 ;;;###autoload
 (defun orb-edit-notes (citekey)
@@ -447,44 +454,7 @@ as `bibtex-completion' commands such as
 
 This function allows to use Org-roam as a backend for managing
 bibliography notes.  It relies on `bibtex-completion' to get
-retrieve bibliographic information from a BibTeX file.
-
-Implementation details and features:
-
-1. This function first calls `org-roam-find-ref' trying to find
-the note file associated with the CITEKEY.  The Org-roam key can
-be set with '#+ROAM_KEY:' in-buffer keyword.
-
-2. If the Org-roam reference has not been found, the function
-calls `org-roam-find-file' passing to it the title associated
-with the CITEKEY as retrieved by `bibtex-completion-get-entry'.
-The prompt presented by `org-roam-find-file' will thus be
-pre-populated with the record title.
-
-3. The template used to create the note is stored in
-`orb-templates'.  If the variable is not defined, revert to using
-`minaduki-capture/templates'.  In the former case, a new file
-will be created and filled according to the template, possibly
-preformatted (see below) without additional user interaction.  In
-the latter case, an interactive `org-capture' process will be
-run.
-
-4. Optionally, when `orb-preformat-templates' is non-nil, any
-prompt wildcards in `orb-templates' or
-`minaduki-capture/templates', associated with the bibtex record
-fields as specified in `orb-preformat-templates', will be
-preformatted.  Both `org-capture-templates' (%^{}) and
-`minaduki-capture/templates' (`s-format', ${}) prompt syntaxes
-are supported.
-
-See `orb-preformat-keywords' for more details on how
-to properly specify prompts for replacement.
-
-Please pay attention when using this feature that by setting
-title for preformatting, it will be impossible to change it in
-the `org-roam-find-file' interactive prompt since all the
-template expansions will have taken place by then.  All the title
-wildcards will be replace with the BibTeX field value."
+retrieve bibliographic information from a BibTeX file."
   (when (consp citekey)
     (setq citekey (car citekey)))
   (let ((note-data (minaduki-db//query-ref citekey)))
