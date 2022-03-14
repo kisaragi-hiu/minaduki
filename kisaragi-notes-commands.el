@@ -611,7 +611,7 @@ List of (DISPLAY-NAME . COMMAND) pairs.")
   '(("Open URL, DOI, or PDF" . minaduki/visit-source)
     ("Show entry in the bibliography file" . minaduki/show-entry)
     ("Edit notes" . orb-edit-notes)
-    ("Save citekey to kill-ring and clipboard" . minaduki/copy-citekey))
+    ("Copy citekey" . minaduki/copy-citekey))
   "Commands useful inside a literature note.
 
 List of (DISPLAY-NAME . FUNCTION) pairs. Each function receives
