@@ -587,45 +587,23 @@ FILE-HASH-PAIRS is a list of (file . hash) pairs."
     (minaduki//for "Clearing files (%s/%s)..."
         (file . _) file-hash-pairs
       (minaduki-db//clear-file file))
-    ;; Process IDs first to eliminate the need to read the file to
-    ;; check if the ID really exists, making link extraction cheaper
-    (minaduki//for "Processing IDs (%s/%s)..."
+    ;; Process titles and tags first to allow links to depend on
+    ;; titles later; process IDs first so IDs are already cached
+    ;; during link extraction
+    (minaduki//for "Processing titles, tags, and lit-entries (%s/%s)..."
         (file . contents-hash) file-hash-pairs
-      (let* ((attr (file-attributes file))
-             (atime (file-attribute-access-time attr))
-             (mtime (file-attribute-modification-time attr)))
-        (condition-case nil
-            (minaduki//with-temp-buffer file
+      (condition-case nil
+          (minaduki//with-temp-buffer file
+            (let* ((attr (file-attributes file))
+                   (atime (file-attribute-access-time attr))
+                   (mtime (file-attribute-modification-time attr)))
               (minaduki-db/query
                [:insert :into files
                 :values $v1]
-               (vector file contents-hash (list :atime atime :mtime mtime)))
-              (setq id-count (+ id-count (minaduki-db//insert-ids))))
-          (file-error
-           (setq error-count (1+ error-count))
-           (minaduki-db//clear-file file)
-           (minaduki//warn
-            :warning
-            "Skipping unreadable file while building cache: %s" file)))))
-    ;; Process titles and tags first to allow links to depend on
-    ;; titles later
-    (minaduki//for "Processing titles and tags (%s/%s)..."
-        (file . _) file-hash-pairs
-      (condition-case nil
-          (minaduki//with-temp-buffer file
+               (vector file contents-hash (list :atime atime :mtime mtime))))
+            (setq id-count (+ id-count (minaduki-db//insert-ids)))
             (setq tag-count (+ tag-count (minaduki-db//insert-tags)))
-            (setq title-count (+ title-count (minaduki-db//insert-titles))))
-        (file-error
-         (setq error-count (1+ error-count))
-         (minaduki-db//clear-file file)
-         (minaduki//warn
-          :warning
-          "Skipping unreadable file while building cache: %s" file))))
-    (minaduki//for "Processing lit-entries (%s/%s)..."
-        (file . _) file-hash-pairs
-      (condition-case nil
-          (minaduki//with-temp-buffer file
-            (setq modified-count (1+ modified-count))
+            (setq title-count (+ title-count (minaduki-db//insert-titles)))
             (setq lit-count (+ lit-count (minaduki-db//insert-lit-entries))))
         (file-error
          (setq error-count (1+ error-count))
