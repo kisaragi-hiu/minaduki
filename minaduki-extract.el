@@ -483,7 +483,8 @@ protocol is treated as the TYPE (after processing through
 (defun minaduki-extract/lit-entries ()
   "Extract literature entries (sources).
 
-These are like your org-bibtex entries."
+Return a cons cell: (POINT . PROPS), where PROPS look like
+`minaduki-lit/source' objects."
   (let ((case-fold-search t))
     (save-excursion
       (goto-char (point-min))
@@ -531,7 +532,7 @@ These are like your org-bibtex entries."
                    sources))
            (when sources
              (push (cons "sources" sources) props)))
-         (map-into props '(hash-table :test equal)))))))
+         (cons (point) (map-into props '(hash-table :test equal))))))))
 
 (defun minaduki-extract/refs ()
   "Extract the citekeys this buffer corresponds with.

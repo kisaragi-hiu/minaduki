@@ -53,7 +53,7 @@
 
 ;;;; Options
 
-(defconst minaduki-db//version 11)
+(defconst minaduki-db//version 12)
 
 (defvar minaduki-db//connection nil
   "Database connection to the cache.")
@@ -127,6 +127,7 @@ SQL can be either the emacsql vector representation, or a string."
     (keys
      [(key :unique :not-null)
       (file :not-null)
+      (point :not-null)
       (props :not-null)])
 
     (refs
@@ -250,13 +251,14 @@ If UPDATE-P is non-nil, first remove the entries from the file in the database."
       (minaduki-db/query [:delete :from keys
                           :where (= file $s1)]
                          file))
-    (cl-loop for entry in (minaduki-extract/lit-entries)
+    (cl-loop for (point . entry) in (minaduki-extract/lit-entries)
              do (condition-case nil
                     (progn
                       (minaduki-db/query
                        [:insert :into keys :values $v1]
                        (list (vector (gethash "key" entry)
                                      file
+                                     point
                                      entry)))
                       (cl-incf count))
                   (error
