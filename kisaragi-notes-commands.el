@@ -536,12 +536,10 @@ CITEKEY is a list whose car is a citation key."
   "Visit the source (URL, file path, DOI...) of CITEKEY."
   (when (listp citekey)
     (setq citekey (car citekey)))
-  ;; HACK: HOPEFULLY WE STOP DOING THIS
-  (unless minaduki-lit//cache
-    (cl-loop for file in minaduki-lit/bibliography
-             do (minaduki-lit/read-sources-from-org file)))
-  (let ((entry (--first (equal citekey (gethash "key" it))
-                        minaduki-lit//cache))
+  (let ((entry (caar (minaduki-db/query
+                      [:select [props] :from keys
+                       :where (= key $s1)]
+                      citekey)))
         sources
         target)
     (with-temp-buffer
