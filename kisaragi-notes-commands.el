@@ -560,6 +560,23 @@ CITEKEY is a list whose car is a citation key."
       (t (browse-url
           (completing-read "Which one: " sources nil t))))))
 
+(defun minaduki/show-entry (citekey)
+  "Go to where CITEKEY is defined."
+  (when (listp citekey)
+    (setq citekey (car citekey)))
+  (-let ((((file point)) ; oh god this destructuring is so ugly
+          (minaduki-db/query
+           [:select [file point] :from keys
+            :where (= key $s1)]
+           citekey)))
+    (minaduki//find-file file)
+    (goto-char point)
+    (when (eq major-mode 'org-mode)
+      ;; Doing this because for some reason `org-back-to-heading'
+      ;; goes to the parent of the current heading
+      (org-up-element) ; up to the property drawer
+      (org-up-element)))) ; up to the heading
+
 ;;;; Actions
 
 (defvar minaduki/global-commands
@@ -592,7 +609,7 @@ List of (DISPLAY-NAME . COMMAND) pairs.")
 
 (defvar minaduki/literature-note-actions
   '(("Open URL, DOI, or PDF" . minaduki/visit-source)
-    ("Show entry in the bibliography file" . bibtex-completion-show-entry)
+    ("Show entry in the bibliography file" . minaduki/show-entry)
     ("Edit notes" . orb-edit-notes)
     ("Save citekey to kill-ring and clipboard" . minaduki/copy-citekey))
   "Commands useful inside a literature note.
