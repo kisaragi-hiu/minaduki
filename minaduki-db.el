@@ -604,7 +604,8 @@ FILE-HASH-PAIRS is a list of (file . hash) pairs."
             (setq id-count (+ id-count (minaduki-db//insert-ids)))
             (setq tag-count (+ tag-count (minaduki-db//insert-tags)))
             (setq title-count (+ title-count (minaduki-db//insert-titles)))
-            (setq lit-count (+ lit-count (minaduki-db//insert-lit-entries))))
+            (when (member file minaduki-lit/bibliography)
+              (setq lit-count (+ lit-count (minaduki-db//insert-lit-entries)))))
         (file-error
          (setq error-count (1+ error-count))
          (minaduki-db//clear-file file)
