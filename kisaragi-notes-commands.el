@@ -300,10 +300,11 @@ Return added tag."
                    (gethash "key" s)
                    (minaduki-lit/format-source s))))
         key)
-    (setq key (car (rassoc (completing-read "Source: "
-                                            (mapcar #'cdr key->formatted)
-                                            nil t)
-                           key->formatted)))
+    (let ((selectrum-should-sort nil))
+      (setq key (car (rassoc (completing-read "Source: "
+                                              (mapcar #'cdr key->formatted)
+                                              nil t)
+                             key->formatted))))
     (minaduki/literature-note-actions key)))
 
 ;;;###autoload
