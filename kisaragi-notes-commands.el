@@ -620,6 +620,7 @@ one argument, a list of cite keys.
 
 Equivalent to `orb-note-actions-default'.")
 
+;; TODO: Try the selected action for all keys
 (defun minaduki/literature-note-actions (&optional citekey)
   ;; `orb-note-actions'
   "Prompt for note-related actions on CITEKEY.
