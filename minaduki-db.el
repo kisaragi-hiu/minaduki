@@ -245,28 +245,25 @@ Returns the number of rows inserted."
 (defun minaduki-db//insert-lit-entries (&optional update-p)
   "Update the lit-entries of the current buffer into the cache.
 If UPDATE-P is non-nil, first remove the entries from the file in the database."
-  (let ((file (or minaduki//file-name (buffer-file-name)))
-        (count 0))
-    (when update-p
-      (minaduki-db/query [:delete :from keys
-                          :where (= file $s1)]
-                         file))
-    (cl-loop for (point . entry) in (minaduki-extract/lit-entries)
-             do (condition-case nil
-                    (progn
-                      (minaduki-db/query
-                       [:insert :into keys :values $v1]
-                       (list (vector (gethash "key" entry)
-                                     file
-                                     point
-                                     entry)))
-                      (cl-incf count))
-                  (error
-                   (minaduki//warn
-                    :error
-                    "Inserting entry %s failed. Skipping..."
-                    (gethash "key" entry)))))
-    count))
+  (cl-block nil
+    (let ((file (or minaduki//file-name (buffer-file-name)))
+          (count 0))
+      (unless (member file minaduki-lit/bibliography)
+        (cl-return 0))
+      (when update-p
+        (minaduki-db/query [:delete :from keys
+                            :where (= file $s1)]
+                           file))
+      (cl-loop for (point . entry) in (minaduki-extract/lit-entries)
+               do (progn
+                    (minaduki-db/query
+                     [:insert :into keys :values $v1]
+                     (list (vector (gethash "key" entry)
+                                   file
+                                   point
+                                   entry)))
+                    (cl-incf count)))
+      count)))
 
 (defun minaduki-db//insert-refs (&optional update-p)
   "Update the refs of the current buffer into the cache.
@@ -606,8 +603,7 @@ FILE-HASH-PAIRS is a list of (file . hash) pairs."
             (setq id-count (+ id-count (minaduki-db//insert-ids)))
             (setq tag-count (+ tag-count (minaduki-db//insert-tags)))
             (setq title-count (+ title-count (minaduki-db//insert-titles)))
-            (when (member file minaduki-lit/bibliography)
-              (setq lit-count (+ lit-count (minaduki-db//insert-lit-entries)))))
+            (setq lit-count (+ lit-count (minaduki-db//insert-lit-entries))))
         (file-error
          (setq error-count (1+ error-count))
          (minaduki-db//clear-file file)
