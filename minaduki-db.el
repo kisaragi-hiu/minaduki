@@ -246,26 +246,26 @@ Returns the number of rows inserted."
   "Update the lit-entries of the current buffer into the cache.
 If UPDATE-P is non-nil, first remove the entries from the file in the database."
   (let ((file (or minaduki//file-name (buffer-file-name)))
-        (count 0)
-        (rows))
-    (cl-loop
-     for (point . entry) in (minaduki-extract/lit-entries)
-     do
-     (progn
-       (push (vector (gethash "key" entry)
-                     file
-                     point
-                     entry)
-             rows)
-       (cl-incf count)))
+        (count 0))
     (when update-p
       (minaduki-db/query [:delete :from keys
                           :where (= file $s1)]
                          file))
-    (minaduki-db/query
-     [:insert :into keys
-      :values $v1]
-     rows)
+    (cl-loop for (point . entry) in (minaduki-extract/lit-entries)
+             do (condition-case nil
+                    (progn
+                      (minaduki-db/query
+                       [:insert :into keys :values $v1]
+                       (list (vector (gethash "key" entry)
+                                     file
+                                     point
+                                     entry)))
+                      (cl-incf count))
+                  (error
+                   (minaduki//warn
+                    :error
+                    "Inserting entry %s failed. Skipping..."
+                    (gethash "key" entry)))))
     count))
 
 (defun minaduki-db//insert-refs (&optional update-p)
