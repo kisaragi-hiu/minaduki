@@ -197,20 +197,22 @@ OTHERS: other key -> value pairs."
 
 (defun minaduki-lit/format-source (source)
   "Format SOURCE for display."
-  (s-format "${date:4} @${type} ${author} - ${title:100} ${todo} ${tags}"
+  (s-format "${date:4} ${todo}@${type} ${author} - ${title:100} ${tags}"
             (lambda (key table)
               (let* ((split (s-split ":" key))
                      (width (cadr split))
                      (real-key (car split)))
                 (let ((value (gethash real-key table "")))
-                  (setq value
-                        (cond
-                         ((equal key "tags")
-                          (->> value
-                            (--map (concat "#" it))
-                            (s-join " ")))
-                         (t
-                          (format "%s" value))))
+                  (cond
+                   ((equal key "todo")
+                    (unless (equal value "")
+                      (setq value (concat value " "))))
+                   ((equal key "tags")
+                    (setq value (->> value
+                                     (--map (concat "#" it))
+                                     (s-join " "))))
+                   (t
+                    (setq value (format "%s" value))))
                   (when width
                     (setq width (string-to-number width))
                     (setq value (concat (minaduki//truncate-string width value "")
