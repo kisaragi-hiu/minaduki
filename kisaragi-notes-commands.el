@@ -300,7 +300,8 @@ Return added tag."
                    (gethash "key" s)
                    (minaduki-lit/format-source s))))
         key)
-    (let ((selectrum-should-sort nil))
+    (let ((selectrum-should-sort nil)
+          (ivy-sort-functions-alist nil))
       (setq key (car (rassoc (completing-read "Source: "
                                               (mapcar #'cdr key->formatted)
                                               nil t)
