@@ -509,21 +509,22 @@ one."
     (setq entry
           (list :path (car (minaduki-db//query-title entry))
                 :title entry)))
-  (let ((file-path (plist-get entry :path))
-        (title (plist-get entry :title))
-        (existing (not (plist-get entry :new?))))
-    (if existing
-        (minaduki//find-file file-path)
-      ;; FIXME: Hardcodes choice of Org
-      (let ((org-capture-templates
-             `(("a" "" plain
-                (file ,(-> (minaduki//title-to-slug title)
-                           (f-expand org-directory)
-                           (concat ".org")))
-                ,(format "#+title: %s\n" title)
-                :jump-to-captured t
-                :immediate-finish t))))
-        (org-capture nil "a")))))
+  (let ((path (plist-get entry :path))
+        (title (plist-get entry :title)))
+    (cond ((plist-get entry :new?)
+           (let ((org-capture-templates
+                  `(("a" "" plain
+                     (file ,(-> (minaduki//title-to-slug title)
+                                (f-expand org-directory)
+                                (concat ".org")))
+                     ,(format "#+title: %s\n" title)
+                     :jump-to-captured t
+                     :immediate-finish t))))
+             (org-capture nil "a")))
+          ((plist-get entry :id?)
+           (minaduki/open-id path))
+          (t
+           (minaduki//find-file path)))))
 
 
 ;;;; Literature note actions

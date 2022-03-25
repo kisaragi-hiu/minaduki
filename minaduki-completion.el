@@ -37,33 +37,48 @@
   "Return an alist for completion.
 The car is the displayed title for completion, and the cdr is a
 plist containing the path and title for the file."
-  ;; id query sample:
-  ;;
-  ;; (minaduki-db/query
-  ;;  [:select [ids:file ids:title titles:title files:meta]
-  ;;   :from ids
-  ;;   :left :join titles
-  ;;   :on (= titles:file ids:file)
-  ;;   :left :join files
-  ;;   :on (= files:file ids:file)])
-  (let* ((rows (minaduki-db/query [:select [files:file titles:title tags:tags files:meta] :from titles
-                                   :left :join tags
-                                   :on (= titles:file tags:file)
-                                   :left :join files
-                                   :on (= titles:file files:file)]))
-         completions)
+  (let* ((file-nodes (minaduki-db/query [:select [files:file titles:title tags:tags files:meta] :from titles
+                                         :left :join tags
+                                         :on (= titles:file tags:file)
+                                         :left :join files
+                                         :on (= titles:file files:file)]))
+         (id-nodes (minaduki-db/query
+                    [:select [ids:id ids:title titles:title files:meta]
+                     :from ids
+                     :left :join titles
+                     :on (= titles:file ids:file)
+                     :left :join files
+                     :on (= files:file ids:file)]))
+         rows)
+    (cl-loop for x in file-nodes
+             do (push (list :path (elt x 0)
+                            :title (elt x 1)
+                            :tags (elt x 2)
+                            :meta (elt x 3))
+                      rows))
+    (cl-loop for x in id-nodes
+             do (push (list :path (elt x 0)
+                            :title (format "[ID] %s - %s"
+                                           (elt x 2)
+                                           (elt x 1))
+                            :tags nil
+                            :meta (elt x 3)
+                            :id? t)
+                      rows))
     (setq rows (seq-sort-by (lambda (x)
-                              (plist-get (nth 3 x) :mtime))
+                              (--> (plist-get x :meta)
+                                   (plist-get it :mtime)))
                             #'time-less-p
                             rows))
-    (dolist (row rows completions)
-      (pcase-let ((`(,file-path ,title ,tags) row))
-        (let ((k (-> (minaduki//add-tag-string title tags)
-                     (propertize :metadata `((path . ,file-path)
-                                             (title . ,title)
-                                             (tags . ,tags)))))
-              (v (list :path file-path :title title)))
-          (push (cons k v) completions))))))
+    (cl-loop for row in rows
+             collect (let ((path (plist-get row :path))
+                           (title (plist-get row :title))
+                           (tags (plist-get row :tags)))
+                       (cons (-> (minaduki//add-tag-string title tags)
+                                 (propertize :metadata `((path . ,path)
+                                                         (title . ,title)
+                                                         (tags . ,tags))))
+                             row)))))
 
 (defun minaduki//get-ref-path-completions (&optional arg filter)
   "Return an alist of refs to absolute path of Org-roam files.
