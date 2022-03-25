@@ -489,7 +489,7 @@ Return a cons cell: (POINT . PROPS), where PROPS look like
     (save-excursion
       (goto-char (point-min))
       (cl-loop
-       while (re-search-forward "^:bibtex_id:" nil t)
+       while (re-search-forward (format "^:%s:" minaduki-lit/key-prop) nil t)
        collect
        (let ((props (org-entry-properties)))
          ;; Remove properties that I'm not interested in
@@ -512,10 +512,11 @@ Return a cons cell: (POINT . PROPS), where PROPS look like
                   ;; Key replacements
                   ;; (ORG_PROP . KEY)
                   (setq key (or (cdr
-                                 (assoc key
-                                        '(("category" . "type")
-                                          ("bibtex_id" . "key")
-                                          ("item" . "title"))))
+                                 (assoc
+                                  key
+                                  `(("category" . "type")
+                                    (,minaduki-lit/key-prop . "key")
+                                    ("item" . "title"))))
                                 key))
                   (cons key value))
                 props))

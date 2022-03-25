@@ -89,6 +89,11 @@ value like `most-positive-fixnum'."
   :group 'minaduki
   :type 'string)
 
+(defcustom minaduki-lit/key-prop "custom_id"
+  "The Org property that defines the keys of literature entries."
+  :group 'group
+  :type 'type)
+
 (defcustom minaduki-lit/bibliography (list (f-join org-directory "sources.org"))
   "Path to the Org file that stores sources."
   :group 'minaduki
