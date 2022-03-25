@@ -255,13 +255,22 @@ When NEW-FILE-OR-DIR is a directory, we use it to compute the new file path."
 
 ;;;; minaduki-mode and minaduki-local-mode
 
+(defun minaduki/open-id (id)
+  "Open an ID.
+
+This assumes ID is present in the cache database."
+  (when-let ((marker
+              ;; Locate ID's location in FILE
+              (let ((file (minaduki-db//fetch-id-file id)))
+                (when file
+                  (org-roam-with-file file t
+                    (org-id-find-id-in-file id file t))))))
+    (org-mark-ring-push)
+    (org-goto-marker-or-bmk marker)
+    (set-marker marker nil)))
+
 (defun minaduki/open-id-at-point ()
   "Open the ID link at point.
-
-We try to open consult the cache database for the ID. If it's not
-found there, we ask whether to allow Org to search using
-`org-id-files', as it is slow. If not, we pretend we've found
-something and return t to stop Org from going further.
 
 This function hooks into `org-open-at-point' via
 `org-open-at-point-functions'."
@@ -272,17 +281,8 @@ This function hooks into `org-open-at-point' via
       ;; `org-open-at-point-functions' expects member functions to
       ;; return t if we visited a link, and nil if we haven't (to move
       ;; onto the next method or onto the default).
-      (or (and
-           (when-let ((marker
-                       ;; Locate ID's location in FILE
-                       (let ((file (minaduki-db//fetch-id-file id)))
-                         (when file
-                           (org-roam-with-file file t
-                             (org-id-find-id-in-file id file t))))))
-             (org-mark-ring-push)
-             (org-goto-marker-or-bmk marker)
-             (set-marker marker nil))
-           t)
+      (or (and (minaduki/open-id id)
+               t)
           ;; No = stop here = return t
           (and (not (y-or-n-p "ID not found in the cache. Search with `org-id-files' (may be slow)? "))
                t)))))
