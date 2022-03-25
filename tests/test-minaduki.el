@@ -418,8 +418,8 @@
       (expect (test #'minaduki-extract/ids
                     "headlines/headline.org")
               :to-have-same-items-as
-              `(["e84d0630-efad-4017-9059-5ef917908823" ,(test-minaduki--abs-path "headlines/headline.org") 1]
-                ["801b58eb-97e2-435f-a33e-ff59a2f0c213" ,(test-minaduki--abs-path "headlines/headline.org") 1])))))
+              `(["e84d0630-efad-4017-9059-5ef917908823" ,(test-minaduki--abs-path "headlines/headline.org") 1 "Headline 1"]
+                ["801b58eb-97e2-435f-a33e-ff59a2f0c213" ,(test-minaduki--abs-path "headlines/headline.org") 1 "Headline 2"])))))
 
 (describe "Test roam links"
   (it ""

@@ -263,7 +263,10 @@ Return a list of [ID FILE LEVEL] vectors."
     (org-map-region
      (lambda ()
        (when-let ((id (org-entry-get nil "ID")))
-         (push (vector id file-path (org-outline-level))
+         (push (vector id
+                       file-path
+                       (org-outline-level)
+                       (org-entry-get nil "ITEM"))
                result)))
      (point-min) (point-max))
     result))

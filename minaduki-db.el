@@ -53,7 +53,7 @@
 
 ;;;; Options
 
-(defconst minaduki-db//version 12)
+(defconst minaduki-db//version 13)
 
 (defvar minaduki-db//connection nil
   "Database connection to the cache.")
@@ -108,7 +108,8 @@ SQL can be either the emacsql vector representation, or a string."
     (ids
      [(id :unique :primary-key)
       (file :not-null)
-      (level :not-null)])
+      (level :not-null)
+      title])
 
     (links
      [(source :not-null)

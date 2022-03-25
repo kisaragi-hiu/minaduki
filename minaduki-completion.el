@@ -32,9 +32,20 @@
 
 ;;;; Completion utils
 (defun minaduki//get-title-path-completions ()
+  ;; TODO: include headlines with IDs. Might have to think about how a
+  ;; headline entry or file entry would be represented.
   "Return an alist for completion.
 The car is the displayed title for completion, and the cdr is a
 plist containing the path and title for the file."
+  ;; id query sample:
+  ;;
+  ;; (minaduki-db/query
+  ;;  [:select [ids:file ids:title titles:title files:meta]
+  ;;   :from ids
+  ;;   :left :join titles
+  ;;   :on (= titles:file ids:file)
+  ;;   :left :join files
+  ;;   :on (= files:file ids:file)])
   (let* ((rows (minaduki-db/query [:select [files:file titles:title tags:tags files:meta] :from titles
                                    :left :join tags
                                    :on (= titles:file tags:file)
