@@ -303,9 +303,10 @@ Return added tag."
       (setq key (--> (completing-read "Source: "
                                       (mapcar #'cdr key->formatted)
                                       nil t nil nil
-                                      (minaduki-lit/format-source
-                                       (minaduki-db//fetch-lit-entry
-                                        (minaduki-lit/key-at-point))))
+                                      (-some->
+                                          (minaduki-db//fetch-lit-entry
+                                           (minaduki-lit/key-at-point))
+                                        minaduki-lit/format-source))
                      (rassoc it key->formatted)
                      car)))
     (minaduki/literature-note-actions key)))
