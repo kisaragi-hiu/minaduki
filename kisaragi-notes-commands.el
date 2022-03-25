@@ -106,12 +106,13 @@ LOWERCASE?: if non-nil, the link description will be downcased."
               (region-beginning)
               (region-end))))
       (delete-active-region))
+    (when lowercase?
+      (setq desc (downcase desc)))
+    (message "id?: %s" (plist-get entry :id?))
     (insert (minaduki/format-link
              :target (plist-get entry :path)
-             :desc (--> desc
-                        (if lowercase?
-                            (downcase it)
-                          it))))))
+             :desc desc
+             :id? (plist-get entry :id?)))))
 
 ;;;###autoload
 (defun org-roam-unlinked-references ()
