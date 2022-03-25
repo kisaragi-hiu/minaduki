@@ -65,11 +65,11 @@ plist containing the path and title for the file."
                             :meta (elt x 3)
                             :id? t)
                       rows))
-    (setq rows (seq-sort-by (lambda (x)
-                              (--> (plist-get x :meta)
-                                   (plist-get it :mtime)))
-                            #'time-less-p
-                            rows))
+    (setq rows (sort rows
+                     (lambda (a b)
+                       (time-less-p
+                        (plist-get (plist-get a :meta) :mtime)
+                        (plist-get (plist-get b :meta) :mtime)))))
     (cl-loop for row in rows
              collect (let ((path (plist-get row :path))
                            (title (plist-get row :title))
