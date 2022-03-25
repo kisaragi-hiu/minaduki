@@ -1,4 +1,4 @@
-;;; kisaragi-notes-utils.el --- Low level utilities -*- lexical-binding: t; -*-
+;;; minaduki-utils.el --- Low level utilities -*- lexical-binding: t; -*-
 
 ;;; Commentary:
 
@@ -528,6 +528,6 @@ If BUFFER is not specified, use the current buffer."
   (--filter (org-roam--org-roam-buffer-p it)
             (buffer-list)))
 
-(provide 'kisaragi-notes-utils)
+(provide 'minaduki-utils)
 
-;;; kisaragi-notes-utils.el ends here
+;;; minaduki-utils.el ends here

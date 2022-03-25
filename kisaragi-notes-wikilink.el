@@ -35,7 +35,7 @@
 (require 'f)
 (require 'ol)
 
-(require 'kisaragi-notes-utils)
+(require 'minaduki-utils)
 (require 'minaduki-db)
 
 (require 'minaduki-vars)

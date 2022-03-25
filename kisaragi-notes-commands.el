@@ -20,7 +20,7 @@
 (require 'minaduki-completion)
 (require 'minaduki-lit)
 
-(require 'kisaragi-notes-utils)
+(require 'minaduki-utils)
 (require 'kisaragi-notes-templates)
 
 
@@ -302,10 +302,11 @@ Return added tag."
         key)
     (let ((selectrum-should-sort nil)
           (ivy-sort-functions-alist nil))
-      (setq key (car (rassoc (completing-read "Source: "
-                                              (mapcar #'cdr key->formatted)
-                                              nil t)
-                             key->formatted))))
+      (setq key (--> (completing-read "Source: "
+                                      (mapcar #'cdr key->formatted)
+                                      nil t)
+                     (rassoc it key->formatted)
+                     car)))
     (minaduki/literature-note-actions key)))
 
 ;;;###autoload

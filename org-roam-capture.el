@@ -35,7 +35,7 @@
 (require 'cl-lib)
 (require 'org-capture)
 
-(require 'kisaragi-notes-utils)
+(require 'minaduki-utils)
 (require 'minaduki-db)
 (require 'minaduki-extract)
 (require 'minaduki-completion)

@@ -27,7 +27,7 @@
 (require 'f)
 
 (require 'minaduki-vars)
-(require 'kisaragi-notes-utils)
+(require 'minaduki-utils)
 (require 'minaduki-db)
 
 ;;;; Completion utils

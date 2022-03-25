@@ -50,7 +50,7 @@
 (require 'minaduki-vars)
 (require 'minaduki-completion)
 (require 'kisaragi-notes-commands)
-(require 'kisaragi-notes-utils)
+(require 'minaduki-utils)
 
 (when (featurep 'marginalia)
   (require 'kisaragi-notes-marginalia))

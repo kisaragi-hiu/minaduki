@@ -39,7 +39,7 @@
 
 (require 'dash)
 
-(require 'kisaragi-notes-utils)
+(require 'minaduki-utils)
 (require 'minaduki-vars)
 
 ;; (declare-function parsebib-find-next-item "parsebib")

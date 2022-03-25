@@ -45,7 +45,7 @@
   ;; For `org-with-wide-buffer'
   (require 'org-macs))
 
-(require 'kisaragi-notes-utils)
+(require 'minaduki-utils)
 (require 'minaduki-vars)
 (require 'minaduki-extract)
 

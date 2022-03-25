@@ -47,7 +47,7 @@
 (require 'org-element)
 (require 's)
 (require 'dash)
-(require 'kisaragi-notes-utils)
+(require 'minaduki-utils)
 
 (declare-function org-roam-insert "org-roam")
 (declare-function org-roam--get-roam-buffers "org-roam")

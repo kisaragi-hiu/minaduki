@@ -11,7 +11,7 @@
 (require 'org-id)
 (require 'org)
 
-(require 'kisaragi-notes-utils)
+(require 'minaduki-utils)
 (require 'minaduki-vars)
 
 (defvar markdown-regex-link-inline)

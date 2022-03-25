@@ -53,7 +53,7 @@
 ;;;; Dependencies
 ;; ============================================================================
 
-(require 'kisaragi-notes-utils)
+(require 'minaduki-utils)
 (require 'minaduki-vars)
 
 (require 'org-roam-capture)

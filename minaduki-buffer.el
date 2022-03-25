@@ -50,7 +50,7 @@
 (require 'org-element)
 
 (require 'minaduki-db)
-(require 'kisaragi-notes-utils)
+(require 'minaduki-utils)
 (require 'minaduki-vars)
 (require 'minaduki-extract)
 

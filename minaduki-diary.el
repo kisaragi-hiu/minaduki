@@ -24,7 +24,7 @@
 (require 's)
 
 (require 'minaduki-db)
-(require 'kisaragi-notes-utils)
+(require 'minaduki-utils)
 (require 'minaduki-vars)
 
 (defun minaduki//read-date (prompt)

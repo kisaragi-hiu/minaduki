@@ -33,7 +33,7 @@
 (require 'xml) ;xml-escape-string
 (require 's)   ;s-truncate, s-replace
 (eval-and-compile
-  (require 'kisaragi-notes-utils))
+  (require 'minaduki-utils))
 (require 'minaduki-db)
 
 ;;;; Options
