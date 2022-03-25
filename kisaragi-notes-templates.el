@@ -3,6 +3,10 @@
 ;;; Commentary:
 
 ;; TODO: Replace org-roam-capture with this
+;; TODO: passing in arguments: just use %s?
+;; TODO: each special template needs a documentation on what arguments
+;; they will receive. "new" will get the title as the first argument,
+;; "new-lit" will get the title and the key, and so on.
 
 ;;; Code:
 
@@ -38,31 +42,31 @@ TEMPLATE has no extension, TEMPLATE.org or TEMPLATE.md will be used."
   (setq template (f-expand template minaduki/templates-directory))
   template)
 
-(defun minaduki-templates//capture (template)
-  "Create a new note using TEMPLATE.
+;; (defun minaduki-templates//capture (template)
+;;   "Create a new note using TEMPLATE.
 
-The note is stored in a location specified in the #+path: keyword.
+;; The note is stored in a location specified in the #+path: keyword.
 
-Template is a file under `minaduki/templates-directory'.
+;; Template is a file under `minaduki/templates-directory'.
 
-Return the captured file.
+;; Return the captured file.
 
-The template's contents are expanded with `org-capture-fill-template'."
-  (let ((file (minaduki-templates//path-to template))
-        target content)
-    (org-roam-with-file file nil
-      (-when-let* ((path (car (minaduki//org-prop "path"))))
-        (setq target (f-expand (s-trim (org-capture-fill-template path))
-                               org-directory)))
-      (setq content (buffer-string)))
-    (with-temp-file target
-      (insert (org-capture-fill-template content))
-      (save-excursion
-        (goto-char 1)
-        (while (search-forward "^#+path:" nil t)
-          (delete-region (line-beginning-position)
-                         (1+ (line-end-position))))))
-    target))
+;; The template's contents are expanded with `org-capture-fill-template'."
+;;   (let ((file (minaduki-templates//path-to template))
+;;         target content)
+;;     (org-roam-with-file file nil
+;;       (-when-let* ((path (car (minaduki//org-prop "path"))))
+;;         (setq target (f-expand (s-trim (org-capture-fill-template path))
+;;                                org-directory)))
+;;       (setq content (buffer-string)))
+;;     (with-temp-file target
+;;       (insert (org-capture-fill-template content))
+;;       (save-excursion
+;;         (goto-char 1)
+;;         (while (search-forward "^#+path:" nil t)
+;;           (delete-region (line-beginning-position)
+;;                          (1+ (line-end-position))))))
+;;     target))
 
 (defun minaduki-templates//make-note (&optional template)
   "Fill out TEMPLATE and return the new note text as a string.

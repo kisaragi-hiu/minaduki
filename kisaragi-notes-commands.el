@@ -413,13 +413,6 @@ are named with a YYYYMMDD prefix (optionally with dashes)."
   (minaduki//find-file
    (minaduki-templates//read-template "Open template: ")))
 
-(defun minaduki/capture-template ()
-  "Capture a template."
-  (interactive)
-  (-> (minaduki-templates//read-template "Template: ")
-      minaduki-templates//capture
-      minaduki//find-file))
-
 ;;;###autoload
 (defun minaduki/open-non-literature-note (&optional initial-prompt)
   ;; `orb-find-non-ref-file'
@@ -589,7 +582,6 @@ CITEKEY is a list whose car is a citation key."
     ("Open notes directory"               . minaduki/open-directory)
     ("Open or create a template"          . minaduki/open-template)
     ("Create a new diary entry"           . minaduki/new-diary-entry)
-    ("Create a new note from a template" . minaduki/capture-template)
     ("Create a new note with the \"daily\" template" . minaduki/new-daily-note)
     ("Open the index file"                . minaduki/open-index)
     ("Open a literature note"             . minaduki/open-literature-note)
