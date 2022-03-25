@@ -510,16 +510,21 @@ one."
           (list :path (car (minaduki-db//query-title entry))
                 :title entry)))
   (let ((file-path (plist-get entry :path))
-        (title (plist-get entry :title)))
-    (if file-path
+        (title (plist-get entry :title))
+        (existing (not (plist-get entry :new?))))
+    (if existing
         (minaduki//find-file file-path)
       ;; FIXME: Hardcodes choice of Org
-      (with-current-buffer (find-file-noselect
-                            (-> (minaduki//title-to-slug title)
-                                (f-expand org-directory)
-                                (concat ".org")))
-        (insert "#+TITLE: " title "\n")
-        (pop-to-buffer-same-window (current-buffer))))))
+      (let ((org-capture-templates
+             `(("a" "" plain
+                (file ,(-> (minaduki//title-to-slug title)
+                           (f-expand org-directory)
+                           (concat ".org")))
+                ,(format "#+title: %s\n" title)
+                :jump-to-captured t
+                :immediate-finish t))))
+        (org-capture nil "a")))))
+
 
 ;;;; Literature note actions
 
