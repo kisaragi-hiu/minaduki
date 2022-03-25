@@ -7,33 +7,29 @@
 ;; adding sources. Sources are articles, books, etc., or just anything
 ;; you'd like to have a literature note for.
 ;;
-;; TODO: we should save the parsed result into the cache. Maybe even
-;; do this as just another part of extraction.
-
-;; - sources.json
-;;   - parsed into something
-;;   - stored in a local cache?
-;; - list sources
-;; - add sources
-;; - modify sources
-;; - remove sources
+;; Literature entries (sources) are extracted from the bibliography
+;; (in minaduki-extract.el).
 ;;
-;; - command to browse sources
-;; - actions on sources
-;;   - visiting the source's corresponding note
-;;     - creating one if one doesn't exist
-;;   - open the source's url or file
-;;   - show the source's entry in the JSON
-;;   - modify the source
-
-;; We can probably use CSL-JSON later, but I'll make up my own format
-;; for now.
+;; The bibliography can currently only be Org files. They should look
+;; like this:
 ;;
-;; A source has:
+;;   * title
+;;   :PROPERTIES:
+;;   :custom_id:  abc123
+;;   :author:  some author
+;;   :END:
 ;;
-;; - a type (string)
-;; - a list of "sources" (like file paths and urls)
-;; - an ID (called "key"); if this is a url, it's also considered a source.
+;; Which defines an entry with the key "abc123", title "title", and
+;; author "some author".
+;;
+;; Every heading with the custom_id prop (customizable with
+;; `minaduki-lit/key-prop') in a file listed in
+;; `minaduki-lit/bibliography' is considered a literature entry.
+;;
+;; TODO: support saving entries in JSON, maybe even in CSL-JSON
+;; TODO: support extracting entries from bibtex. This would truly
+;; replace bibtex-completion.
+;; TODO: command to add sources, modify a source, or remove a source
 
 ;;; Code:
 
@@ -102,6 +98,13 @@ OTHERS: other key -> value pairs."
 ;;     (json-pretty-print-buffer)))
 
 ;;;; Reading from Org
+(defun minaduki-lit/key-at-point ()
+  "Return the key of the literature entry at point."
+  (when (eq major-mode 'org-mode)
+    (let ((value (org-entry-get nil minaduki-lit/key-prop t)))
+      (when (and value
+                 (not (string= "" value)))
+        value))))
 
 ;;;; Migration
 ;; (defun minaduki-lit/read-sources-from-bibtex (bibtex-file)

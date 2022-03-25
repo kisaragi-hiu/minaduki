@@ -302,7 +302,10 @@ Return added tag."
           (ivy-sort-functions-alist nil))
       (setq key (--> (completing-read "Source: "
                                       (mapcar #'cdr key->formatted)
-                                      nil t)
+                                      nil t nil nil
+                                      (minaduki-lit/format-source
+                                       (minaduki-db//fetch-lit-entry
+                                        (minaduki-lit/key-at-point))))
                      (rassoc it key->formatted)
                      car)))
     (minaduki/literature-note-actions key)))

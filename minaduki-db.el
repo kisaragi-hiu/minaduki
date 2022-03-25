@@ -394,6 +394,13 @@ Return the number of rows inserted."
          :where (= refs:ref $s1)]
         ref)))
 
+(defun minaduki-db//fetch-lit-entry (key)
+  "Fetch the literature entry with KEY in the DB."
+  (caar (minaduki-db/query
+         [:select [props] :from keys
+          :where (= key $s1)]
+         key)))
+
 (defun minaduki-db//fetch-all-files-hash ()
   "Return ((path . content-hash) ...) for all cached files as a hash-table."
   (let* ((current-files (minaduki-db/query [:select [file hash] :from files]))
