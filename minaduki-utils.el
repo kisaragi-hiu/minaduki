@@ -18,6 +18,21 @@
 ;; regardless of whether Org is loaded before their compilation.
 (require 'org)
 
+(defun org-roam--plist-to-alist (plist)
+  "Return an alist of the property-value pairs in PLIST."
+  (let (res)
+    (while plist
+      (let ((prop (intern (substring (symbol-name (pop plist)) 1 nil)))
+            (val (pop plist)))
+        (push (cons prop val) res)))
+    res))
+
+;;;; Error and progress reporting
+(defun org-roam-message (format-string &rest args)
+  "Pass FORMAT-STRING and ARGS to `message' when `minaduki-verbose' is t."
+  (when minaduki-verbose
+    (apply #'message `(,(concat "(org-roam) " format-string) ,@args))))
+
 (defun minaduki//warn (level message &rest args)
   "Display a warning for minaduki at LEVEL.
 
@@ -30,6 +45,37 @@ This is a convenience wrapper around `lwarn'. Difference:
   (prog1 nil
     (apply #'lwarn '(org-roam) level message args)))
 
+;; From `orb--with-message!'
+(defmacro minaduki//with-message (message &rest body)
+  "Put MESSAGE before and after BODY.
+
+Echo \"MESSAGE...\", run BODY, then echo \"MESSAGE...done\"
+afterwards. The value of BODY is returned."
+  (declare (indent 1) (debug (stringp &rest form)))
+  `(prog2
+       (message "%s..." ,message)
+       (progn ,@body)
+     (message "%s...done" ,message)))
+
+(defmacro minaduki//for (message var sequence &rest body)
+  "Iterate BODY over SEQUENCE.
+
+VAR is the variable bound for each element in SEQUENCE. This is
+the X in (cl-loop for X in sequence).
+
+MESSAGE is a format string which must have two slots: the first
+is the 1-based index, the second is the total length of
+SEQUENCE."
+  (declare (indent 3))
+  `(cl-loop for ,var being the elements of ,sequence
+            using (index i)
+            with length = (length ,sequence)
+            do
+            (progn
+              (org-roam-message ,message (1+ i) length)
+              ,@body)))
+
+;;;; String manipulation
 (defun minaduki//truncate-string (len str &optional ellipsis)
   "Truncate STR to LEN, adding ELLIPSIS (default `...').
 
@@ -59,8 +105,47 @@ width (`string-width') to determine whether to truncate."
     (save-match-data
       (replace-regexp-in-string "[{}]" "" str))))
 
+(defun minaduki//add-tag-string (str tags)
+  "Add TAGS to STR.
 
-;;; org-link-abbrev
+Depending on the value of `org-roam-file-completion-tag-position', this function
+prepends TAGS to STR, appends TAGS to STR or omits TAGS from STR."
+  (pcase org-roam-file-completion-tag-position
+    ('prepend (concat
+               (when tags (propertize (format "(%s) " (s-join org-roam-tag-separator tags))
+                                      'face 'org-roam-tag))
+               str))
+    ('append (concat
+              str
+              (when tags (propertize (format " (%s)" (s-join org-roam-tag-separator tags))
+                                     'face 'org-roam-tag))))
+    ('omit str)))
+
+(defun minaduki//remove-org-links (str)
+  "Remove Org bracket links from STR."
+  (let ((links (s-match-strings-all org-link-bracket-re str)))
+    (--> (cl-loop for link in links
+                  collect
+                  (let ((orig (elt link 0))
+                        (desc (or (elt link 2)
+                                  (elt link 1))))
+                    (cons orig desc)))
+         (s-replace-all it str))))
+
+(defun org-roam-string-quote (str)
+  "Quote STR."
+  (->> str
+       (s-replace "\\" "\\\\")
+       (s-replace "\"" "\\\"")))
+
+;;;; URL
+(defun minaduki//url? (path)
+  "Check if PATH is a URL.
+Assume the protocol is not present in PATH; e.g. URL `https://google.com' is
+passed as `//google.com'."
+  (or (s-prefix? "//" path)
+      (s-prefix? "http://" path)
+      (s-prefix? "https://" path)))
 
 (defun minaduki//apply-link-abbrev (path)
   "Apply `org-link-abbrev-alist' to PATH.
@@ -141,109 +226,27 @@ In Markdown, TYPE has no effect."
           (t
            (format "[%s](%s)" description target))))))
 
-(defun minaduki//find-file (file)
-  "Open FILE using `org-roam-find-file-function' or `find-file'."
-  (funcall (or org-roam-find-file-function #'find-file) file))
+(defun minaduki//path-to-title (path)
+  "Convert PATH to a string that's suitable as a title."
+  (-> path
+      (f-relative (f-expand org-directory))
+      f-no-ext))
 
-(defun minaduki//compute-content-hash (&optional file)
-  "Compute the hash of the contents of FILE or the current buffer."
-  (if file
-      (with-temp-buffer
-        (set-buffer-multibyte nil)
-        (insert-file-contents-literally file)
-        (secure-hash 'sha1 (current-buffer)))
-    (org-with-wide-buffer
-     (secure-hash 'sha1 (current-buffer)))))
-
-;; `org-roam--extract-global-props'
-(defun minaduki//org-props (props)
-  "Extract PROPS from the current Org buffer.
-Props are extracted from both the file-level property drawer (if
-any), and Org keywords. Org keywords take precedence."
-  (let (ret)
-    ;; Org: keyword properties
-    (pcase-dolist (`(,key . ,values) (org-collect-keywords props))
-      (dolist (value values)
-        (push (cons key value) ret)))
-    ;; Org: file-level property drawer properties
-    (org-with-point-at 1
-      (dolist (prop props)
-        (when-let ((v (org-entry-get (point) prop)))
-          (push (cons prop v) ret))))
-    ret))
-
-(defsubst minaduki//org-prop (prop)
-  "Return values of PROP as a list.
-
-Given an Org file
-
-  #+title: abc
-  #+prop1: abcdef
-  #+prop1: ghi
-
-\(minaduki//org-prop \"title\") -> '(\"abc\")
-\(minaduki//org-prop \"prop1\") -> '(\"abcdef\" \"ghi\")"
-  (nreverse (mapcar #'cdr (minaduki//org-props (list prop)))))
-
-(defmacro minaduki//for (message var sequence &rest body)
-  "Iterate BODY over SEQUENCE.
-
-VAR is the variable bound for each element in SEQUENCE. This is
-the X in (cl-loop for X in sequence).
-
-MESSAGE is a format string which must have two slots: the first
-is the 1-based index, the second is the total length of
-SEQUENCE."
-  (declare (indent 3))
-  `(cl-loop for ,var being the elements of ,sequence
-            using (index i)
-            with length = (length ,sequence)
-            do
-            (progn
-              (org-roam-message ,message (1+ i) length)
-              ,@body)))
-
-;; From `orb--with-message!'
-(defmacro minaduki//with-message (message &rest body)
-  "Put MESSAGE before and after BODY.
-
-Echo \"MESSAGE...\", run BODY, then echo \"MESSAGE...done\"
-afterwards. The value of BODY is returned."
-  (declare (indent 1) (debug (stringp &rest form)))
-  `(prog2
-       (message "%s..." ,message)
-       (progn ,@body)
-     (message "%s...done" ,message)))
-
-(defun minaduki//add-tag-string (str tags)
-  "Add TAGS to STR.
-
-Depending on the value of `org-roam-file-completion-tag-position', this function
-prepends TAGS to STR, appends TAGS to STR or omits TAGS from STR."
-  (pcase org-roam-file-completion-tag-position
-    ('prepend (concat
-               (when tags (propertize (format "(%s) " (s-join org-roam-tag-separator tags))
-                                      'face 'org-roam-tag))
-               str))
-    ('append (concat
-              str
-              (when tags (propertize (format " (%s)" (s-join org-roam-tag-separator tags))
-                                     'face 'org-roam-tag))))
-    ('omit str)))
-
-(defun minaduki//remove-org-links (str)
-  "Remove Org bracket links from STR."
-  (let ((links (s-match-strings-all org-link-bracket-re str)))
-    (--> (cl-loop for link in links
-                  collect
-                  (let ((orig (elt link 0))
-                        (desc (or (elt link 2)
-                                  (elt link 1))))
-                    (cons orig desc)))
-         (s-replace-all it str))))
+(defun minaduki//title-to-slug (title)
+  "Convert TITLE to a filename-suitable slug."
+  (let ((slug
+         (--> title
+              ;; Normalize combining characters (use single character ä
+              ;; instead of combining a + #x308 (combining diaeresis))
+              ucs-normalize-NFC-string
+              ;; Do the replacement. Note that `s-replace-all' does not
+              ;; use regexp.
+              (--reduce-from
+               (replace-regexp-in-string (car it) (cdr it) acc) it
+               minaduki/slug-replacements))))
+    (downcase slug)))
 
 ;;;; Dates
-
 (defun minaduki//date/ymd->calendar.el (yyyy-mm-dd)
   "Convert date string YYYY-MM-DD to calendar.el list (MM DD YYYY)."
   (pcase-let ((`(,year ,month ,day) (cdr (s-match (rx (group (= 4 digit)) "-"
@@ -279,8 +282,7 @@ means tomorrow, and N = -1 means yesterday."
          ;; otherwise just return (now - 0) = now.
          0)))))
 
-;;;; File predicates
-
+;;;; File utilities
 (defun org-roam--org-file-p (path)
   "Check if PATH is pointing to an org file."
   (let ((ext (org-roam--file-name-extension path)))
@@ -288,15 +290,15 @@ means tomorrow, and N = -1 means yesterday."
       (setq ext (org-roam--file-name-extension (file-name-sans-extension path))))
     (member ext org-roam-file-extensions)))
 
-(defsubst minaduki//excluded? (file)
-  "Should FILE be excluded from indexing?"
+(defsubst minaduki//excluded? (path)
+  "Should PATH be excluded from indexing?"
   (and org-roam-file-exclude-regexp
-       (string-match-p org-roam-file-exclude-regexp file)))
+       (string-match-p org-roam-file-exclude-regexp path)))
 
-(defun org-roam--org-roam-file-p (&optional file)
-  "Return t if FILE is part of Org-roam system, nil otherwise.
-If FILE is not specified, use the current buffer's file-path."
-  (when-let ((path (or file
+(defun org-roam--org-roam-file-p (&optional path)
+  "Return t if PATH is part of Org-roam system, nil otherwise.
+If PATH is not specified, use the current buffer's file-path."
+  (when-let ((path (or path
                        minaduki//file-name
                        (-> (buffer-base-buffer)
                            (buffer-file-name)))))
@@ -306,7 +308,30 @@ If FILE is not specified, use the current buffer's file-path."
        (not (minaduki//excluded? path))
        (f-descendant-of-p path (expand-file-name org-directory))))))
 
-;;;; File functions and predicates
+(defun org-roam--file-name-extension (path)
+  "Return file name extension for PATH.
+Like `file-name-extension', but does not strip version number."
+  (save-match-data
+    (let ((file (file-name-nondirectory path)))
+      (if (and (string-match "\\.[^.]*\\'" file)
+               (not (eq 0 (match-beginning 0))))
+          (substring file (+ (match-beginning 0) 1))))))
+
+;;;; File functions
+(defun minaduki//find-file (file)
+  "Open FILE using `org-roam-find-file-function' or `find-file'."
+  (funcall (or org-roam-find-file-function #'find-file) file))
+
+(defun minaduki//compute-content-hash (&optional file)
+  "Compute the hash of the contents of FILE or the current buffer."
+  (if file
+      (with-temp-buffer
+        (set-buffer-multibyte nil)
+        (insert-file-contents-literally file)
+        (secure-hash 'sha1 (current-buffer)))
+    (org-with-wide-buffer
+     (secure-hash 'sha1 (current-buffer)))))
+
 (defun org-roam--list-files-search-globs (exts)
   "Given EXTS, return a list of search globs.
 E.g. (\".org\") => (\"*.org\" \"*.org.gpg\")"
@@ -350,90 +375,7 @@ Use Ripgrep if we can find it."
   "Return a list of all Org-roam files within `org-directory'."
   (org-roam--list-files (expand-file-name org-directory)))
 
-;;;; Title/Path/Slug conversion
-
-(defun minaduki//path-to-title (path)
-  "Convert PATH to a string that's suitable as a title."
-  (-> path
-      (f-relative (f-expand org-directory))
-      f-no-ext))
-
-(defun minaduki//title-to-slug (title)
-  "Convert TITLE to a filename-suitable slug."
-  (let ((slug
-         (--> title
-              ;; Normalize combining characters (use single character ä
-              ;; instead of combining a + #x308 (combining diaeresis))
-              ucs-normalize-NFC-string
-              ;; Do the replacement. Note that `s-replace-all' does not
-              ;; use regexp.
-              (--reduce-from
-               (replace-regexp-in-string (car it) (cdr it) acc) it
-               minaduki/slug-replacements))))
-    (downcase slug)))
-
-;;;; File utilities
-
-(defun org-roam--file-name-extension (filename)
-  "Return file name extension for FILENAME.
-Like `file-name-extension', but does not strip version number."
-  (save-match-data
-    (let ((file (file-name-nondirectory filename)))
-      (if (and (string-match "\\.[^.]*\\'" file)
-               (not (eq 0 (match-beginning 0))))
-          (substring file (+ (match-beginning 0) 1))))))
-
-;;;; Utility Functions
-
-;; Alternative to `org-get-outline-path' that doesn't break
-(defun org-roam--get-outline-path ()
-  "Return the outline path to the current entry.
-
-An outline path is a list of ancestors for current headline, as a
-list of strings. Statistics cookies are removed and links are
-kept.
-
-When optional argument WITH-SELF is non-nil, the path also
-includes the current headline.
-
-Assume buffer is widened and point is on a headline."
-  (org-with-wide-buffer
-   (save-match-data
-     (when (and (or (condition-case nil
-                        (org-back-to-heading t)
-                      (error nil))
-                    (org-up-heading-safe))
-                org-complex-heading-regexp)
-       (cl-loop with headings
-                do (push (let ((case-fold-search nil))
-                           (looking-at org-complex-heading-regexp)
-                           (if (not (match-end 4)) ""
-                             ;; Remove statistics cookies.
-                             (org-trim
-                              (replace-regexp-in-string
-                               "\\[[0-9]+%\\]\\|\\[[0-9]+/[0-9]+\\]" ""
-                               (match-string-no-properties 4)))))
-                         headings)
-                while (org-up-heading-safe)
-                finally return headings)))))
-
-(defun org-roam--plist-to-alist (plist)
-  "Return an alist of the property-value pairs in PLIST."
-  (let (res)
-    (while plist
-      (let ((prop (intern (substring (symbol-name (pop plist)) 1 nil)))
-            (val (pop plist)))
-        (push (cons prop val) res)))
-    res))
-
-(defun minaduki//url? (path)
-  "Check if PATH is a URL.
-Assume the protocol is not present in PATH; e.g. URL `https://google.com' is
-passed as `//google.com'."
-  (or (s-prefix? "//" path)
-      (s-prefix? "http://" path)
-      (s-prefix? "https://" path)))
-
+;;;; Macros
 (defmacro org-roam-with-file (file keep-buf-p &rest body)
   "Execute BODY within FILE.
 If FILE is nil, execute BODY in the current buffer.
@@ -484,18 +426,69 @@ If FILE, set `minaduki//file-name' and variable
                `((insert-file-contents ,file)))
            ,@body)))))
 
-(defun org-roam-message (format-string &rest args)
-  "Pass FORMAT-STRING and ARGS to `message' when `minaduki-verbose' is t."
-  (when minaduki-verbose
-    (apply #'message `(,(concat "(org-roam) " format-string) ,@args))))
+;;;; Org mode local functions
+;; `org-roam--extract-global-props'
+(defun minaduki//org-props (props)
+  "Extract PROPS from the current Org buffer.
+Props are extracted from both the file-level property drawer (if
+any), and Org keywords. Org keywords take precedence."
+  (let (ret)
+    ;; Org: keyword properties
+    (pcase-dolist (`(,key . ,values) (org-collect-keywords props))
+      (dolist (value values)
+        (push (cons key value) ret)))
+    ;; Org: file-level property drawer properties
+    (org-with-point-at 1
+      (dolist (prop props)
+        (when-let ((v (org-entry-get (point) prop)))
+          (push (cons prop v) ret))))
+    ret))
 
-(defun org-roam-string-quote (str)
-  "Quote STR."
-  (->> str
-       (s-replace "\\" "\\\\")
-       (s-replace "\"" "\\\"")))
+(defsubst minaduki//org-prop (prop)
+  "Return values of PROP as a list.
 
-;;;; dealing with file-wide properties
+Given an Org file
+
+  #+title: abc
+  #+prop1: abcdef
+  #+prop1: ghi
+
+\(minaduki//org-prop \"title\") -> '(\"abc\")
+\(minaduki//org-prop \"prop1\") -> '(\"abcdef\" \"ghi\")"
+  (nreverse (mapcar #'cdr (minaduki//org-props (list prop)))))
+
+;; Alternative to `org-get-outline-path' that doesn't break
+(defun org-roam--get-outline-path ()
+  "Return the outline path to the current entry.
+
+An outline path is a list of ancestors for current headline, as a
+list of strings. Statistics cookies are removed and links are
+kept.
+
+When optional argument WITH-SELF is non-nil, the path also
+includes the current headline.
+
+Assume buffer is widened and point is on a headline."
+  (org-with-wide-buffer
+   (save-match-data
+     (when (and (or (condition-case nil
+                        (org-back-to-heading t)
+                      (error nil))
+                    (org-up-heading-safe))
+                org-complex-heading-regexp)
+       (cl-loop with headings
+                do (push (let ((case-fold-search nil))
+                           (looking-at org-complex-heading-regexp)
+                           (if (not (match-end 4)) ""
+                             ;; Remove statistics cookies.
+                             (org-trim
+                              (replace-regexp-in-string
+                               "\\[[0-9]+%\\]\\|\\[[0-9]+/[0-9]+\\]" ""
+                               (match-string-no-properties 4)))))
+                         headings)
+                while (org-up-heading-safe)
+                finally return headings)))))
+
 (defun org-roam--set-global-prop (name value)
   "Set a file property called NAME to VALUE.
 
