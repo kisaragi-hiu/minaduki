@@ -428,6 +428,16 @@ If FILE, set `minaduki//file-name' and variable
                `((insert-file-contents ,file)))
            ,@body)))))
 
+(defmacro minaduki//lambda-self (args &rest body)
+  "Like `lambda', except a symbol `self' is bound to the function itself.
+
+ARGS and BODY are as in `lambda'."
+  (declare (indent defun)
+           (doc-string 2))
+  `(let (self)
+     (setq self (lambda ,args ,@body))
+     self))
+
 ;;;; Org mode local functions
 ;; `org-roam--extract-global-props'
 (defun minaduki//org-props (props)

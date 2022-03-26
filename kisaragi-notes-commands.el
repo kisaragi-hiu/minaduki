@@ -286,6 +286,128 @@ Return added tag."
       (switch-to-buffer (cdr (assoc name names-and-buffers))))))
 
 ;;;###autoload
+(defun minaduki/fix-broken-links ()
+  "List all broken links in a new buffer."
+  (interactive)
+  (let ((list-buffer (get-buffer-create "*minaduki broken links*"))
+        errors)
+    ;; Set up the display buffer
+    (with-current-buffer list-buffer
+      (let ((inhibit-read-only t))
+        (erase-buffer)
+        (kill-all-local-variables)
+        (setq-local buffer-read-only t
+                    revert-buffer-function (lambda (&rest _)
+                                             (minaduki/fix-broken-links)))))
+    ;; Collect missing links
+    (let* ((all-files (org-roam--list-all-files))
+           (i 0)
+           (length (length all-files)))
+      (cl-loop
+       for f in all-files
+       do
+       (cl-incf i)
+       (org-roam-message "(%s/%s) Looking for broken links in %s"
+                         i length f)
+       (minaduki//with-temp-buffer f
+         (save-excursion
+           (goto-char (point-min))
+           (let ((ast (org-element-parse-buffer)))
+             (org-element-map ast 'link
+               (lambda (l)
+                 (let ((file (org-element-property :path l)))
+                   (when (and (equal "file" (org-element-property :type l))
+                              (not (or (file-exists-p file)
+                                       (file-remote-p file))))
+                     (push
+                      `(,f
+                        ,(org-element-property :begin l)
+                        ,(format
+                          (if (org-element-lineage l '(link))
+                              "\"%s\" (image in description) does not exist"
+                            "\"%s\" does not exist")
+                          file))
+                      errors))))))))))
+    ;; Insert them into the buffer
+    (with-current-buffer list-buffer
+      (let ((inhibit-read-only t)
+            (count-bounds '(nil . nil)))
+        (insert "Click the file names to visit the error.\n"
+                "Checkboxes are available for keeping track of which ones are fixed.\n\n")
+        ;; "100 broken links (100 to go)\n\n"
+        ;; We need to capture the second number's bounds.
+        (insert (format "%s broken links ("
+                        (length errors)))
+        (setf (car count-bounds) (point))
+        (insert (format "%s" (length errors)))
+        (setf (cdr count-bounds) (point))
+        (insert " to go):\n\n")
+        (insert
+         (cl-loop
+          for (file point message) in errors
+          concat
+          (format
+           "%s %s: %s\n"
+           (let ((enabled nil))
+             (make-text-button
+              "[ ]" nil
+              'face 'button
+              'follow-link t
+              'action (minaduki//lambda-self (&rest _)
+                        (let ((inhibit-read-only t)
+                              (bounds
+                               (unless (member (char-after) '(?\[ ?\s ?\]))
+                                 (error
+                                  "This action can only be run on a button"))))
+                          (setq enabled (not enabled))
+                          ;; Update the count on top first
+                          (save-excursion
+                            (let (current)
+                              (goto-char (car count-bounds))
+                              (setq current (number-at-point))
+                              (delete-region (car count-bounds)
+                                             (cdr count-bounds))
+                              (if enabled
+                                  (insert (format "%s" (1- current)))
+                                (insert (format "%s" (1+ current))))
+                              (setf (cdr count-bounds) (point))))
+                          ;; Then update the bounds now.
+                          ;; `save-excursion' knows to take the
+                          ;; insertion into account, but we don't.
+                          (setq bounds
+                                (cl-case (char-after)
+                                  (?\[ (cons (point) (+ (point) 2)))
+                                  (?\s (cons (1- (point)) (1+ (point))))
+                                  (?\] (cons (- (point) 2) (point)))))
+                          (setf (buffer-substring (car bounds)
+                                                  (1+ (cdr bounds)))
+                                (make-text-button
+                                 (if enabled "[X]" "[ ]") nil
+                                 'face 'button
+                                 'follow-link t
+                                 'action self))))))
+           ;; This ensures the lambda below gets its own instance of
+           ;; `file', instead of sharing with all the other
+           ;; iterations. Without this, all instances of this button
+           ;; would open the same file.
+           (let ((file file))
+             (make-text-button
+              (format "%s::C%s"
+                      (if (f-descendant-of? file org-directory)
+                          (f-relative file org-directory)
+                        file)
+                      point)
+              nil
+              'face '(font-lock-constant-face underline)
+              'follow-link t
+              'action (lambda (&rest _)
+                        (find-file-other-window file)
+                        (goto-char point))))
+           message))))
+      (goto-char (point-min)))
+    (display-buffer list-buffer)))
+
+;;;###autoload
 (defun minaduki/literature-sources ()
   "List all sources for browsing interactively."
   (interactive)
@@ -591,6 +713,7 @@ CITEKEY is a list whose car is a citation key."
     ("Open or create a template"          . minaduki/open-template)
     ("Create a new diary entry"           . minaduki/new-diary-entry)
     ("Create a new note with the \"daily\" template" . minaduki/new-daily-note)
+    ("Find broken local links"            . minaduki/fix-broken-links)
     ("Open the index file"                . minaduki/open-index)
     ("Open a literature note"             . minaduki/open-literature-note)
     ("Open a non-literature note"         . minaduki/open-non-literature-note)

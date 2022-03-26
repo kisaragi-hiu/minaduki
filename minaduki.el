@@ -59,11 +59,6 @@
   (require 'kisaragi-notes-embark))
 
 ;;;; Features
-;; These features should be able to be loaded order independently.
-;; @TODO: implement something akin to `org-modules' that allows
-;; selectively loading different sets of features.
-;; ~NV [2020-05-22 Fri]
-
 (when (featurep 'oc)
   (require 'kisaragi-notes-cite))
 
@@ -72,7 +67,6 @@
 (require 'org-roam-capture)
 (require 'minaduki-extract)
 (require 'minaduki-db)
-(require 'org-roam-doctor)
 (require 'org-roam-graph)
 (require 'kisaragi-notes-wikilink)
 
