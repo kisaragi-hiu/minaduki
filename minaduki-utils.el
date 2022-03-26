@@ -405,9 +405,6 @@ Kills the buffer if KEEP-BUF-P is nil, and FILE is not yet visited."
 (defmacro minaduki//with-temp-buffer (file &rest body)
   "Execute BODY within a temp buffer.
 
-Use this for hot paths instead of `org-roam-with-file' as it sets
-up the major mode, which is quite slow.
-
 Like `with-temp-buffer', but propagates `org-directory'.
 
 If FILE, set `minaduki//file-name' and variable
@@ -419,6 +416,7 @@ If FILE, set `minaduki//file-name' and variable
          (let ((org-directory ,current-org-directory)
                (org-mode-hook nil)
                (org-inhibit-startup t)
+               (after-change-major-mode-hook '(minaduki-initialize))
                ,@(when file
                    `((minaduki//file-name ,file)
                      (default-directory (file-name-directory ,file))
