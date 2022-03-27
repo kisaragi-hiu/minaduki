@@ -1,4 +1,4 @@
-;;; kisaragi-notes-org-protocol.el --- Org-protocol handler for org-protocol://notes links  -*- lexical-binding: t; -*-
+;;; minaduki-org-protocol.el --- Org-protocol handler for org-protocol://notes links  -*- lexical-binding: t; -*-
 
 ;; Copyright © 2021 Kisaragi Hiu <mail@kisaragi-hiu.com>
 ;; Copyright © 2020 Jethro Kuan <jethrokuan95@gmail.com>
@@ -61,7 +61,7 @@
 ;;
 ;;; Code:
 (require 'org-protocol)
-(require 'kisaragi-notes)
+(require 'minaduki)
 (require 'minaduki-bibtex) ; orb-edit-notes
 
 ;;;; Functions
@@ -96,6 +96,6 @@ emacsclient 'org-protocol://notes?key=banjoazusa2020'"
               org-protocol-protocol-alist
               :test #'equal))
 
-(provide 'kisaragi-notes-org-protocol)
+(provide 'minaduki-org-protocol)
 
-;;; kisaragi-notes-org-protocol.el ends here
+;;; minaduki-org-protocol.el ends here
