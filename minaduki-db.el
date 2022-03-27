@@ -94,9 +94,11 @@ Performs a database upgrade when required."
 (defun minaduki-db/query (sql &rest args)
   "Run SQL query on Org-roam database with ARGS.
 SQL can be either the emacsql vector representation, or a string."
-  (if (stringp sql)
-      (emacsql (minaduki-db) (apply #'format sql args))
-    (apply #'emacsql (minaduki-db) sql args)))
+  (let ((print-level nil)
+        (print-length nil))
+    (if (stringp sql)
+        (emacsql (minaduki-db) (apply #'format sql args))
+      (apply #'emacsql (minaduki-db) sql args))))
 
 ;;;; Schemata
 (defconst minaduki-db//table-schemata
