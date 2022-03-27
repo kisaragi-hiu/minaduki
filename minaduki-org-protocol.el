@@ -67,34 +67,51 @@
 ;;;; Functions
 
 ;;;###autoload
-(cl-defun minaduki-org-protocol/open-file ((&key file key))
+(cl-defun minaduki-org-protocol/open-file ((&key file key title))
   "An org-protocol handler to open a note file.
 
-Arguments are passed in as a plist like (:file FILE :key KEY).
+Arguments are passed in as a plist like
+  \(minaduki-org-protocol/open-file '(:file FILE :key KEY)\)
+.
+
 This corresponds to the org-protocol URL
 \"org-protocol://notes?file=FILE&key=KEY\".
 
+TITLE: open the file with TITLE.
 FILE: a path relative to `org-directory'.
 KEY: a cite key corresponding to the ROAM_KEY keyword
 
-FILE takes precedence over KEY.
-
 Example:
+
+emacsclient 'org-protocol://notes?title=Books'
+emacsclient 'org-protocol://notes?file=characters/闇音レンリ.org'
+emacsclient 'org-protocol://notes?key=banjoazusa2020'"
+  (cond
+   (title
+    (minaduki/open title))
+   (file
+    (find-file (f-join org-directory file)))
+   (key
+    (orb-edit-notes key))))
+
+;;;###autoload
+(define-minor-mode minaduki-org-protocol-mode
+  "Enable Minaduki's \"notes\" org-protocol.
+
+With this mode turned on, these can work:
 
 emacsclient 'org-protocol://notes?file=characters/闇音レンリ.org'
 emacsclient 'org-protocol://notes?key=banjoazusa2020'"
-  (cond (file
-         (find-file (f-join org-directory file)))
-        (key
-         (orb-edit-notes key))))
-
-;;;###autoload
-(with-eval-after-load 'org-protocol
-  (cl-pushnew '("minaduki"
-                :protocol "notes"
-                :function minaduki-org-protocol/open-file)
-              org-protocol-protocol-alist
-              :test #'equal))
+  :global t :lighter ""
+  (if minaduki-org-protocol-mode
+      (cl-pushnew '("minaduki"
+                    :protocol "notes"
+                    :function minaduki-org-protocol/open-file)
+                  org-protocol-protocol-alist
+                  :test #'equal)
+    (setq org-protocol-protocol-alist
+          (--remove (equal (car it) "minaduki")
+                    org-protocol-protocol-alist))))
 
 (provide 'minaduki-org-protocol)
 
