@@ -106,6 +106,123 @@ OTHERS: other key -> value pairs."
                  (not (string= "" value)))
         value))))
 
+(defun minaduki-lit/generate-key-at-point ()
+  "Generate a key for the headline at point."
+  (unless (org-entry-get nil minaduki-lit/key-prop)
+    (let* ((author
+            (-some->> (org-entry-get nil "author")
+              (s-replace-all '((" " . "")
+                               ("," . "")
+                               ("/" . "")
+                               ("?" . "")))
+              downcase))
+           (date
+            (-some->> (or (org-entry-get nil "date")
+                          (org-entry-get nil "year"))
+              (s-replace "--" "–")
+              (s-replace "-" "")
+              (s-replace "–" "--")
+              ;; this should handle ISO 8601 timestamps
+              (s-replace-regexp "T[[:digit:]].*" "")))
+           (new-id
+            (concat author (or date ""))))
+      (unless (and author date)
+        (setq new-id (read-string "The currently generated ID is too general. Make it more specific: " new-id)))
+      (org-entry-put nil minaduki-lit/key-prop new-id))))
+
+(defun minaduki-lit/insert-new-entry-from-url (url)
+  "Fetch information from URL and insert a new literature entry.
+
+The entry is an Org heading.
+
+If the author or publish date cannot be determined, ask the user
+to fill them in."
+  (let (dom)
+    (message "Retrieving entry from %s..." url)
+    (when-let ((buf (url-retrieve-synchronously url :silent)))
+      ;; Extract the DOM first
+      (with-current-buffer buf
+        (decode-coding-region (point-min) (point-max) 'utf-8)
+        (goto-char (point-min))
+        ;; Move cursor after the headers
+        (eww-parse-headers)
+        (setq dom (libxml-parse-html-region (point) (point-max))))
+      (let (title author publishdate)
+        ;; Parse information out of it
+        (setq title (or
+                     ;; <meta name="title" content="...">
+                     ;; Youtube puts "- YouTube" in <title>, so I want
+                     ;; this first.
+                     (-some--> (dom-by-tag dom 'meta)
+                       (--first (equal (dom-attr it 'name) "title") it)
+                       (dom-attr it 'content))
+                     ;; Open Graph
+                     ;; Also often without the site suffix
+                     (-some--> (dom-by-tag dom 'meta)
+                       (--first (equal (dom-attr it 'property) "og:title") it)
+                       (dom-attr it 'content))
+                     ;; <title>
+                     (dom-texts (car (dom-by-tag dom 'title))))
+              author (or
+                      ;; <meta name="author" content="...">
+                      (-some--> (dom-by-tag dom 'meta)
+                        (--first (equal "author" (dom-attr it 'name)) it)
+                        (dom-attr it 'content))
+                      ;; <meta name="cXenseParse:author" content="...">
+                      ;; nippon.com uses this
+                      (-some--> (dom-by-tag dom 'meta)
+                        (--first (equal "cXenseParse:author" (dom-attr it 'name)) it)
+                        (dom-attr it 'content))
+                      ;; WordPress entry header
+                      ;; <body><div class="entry-meta">...<a rel="author" href=...>
+                      (-some--> (dom-by-class dom "entry-meta")
+                        (dom-by-tag it 'a)
+                        (--first (equal "author" (dom-attr it 'rel)) it)
+                        (dom-text it))
+                      ;; YouTube stores this in a <div> in <body>...
+                      ;; And yes, it's in a <span> for some reason
+                      (-some--> (dom-by-tag dom 'span)
+                        (--first (equal "author" (dom-attr it 'itemprop)) it)
+                        dom-children
+                        (--first (equal "name" (dom-attr it 'itemprop)) it)
+                        (dom-attr it 'content)))
+              publishdate (or
+                           ;; Open Graph
+                           ;; <meta property="article:published_time"
+                           ;;       content="2019-08-29T09:54:00-04:00" />
+                           (-some--> (dom-by-tag dom 'meta)
+                             (--first (equal "article:published_time"
+                                             (dom-attr it 'property))
+                                      it)
+                             (dom-attr it 'content))
+                           ;; WordPress entry header
+                           ;; <body><div class="entry-meta">...<time class="entry-date"...>
+                           (-some--> (dom-by-class dom "entry-meta")
+                             (dom-by-tag it 'time)
+                             (--first (equal "entry-date" (dom-attr it 'class)) it)
+                             (dom-text it))
+                           ;; YouTube
+                           (-some--> (dom-by-tag dom 'meta)
+                             (--first (equal "datePublished" (dom-attr it 'itemprop)) it)
+                             (dom-attr it 'content))))
+        (unless (eq ?\n (char-before))
+          (insert "\n"))
+        (insert (format "%s %s\n"
+                        (make-string (1+ (or (org-current-level)
+                                             0))
+                                     ?*)
+                        title))
+        (org-entry-put nil "url" url)
+        (org-entry-put nil "author" author)
+        (org-entry-put nil "date" publishdate)
+        (message "Retrieving entry from %s...done" url)
+        (dolist (prop '("url" "author" "date"))
+          (let ((value (org-read-property-value prop)))
+            (unless (or (null value)
+                        (string= value ""))
+              (org-entry-put nil prop value))))
+        (minaduki-lit/generate-key-at-point)))))
+
 ;;;; Migration
 ;; (defun minaduki-lit/read-sources-from-bibtex (bibtex-file)
 ;;   "Parse a BIBTEX-FILE into our format."
