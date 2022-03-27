@@ -8,44 +8,7 @@
 ;; 	Mykhailo Shevchuk <mail@mshevchuk.com>
 ;; 	Jethro Kuan <jethrokuan95@gmail.com>
 
-;; Soft dependencies: projectile, persp-mode
-
-;; This file is NOT part of GNU Emacs.
-
-;; This program is free software; you can redistribute it and/or modify
-;; it under the terms of the GNU General Public License as published by
-;; the Free Software Foundation; either version 3, or (at your option)
-;; any later version.
-;;
-;; This program is distributed in the hope that it will be useful,
-;; but WITHOUT ANY WARRANTY; without even the implied warranty of
-;; MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-;; GNU General Public License for more details.
-;;
-;; You should have received a copy of the GNU General Public License along with
-;; this program; see the file LICENSE.  If not, visit
-;; <https://www.gnu.org/licenses/>.
-
 ;;; Commentary:
-;;
-;; This library offers an integration between Bibtex-completion and
-;; Org-roam by delegating the tasks of note's creation, editing and
-;; retrieval to Org-roam.  From the Org-roam's perspective, the
-;; library provides a means to populate Org-roam templates with
-;; bibliographic information secured through Bibtex-completion,.
-;;
-;; To use it:
-;;
-;; call interactively `minaduki-bibtex-mode' or
-;; call (minaduki-bibtex-mode +1) from Lisp.
-;;
-;; After enabling `minaduki-bibtex-mode', the function
-;; `orb-edit-notes' will shadow `bibtex-completion-edit-notes' in
-;; Helm-bibtex, Ivy-bibtex.
-;;
-;; As a user option, `minaduki-capture/templates' can be dynamically
-;; preformatted with bibtex field values.  See
-;; `orb-preformat-keywords' for more details.
 
 ;;; Code:
 
@@ -58,26 +21,8 @@
 
 (require 'org-roam-capture)
 
-(eval-when-compile
-  (require 'subr-x)
-  (require 'cl-lib))
-
-;; declare external functions and variables
-
-(defvar bibtex-completion-bibliography)
-(defvar bibtex-completion-find-note-functions)
-(declare-function bibtex-completion-get-value
-                  "bibtex-completion" (field entry &optional default))
-(declare-function bibtex-completion-get-entry
-                  "bibtex-completion" (entry-key))
-(declare-function bibtex-completion-clear-cache
-                  "bibtex-completion" (&optional files))
-(declare-function bibtex-completion-init "bibtex-completion")
-(declare-function bibtex-completion-candidates "bibtex-completion")
-
-(declare-function projectile-relevant-open-projects "projectile")
-(declare-function persp-switch "persp-mode")
-(declare-function persp-names "persp-mode")
+(require 'subr-x)
+(require 'cl-lib)
 
 ;; ============================================================================
 ;;;; Utils
@@ -85,23 +30,19 @@
 
 ;;;###autoload
 (defun orb-process-file-field (citekey)
-  "Process the 'file' BibTeX field and resolve if there are multiples.
-Search the disk for the document associated with this BibTeX
-entry.  The disk matching is based on looking in the
-`bibtex-completion-library-path' for a file with the
-CITEKEY.
+  "Return a source of CITEKEY.
+
+Sources are resources like PDFs, URLs, etc. that are associated
+with a literature entry.
+
+If CITEKEY has multiple sources, prompt to select one of them.
 
 If variable `orb-file-field-extensions' is non-nil, return only
-the file paths with the respective extensions.
-
-\(Mendeley, Zotero, normal paths) are all supported.  If there
-are multiple files found the user is prompted to select which one
-to enter."
-  ;; ignore any errors that may be thrown by `bibtex-completion-find-pdf'
-  ;; don't stop the capture process
+the file paths with the respective extensions."
   (ignore-errors
-    (when-let* ((entry (bibtex-completion-get-entry citekey))
-                (paths (bibtex-completion-find-pdf entry)))
+    (when-let* ((entry (minaduki-db//fetch-lit-entry citekey))
+                (paths (minaduki//resolve-org-links
+                        (gethash "sources" entry))))
       (when-let ((extensions orb-file-field-extensions))
         (unless (listp extensions)
           (setq extensions (list extensions)))
@@ -262,6 +203,7 @@ is the function `ignore', it is added as `:override'."
       (dolist (advisee orb-ignore-bibtex-store-link-functions)
         (apply advice-func (push advisee advice))))))
 
+;; TODO: ENTRY should be in `minaduki-lit''s entry format.
 (defun orb--preformat-template (template entry)
   "Helper function for `orb--preformat-templates'.
 TEMPLATE is an element of `minaduki-capture/templates' and ENTRY
@@ -285,7 +227,7 @@ is a BibTeX entry as returned by `bibtex-completion-get-entry'."
          ;;  org-roam capture properties are here
          (plst (cdr template))
          ;; regexp for org-capture prompt wildcard
-         (rx "\\(%\\^{[[:alnum:]-_]*}\\)")
+         (rx "\\(%\\^{[[:alnum:]_-]*}\\)")
          (file-keyword (when orb-process-file-keyword
                          (or (and (stringp orb-process-file-keyword)
                                   orb-process-file-keyword)
@@ -306,15 +248,11 @@ is a BibTeX entry as returned by `bibtex-completion-get-entry'."
               (or (if (and file-keyword (string= field-name file-keyword))
                       (prog1
                           (orb-process-file-field
-                           (bibtex-completion-get-value "=key=" entry))
+                           (cdr (assoc "=key=" entry)))
                         ;; we're done so don't even compare file-name with
                         ;; file-keyword in the successive cycles
                         (setq file-keyword nil))
-                    ;; do the usual processing otherwise
-                    ;; condition-case to temporary workaround an upstream bug
-                    (condition-case nil
-                        (bibtex-completion-get-value field-name entry)
-                      (error "")))
+                    (cdr (assoc field-name entry)))
                   ""))
              ;; org-capture prompt wildcard
              (rplc-s (concat "%^{" (or keyword "citekey") "}"))
@@ -445,18 +383,11 @@ or `title' should be used for slug: %s not supported" orb-slug-source))))
 
 ;;;###autoload
 (defun orb-edit-notes (citekey)
-  "Open an Org-roam note associated with the CITEKEY or create a new one.
+  "Open a note associated with the CITEKEY or create a new one.
 
-CITEKEY is normally a string. When it's a list, the first entry
-is used as the key. This allows us to receive the same arguments
-as `bibtex-completion' commands such as
-`bibtex-completion-show-entry'.
-
-This function allows to use Org-roam as a backend for managing
-bibliography notes.  It relies on `bibtex-completion' to get
-retrieve bibliographic information from a BibTeX file."
-  (when (consp citekey)
-    (setq citekey (car citekey)))
+CITEKEY's information is extracted from files listed in
+`minaduki-lit/bibliography' during Minaduki's cache build
+process."
   (let* ((file (minaduki-db//fetch-file :key citekey))
          (note-data (when file
                       (list (minaduki-db//fetch-title file)
@@ -476,83 +407,6 @@ retrieve bibliographic information from a BibTeX file."
             (orb--edit-notes citekey)
           (error
            (with-orb-cleanup (orb-do-hook-functions 'remove))))))))
-
-;; ============================================================================
-;;;; Non-ref functions
-;; ============================================================================
-
-;;;###autoload
-(defun orb-insert-non-ref (lowercase?)
-  "Find a non-ref Org-roam file, and insert a relative org link to it at point.
-If LOWERCASE?, downcase the title before insertion.  See
-`minaduki/insert' and `minaduki-completion//get-non-literature' for
-details."
-  (interactive "P")
-  (minaduki/insert :lowercase? lowercase?
-                   :entry (minaduki-completion//read-note
-                           :completions (minaduki-completion//get-non-literature))))
-
-;; ============================================================================
-;;;; Orb note actions
-;; ============================================================================
-;; ============================================================================
-;;;; minaduki-bibtex minor mode
-;; ============================================================================
-
-(defun orb-edit-notes-ad (keys)
-  "Open an Org-roam note associated with the first key from KEYS.
-This function replaces `bibtex-completion-edit-notes'.  Only the
-first key from KEYS will actually be used."
-  (orb-edit-notes (car keys)))
-
-(defun orb-bibtex-completion-parse-bibliography-ad (&optional _ht-strings)
-  "Update `orb-notes-cache' before `bibtex-completion-parse-bibliography'."
-  (orb-make-notes-cache))
-
-;;;; Cache all refs.
-;; This is because `orb-find-note-file' is called on every existing
-;; cite key when `bibtex-completion' is preparing to display entries.
-;;
-;; Rapidly querying the DB is slower than `gethash' on a hash table.
-;; It's about an order of magnitude slower on my device. Try it:
-;;
-;;     ;; Fetch a list of citekeys
-;;     (let ((cite-refs (->> (minaduki//get-ref-path-completions nil "cite")
-;;                        (--map (plist-get (cdr it) :ref)))))
-;;       (list
-;;        (benchmark-run 10
-;;          (progn
-;;            (setq orb-notes-cache nil)
-;;            (mapc #'orb-find-note-file cite-refs)))
-;;        (benchmark-run 10
-;;          (mapc (lambda (key)
-;;                  (minaduki-db/query
-;;                   [:select [file] :from refs
-;;                    :where (= ref $s1)]
-;;                   key))
-;;                cite-refs))))
-;;
-;; -> ((0.24450254200000002 0 0.0) (3.7526077939999998 0 0.0))
-
-(defvar orb-notes-cache nil
-  "Cache of ORB notes.")
-
-(defun orb-make-notes-cache ()
-  "Update ORB notes hash table `orb-notes-cache'."
-  (let* ((db-entries (minaduki//get-ref-path-completions nil "cite"))
-         (size (round (/ (length db-entries) 0.8125))) ;; ht oversize
-         (ht (make-hash-table :test #'equal :size size)))
-    (dolist (entry db-entries)
-      (let* ((key (car entry))
-             (value (plist-get (cdr (assoc key db-entries)) :path)))
-        (puthash key value ht)))
-    (setq orb-notes-cache ht)))
-
-(defun orb-find-note-file (citekey)
-  "Find note file associated with CITEKEY.
-Returns the path to the note file, or nil if it doesn’t exist."
-  (gethash citekey (or orb-notes-cache
-                       (orb-make-notes-cache))))
 
 (provide 'minaduki-bibtex)
 

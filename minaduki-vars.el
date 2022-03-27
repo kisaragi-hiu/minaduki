@@ -348,14 +348,6 @@ See `orb-edit-notes' for details."
   :type '(list)
   :group 'minaduki-bibtex)
 
-(defcustom orb-include-citekey-in-titles nil
-  "Non-nil to include the citekey in titles.
-See `orb-edit-notes' for details."
-  :type '(choice
-          (const :tag "Yes" t)
-          (const :tag "No" nil))
-  :group 'minaduki-bibtex)
-
 (defcustom orb-preformat-keywords
   '("citekey" "entry-type" "date" "pdf?" "note?" "file"
     "author" "editor" "author-abbrev" "editor-abbrev"

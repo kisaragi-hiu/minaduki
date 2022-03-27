@@ -7,7 +7,7 @@
 ;; URL: https://github.com/kisaragi-hiu/minaduki
 ;; Keywords: org-mode, roam, convenience
 ;; Version: 1.2.3
-;; Package-Requires: ((emacs "27.1") (dash "2.13") (f "0.17.2") (s "1.12.0") (org "9.5") (emacsql "3.0.0") (emacsql-sqlite3 "1.0.2") (bibtex-completion "2.0.0") (markdown-mode "2.4") (transient "0.3.7"))
+;; Package-Requires: ((emacs "27.1") (dash "2.13") (f "0.17.2") (s "1.12.0") (org "9.5") (emacsql "3.0.0") (emacsql-sqlite3 "1.0.2") (markdown-mode "2.4") (transient "0.3.7"))
 
 ;; This file is NOT part of GNU Emacs.
 
@@ -44,7 +44,6 @@
 (require 'rx)
 (require 's)
 (require 'seq)
-(require 'bibtex-completion)
 (eval-when-compile (require 'subr-x))
 
 (require 'minaduki-vars)
@@ -335,9 +334,6 @@ Ensure it is installed and can be found within `exec-path'."))
         (add-to-list 'org-execute-file-search-functions 'org-roam--execute-file-row-col)
         (add-hook 'org-open-at-point-functions #'minaduki/open-id-at-point)
         (advice-add 'org-id-new :after #'org-roam--id-new-advice)
-        (add-to-list 'bibtex-completion-find-note-functions #'orb-find-note-file)
-        (advice-add 'bibtex-completion-edit-notes :override #'orb-edit-notes-ad)
-        (advice-add 'bibtex-completion-parse-bibliography :before #'orb-bibtex-completion-parse-bibliography-ad)
         (setq calendar-mark-diary-entries-flag t)
         (advice-add 'diary-mark-entries :override #'minaduki//mark-calendar)
         (advice-add 'org-read-date :before #'minaduki//set-calendar-mark-diary-entries-flag-nil)
@@ -361,13 +357,6 @@ Ensure it is installed and can be found within `exec-path'."))
       (dolist (face '("file" "id"))
         (org-link-set-parameters face :face 'org-link)))
     (minaduki-db//close)
-    (setq bibtex-completion-find-note-functions
-          (delq #'orb-find-note-file
-                bibtex-completion-find-note-functions))
-    (advice-remove 'bibtex-completion-edit-notes
-                   #'orb-edit-notes-ad)
-    (advice-remove 'bibtex-completion-parse-bibliography
-                   #'orb-bibtex-completion-parse-bibliography-ad)
     (setq calendar-mark-diary-entries-flag nil)
     (advice-remove 'diary-mark-entries
                    #'minaduki//mark-calendar)

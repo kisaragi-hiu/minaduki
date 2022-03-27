@@ -14,8 +14,6 @@
 
 (require 'transient)
 
-(require 'bibtex-completion)
-
 (require 'minaduki-diary)
 (require 'minaduki-completion)
 (require 'minaduki-lit)
@@ -666,17 +664,7 @@ CITEKEY is a list whose car is a citation key."
                       citekey)))
         sources
         target)
-    (with-temp-buffer
-      (setq sources (cl-loop for source in (gethash "sources" entry)
-                             collect
-                             (progn
-                               (erase-buffer)
-                               (insert source)
-                               (goto-char (point-min))
-                               (let ((link (org-element-link-parser)))
-                                 (if link
-                                     (org-element-property :raw-link link)
-                                   source))))))
+    (setq sources (minaduki//resolve-org-links (gethash "sources" entry)))
     (setq minaduki-lit//cache nil)
     (cl-case (length sources)
       (0 (message "%s has no associated source" citekey))

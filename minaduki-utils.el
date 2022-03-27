@@ -132,6 +132,45 @@ prepends TAGS to STR, appends TAGS to STR or omits TAGS from STR."
                     (cons orig desc)))
          (s-replace-all it str))))
 
+(defun minaduki//resolve-org-links (strings)
+  "Resolve STRINGS as a list of Org links.
+
+Each string in STRINGS might be something like \"[[file:/abc]]\";
+we run `org-element-link-parser' on it and return the
+`:raw-link'."
+  ;; Optimization: use the same buffer for this. `erase-buffer' is
+  ;; faster than destroying the buffer and creating another one.
+  ;;
+  ;; Try:
+  ;;
+  ;; (list
+  ;;  (benchmark-run-compiled 1000
+  ;;    (dotimes (i 100)
+  ;;      (with-temp-buffer
+  ;;        (insert "a"))))
+  ;;  (benchmark-run-compiled 1000
+  ;;    (with-temp-buffer
+  ;;      (dotimes (i 100)
+  ;;        (erase-buffer)
+  ;;        (insert "a")))))
+  ;;
+  ;; -> ((7.5397476370000005 1 0.9251548320000005)
+  ;;     (0.11945125100000001 0 0.0))
+  (with-temp-buffer
+    (cl-loop for str in strings
+             collect
+             (progn
+               (erase-buffer)
+               (insert str)
+               (goto-char (point-min))
+               (let ((link (org-element-link-parser)))
+                 ;; If we resolve something...
+                 (if link
+                     ;; Return the resolved result
+                     (org-element-property :raw-link link)
+                   ;; Otherwise return the original
+                   str))))))
+
 (defun org-roam-string-quote (str)
   "Quote STR."
   (->> str
