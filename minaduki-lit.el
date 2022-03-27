@@ -204,7 +204,21 @@ to fill them in."
                            ;; YouTube
                            (-some--> (dom-by-tag dom 'meta)
                              (--first (equal "datePublished" (dom-attr it 'itemprop)) it)
-                             (dom-attr it 'content))))
+                             (dom-attr it 'content))
+                           ;; Sites using Next.js
+                           (-some--> (dom-by-id dom "__NEXT_DATA__")
+                             dom-children
+                             car
+                             ;; Use `json-read-from-string' so it
+                             ;; returns an alist, allowing us to use `let-alist'
+                             (let-alist (json-read-from-string it)
+                               (let-alist .props.pageProps
+                                 (or
+                                  ;; maggieappleton.com
+                                  .frontMatter.startDate
+                                  .frontMatter.updated
+                                  ;; vercel.com
+                                  .post.date))))))
         (unless (eq ?\n (char-before))
           (insert "\n"))
         (insert (format "%s %s\n"
