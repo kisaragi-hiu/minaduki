@@ -451,10 +451,10 @@
     (test-minaduki--teardown))
 
   (it "Returns a file from its title"
-    (expect (minaduki-db//query-title "Foo")
+    (expect (minaduki-db//fetch-file :title "Foo")
             :to-equal
             (list (test-minaduki--abs-path "foo.org")))
-    (expect (minaduki-db//query-title "Deeply Nested File")
+    (expect (minaduki-db//fetch-file :title "Deeply Nested File")
             :to-equal
             (list (test-minaduki--abs-path "nested/deeply/deeply_nested_file.org")))))
 

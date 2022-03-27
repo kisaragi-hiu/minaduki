@@ -605,7 +605,7 @@ The index file is specified in this order:
                 ((stringp org-roam-index-file)
                  (f-expand org-roam-index-file))
                 (t
-                 (car (minaduki-db//query-title "Index"))))))
+                 (car (minaduki-db//fetch-file :title "Index"))))))
     (if (and index (f-exists? index))
         (minaduki//find-file index)
       (when (y-or-n-p "Index file does not exist.  Would you like to create it? ")
@@ -630,7 +630,7 @@ one."
    (list (minaduki-completion//read-note)))
   (when (stringp entry)
     (setq entry
-          (list :path (car (minaduki-db//query-title entry))
+          (list :path (car (minaduki-db//fetch-file :title entry))
                 :title entry)))
   (let ((path (plist-get entry :path))
         (title (plist-get entry :title)))

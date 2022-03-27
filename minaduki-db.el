@@ -376,7 +376,7 @@ Return the number of rows inserted."
                             :limit 1]
                            id)))
 
-(defun minaduki-db//query-title (title)
+(cl-defun minaduki-db//fetch-file (&key title)
   "Return files matching TITLE in the DB."
   (->> (minaduki-db/query
         [:select [file] :from titles
