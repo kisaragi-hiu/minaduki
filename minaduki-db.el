@@ -421,12 +421,6 @@ Return the number of rows inserted."
                             :limit 1]
                            file)))
 
-(defun minaduki-db//fetch-file-tags (file)
-  "Return tags of FILE from the cache."
-  (caar (minaduki-db/query [:select [tags] :from tags
-                            :where (= file $s1)]
-                           file)))
-
 (defun minaduki-db//fetch-all-tags ()
   "Return all distinct tags from the cache."
   (let ((rows (minaduki-db/query [:select :distinct [tags] :from tags]))
