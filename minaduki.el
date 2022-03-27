@@ -48,7 +48,7 @@
 
 (require 'minaduki-vars)
 (require 'minaduki-completion)
-(require 'kisaragi-notes-commands)
+(require 'minaduki-commands)
 (require 'minaduki-utils)
 
 (when (featurep 'marginalia)

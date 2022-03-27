@@ -1,4 +1,4 @@
-;;; kisaragi-notes-commands.el --- Commands -*- lexical-binding: t -*-
+;;; minaduki-commands.el --- Commands -*- lexical-binding: t -*-
 
 ;;; Commentary:
 
@@ -766,6 +766,6 @@ Actions are defined in `minaduki/literature-note-actions'."
         (funcall func citekey))
     (user-error "Could not retrieve the citekey, is ROAM_KEY specified?")))
 
-(provide 'kisaragi-notes-commands)
+(provide 'minaduki-commands)
 
-;;; kisaragi-notes-commands.el ends here
+;;; minaduki-commands.el ends here
