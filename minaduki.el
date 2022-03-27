@@ -389,7 +389,7 @@ Ensure it is installed and can be found within `exec-path'."))
 
 ;;; Interactive Commands
 ;;;###autoload
-(defalias 'org-roam 'minaduki-buffer/toggle-display)
+(defalias 'minaduki/sidebar 'minaduki-buffer/toggle-display)
 
 (provide 'minaduki)
 ;;; minaduki.el ends here
