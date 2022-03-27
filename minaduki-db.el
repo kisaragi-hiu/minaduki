@@ -375,20 +375,16 @@ Return the number of rows inserted."
 (cl-defun minaduki-db//fetch-file (&key title key id)
   "Return files from the DB.
 
-- ID: return the file containing a headline with ID. (*)
+- ID: return the file containing a headline with ID.
 - TITLE: return files with TITLE
-- KEY: return file associated with KEY. (*)
-
-* The file is returned in a list for consistency, but because one
-  ID or one KEY can only correspond to one file, these values
-  will only ever have a length of 1 or 0."
+- KEY: return the file associated with KEY."
   (cond
    (id
-    (car (minaduki-db/query
-          [:select [file] :from ids
-           :where (= id $s1)
-           :limit 1]
-          id)))
+    (caar (minaduki-db/query
+           [:select [file] :from ids
+            :where (= id $s1)
+            :limit 1]
+           id)))
    (title
     (->> (minaduki-db/query
           [:select [file] :from titles
@@ -398,10 +394,10 @@ Return the number of rows inserted."
          ;; Turn it into (path1 path2 ...).
          (apply #'nconc)))
    (key
-    (car (minaduki-db/query
-          [:select [file] :from refs
-           :where (= ref $s0)]
-          key)))))
+    (caar (minaduki-db/query
+           [:select [file] :from refs
+            :where (= ref $s0)]
+           key)))))
 
 (defun minaduki-db//fetch-lit-entry (key)
   "Fetch the literature entry with KEY in the DB."

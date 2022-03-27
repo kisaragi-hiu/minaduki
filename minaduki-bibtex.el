@@ -457,9 +457,10 @@ bibliography notes.  It relies on `bibtex-completion' to get
 retrieve bibliographic information from a BibTeX file."
   (when (consp citekey)
     (setq citekey (car citekey)))
-  (let* ((file (car (minaduki-db//fetch-file :key citekey)))
-         (note-data (and file (list (minaduki-db//fetch-title file)
-                                    file))))
+  (let* ((file (minaduki-db//fetch-file :key citekey))
+         (note-data (when file
+                      (list (minaduki-db//fetch-title file)
+                            file))))
     ;; Find org-roam reference with the CITEKEY and collect data into
     ;; `orb-plist'
     (orb-plist-put :note-existed (and note-data t))
