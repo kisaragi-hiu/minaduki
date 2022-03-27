@@ -372,36 +372,36 @@ Return the number of rows inserted."
                               file))
      0))
 
-(defun minaduki-db//fetch-id-file (id)
-  "Return the file containing ID."
-  (caar (minaduki-db/query [:select [file]
-                            :from ids
-                            :where (= id $s1)
-                            :limit 1]
-                           id)))
-
-(cl-defun minaduki-db//fetch-file (&key title key)
+(cl-defun minaduki-db//fetch-file (&key title key id)
   "Return files from the DB.
 
+- ID: return the file containing a headline with ID. (*)
 - TITLE: return files with TITLE
-- KEY: return file associated with KEY
+- KEY: return file associated with KEY. (*)
 
-  The file is returned in a list for consistency, but since the
-  key has to be unique this list will only ever have a length of
-  1 or 0."
-  (cond (title
-         (->> (minaduki-db/query
-               [:select [file] :from titles
-                :where (= title $s0)]
-               title)
-              ;; The above returns ((path1) (path2) ...).
-              ;; Turn it into (path1 path2 ...).
-              (apply #'nconc)))
-        (key
-         (car (minaduki-db/query
-               [:select [file] :from refs
-                :where (= ref $s0)]
-               key)))))
+* The file is returned in a list for consistency, but because one
+  ID or one KEY can only correspond to one file, these values
+  will only ever have a length of 1 or 0."
+  (cond
+   (id
+    (car (minaduki-db/query
+          [:select [file] :from ids
+           :where (= id $s1)
+           :limit 1]
+          id)))
+   (title
+    (->> (minaduki-db/query
+          [:select [file] :from titles
+           :where (= title $s0)]
+          title)
+         ;; The above returns ((path1) (path2) ...).
+         ;; Turn it into (path1 path2 ...).
+         (apply #'nconc)))
+   (key
+    (car (minaduki-db/query
+          [:select [file] :from refs
+           :where (= ref $s0)]
+          key)))))
 
 (defun minaduki-db//fetch-lit-entry (key)
   "Fetch the literature entry with KEY in the DB."

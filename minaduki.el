@@ -83,7 +83,7 @@
                                   (type (org-element-property :type context))
                                   (dest (org-element-property :path context)))
                              (pcase type
-                               ("id" (minaduki-db//fetch-id-file dest))
+                               ("id" (minaduki-db//fetch-file :id dest))
                                (_ dest))))))
       (string= current-file backlink-dest))))
 
@@ -126,12 +126,12 @@ file."
                   (minaduki//backlink-to-current-p))
              'org-roam-link-current)
             ((and custom
-                  (minaduki-db//fetch-id-file id))
+                  (minaduki-db//fetch-file :id id))
              'org-roam-link)
             ;; FIXME: this breaks the display of ID links to untracked
             ;; files.
             ((and custom
-                  (not (minaduki-db//fetch-id-file id)))
+                  (not (minaduki-db//fetch-file :id id)))
              'org-roam-link-invalid)
             (t
              'org-link)))))
@@ -255,7 +255,7 @@ When NEW-FILE-OR-DIR is a directory, we use it to compute the new file path."
 This assumes ID is present in the cache database."
   (when-let ((marker
               ;; Locate ID's location in FILE
-              (let ((file (minaduki-db//fetch-id-file id)))
+              (let ((file (minaduki-db//fetch-file :id id)))
                 (when file
                   (org-roam-with-file file t
                     (org-id-find-id-in-file id file t))))))
