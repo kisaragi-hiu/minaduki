@@ -125,6 +125,8 @@ SQL can be either the emacsql vector representation, or a string."
      [(file :not-null)
       title])
 
+    ;; TODO: "keys" maps keys to literature entry listings; "refs"
+    ;; maps keys to note files. These should be in the same table.
     (keys
      [(key :unique :not-null)
       (file :not-null)
@@ -376,24 +378,28 @@ Return the number of rows inserted."
                             :limit 1]
                            id)))
 
-(cl-defun minaduki-db//fetch-file (&key title)
-  "Return files matching TITLE in the DB."
-  (->> (minaduki-db/query
-        [:select [file] :from titles
-         :where (= title $s0)]
-        title)
-       ;; The above returns ((path1) (path2) ...).
-       ;; Turn it into (path1 path2 ...).
-       (apply #'nconc)))
+(cl-defun minaduki-db//fetch-file (&key title key)
+  "Return files from the DB.
 
-(defun minaduki-db//query-ref (ref)
-  "Return the file associated with REF as (TITLE FILE)."
-  (car (minaduki-db/query
-        [:select [titles:title refs:file]
-         :from refs
-         :left-join titles :on (= titles:file refs:file)
-         :where (= refs:ref $s1)]
-        ref)))
+- TITLE: return files with TITLE
+- KEY: return file associated with KEY
+
+  The file is returned in a list for consistency, but since the
+  key has to be unique this list will only ever have a length of
+  1 or 0."
+  (cond (title
+         (->> (minaduki-db/query
+               [:select [file] :from titles
+                :where (= title $s0)]
+               title)
+              ;; The above returns ((path1) (path2) ...).
+              ;; Turn it into (path1 path2 ...).
+              (apply #'nconc)))
+        (key
+         (car (minaduki-db/query
+               [:select [file] :from refs
+                :where (= ref $s0)]
+               key)))))
 
 (defun minaduki-db//fetch-lit-entry (key)
   "Fetch the literature entry with KEY in the DB."

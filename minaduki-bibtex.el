@@ -384,11 +384,11 @@ a capture session."
                                  ;; if only one template is defined, use it
                                  (car org-capture-templates)
                                (org-capture-select-template))
-                          (copy-tree it)
-                          ;; optionally preformat templates
-                          (if orb-preformat-templates
-                              (orb--preformat-template it entry)
-                            it)))
+                             (copy-tree it)
+                             ;; optionally preformat templates
+                             (if orb-preformat-templates
+                                 (orb--preformat-template it entry)
+                               it)))
               ;; pretend we had only one template
               ;; `minaduki-capture//capture' behaves specially in this case
               ;; NOTE: this circumvents using functions other than
@@ -457,7 +457,9 @@ bibliography notes.  It relies on `bibtex-completion' to get
 retrieve bibliographic information from a BibTeX file."
   (when (consp citekey)
     (setq citekey (car citekey)))
-  (let ((note-data (minaduki-db//query-ref citekey)))
+  (let* ((file (car (minaduki-db//fetch-file :key citekey)))
+         (note-data (and file (list (minaduki-db//fetch-title file)
+                                    file))))
     ;; Find org-roam reference with the CITEKEY and collect data into
     ;; `orb-plist'
     (orb-plist-put :note-existed (and note-data t))
