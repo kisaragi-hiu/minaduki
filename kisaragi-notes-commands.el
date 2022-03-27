@@ -649,20 +649,17 @@ one."
           (t
            (minaduki//find-file path)))))
 
-
 ;;;; Literature note actions
 
 (defun minaduki/copy-citekey (citekey)
   "Save note's citation key to `kill-ring' and copy it to clipboard.
 CITEKEY is a list whose car is a citation key."
   (with-temp-buffer
-    (insert (car citekey))
+    (insert citekey)
     (copy-region-as-kill (point-min) (point-max))))
 
 (defun minaduki/visit-source (citekey)
   "Visit the source (URL, file path, DOI...) of CITEKEY."
-  (when (listp citekey)
-    (setq citekey (car citekey)))
   (let ((entry (caar (minaduki-db/query
                       [:select [props] :from keys
                        :where (= key $s1)]
@@ -689,8 +686,6 @@ CITEKEY is a list whose car is a citation key."
 
 (defun minaduki/show-entry (citekey)
   "Go to where CITEKEY is defined."
-  (when (listp citekey)
-    (setq citekey (car citekey)))
   (-let ((((file point)) ; oh god this destructuring is so ugly
           (minaduki-db/query
            [:select [file point] :from keys
@@ -703,6 +698,24 @@ CITEKEY is a list whose car is a citation key."
       ;; goes to the parent of the current heading
       (org-up-element) ; up to the property drawer
       (org-up-element)))) ; up to the heading
+
+(defun minaduki/insert-note-to-citekey (citekey)
+  "Insert a link to the note associated with CITEKEY."
+  (-if-let* ((path
+              (caar (minaduki-db/query
+                     [:select [file] :from refs
+                      :where (= ref $s1)]
+                     citekey)))
+             (title (minaduki-db//fetch-title path)))
+      ;; A corresponding note already exists. Insert a link to it.
+      (minaduki/insert :entry (list :path path :title title))
+    ;; There is no corresponding note. Barf about it for now. Ideally
+    ;; we'd create a note as usual, and insert a link after that's
+    ;; done. But I don't know how to do that with the current
+    ;; templates system.
+    (message
+     "@%s does not have an associated note file. Please create one first."
+     citekey)))
 
 ;;;; Actions
 
@@ -738,11 +751,13 @@ List of (DISPLAY-NAME . COMMAND) pairs.")
   '(("Open URL, DOI, or PDF" . minaduki/visit-source)
     ("Show entry in the bibliography file" . minaduki/show-entry)
     ("Edit notes" . orb-edit-notes)
-    ("Copy citekey" . minaduki/copy-citekey))
+    ("Copy citekey" . minaduki/copy-citekey)
+    ("Insert citekey" . insert)
+    ("Insert link to associated notes" . minaduki/insert-note-to-citekey))
   "Commands useful inside a literature note.
 
 List of (DISPLAY-NAME . FUNCTION) pairs. Each function receives
-one argument, a list of cite keys.
+one argument, the citekey.
 
 Equivalent to `orb-note-actions-default'.")
 
@@ -760,7 +775,7 @@ Actions are defined in `minaduki/literature-note-actions'."
              (candidates minaduki/literature-note-actions)
              (selection (completing-read prompt candidates))
              (func (cdr (assoc selection candidates))))
-        (funcall func (list citekey)))
+        (funcall func citekey))
     (user-error "Could not retrieve the citekey, is ROAM_KEY specified?")))
 
 (provide 'kisaragi-notes-commands)

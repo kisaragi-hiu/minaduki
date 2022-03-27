@@ -315,8 +315,6 @@ See `minaduki-local-mode' for more information on Minaduki-Local mode."
   :keymap (let ((map (make-sparse-keymap)))
             (define-key map (kbd "C-c ) a") #'minaduki/literature-note-actions)
             (define-key map (kbd "C-c ) i") #'orb-insert)
-            (define-key map (kbd "C-c ) C-f") #'minaduki/open-non-literature-note)
-            (define-key map (kbd "C-c ) C-i") #'orb-insert-non-ref)
             map)
   :require 'minaduki
   (unless (or (and (bound-and-true-p emacsql-sqlite3-executable)

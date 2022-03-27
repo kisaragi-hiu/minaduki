@@ -534,14 +534,6 @@ information."
           (const :tag "Yes" t)
           (const :tag "No" nil)))
 
-(defcustom orb-insert-generic-candidates-format 'key
-  "Format of selection candidates for `orb-insert' with `generic' interface.
-Possible values are `key' and `entry'."
-  :group 'minaduki-bibtex
-  :type '(choice
-          (const key)
-          (const entry)))
-
 ;;;; Internal Variables
 
 (defvar-local minaduki//file-name nil
