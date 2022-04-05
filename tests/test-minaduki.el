@@ -462,6 +462,15 @@
     (expect (minaduki-db//fetch-file :title "Foo")
             :to-equal
             (list (test-minaduki--abs-path "foo.org"))))
+  (it "Returns a list of files with the same title"
+    ;; The cache is already built, and the world should be sane again
+    ;; from here on out.
+    (expect (minaduki-db//fetch-file :title "Headline")
+            :to-have-same-items-as
+            (-map #'test-minaduki--abs-path
+                  '("headlines/headline.org"
+                    "titles/headline.md"
+                    "titles/headline.org"))))
   (it "Returns a file from an ID"
     (expect (minaduki-db//fetch-file
              :id "e84d0630-efad-4017-9059-5ef917908823")
