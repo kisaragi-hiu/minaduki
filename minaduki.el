@@ -150,7 +150,7 @@ Will update link to NEW-PATH. If OLD-DESC is set, and is not the
 same as the link description, it is assumed that the user has
 modified the description, and the description will not be
 updated. Else, update with NEW-DESC."
-  (let (type path label new-label)
+  (let (path label new-label)
     (when-let ((link (org-element-lineage (org-element-context) '(link) t)))
       (setq path (org-element-property :path link))
       (when (and (string-equal (expand-file-name path) old-path)
@@ -237,7 +237,9 @@ When NEW-FILE-OR-DIR is a directory, we use it to compute the new file path."
     (minaduki-db/update)))
 
 (defun org-roam--execute-file-row-col (s)
-  "Move to row:col if S match the row:col syntax. To be used with `org-execute-file-search-functions'."
+  "Move to row:col if S match the row:col syntax.
+
+To be used with `org-execute-file-search-functions'."
   (when (string-match (rx (group (1+ digit))
                           ":"
                           (group (1+ digit))) s)
@@ -248,38 +250,6 @@ When NEW-FILE-OR-DIR is a directory, we use it to compute the new file path."
       t)))
 
 ;;;; minaduki-mode and minaduki-local-mode
-
-(defun minaduki/open-id (id)
-  "Open an ID.
-
-This assumes ID is present in the cache database."
-  (when-let ((marker
-              ;; Locate ID's location in FILE
-              (let ((file (minaduki-db//fetch-file :id id)))
-                (when file
-                  (org-roam-with-file file t
-                    (org-id-find-id-in-file id file t))))))
-    (org-mark-ring-push)
-    (org-goto-marker-or-bmk marker)
-    (set-marker marker nil)))
-
-(defun minaduki/open-id-at-point ()
-  "Open the ID link at point.
-
-This function hooks into `org-open-at-point' via
-`org-open-at-point-functions'."
-  (let* ((context (org-element-context))
-         (type (org-element-property :type context))
-         (id (org-element-property :path context)))
-    (when (string= type "id")
-      ;; `org-open-at-point-functions' expects member functions to
-      ;; return t if we visited a link, and nil if we haven't (to move
-      ;; onto the next method or onto the default).
-      (or (and (minaduki/open-id id)
-               t)
-          ;; No = stop here = return t
-          (and (not (y-or-n-p "ID not found in the cache. Search with `org-id-files' (may be slow)? "))
-               t)))))
 
 (define-minor-mode minaduki-local-mode
   "Minor mode active in files tracked by minaduki."
@@ -314,7 +284,6 @@ See `minaduki-local-mode' for more information on Minaduki-Local mode."
   :group 'minaduki
   :keymap (let ((map (make-sparse-keymap)))
             (define-key map (kbd "C-c ) a") #'minaduki/literature-note-actions)
-            (define-key map (kbd "C-c ) i") #'orb-insert)
             map)
   :require 'minaduki
   (unless (or (and (bound-and-true-p emacsql-sqlite3-executable)

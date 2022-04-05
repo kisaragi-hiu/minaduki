@@ -38,6 +38,9 @@
 (require 'minaduki-utils)
 (require 'minaduki-vars)
 
+;; For `eww-parse-headers'
+(require 'eww)
+
 ;; (declare-function parsebib-find-next-item "parsebib")
 ;; (declare-function parsebib-read-entry "parsebib")
 

@@ -383,7 +383,9 @@ E.g. (\".org\") => (\"*.org\" \"*.org.gpg\")"
    (mapcar (lambda (ext) (concat "*." ext ".gpg")) exts)))
 
 (defun org-roam--list-files-rg (executable dir)
-  "Return all Org-roam files located recursively within DIR, using ripgrep, provided as EXECUTABLE."
+  "Return all Org-roam files located recursively within DIR.
+
+EXECUTABLE is the Ripgrep executable."
   (let* ((globs (org-roam--list-files-search-globs org-roam-file-extensions))
          (arguments `("-L" ,dir "--files"
                       ,@(cons "-g" (-interpose "-g" globs)))))

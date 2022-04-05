@@ -650,6 +650,38 @@ one."
           (t
            (minaduki//find-file path)))))
 
+(defun minaduki/open-id (id)
+  "Open an ID.
+
+This assumes ID is present in the cache database."
+  (when-let ((marker
+              ;; Locate ID's location in FILE
+              (let ((file (minaduki-db//fetch-file :id id)))
+                (when file
+                  (org-roam-with-file file t
+                    (org-id-find-id-in-file id file t))))))
+    (org-mark-ring-push)
+    (org-goto-marker-or-bmk marker)
+    (set-marker marker nil)))
+
+(defun minaduki/open-id-at-point ()
+  "Open the ID link at point.
+
+This function hooks into `org-open-at-point' via
+`org-open-at-point-functions'."
+  (let* ((context (org-element-context))
+         (type (org-element-property :type context))
+         (id (org-element-property :path context)))
+    (when (string= type "id")
+      ;; `org-open-at-point-functions' expects member functions to
+      ;; return t if we visited a link, and nil if we haven't (to move
+      ;; onto the next method or onto the default).
+      (or (and (minaduki/open-id id)
+               t)
+          ;; No = stop here = return t
+          (and (not (y-or-n-p "ID not found in the cache. Search with `org-id-files' (may be slow)? "))
+               t)))))
+
 ;;;; Literature note actions
 
 (defun minaduki/copy-citekey (citekey)
@@ -665,8 +697,7 @@ CITEKEY is a list whose car is a citation key."
                       [:select [props] :from keys
                        :where (= key $s1)]
                       citekey)))
-        sources
-        target)
+        sources)
     (setq sources (minaduki//resolve-org-links (gethash "sources" entry)))
     (setq minaduki-lit//cache nil)
     (cl-case (length sources)

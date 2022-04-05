@@ -103,6 +103,7 @@ With this mode turned on, these can work:
 emacsclient 'org-protocol://notes?file=characters/闇音レンリ.org'
 emacsclient 'org-protocol://notes?key=banjoazusa2020'"
   :global t :lighter ""
+  :group 'minaduki
   (if minaduki-org-protocol-mode
       (cl-pushnew '("minaduki"
                     :protocol "notes"
