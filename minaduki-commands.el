@@ -473,7 +473,10 @@ under `minaduki/diary-directory'. Example:
 
 When TIME is non-nil, create an entry for TIME instead of
 `current-time'."
-  (interactive)
+  (interactive
+   (list (and current-prefix-arg
+              (parse-iso8601-time-string
+               (read-string "Create new diary entry at (yyyymmddThhmmssz): ")))))
   (let* ((now (or time (current-time)))
          (filename (format-time-string "%Y%m%dT%H%M%S%z" now))
          (title (format-time-string "%FT%T%z" now))
