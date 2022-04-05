@@ -12,6 +12,7 @@
 (require 'f)
 
 (require 'minaduki-vars)
+(require 'ucs-normalize)
 
 ;; This is necessary to ensure all dependents on this module see
 ;; `org-mode-hook' and `org-inhibit-startup' as dynamic variables,
