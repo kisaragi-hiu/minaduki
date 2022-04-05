@@ -448,7 +448,8 @@
 
 (describe "Accessing the DB"
   (before-all
-    (test-minaduki--init))
+    (test-minaduki--init)
+    (message "files: %s" (minaduki-db/query [:select [*] :from files])))
 
   (after-all
     (test-minaduki--teardown))
