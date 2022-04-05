@@ -12,9 +12,9 @@ jobs:
       fail-fast: false
       matrix:
         emacs_version:
-          - snapshot
+          # - snapshot
           - 28.1
-          - 27.2
+          # - 27.2
     steps:
       - uses: actions/checkout@v2
       - name: Set up Emacs

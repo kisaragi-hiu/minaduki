@@ -448,13 +448,13 @@
 
 (describe "Accessing the DB"
   (before-all
-    (test-minaduki--init)
-    (message "files: %s" (minaduki-db/query [:select [*] :from files])))
+    (test-minaduki--init))
 
   (after-all
     (test-minaduki--teardown))
 
   (it "Returns a file from its title"
+    (message "files: %s" (minaduki-db/query [:select [*] :from files]))
     (expect (minaduki-db//fetch-file :title "Foo")
             :to-equal
             (list (test-minaduki--abs-path "foo.org"))))
