@@ -454,7 +454,9 @@
     (test-minaduki--teardown))
 
   (it "Returns a file from its title"
-    (message "files: %s" (minaduki-db/query [:select [*] :from files]))
+    (message "titles: %s" (minaduki-db/query [:select [*] :from titles]))
+    (message "ids: %s" (minaduki-db/query [:select [*] :from ids]))
+    (message "refs: %s" (minaduki-db/query [:select [*] :from refs]))
     (expect (minaduki-db//fetch-file :title "Foo")
             :to-equal
             (list (test-minaduki--abs-path "foo.org"))))
