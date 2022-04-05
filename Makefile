@@ -4,7 +4,7 @@
 compile: .cask
 	cask build
 
-test: .cask compile
+test: .cask
 	cask exec buttercup tests/
 
 .PHONY: test compile

@@ -23,6 +23,9 @@ jobs:
           version: ${{ matrix.emacs_version }}
       - name: Set up Cask
         uses: conao3/setup-cask@master
+      - name: Compile
+        run: |
+          make compile
       - name: Test
         run: |
           make test
