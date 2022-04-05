@@ -1,28 +1,3 @@
-# * test.yml --- Test Emacs packages using makem.sh on GitHub Actions
-
-# https://github.com/alphapapa/makem.sh
-
-# Based on Steve Purcell's examples at
-# <https://github.com/purcell/setup-emacs/blob/master/.github/workflows/test.yml>,
-# <https://github.com/purcell/package-lint/blob/master/.github/workflows/test.yml>.
-
-# * License:
-
-# This program is free software; you can redistribute it and/or modify
-# it under the terms of the GNU General Public License as published by
-# the Free Software Foundation, either version 3 of the License, or
-# (at your option) any later version.
-
-# This program is distributed in the hope that it will be useful,
-# but WITHOUT ANY WARRANTY; without even the implied warranty of
-# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-# GNU General Public License for more details.
-
-# You should have received a copy of the GNU General Public License
-# along with this program.  If not, see <https://www.gnu.org/licenses/>.
-
-# * Code:
-
 name: "CI"
 on:
   pull_request:
@@ -38,28 +13,16 @@ jobs:
       matrix:
         emacs_version:
           - snapshot
+          - 28.1
           - 27.2
     steps:
-    - uses: purcell/setup-emacs@master
-      with:
-        version: ${{ matrix.emacs_version }}
-
-    - uses: actions/checkout@v2
-
-    - name: Create Sandbox Directory
-      run: |
-        SANDBOX_DIR=$(mktemp -d --dry-run) || exit 1
-        echo "SANDBOX_DIR=$SANDBOX_DIR" >> $GITHUB_ENV
-
-    - name: Initialize Sandbox
-      run: |
-        make sandbox
-
-    - name: Test
-      if: always()  # Run test even if linting fails.
-      run: |
-        make test
-
-# Local Variables:
-# eval: (outline-minor-mode)
-# End:
+      - uses: actions/checkout@v2
+      - name: Set up Emacs
+        uses: purcell/setup-emacs@master
+        with:
+          version: ${{ matrix.emacs_version }}
+      - name: Set up Cask
+        uses: conao3/setup-cask@master
+      - name: Test
+        run: |
+          make test

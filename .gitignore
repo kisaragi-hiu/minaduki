@@ -1,16 +1,3 @@
-/.sandbox/
 **/*.elc
 *.elc
-/doc/dir
-/doc/*.info
-/doc/*.pdf
-/doc/*.epub
-/doc/META_INF/
-/doc/OEBPS/
-/doc/dir
-/doc/epub.xml
-/doc/org-roam/
-/doc/mimetype
-/doc/stats/
-/config.mk
-/doc/manual.html
+.cask
