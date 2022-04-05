@@ -46,7 +46,7 @@
     (copy-directory original-dir new-dir)
     (setq org-directory new-dir)
     (minaduki-mode)
-    (sleep-for 2)))
+    (minaduki-db/build-cache)))
 
 (defun test-minaduki--teardown ()
   (minaduki-mode -1)
