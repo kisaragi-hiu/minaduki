@@ -457,6 +457,11 @@
     (expect (minaduki-db//fetch-file :title "Foo")
             :to-equal
             (list (test-minaduki--abs-path "foo.org"))))
+  (it "Returns a file from an ID"
+    (expect (minaduki-db//fetch-file
+             :id "e84d0630-efad-4017-9059-5ef917908823")
+            :to-equal
+            (test-minaduki--abs-path "headlines/headline.org")))
   (it "Returns a nested file from its title"
     (expect (minaduki-db//fetch-file :title "Deeply Nested File")
             :to-equal
