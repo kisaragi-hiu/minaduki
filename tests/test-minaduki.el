@@ -121,13 +121,15 @@
        (--map
         (test-minaduki--abs-path (f-relative it test-repository))
         (f-files test-repository nil t))))
-    (it "using rg"
-      (expect
-       (org-roam--list-files-rg (executable-find "rg") (expand-file-name org-directory))
-       :to-have-same-items-as
-       (--map
-        (test-minaduki--abs-path (f-relative it test-repository))
-        (f-files test-repository nil t)))))
+    (when (executable-find "rg")
+      (it "using rg"
+        (expect
+         (org-roam--list-files-rg (executable-find "rg")
+                                  (expand-file-name org-directory))
+         :to-have-same-items-as
+         (--map
+          (test-minaduki--abs-path (f-relative it test-repository))
+          (f-files test-repository nil t))))))
   (it "removes Org links from a string"
     (expect
      (minaduki//remove-org-links
