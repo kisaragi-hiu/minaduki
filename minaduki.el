@@ -33,6 +33,7 @@
 ;;
 ;;; Code:
 ;;;; Dependencies
+(require 'markdown-mode)
 (require 'org)
 (require 'org-element)
 (require 'org-id)
