@@ -24,7 +24,7 @@
 (require 'buttercup)
 (require 'minaduki)
 
-(setq minaduki-verbose t)
+(setq minaduki-verbose nil)
 
 (defconst test-minaduki-perf-zip-url "https://github.com/org-roam/test-org-files/archive/master.zip"
   "Path to zip for test org-roam files.")
