@@ -405,44 +405,6 @@ Return added tag."
       (goto-char (point-min)))
     (display-buffer list-buffer)))
 
-(defun minaduki/new-literature-note ()
-  "Create a new literature note.
-
-This first adds an entry for it into a file in
-`minaduki-lit/bibliography'."
-  (interactive)
-  (let ((target-biblio
-         (cond
-          ((stringp minaduki-lit/bibliography)
-           minaduki-lit/bibliography)
-          ((= 1 (length minaduki-lit/bibliography))
-           (car minaduki-lit/bibliography))
-          (t
-           (let ((default-directory org-directory)
-                 (maybe-relative
-                  (cl-loop
-                   for f in minaduki-lit/bibliography
-                   collect (if (f-descendant-of? f org-directory)
-                               (f-relative f org-directory)
-                             f))))
-             (-->
-              maybe-relative
-              (minaduki-completion//mark-category it 'file)
-              (completing-read "Which bibliography? " it nil t)
-              f-expand))))))
-    ;; Use find-file to ensure we save into it
-    (find-file target-biblio)
-    ;; Go to just before the first heading
-    (goto-char (point-min))
-    (outline-next-heading)
-    (forward-char -1)
-    ;; Actually insert the new entry
-    (minaduki-lit/insert-new-entry-from-url
-     (read-string "Create new literature entry for URL: "))
-    ;; Save the buffer
-    (basic-save-buffer)
-    (orb-edit-notes (org-entry-get nil minaduki-lit/key-prop))))
-
 ;;;###autoload
 (defun minaduki/literature-sources ()
   "List all sources for browsing interactively."
@@ -742,6 +704,59 @@ CITEKEY is a list whose car is a citation key."
     (message
      "@%s does not have an associated note file. Please create one first."
      citekey)))
+
+;;;; Managing literature entries
+
+;; Literature entries are like entries in a .bib file.
+
+(defun minaduki-lit/org-set-id ()
+  "Make the heading at point a literature entry."
+  (interactive)
+  (cl-loop for prop in (list minaduki-lit/key-prop "date")
+           do (org-entry-put nil prop (org-read-property-value prop))))
+
+(defun minaduki-lit/new-entry ()
+  "Add a new literature entry."
+  (interactive)
+  (let ((target-biblio
+         (cond
+          ((stringp minaduki-lit/bibliography)
+           minaduki-lit/bibliography)
+          ((= 1 (length minaduki-lit/bibliography))
+           (car minaduki-lit/bibliography))
+          (t
+           (let ((default-directory org-directory)
+                 (maybe-relative
+                  (cl-loop
+                   for f in minaduki-lit/bibliography
+                   collect (if (f-descendant-of? f org-directory)
+                               (f-relative f org-directory)
+                             f))))
+             (-->
+              maybe-relative
+              (minaduki-completion//mark-category it 'file)
+              (completing-read "Which bibliography? " it nil t)
+              f-expand))))))
+    ;; Use find-file to ensure we save into it
+    (find-file target-biblio)
+    ;; Go to just before the first heading
+    (goto-char (point-min))
+    (outline-next-heading)
+    (forward-char -1)
+    ;; Actually insert the new entry
+    (minaduki-lit/insert-new-entry-from-url
+     (read-string "Create new literature entry for URL: "))
+    ;; Save the buffer
+    (basic-save-buffer)))
+
+(defun minaduki/new-literature-note ()
+  "Create a new literature note.
+
+This first adds an entry for it into a file in
+`minaduki-lit/bibliography'."
+  (interactive)
+  (call-interactively #'minaduki-lit/new-entry)
+  (orb-edit-notes (org-entry-get nil minaduki-lit/key-prop)))
 
 ;;;; Actions
 
