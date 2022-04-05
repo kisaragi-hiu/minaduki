@@ -41,7 +41,7 @@
          (_ (shell-command (format "mkdir -p %s && unzip -j -qq %s -d %s" temp-loc zip-file-loc temp-loc))))
     (setq org-directory temp-loc)))
 
-(describe "Cache Build"
+(xdescribe "Cache Build"
   (it "cache build from scratch time to be acceptable"
     (test-minaduki-perf--init)
     (pcase (benchmark-run 1 (minaduki-db/build-cache t))
