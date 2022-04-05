@@ -456,7 +456,8 @@
   (it "Returns a file from its title"
     (expect (minaduki-db//fetch-file :title "Foo")
             :to-equal
-            (list (test-minaduki--abs-path "foo.org")))
+            (list (test-minaduki--abs-path "foo.org"))))
+  (it "Returns a nested file from its title"
     (expect (minaduki-db//fetch-file :title "Deeply Nested File")
             :to-equal
             (list (test-minaduki--abs-path "nested/deeply/deeply_nested_file.org")))))
