@@ -170,6 +170,7 @@ This function hooks into `org-open-at-point' via `org-open-at-point-functions'."
 
 \\{minaduki-buffer/mode-map}"
   :lighter " Backlinks"
+  :interactive nil
   :keymap (let ((map (make-sparse-keymap)))
             (define-key map [mouse-1] 'org-open-at-point)
             (define-key map (kbd "RET") 'org-open-at-point)
