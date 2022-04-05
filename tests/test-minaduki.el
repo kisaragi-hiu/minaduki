@@ -83,6 +83,12 @@
        "[ABC](https://kisaragi-hiu.com)"))))
 
 (describe "Utils"
+  (before-all
+    (test-minaduki--init))
+
+  (after-all
+    (test-minaduki--teardown))
+
   (it "converts between calendar.el dates and YYYY-MM-DD date strings"
     (expect (minaduki//date/calendar.el->ymd '(7 17 2019))
             :to-equal
@@ -107,6 +113,21 @@
             :to-equal "starting_and_ending")
     (expect (minaduki//title-to-slug "isn't alpha numeric")
             :to-equal "isn_t_alpha_numeric"))
+  (describe "list-files"
+    (it "using pure elisp"
+      (expect
+       (org-roam--list-files-elisp (expand-file-name org-directory))
+       :to-have-same-items-as
+       (--map
+        (test-minaduki--abs-path (f-relative it test-repository))
+        (f-files test-repository nil t))))
+    (it "using rg"
+      (expect
+       (org-roam--list-files-rg (executable-find "rg") (expand-file-name org-directory))
+       :to-have-same-items-as
+       (--map
+        (test-minaduki--abs-path (f-relative it test-repository))
+        (f-files test-repository nil t)))))
   (it "removes Org links from a string"
     (expect
      (minaduki//remove-org-links
@@ -129,13 +150,14 @@
      :to-equal
      "Abc Google")))
 
-(describe "Ref extraction"
+(describe "Extraction"
   (before-all
     (test-minaduki--init))
 
   (after-all
     (test-minaduki--teardown))
 
+  ;; Refs
   (cl-flet
       ((test (fn file)
              (let* ((fname (test-minaduki--abs-path file))
@@ -166,15 +188,8 @@
               :to-have-same-items-as
               '(("cite" . "orgroam2020")
                 ("cite" . "plain-key")
-                ("website" . "//www.orgroam.com/"))))))
-
-(describe "Title extraction"
-  (before-all
-    (test-minaduki--init))
-
-  (after-all
-    (test-minaduki--teardown))
-
+                ("website" . "//www.orgroam.com/")))))
+  ;; Title
   (cl-flet
       ((test (fn file)
              (let ((buf (find-file-noselect
@@ -243,19 +258,12 @@
               :to-equal
               '("Headline")))
 
-    (it "extracts all"
+    (it "extracts all titles and aliases"
       (expect (test #'org-roam--extract-titles
                     "titles/combination.org")
               :to-equal
-              '("TITLE PROP" "roam" "alias")))))
-
-(describe "Link extraction"
-  (before-all
-    (test-minaduki--init))
-
-  (after-all
-    (test-minaduki--teardown))
-
+              '("TITLE PROP" "roam" "alias"))))
+  ;; Links
   (cl-flet
       ((test (fn file)
              (let ((buf (find-file-noselect
@@ -304,113 +312,99 @@
                  "cite"]
                 [,(test-minaduki--abs-path "org-cite.org")
                  "takeshisu20191228"
-                 "cite"])))))
-
-(describe "Tag extraction"
-  :var (minaduki/tag-sources)
-  (before-all
-    (test-minaduki--init))
-
-  (after-all
-    (test-minaduki--teardown))
-
-  (cl-flet
-      ((test (fn file)
-             (let* ((fname (test-minaduki--abs-path file))
-                    (buf (find-file-noselect fname)))
-               (with-current-buffer buf
-                 (funcall fn fname)))))
-    (it "extracts from #+tags[]"
-      (expect (test #'org-roam--extract-tags-prop
-                    "tags/hugo-style.org")
-              :to-equal
-              '("hello" "tag2" "tag3")))
-    (it "extracts hashtag style tags, but only from frontmatter"
-      (expect (test #'minaduki-extract/tags-hashtag-frontmatter
-                    "tags/tag.md")
-              :to-equal
-              '("#abc" "#def" "#ghi")))
-
-    (it "extracts hashtag style tags"
-      (expect (test #'minaduki-extract/tags-hashtag
-                    "tags/tag.md")
-              :to-equal
-              '("#abc" "#def" "#ghi" "#not-frontmatter-a" "#not-front-matter-b")))
-
-    (it "extracts from prop"
-      (expect (test #'org-roam--extract-tags-prop
-                    "tags/tag.org")
-              :to-equal
-              '("t1" "t2 with space" "t3" "t4 second-line"))
-      (expect (test #'org-roam--extract-tags-prop
-                    "tags/no_tag.org")
-              :to-equal
-              nil))
-
-    (it "extracts from all directories"
-      (expect (test #'org-roam--extract-tags-all-directories
-                    "base.org")
-              :to-equal
-              nil)
-      (expect (test #'org-roam--extract-tags-all-directories
-                    "tags/tag.org")
-              :to-equal
-              '("tags"))
-      (expect (test #'org-roam--extract-tags-all-directories
-                    "nested/deeply/deeply_nested_file.org")
-              :to-equal
-              '("nested" "deeply")))
-
-    (it "extracts from last directory"
-      (expect (test #'org-roam--extract-tags-last-directory
-                    "base.org")
-              :to-equal
-              nil)
-      (expect (test #'org-roam--extract-tags-last-directory
-                    "tags/tag.org")
-              :to-equal
-              '("tags"))
-      (expect (test #'org-roam--extract-tags-last-directory
-                    "nested/deeply/deeply_nested_file.org")
-              :to-equal
-              '("deeply")))
-
-    (it "extracts from first directory"
-      (expect (test #'org-roam--extract-tags-first-directory
-                    "base.org")
-              :to-equal
-              nil)
-      (expect (test #'org-roam--extract-tags-first-directory
-                    "tags/tag.org")
-              :to-equal
-              '("tags"))
-      (expect (test #'org-roam--extract-tags-first-directory
-                    "nested/deeply/deeply_nested_file.org")
-              :to-equal
-              '("nested")))
-
-    (describe "uses minaduki/tag-sources correctly"
-      (it "'(prop)"
-        (expect (let ((minaduki/tag-sources '(org-roam--extract-tags-prop)))
-                  (test #'org-roam--extract-tags
-                        "tags/tag.org"))
+                 "cite"]))))
+  ;; Tags
+  (let (minaduki/tag-sources)
+    (cl-flet
+        ((test (fn file)
+               (let* ((fname (test-minaduki--abs-path file))
+                      (buf (find-file-noselect fname)))
+                 (with-current-buffer buf
+                   (funcall fn fname)))))
+      (it "extracts tags from #+tags[]"
+        (expect (test #'org-roam--extract-tags-prop
+                      "tags/hugo-style.org")
                 :to-equal
-                '("t1" "t2 with space" "t3" "t4 second-line")))
-      (it "'(prop all-directories)"
-        (expect (let ((minaduki/tag-sources '(org-roam--extract-tags-prop
-                                              org-roam--extract-tags-all-directories)))
-                  (test #'org-roam--extract-tags
-                        "tags/tag.org"))
+                '("hello" "tag2" "tag3")))
+      (it "extracts hashtag style tags, but only from frontmatter"
+        (expect (test #'minaduki-extract/tags-hashtag-frontmatter
+                      "tags/tag.md")
                 :to-equal
-                '("t1" "t2 with space" "t3" "t4 second-line" "tags"))))))
+                '("#abc" "#def" "#ghi")))
 
-(describe "ID extraction"
-  (before-all
-    (test-minaduki--init))
+      (it "extracts hashtag style tags"
+        (expect (test #'minaduki-extract/tags-hashtag
+                      "tags/tag.md")
+                :to-equal
+                '("#abc" "#def" "#ghi" "#not-frontmatter-a" "#not-front-matter-b")))
 
-  (after-all
-    (test-minaduki--teardown))
+      (it "extracts tags from prop"
+        (expect (test #'org-roam--extract-tags-prop
+                      "tags/tag.org")
+                :to-equal
+                '("t1" "t2 with space" "t3" "t4 second-line"))
+        (expect (test #'org-roam--extract-tags-prop
+                      "tags/no_tag.org")
+                :to-equal
+                nil))
 
+      (it "extracts tags from all directories"
+        (expect (test #'org-roam--extract-tags-all-directories
+                      "base.org")
+                :to-equal
+                nil)
+        (expect (test #'org-roam--extract-tags-all-directories
+                      "tags/tag.org")
+                :to-equal
+                '("tags"))
+        (expect (test #'org-roam--extract-tags-all-directories
+                      "nested/deeply/deeply_nested_file.org")
+                :to-equal
+                '("nested" "deeply")))
+
+      (it "extracts tags from last directory"
+        (expect (test #'org-roam--extract-tags-last-directory
+                      "base.org")
+                :to-equal
+                nil)
+        (expect (test #'org-roam--extract-tags-last-directory
+                      "tags/tag.org")
+                :to-equal
+                '("tags"))
+        (expect (test #'org-roam--extract-tags-last-directory
+                      "nested/deeply/deeply_nested_file.org")
+                :to-equal
+                '("deeply")))
+
+      (it "extracts tags from first directory"
+        (expect (test #'org-roam--extract-tags-first-directory
+                      "base.org")
+                :to-equal
+                nil)
+        (expect (test #'org-roam--extract-tags-first-directory
+                      "tags/tag.org")
+                :to-equal
+                '("tags"))
+        (expect (test #'org-roam--extract-tags-first-directory
+                      "nested/deeply/deeply_nested_file.org")
+                :to-equal
+                '("nested")))
+
+      (describe "uses minaduki/tag-sources correctly"
+        (it "'(prop)"
+          (expect (let ((minaduki/tag-sources '(org-roam--extract-tags-prop)))
+                    (test #'org-roam--extract-tags
+                          "tags/tag.org"))
+                  :to-equal
+                  '("t1" "t2 with space" "t3" "t4 second-line")))
+        (it "'(prop all-directories)"
+          (expect (let ((minaduki/tag-sources '(org-roam--extract-tags-prop
+                                                org-roam--extract-tags-all-directories)))
+                    (test #'org-roam--extract-tags
+                          "tags/tag.org"))
+                  :to-equal
+                  '("t1" "t2 with space" "t3" "t4 second-line" "tags"))))))
+  ;; IDs
   (cl-flet
       ((test (fn file)
              (let* ((fname (test-minaduki--abs-path file))
@@ -454,9 +448,6 @@
     (test-minaduki--teardown))
 
   (it "Returns a file from its title"
-    (message "titles: %s" (minaduki-db/query [:select [*] :from titles]))
-    (message "ids: %s" (minaduki-db/query [:select [*] :from ids]))
-    (message "refs: %s" (minaduki-db/query [:select [*] :from refs]))
     (expect (minaduki-db//fetch-file :title "Foo")
             :to-equal
             (list (test-minaduki--abs-path "foo.org"))))
