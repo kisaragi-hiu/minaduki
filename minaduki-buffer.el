@@ -300,6 +300,20 @@ or to this file's ROAM_KEY.
                    'file-from file-from
                    'file-from-point (plist-get prop :point))))))))))
 
+(defun minaduki-buffer//insert-tag-references (tag)
+  "Insert links to files tagged with TAG."
+  (when tag
+    (-when-let (references (minaduki-db//fetch-tag-references tag))
+      (insert (format "\n\n* Files tagged with /%s/\n" tag))
+      (->> (cl-loop for file in references
+                    collect (concat "** "
+                                    (minaduki/format-link
+                                     :target file
+                                     :desc (minaduki//remove-org-links
+                                            (minaduki-db//fetch-title file)))))
+           (s-join "\n")
+           insert))))
+
 (defun minaduki-buffer//insert-cite-backlinks ()
   "Insert ref backlinks.
 
@@ -378,6 +392,10 @@ ORIG-PATH is the path where the CONTENT originated."
         (erase-buffer)
         (run-hooks 'minaduki-buffer/before-insert-hook)
         (minaduki-buffer//insert-title)
+        (minaduki-buffer//insert-tag-references
+         (--> (buffer-file-name minaduki-buffer//current)
+              minaduki-db//fetch-title
+              downcase))
         (minaduki-buffer//insert-cite-backlinks)
         (minaduki-buffer//insert-reflection-backlinks)
         (minaduki-buffer//insert-diary-backlinks)
