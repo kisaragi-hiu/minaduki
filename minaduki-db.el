@@ -372,32 +372,38 @@ Return the number of rows inserted."
                               file))
      0))
 
-(cl-defun minaduki-db//fetch-file (&key title key id)
+(cl-defun minaduki-db//fetch-file (&key title key id nocase?)
   "Return files from the DB.
+
+When NOCASE? is non-nil, match case-insentively.
 
 - ID: return the file containing a headline with ID.
 - TITLE: return files with TITLE
 - KEY: return the file associated with KEY."
-  (cond
-   (id
-    (caar (minaduki-db/query
-           [:select [file] :from ids
-            :where (= id $s1)
-            :limit 1]
-           id)))
-   (title
-    (->> (minaduki-db/query
-          [:select [file] :from titles
-           :where (= title $s0)]
-          title)
-         ;; The above returns ((path1) (path2) ...).
-         ;; Turn it into (path1 path2 ...).
-         (apply #'nconc)))
-   (key
-    (caar (minaduki-db/query
-           [:select [file] :from refs
-            :where (= ref $s0)]
-           key)))))
+  (let ((maybe-nocase (when nocase? `(:collate :nocase))))
+    (cond
+     (id
+      (caar (minaduki-db/query
+             `[:select [file] :from ids
+               :where (= id $s1)
+               :limit 1
+               ,@maybe-nocase]
+             id)))
+     (title
+      (->> (minaduki-db/query
+            `[:select [file] :from titles
+              :where (= title $s0)
+              ,@maybe-nocase]
+            title)
+           ;; The above returns ((path1) (path2) ...).
+           ;; Turn it into (path1 path2 ...).
+           (apply #'nconc)))
+     (key
+      (caar (minaduki-db/query
+             `[:select [file] :from refs
+               :where (= ref $s0)
+               ,@maybe-nocase]
+             key))))))
 
 (defun minaduki-db//fetch-lit-entry (key)
   "Fetch the literature entry with KEY in the DB."
@@ -431,6 +437,29 @@ Return the number of rows inserted."
           (push tag acc))))
     acc))
 
+(defun minaduki-db//fetch-tag-references (tag)
+  "Return files that are tagged with TAG."
+  ;; We narrow the list as much as possible in SQLite with the
+  ;; string match first, then do the accurate filtering in Emacs
+  ;; Lisp afterwards.
+  ;;
+  ;; This seems to indeed be faster: try this (the 2 variant is with
+  ;; the while clause removed)
+  ;;
+  ;; (list
+  ;;  (benchmark-run-compiled 1000
+  ;;    (minaduki-buffer//insert-tag-references "public"))
+  ;;  (benchmark-run-compiled 1000
+  ;;    (minaduki-buffer//insert-tag-references2 "public")))
+  ;; ; -> ((1.961452458 2 0.3958529560000006)
+  ;;       (12.077074859 12 2.0858843059999987)))
+  (let ((candidates
+         (minaduki-db/query `[:select [file tags] :from tags
+                              :where (like tags (quote ,(concat "%" tag "%")))])))
+    (cl-loop for cand in candidates
+             when (member tag (cadr cand))
+             collect (car cand))))
+
 (defun minaduki-db//fetch-backlinks (targets)
   "Fetch backlinks to TARGETS from the cache.
 
@@ -438,9 +467,11 @@ TARGETS are strings that are either file paths or ref keys. They
 correspond to the TO field in the cache DB."
   (unless (listp targets)
     (setq targets (list targets)))
-  (let ((conditions (--> targets
-                         (--map `(= dest ,it) it)
-                         (-interpose :or it))))
+  (let ((conditions
+         ;; ((= dest target1) :or (= dest target2) :or ...)
+         (--> targets
+              (--map `(= dest ,it) it)
+              (-interpose :or it))))
     (minaduki-db/query `[:select [source dest properties] :from links
                          :where ,@conditions
                          :order-by (asc source)])))
