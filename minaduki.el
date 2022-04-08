@@ -251,6 +251,35 @@ To be used with `org-execute-file-search-functions'."
 
 ;;;; minaduki-mode and minaduki-local-mode
 
+(defun minaduki//buttonize-tags ()
+  "Turn tags into buttons in this buffer."
+  (when (eq 'org-mode major-mode)
+    (save-excursion
+      (goto-char (point-min))
+      (re-search-forward (rx bol "#+" (or "tags[]" "roam_tags") ":") nil t)
+      (cl-loop for tag in (--sort (> (length it)
+                                     (length other))
+                                  (org-roam--extract-tags-prop buffer-file-name))
+               do (save-excursion
+                    (search-forward tag)
+                    (let* ((end (point))
+                           (start (- end (length tag)))
+                           ;; Introduce a new scope for each iteration
+                           ;; Otherwise all iterations share the same
+                           ;; `tag' variable.
+                           (tag tag)
+                           (file (car (minaduki-db//fetch-file
+                                       :title tag
+                                       :nocase? t))))
+                      (remove-overlays start end 'face 'button)
+                      (when file
+                        (make-button
+                         start end
+                         'action (lambda (&rest _)
+                                   (minaduki//find-file file))
+                         'follow-link t
+                         'face 'button))))))))
+
 (define-minor-mode minaduki-local-mode
   "Minor mode active in files tracked by minaduki."
   :global nil
@@ -258,6 +287,7 @@ To be used with `org-execute-file-search-functions'."
   ;; TODO: use minaduki-local-mode-hook
   (run-hooks 'minaduki/file-setup-hook) ; Run user hooks
   (add-hook 'post-command-hook #'minaduki-buffer//update-maybe nil t)
+  (add-hook 'post-command-hook #'minaduki//buttonize-tags nil t)
   (add-hook 'before-save-hook #'org-roam-link--replace-link-on-save nil t)
   (add-hook 'after-save-hook #'minaduki-db/update nil t)
   (dolist (fn '(minaduki-completion/tags-at-point
