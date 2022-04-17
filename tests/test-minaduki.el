@@ -21,6 +21,7 @@
 ;;; Code:
 
 (require 'buttercup)
+(require 'parsebib) ; necessary for testing bibtex extraction support
 (require 'minaduki)
 (require 'seq)
 (require 'dash)

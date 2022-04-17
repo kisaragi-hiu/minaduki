@@ -99,7 +99,7 @@ value like `most-positive-fixnum'."
   :type 'boolean
   :group 'minaduki)
 
-(defcustom org-roam-file-extensions '("org" "md")
+(defcustom org-roam-file-extensions `("org" "md" "bib")
   "Only files with these extensions are indexed.
 
 The first item in the list is used as the default file extension.
