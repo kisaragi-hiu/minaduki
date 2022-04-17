@@ -24,6 +24,7 @@
 (require 'minaduki)
 (require 'seq)
 (require 'dash)
+(require 'ht)
 
 (defun test-minaduki--abs-path (file-path)
   "Get absolute FILE-PATH from `org-directory'."
@@ -52,6 +53,53 @@
   (minaduki-mode -1)
   (delete-file minaduki/db-location)
   (minaduki-db//close))
+
+(defun test-equal-ht (a b)
+  "Are A and B the same?
+
+This also treats A and B as the same if they have hash table
+members that should be equal."
+  (or (equal a b)
+      (cond ((and (consp a)
+                  (consp b))
+             (and (test-equal-ht (car a) (car b))
+                  (test-equal-ht (cdr a) (cdr b))))
+            (t
+             (or (equal a b)
+                 (ht-equal? a b))))))
+
+(buttercup-define-matcher-for-binary-function :to-equal/ht test-equal-ht)
+
+(describe "minaduki-lit"
+  (it "parses a bibtex file"
+    (expect
+     (with-temp-buffer
+       (insert-file-contents
+        (expand-file-name "entries.bib" test-repository))
+       (minaduki-lit/parse-entries/bibtex))
+     :to-equal/ht
+     '((8 . #s(hash-table
+               size 65 test equal rehash-size 1.5
+               rehash-threshold 0.8125
+               data ("author" "大崎ひとみ"
+                     "type" "manual"
+                     "title" "あたらしい女声の教科書"
+                     "key" "hitomine2013"
+                     "tags" ["voice"]
+                     "year" "2013"
+                     "publisher" "t2library課外活動部")))
+       (160 .
+            #s(hash-table
+               size 65 test equal rehash-size 1.5
+               rehash-threshold 0.8125
+               data ("author" "Bert Bos"
+                     "type" "manual"
+                     "title" "An essay on W3C's design principles"
+                     "key" "bertbos20030306"
+                     "sources"
+                     ["https://www.w3.org/People/Bos/DesignGuide/designguide.html"]
+                     "tags" ["webdev" "css" "html"]
+                     "date" "2003-03-06")))))))
 
 (describe "minaduki/format-link"
   (it "formats Org links"

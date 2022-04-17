@@ -2,33 +2,56 @@
 
 ;;; Commentary:
 
-;; This has roughly the same goal as org-roam-bibtex and
-;; bibtex-completion, but with more of a focus on managing and easily
-;; adding sources. Sources are articles, books, etc., or just anything
-;; you'd like to have a literature note for.
+;; This defines three things:
 ;;
-;; Literature entries (sources) are extracted from the bibliography
-;; (in minaduki-extract.el).
+;; - A format for bibliography files using Org properties
+;; - Functions to read entries from that format or from BibTex
+;; - A function that takes the parsed entries and formats them for display
 ;;
-;; The bibliography can currently only be Org files. They should look
-;; like this:
+;; Additionally, there are also commands that allow the browsing of
+;; the stored entries, similar to bibtex-completion. As a goal, I hope
+;; to add more commands to manage or add entries without having to
+;; edit the bibliography directly.
 ;;
-;;   * title
+;; Entries are articles, books, etc., anything one might like to have
+;; a literature note for.
+;;
+;; The entries are extracted and saved in the DB.
+;;
+;; BibTeX is also (somewhat) supported, but only after parsebib is
+;; installed manually. (This support is not yet done: .bib files are
+;; not saved into the DB just yet.)
+;;
+;; * The bibliography format
+;;
+;; Each entry is stored as an Org heading; every heading with a
+;; CUSTOM_ID (customizable with `minaduki-lit/key-prop') in a
+;; bibliography file (ie. a member of `minaduki-lit/bibliography') is
+;; a literature entry, analogous to a BibTeX entry.
+;;
+;; An entry like this:
+;;
+;;   * エイプリルフールに自殺しようとした女の子の話 :fiction:comic:doujin:yuri:
 ;;   :PROPERTIES:
-;;   :custom_id:  abc123
-;;   :author:  some author
+;;   :url:      https://booth.pm/ja/items/655505
+;;   :author:   純玲
+;;   :date:     2019-05-12
+;;   :custom_id: sumire2019
 ;;   :END:
 ;;
-;; Which defines an entry with the key "abc123", title "title", and
-;; author "some author".
+;; is equivalent to the bibtex entry
 ;;
-;; Every heading with the custom_id prop (customizable with
-;; `minaduki-lit/key-prop') in a file listed in
-;; `minaduki-lit/bibliography' is considered a literature entry.
+;;   @book{sumire2019,
+;;       author = {純玲},
+;;       date = {2019-05-12},
+;;       keywords = {{fiction}, {comic}, {doujin}, {yuri}},
+;;       title = {エイプリルフールに自殺しようとした女の子の話},
+;;       url = {https://booth.pm/ja/items/655505}
+;;   }
+;;
+;; .
 ;;
 ;; TODO: support saving entries in JSON, maybe even in CSL-JSON
-;; TODO: support extracting entries from bibtex. This would truly
-;; replace bibtex-completion.
 ;; TODO: command to add sources, modify a source, or remove a source
 
 ;;; Code:
@@ -77,35 +100,6 @@ OTHERS: other key -> value pairs."
     obj))
 
 ;;;; Bibliography
-
-;; This is effectively a new format for storing literature entries.
-;;
-;; Each entry is stored as an Org heading; every heading with a
-;; CUSTOM_ID (customizable with `minaduki-lit/key-prop') in a
-;; bibliography file (ie. a member of `minaduki-lit/bibliography') is
-;; a literature entry, analogous to a BibTeX entry.
-;;
-;; A bibtex entry
-;;
-;;   @book{sumire2019,
-;;       author = {純玲},
-;;       date = {2019-05-12},
-;;       keywords = {{fiction}, {comic}, {doujin}, {yuri}},
-;;       title = {エイプリルフールに自殺しようとした女の子の話},
-;;       url = {https://booth.pm/ja/items/655505}
-;;   }
-;;
-;; is equivalent to
-;;
-;;   * エイプリルフールに自殺しようとした女の子の話 :fiction:comic:doujin:yuri:
-;;   :PROPERTIES:
-;;   :url:      https://booth.pm/ja/items/655505
-;;   :author:   純玲
-;;   :date:     2019-05-12
-;;   :custom_id: sumire2019
-;;   :END:
-;;
-;; in this format.
 
 ;;;; Reading from Org
 (defun minaduki-lit/key-at-point ()
@@ -299,43 +293,44 @@ like `minaduki-lit/entry' objects."
              (push (cons "sources" sources) props)))
          (cons (point) (map-into props '(hash-table :test equal))))))))
 
-;;;; Migration
-;; (defun minaduki-lit/read-sources-from-bibtex (bibtex-file)
-;;   "Parse a BIBTEX-FILE into our format."
-;;   (with-temp-buffer
-;;     (insert-file-contents bibtex-file)
-;;     (goto-char (point-min))
-;;     (cl-loop for entry-type = (parsebib-find-next-item)
-;;              while entry-type
-;;              collect (let ((entry
-;;                             (--map (cons (intern (car it))
-;;                                          (cdr it))
-;;                                    (parsebib-read-entry entry-type (point)))))
-;;                        (let-alist entry
-;;                          (minaduki-lit/source
-;;                           :author (minaduki//remove-curly .author)
-;;                           :type .=type=
-;;                           :key .=key=
-;;                           :title (minaduki//remove-curly .title)
-;;                           :tags
-;;                           (-some->> .keywords
-;;                             minaduki//remove-curly
-;;                             (s-split ",")
-;;                             (-map #'s-trim))
-;;                           :sources (-non-nil
-;;                                     (mapcar #'minaduki//remove-curly
-;;                                             (list .link .url)))
-;;                           :others
-;;                           (cl-loop for (k . v) in entry
-;;                                    unless (member k '(author =type= =key= title keywords url link))
-;;                                    collect (cons k (minaduki//remove-curly v)))))))))
+(declare-function parsebib-find-next-item "parsebib")
+(declare-function parsebib-read-entry "parsebib")
 
-;; (defun minaduki-lit/migrate-from-bibtex ()
-;;   "Migrate from .bib files."
-;;   (minaduki-lit/write-sources
-;;    (cl-loop for (_ . bib) in bibtex-completion-bibliography
-;;             vconcat (minaduki-lit/read-sources-from-bibtex bib))
-;;    minaduki-lit/source-json))
+;;;; Reading from BibTeX
+(defun minaduki-lit/parse-entries/bibtex ()
+  "Parse a BIBTEX-FILE into a list of (POINT . PROPS).
+
+POINT is where the entry is in the file. PROPS is a
+`minaduki-lit/entry' object."
+  (require 'parsebib)
+  (save-excursion
+    (goto-char (point-min))
+    (cl-loop for entry-type = (parsebib-find-next-item)
+             while entry-type
+             collect (let ((start-position (point))
+                           (entry
+                            (--map (cons (intern (car it))
+                                         (cdr it))
+                                   (parsebib-read-entry entry-type))))
+                       (let-alist entry
+                         (cons start-position
+                               (minaduki-lit/entry
+                                :author (minaduki//remove-curly .author)
+                                :type .=type=
+                                :key .=key=
+                                :title (minaduki//remove-curly .title)
+                                :tags
+                                (-some->> .keywords
+                                  minaduki//remove-curly
+                                  (s-split ",")
+                                  (-map #'s-trim))
+                                :sources (-non-nil
+                                          (mapcar #'minaduki//remove-curly
+                                                  (list .link .url)))
+                                :others
+                                (cl-loop for (k . v) in entry
+                                         unless (member k '(author =type= =key= title keywords url link))
+                                         collect (cons k (minaduki//remove-curly v))))))))))
 
 ;;;; The search interface
 
