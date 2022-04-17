@@ -59,8 +59,6 @@
   (require 'kisaragi-notes-embark))
 
 ;;;; Features
-(when (featurep 'oc)
-  (require 'kisaragi-notes-cite))
 
 (require 'minaduki-buffer)
 (require 'minaduki-bibtex)
@@ -249,6 +247,24 @@ To be used with `org-execute-file-search-functions'."
       (move-to-column (- col 1))
       t)))
 
+;;;; Citation
+
+(defun minaduki-cite//follow (datum _)
+  "The follow function for Minaduki's Org-cite processor.
+
+This will extract the citation key from DATUM and ask the user
+what they want to do with it."
+  (let ((key
+         ;; Taken from the `basic' processor's follow function
+         (if (eq 'citation-reference (org-element-type datum))
+             (org-element-property :key datum)
+           (pcase (org-cite-get-references datum t)
+             (`(,key) key)
+             (keys
+              (or (completing-read "Select citation key: " keys nil t)
+                  (user-error "Aborted")))))))
+    (minaduki/literature-note-actions key)))
+
 ;;;; minaduki-mode and minaduki-local-mode
 
 (defun minaduki//buttonize-tags ()
@@ -323,6 +339,10 @@ See `minaduki-local-mode' for more information on Minaduki-Local mode."
 Ensure it is installed and can be found within `exec-path'."))
   (if minaduki-mode
       (progn
+        (with-eval-after-load 'oc
+          (org-cite-register-processor 'minaduki
+            :follow #'minaduki-cite//follow)
+          (setq org-cite-follow-processor 'minaduki))
         (add-hook 'after-change-major-mode-hook 'minaduki-initialize)
         (add-hook 'find-file-hook 'minaduki-initialize)
         (add-hook 'kill-emacs-hook #'minaduki-db//close)
@@ -344,6 +364,9 @@ Ensure it is installed and can be found within `exec-path'."))
         (dolist (buf (buffer-list))
           (with-current-buffer buf
             (minaduki-initialize))))
+    (with-eval-after-load 'oc
+      (org-cite-unregister-processor 'minaduki)
+      (setq org-cite-follow-processor 'basic))
     (remove-hook 'after-change-major-mode-hook 'minaduki-initialize)
     (remove-hook 'find-file-hook 'minaduki-initialize)
     (remove-hook 'kill-emacs-hook #'minaduki-db//close)
