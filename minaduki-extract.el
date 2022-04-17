@@ -489,9 +489,9 @@ like `minaduki-lit/entry' objects.
 
 If this file is not in `minaduki-lit/bibliography', this does
 nothing and returns nil."
-  (when (member (or minaduki//file-name (buffer-file-name))
-                minaduki-lit/bibliography)
-    (minaduki-lit/parse-entries)))
+  (pcase major-mode
+    (`bibtex-mode (minaduki-lit/parse-entries/bibtex))
+    (_ (minaduki-lit/parse-entries))))
 
 (defun minaduki-extract/refs ()
   "Extract the citekeys this buffer corresponds with.

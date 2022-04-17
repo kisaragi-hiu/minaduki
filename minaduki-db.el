@@ -550,13 +550,15 @@ If the file exists, update the cache with information."
         (save-buffer)))
     (minaduki//with-temp-buffer file-path
       (emacsql-with-transaction (minaduki-db)
-        (minaduki-db//insert-meta 'update)
-        (minaduki-db//insert-tags 'update)
-        (minaduki-db//insert-titles 'update)
-        (minaduki-db//insert-lit-entries 'update)
-        (minaduki-db//insert-refs 'update)
-        (minaduki-db//insert-ids 'update)
-        (minaduki-db//insert-links 'update)))))
+        (when (member file-path minaduki-lit/bibliography)
+          (minaduki-db//insert-lit-entries 'update))
+        (unless (eq major-mode 'bibtex-mode)
+          (minaduki-db//insert-meta 'update)
+          (minaduki-db//insert-tags 'update)
+          (minaduki-db//insert-titles 'update)
+          (minaduki-db//insert-refs 'update)
+          (minaduki-db//insert-ids 'update)
+          (minaduki-db//insert-links 'update))))))
 
 (defun minaduki-db/build-cache (&optional force)
   "Build the cache for `org-directory'.

@@ -19,8 +19,7 @@
 ;; The entries are extracted and saved in the DB.
 ;;
 ;; BibTeX is also (somewhat) supported, but only after parsebib is
-;; installed manually. (This support is not yet done: .bib files are
-;; not saved into the DB just yet.)
+;; installed manually.
 ;;
 ;; * The bibliography format
 ;;
