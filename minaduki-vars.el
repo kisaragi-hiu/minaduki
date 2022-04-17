@@ -84,18 +84,13 @@ value like `most-positive-fixnum'."
   :group 'minaduki
   :type 'string)
 
-(defcustom minaduki-lit/source-json (f-join org-directory "sources.json")
-  "Path to the JSON file that stores sources."
-  :group 'minaduki
-  :type 'string)
-
 (defcustom minaduki-lit/key-prop "custom_id"
   "The Org property that defines the keys of literature entries."
   :group 'group
   :type 'type)
 
-(defcustom minaduki-lit/bibliography (list (f-join org-directory "sources.org"))
-  "Path to the Org file that stores sources."
+(defcustom minaduki-lit/bibliography (list (f-join org-directory "bibliography.org"))
+  "Path to the Org file that stores literature entries."
   :group 'minaduki
   :type 'string)
 

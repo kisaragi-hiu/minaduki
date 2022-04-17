@@ -45,7 +45,7 @@
 
 (defvar minaduki-lit//cache nil)
 
-(cl-defun minaduki-lit/source (&key author type title key sources tags others)
+(cl-defun minaduki-lit/entry (&key author type title key sources tags others)
   "Return a hash table representing a source.
 
 AUTHOR: the main entity responsible for the source.
@@ -251,7 +251,7 @@ to fill them in."
   "Parse entries in the current buffer into entry objects.
 
 Return a list of cons cells: (POINT . PROPS), where PROPS look
-like `minaduki-lit/source' objects."
+like `minaduki-lit/entry' objects."
   (let ((case-fold-search t))
     (save-excursion
       (goto-char (point-min))
@@ -339,8 +339,8 @@ like `minaduki-lit/source' objects."
 
 ;;;; The search interface
 
-(defun minaduki-lit/format-source (source)
-  "Format SOURCE for display."
+(defun minaduki-lit/format-entry (entry)
+  "Format ENTRY for display."
   (s-format "${date:4} ${todo}@${type} ${author} - ${title:100} ${tags}"
             (lambda (key table)
               (let* ((split (s-split ":" key))
@@ -366,7 +366,7 @@ like `minaduki-lit/source' objects."
                                                  (string-width value)))
                                          ?\s))))
                   value)))
-            source))
+            entry))
 
 (provide 'minaduki-lit)
 

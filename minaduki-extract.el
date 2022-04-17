@@ -485,7 +485,7 @@ protocol is treated as the TYPE (after processing through
   "Extract literature entries from this bibliography file.
 
 Return a list of cons cells: (POINT . PROPS), where PROPS look
-like `minaduki-lit/source' objects.
+like `minaduki-lit/entry' objects.
 
 If this file is not in `minaduki-lit/bibliography', this does
 nothing and returns nil."

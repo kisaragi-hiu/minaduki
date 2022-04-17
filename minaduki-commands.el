@@ -413,11 +413,10 @@ Return added tag."
          ;; Use an alist here so that we can retrieve the key from the
          ;; selected item
          (cl-loop for (s) in (minaduki-db/query [:select [props] :from keys])
-                  ;; (minaduki-lit/read-sources minaduki-lit/source-json)
                   collect
                   (cons
                    (gethash "key" s)
-                   (minaduki-lit/format-source s))))
+                   (minaduki-lit/format-entry s))))
         key)
     (let ((selectrum-should-sort nil)
           (ivy-sort-functions-alist nil))
@@ -427,7 +426,7 @@ Return added tag."
                                       (-some->
                                           (minaduki-db//fetch-lit-entry
                                            (minaduki-lit/key-at-point))
-                                        minaduki-lit/format-source))
+                                        minaduki-lit/format-entry))
                      (rassoc it key->formatted)
                      car)))
     (minaduki/literature-note-actions key)))
