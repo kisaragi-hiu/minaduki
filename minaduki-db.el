@@ -253,8 +253,6 @@ If UPDATE-P is non-nil, first remove the entries from the file in the database."
   (cl-block nil
     (let ((file (or minaduki//file-name (buffer-file-name)))
           (count 0))
-      (unless (member file minaduki-lit/bibliography)
-        (cl-return 0))
       (when update-p
         (minaduki-db/query [:delete :from keys
                             :where (= file $s1)]

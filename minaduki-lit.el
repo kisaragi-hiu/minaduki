@@ -41,9 +41,6 @@
 ;; For `eww-parse-headers'
 (require 'eww)
 
-;; (declare-function parsebib-find-next-item "parsebib")
-;; (declare-function parsebib-read-entry "parsebib")
-
 ;;;; Type definition
 
 (defvar minaduki-lit//cache nil)
@@ -79,26 +76,36 @@ OTHERS: other key -> value pairs."
      others)
     obj))
 
-;;;; JSON <-> vector of hash tables
-;; (defun minaduki-lit/read-sources (file)
-;;   "Parse FILE, a JSON file, into a list of sources."
-;;   (catch 'ret
-;;     (unless (f-exists? file)
-;;       (throw 'ret nil))
-;;     (with-temp-buffer
-;;       (let ((format-alist nil)
-;;             (after-insert-file-functions nil))
-;;         (insert-file-contents file))
-;;       (json-parse-buffer))))
+;;;; Bibliography
 
-;; (defun minaduki-lit/write-sources (source-list file)
-;;   "Write SOURCE-LIST into FILE as JSON."
-;;   (with-temp-file file
-;;     (insert (json-serialize source-list))
-;;     ;; This is re-parsing and re-writing it again, but (a) I want it
-;;     ;; pretty printed because Emacs chokes on long lines and (b) this
-;;     ;; function should not on a hot path anyways. I think.
-;;     (json-pretty-print-buffer)))
+;; This is effectively a new format for storing literature entries.
+;;
+;; Each entry is stored as an Org heading; every heading with a
+;; CUSTOM_ID (customizable with `minaduki-lit/key-prop') in a
+;; bibliography file (ie. a member of `minaduki-lit/bibliography') is
+;; a literature entry, analogous to a BibTeX entry.
+;;
+;; A bibtex entry
+;;
+;;   @book{sumire2019,
+;;       author = {純玲},
+;;       date = {2019-05-12},
+;;       keywords = {{fiction}, {comic}, {doujin}, {yuri}},
+;;       title = {エイプリルフールに自殺しようとした女の子の話},
+;;       url = {https://booth.pm/ja/items/655505}
+;;   }
+;;
+;; is equivalent to
+;;
+;;   * エイプリルフールに自殺しようとした女の子の話 :fiction:comic:doujin:yuri:
+;;   :PROPERTIES:
+;;   :url:      https://booth.pm/ja/items/655505
+;;   :author:   純玲
+;;   :date:     2019-05-12
+;;   :custom_id: sumire2019
+;;   :END:
+;;
+;; in this format.
 
 ;;;; Reading from Org
 (defun minaduki-lit/key-at-point ()
@@ -239,6 +246,58 @@ to fill them in."
                         (string= value ""))
               (org-entry-put nil prop value))))
         (minaduki-lit/generate-key-at-point)))))
+
+(defun minaduki-lit/parse-entries ()
+  "Parse entries in the current buffer into entry objects.
+
+Return a list of cons cells: (POINT . PROPS), where PROPS look
+like `minaduki-lit/source' objects."
+  (let ((case-fold-search t))
+    (save-excursion
+      (goto-char (point-min))
+      (cl-loop
+       while (re-search-forward (format "^:%s:" minaduki-lit/key-prop) nil t)
+       collect
+       (let ((props (org-entry-properties)))
+         ;; Remove properties that I'm not interested in
+         (setq props
+               (--remove
+                (member (car it)
+                        (-difference org-special-properties '("ITEM" "TODO")))
+                props))
+         (when-let (tags (org-get-tags))
+           (push (cons "tags" tags) props))
+         (setq props
+               (--map
+                (let ((key (car it))
+                      (value (cdr it)))
+                  ;; Downcase all keys
+                  (setq key (downcase key))
+                  ;; Key replacements
+                  ;; (ORG_PROP . KEY)
+                  (setq key (or (cdr
+                                 (assoc
+                                  key
+                                  `(("category" . "type")
+                                    (,minaduki-lit/key-prop . "key")
+                                    ("item" . "title"))))
+                                key))
+                  (cons key value))
+                props))
+         ;; FIXME: this overwrites preexisting :sources:... values
+         (let (sources)
+           (when-let (pair (assoc "link" props))
+             (push (cdr pair)
+                   sources))
+           (when-let (pair (assoc "url" props))
+             (push (cdr pair)
+                   sources))
+           (when-let (pair (assoc "doi" props))
+             (push (concat "https://doi.org/" (cdr pair))
+                   sources))
+           (when sources
+             (push (cons "sources" sources) props)))
+         (cons (point) (map-into props '(hash-table :test equal))))))))
 
 ;;;; Migration
 ;; (defun minaduki-lit/read-sources-from-bibtex (bibtex-file)

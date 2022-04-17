@@ -482,59 +482,16 @@ protocol is treated as the TYPE (after processing through
       (cons "cite" ref))))
 
 (defun minaduki-extract/lit-entries ()
-  "Extract literature entries (sources).
+  "Extract literature entries from this bibliography file.
 
-Return a cons cell: (POINT . PROPS), where PROPS look like
-`minaduki-lit/source' objects."
-  (let ((case-fold-search t))
-    (save-excursion
-      (goto-char (point-min))
-      (cl-loop
-       while (re-search-forward (format "^:%s:" minaduki-lit/key-prop) nil t)
-       collect
-       (let ((props (org-entry-properties)))
-         ;; Remove properties that I'm not interested in
-         (setq props
-               (--remove
-                (member (car it)
-                        (->> org-special-properties
-                             ;; But keep these
-                             (remove "ITEM")
-                             (remove "TODO")))
-                props))
-         (when-let (tags (org-get-tags))
-           (push (cons "tags" tags) props))
-         (setq props
-               (--map
-                (let ((key (car it))
-                      (value (cdr it)))
-                  ;; Downcase all keys
-                  (setq key (downcase key))
-                  ;; Key replacements
-                  ;; (ORG_PROP . KEY)
-                  (setq key (or (cdr
-                                 (assoc
-                                  key
-                                  `(("category" . "type")
-                                    (,minaduki-lit/key-prop . "key")
-                                    ("item" . "title"))))
-                                key))
-                  (cons key value))
-                props))
-         ;; FIXME: this overwrites preexisting :sources:... values
-         (let (sources)
-           (when-let (pair (assoc "link" props))
-             (push (cdr pair)
-                   sources))
-           (when-let (pair (assoc "url" props))
-             (push (cdr pair)
-                   sources))
-           (when-let (pair (assoc "doi" props))
-             (push (concat "https://doi.org/" (cdr pair))
-                   sources))
-           (when sources
-             (push (cons "sources" sources) props)))
-         (cons (point) (map-into props '(hash-table :test equal))))))))
+Return a list of cons cells: (POINT . PROPS), where PROPS look
+like `minaduki-lit/source' objects.
+
+If this file is not in `minaduki-lit/bibliography', this does
+nothing and returns nil."
+  (when (member (or minaduki//file-name (buffer-file-name))
+                minaduki-lit/bibliography)
+    (minaduki-lit/parse-entries)))
 
 (defun minaduki-extract/refs ()
   "Extract the citekeys this buffer corresponds with.
