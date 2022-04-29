@@ -58,7 +58,7 @@ plist containing the path and title for the file."
                       rows))
     (cl-loop for x in id-nodes
              do (push (list :path (elt x 0)
-                            :title (format "[ID] %s - %s"
+                            :title (format "* %s - %s"
                                            (elt x 2)
                                            (elt x 1))
                             :tags nil
