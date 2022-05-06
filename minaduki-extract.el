@@ -165,13 +165,23 @@ Links are assumed to originate from FILE-PATH."
      while (re-search-forward markdown-regex-link-inline nil t)
      collect
      (let ((imagep (match-string-no-properties 1))
-           (link (match-string-no-properties 6))
+           (url (match-string-no-properties 6))
            (begin-of-block)
            (end-of-block)
-           (content)
-           (link-type "file"))
+           content link-type
+           file-to)
+       (setq link-type (org-roam--collate-types
+                        (or (url-type
+                             (url-generic-parse-url url))
+                            "file")))
+       (setq file-to (if (equal link-type "file")
+                         (file-truename
+                          (expand-file-name
+                           (url-filename (url-generic-parse-url url))
+                           (file-name-directory file-path)))
+                       url))
        (when (and (not imagep)
-                  (not (url-type (url-generic-parse-url link))))
+                  (equal link-type "file"))
          (save-excursion
            ;; get the text block = content around the link as context
            (unless (eobp)
@@ -182,9 +192,7 @@ Links are assumed to originate from FILE-PATH."
            (setq content
                  (buffer-substring-no-properties begin-of-block end-of-block))))
        (vector file-path ; file-from
-               (file-truename
-                (expand-file-name (url-filename (url-generic-parse-url link))
-                                  (file-name-directory file-path))) ; file-to
+               file-to
                link-type
                (list :content content :point begin-of-block))))))
 
