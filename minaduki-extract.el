@@ -14,7 +14,14 @@
 (require 'minaduki-utils)
 (require 'minaduki-vars)
 
+;; Markdown
 (defvar markdown-regex-link-inline)
+(defvar markdown-regex-angle-uri)
+(defvar markdown-regex-uri)
+(defvar markdown-regex-email)
+
+(declare-function markdown-inline-code-at-point-p "markdown-mode")
+(declare-function markdown-code-block-at-point-p "markdown-mode")
 
 ;; Silence byte compiler on Org < 9.5. These are not present there and
 ;; aren't used.
@@ -161,40 +168,48 @@ Assume links come from FILE-PATH."
 Links are assumed to originate from FILE-PATH."
   (save-excursion
     (goto-char (point-min))
-    (cl-loop
-     while (re-search-forward markdown-regex-link-inline nil t)
-     collect
-     (let ((imagep (match-string-no-properties 1))
-           (url (match-string-no-properties 6))
-           (begin-of-block)
-           (end-of-block)
-           content link-type
-           file-to)
-       (setq link-type (org-roam--collate-types
-                        (or (url-type
-                             (url-generic-parse-url url))
-                            "file")))
-       (setq file-to (if (equal link-type "file")
-                         (file-truename
-                          (expand-file-name
-                           (url-filename (url-generic-parse-url url))
-                           (file-name-directory file-path)))
-                       url))
-       (when (and (not imagep)
-                  (equal link-type "file"))
-         (save-excursion
-           ;; get the text block = content around the link as context
-           (unless (eobp)
-             (forward-sentence))
-           (setq end-of-block (point))
-           (backward-sentence)
-           (setq begin-of-block (point))
-           (setq content
-                 (buffer-substring-no-properties begin-of-block end-of-block))))
-       (vector file-path ; file-from
-               file-to
-               link-type
-               (list :content content :point begin-of-block))))))
+    ;; Adadpted from `markdown-get-used-uris'
+    (cl-loop while (re-search-forward
+                    (concat "\\(?:" markdown-regex-link-inline
+                            "\\|" markdown-regex-angle-uri
+                            "\\|" markdown-regex-uri
+                            "\\|" markdown-regex-email
+                            "\\)")
+                    nil t)
+             unless (or (markdown-inline-code-at-point-p)
+                        (markdown-code-block-at-point-p))
+             collect
+             (let* ((file-to (or (match-string-no-properties 6)
+                                 (match-string-no-properties 10)
+                                 (match-string-no-properties 12)
+                                 (match-string-no-properties 13)))
+                    (link-type (org-roam--collate-types
+                                (or (url-type
+                                     (url-generic-parse-url file-to))
+                                    "file")))
+                    end-of-block begin-of-block
+                    content)
+               (when (equal link-type "file")
+                 (setq file-to
+                       (file-truename
+                        (expand-file-name
+                         (url-filename (url-generic-parse-url file-to))
+                         (file-name-directory file-path))))
+                 (save-excursion
+                   ;; get the text block = content around the link as context
+                   (unless (eobp)
+                     (forward-sentence))
+                   (setq end-of-block (point))
+                   (backward-sentence)
+                   (setq begin-of-block (point))
+                   (setq content
+                         (buffer-substring-no-properties begin-of-block
+                                                         end-of-block))))
+               (vector file-path
+                       file-to
+                       link-type
+                       (list :content content
+                             :point begin-of-block))))))
 
 ;; Modified from md-roam's `md-roam--extract-cite-links'
 (defun org-roam--extract-links-pandoc-cite (file-path)
