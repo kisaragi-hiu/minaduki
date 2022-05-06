@@ -183,12 +183,22 @@ Links are assumed to originate from FILE-PATH."
                                  (match-string-no-properties 10)
                                  (match-string-no-properties 12)
                                  (match-string-no-properties 13)))
+                    (link-type-raw (url-type
+                                    (url-generic-parse-url file-to)))
                     (link-type (org-roam--collate-types
-                                (or (url-type
-                                     (url-generic-parse-url file-to))
-                                    "file")))
+                                (or link-type-raw "file")))
                     end-of-block begin-of-block
                     content)
+               ;; Not a file link
+               (when link-type-raw
+                 ;; https://... -> remove ^https: ->  //...
+                 ;; http://... -> remove ^http: ->  //...
+                 (setq file-to
+                       (s-replace-regexp
+                        (format "^%s:" (regexp-quote link-type-raw))
+                        ""
+                        file-to)))
+               ;; Is a file link
                (when (equal link-type "file")
                  (setq file-to
                        (file-truename
