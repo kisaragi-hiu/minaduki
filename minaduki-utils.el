@@ -181,8 +181,9 @@ we run `org-element-link-parser' on it and return the
 ;;;; URL
 (defun minaduki//url? (path)
   "Check if PATH is a URL.
-Assume the protocol is not present in PATH; e.g. URL `https://google.com' is
-passed as `//google.com'."
+
+Works even if the protocol is not present in PATH, for example
+when URL `https://google.com' is passed as `//google.com'."
   (or (s-prefix? "//" path)
       (s-prefix? "http://" path)
       (s-prefix? "https://" path)))
