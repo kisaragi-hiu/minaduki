@@ -31,12 +31,6 @@
   "Get absolute FILE-PATH from `org-directory'."
   (expand-file-name file-path org-directory))
 
-(defun test-minaduki//find-file (path)
-  "PATH."
-  (let ((path (test-minaduki--abs-path path)))
-    (make-directory (file-name-directory path) t)
-    (find-file path)))
-
 (defvar test-repository (expand-file-name "tests/minaduki-files")
   "Directory containing minaduki test org files.")
 

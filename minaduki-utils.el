@@ -19,15 +19,6 @@
 ;; regardless of whether Org is loaded before their compilation.
 (require 'org)
 
-(defun org-roam--plist-to-alist (plist)
-  "Return an alist of the property-value pairs in PLIST."
-  (let (res)
-    (while plist
-      (let ((prop (intern (substring (symbol-name (pop plist)) 1 nil)))
-            (val (pop plist)))
-        (push (cons prop val) res)))
-    res))
-
 ;;;; Error and progress reporting
 (defun org-roam-message (format-string &rest args)
   "Pass FORMAT-STRING and ARGS to `message' when `minaduki-verbose' is t."
@@ -171,12 +162,6 @@ we run `org-element-link-parser' on it and return the
                      (org-element-property :raw-link link)
                    ;; Otherwise return the original
                    str))))))
-
-(defun org-roam-string-quote (str)
-  "Quote STR."
-  (->> str
-       (s-replace "\\" "\\\\")
-       (s-replace "\"" "\\\"")))
 
 ;;;; URL
 (defun minaduki//url? (path)

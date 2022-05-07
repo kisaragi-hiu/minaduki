@@ -29,10 +29,6 @@
 (defconst test-minaduki-perf-zip-url "https://github.com/org-roam/test-org-files/archive/master.zip"
   "Path to zip for test org-roam files.")
 
-(defun test-minaduki-perf--abs-path (file-path)
-  "Get absolute FILE-PATH from `org-directory'."
-  (expand-file-name file-path org-directory))
-
 (defun test-minaduki-perf--init ()
   "."
   (let* ((temp-loc (expand-file-name (make-temp-name "test-org-files-") temporary-file-directory))
