@@ -65,7 +65,7 @@
 (require 'org-roam-capture)
 (require 'minaduki-extract)
 (require 'minaduki-db)
-(require 'org-roam-graph)
+
 (require 'kisaragi-notes-wikilink)
 
 ;;;; Function Faces
