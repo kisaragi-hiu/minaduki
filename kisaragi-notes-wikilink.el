@@ -110,7 +110,7 @@ When there are multiple options, ask the user to choose one. When
 NO-INTERACTIVE is non-nil, return nil in this case."
   (let ((files (minaduki-db//fetch-file :title title)))
     (if (< (length files) 2)
-        files
+        (car files)
       (unless no-interactive
         (completing-read
          (format "More than one file has the title \"%s\". Select one: "
