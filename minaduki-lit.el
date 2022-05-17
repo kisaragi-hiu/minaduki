@@ -184,11 +184,15 @@ to fill them in."
                         (dom-text it))
                       ;; YouTube stores this in a <div> in <body>...
                       ;; And yes, it's in a <span> for some reason
-                      (-some--> (dom-by-tag dom 'span)
-                        (--first (equal "author" (dom-attr it 'itemprop)) it)
-                        dom-children
-                        (--first (equal "name" (dom-attr it 'itemprop)) it)
-                        (dom-attr it 'content)))
+                      ;;
+                      ;; Error here from GitHub as we end up with
+                      ;; string nodes.
+                      (ignore-errors
+                        (-some--> (dom-by-tag dom 'span)
+                          (--first (equal "author" (dom-attr it 'itemprop)) it)
+                          dom-children
+                          (--first (equal "name" (dom-attr it 'itemprop)) it)
+                          (dom-attr it 'content))))
               publishdate (or
                            ;; Open Graph
                            ;; <meta property="article:published_time"
