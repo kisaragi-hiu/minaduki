@@ -28,7 +28,7 @@
 
 ;;;; User Options
 
-(defcustom minaduki/db-location (expand-file-name "org-roam.db" user-emacs-directory)
+(defcustom minaduki/db-location (expand-file-name "minaduki.db" user-emacs-directory)
   "Full path to the cache database.
 
 All cache will be saved here regardless of which project a note
