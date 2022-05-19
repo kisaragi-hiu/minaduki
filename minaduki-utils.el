@@ -369,8 +369,8 @@ E.g. (\".org\") => (\"*.org\" \"*.org.gpg\")"
    (mapcar (lambda (ext) (concat "*." ext)) exts)
    (mapcar (lambda (ext) (concat "*." ext ".gpg")) exts)))
 
-(defun org-roam--list-files-rg (executable dir)
-  "Return all Org-roam files located recursively within DIR.
+(defun minaduki//list-files/rg (executable dir)
+  "List all tracked files in DIR with Ripgrep.
 
 EXECUTABLE is the Ripgrep executable."
   (let* ((globs (org-roam--list-files-search-globs org-roam-file-extensions))
@@ -380,10 +380,13 @@ EXECUTABLE is the Ripgrep executable."
       (apply #'call-process executable
              nil '(t nil) nil
              arguments)
-      (s-split "\n" (buffer-string) :omit-nulls))))
+      (-some--> (buffer-string)
+        (s-split "\n" it :omit-nulls)
+        (-remove #'minaduki//excluded? it)
+        (-map #'f-expand it)))))
 
-(defun org-roam--list-files-elisp (dir)
-  "Return all Org-roam files located recursively within DIR, using elisp."
+(defun minaduki//list-files/elisp (dir)
+  "List all tracked files in DIR with `directory-files-recursively'."
   (let ((regexp (concat "\\.\\(?:"
                         (mapconcat #'regexp-quote org-roam-file-extensions "\\|")
                         "\\)\\(?:\\.gpg\\)?\\'"))
@@ -394,21 +397,21 @@ EXECUTABLE is the Ripgrep executable."
         (push file result)))
     result))
 
-(defun org-roam--list-files (dir)
-  "Return all Org-roam files located recursively within DIR.
-Use Ripgrep if we can find it."
-  (if-let ((rg (executable-find "rg")))
-      (-some->> (org-roam--list-files-rg rg dir)
-        (-remove #'minaduki//excluded?)
-        (-map #'f-expand))
-    (org-roam--list-files-elisp dir)))
+(defun minaduki//list-files (dir)
+  "List tracked files in DIR.
 
-(defun org-roam--list-all-files ()
-  "Return a list of all Org-roam files within `org-directory'."
-  (org-roam--list-files (expand-file-name org-directory)))
+Uses either Ripgrep or `directory-files-recursively'."
+  (let ((cmd (executable-find "rg")))
+    (if cmd
+        (minaduki//list-files/rg cmd dir)
+      (minaduki//list-files/elisp dir))))
+
+(defun minaduki//list-all-files ()
+  "Return a list of all tracked files within `org-directory'."
+  (minaduki//list-files (expand-file-name org-directory)))
 
 ;;;; Macros
-(defmacro org-roam-with-file (file keep-buf-p &rest body)
+(defmacro minaduki//with-file (file keep-buf-p &rest body)
   "Execute BODY within FILE.
 If FILE is nil, execute BODY in the current buffer.
 Kills the buffer if KEEP-BUF-P is nil, and FILE is not yet visited."

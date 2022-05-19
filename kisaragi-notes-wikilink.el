@@ -72,7 +72,7 @@ the link."
 If FILE, return outline headings for passed FILE instead.
 If WITH-MARKER, return a cons cell of (headline . marker).
 If USE-STACK, include the parent paths as well."
-  (org-roam-with-file file (when with-marker 'keep)
+  (minaduki//with-file file (when with-marker 'keep)
     (let* ((outline-level-fn outline-level)
            (path-separator "/")
            (stack-level 0)
@@ -122,7 +122,7 @@ NO-INTERACTIVE is non-nil, return nil in this case."
 If FILE is nil, get ID from current buffer.
 If there is no corresponding headline, return nil."
   (save-excursion
-    (org-roam-with-file file 'keep
+    (minaduki//with-file file 'keep
       (let ((headlines (org-roam-link--get-headlines file 'with-markers)))
         (when-let ((marker (cdr (assoc-string headline headlines))))
           (goto-char marker)

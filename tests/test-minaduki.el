@@ -159,7 +159,7 @@ members that should be equal."
   (describe "list-files"
     (it "using pure elisp"
       (expect
-       (org-roam--list-files-elisp (expand-file-name org-directory))
+       (minaduki//list-files/elisp (expand-file-name org-directory))
        :to-have-same-items-as
        (--map
         (test-minaduki--abs-path (f-relative it test-repository))
@@ -167,7 +167,7 @@ members that should be equal."
     (when (executable-find "rg")
       (it "using rg"
         (expect
-         (org-roam--list-files-rg (executable-find "rg")
+         (minaduki//list-files/rg (executable-find "rg")
                                   (expand-file-name org-directory))
          :to-have-same-items-as
          (--map

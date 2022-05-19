@@ -54,7 +54,7 @@ TEMPLATE has no extension, TEMPLATE.org or TEMPLATE.md will be used."
 ;; The template's contents are expanded with `org-capture-fill-template'."
 ;;   (let ((file (minaduki-templates//path-to template))
 ;;         target content)
-;;     (org-roam-with-file file nil
+;;     (minaduki//with-file file nil
 ;;       (-when-let* ((path (car (minaduki//org-prop "path"))))
 ;;         (setq target (f-expand (s-trim (org-capture-fill-template path))
 ;;                                org-directory)))

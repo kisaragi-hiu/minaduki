@@ -298,7 +298,7 @@ Return added tag."
                     revert-buffer-function (lambda (&rest _)
                                              (minaduki/fix-broken-links)))))
     ;; Collect missing links
-    (let* ((all-files (org-roam--list-all-files))
+    (let* ((all-files (minaduki//list-all-files))
            (i 0)
            (length (length all-files)))
       (cl-loop
@@ -586,7 +586,7 @@ included as a candidate."
   ;; Originally `org-roam-random-note'
   "Open a random note."
   (interactive)
-  (find-file (seq-random-elt (org-roam--list-all-files))))
+  (find-file (seq-random-elt (minaduki//list-all-files))))
 
 ;;;###autoload
 (defun minaduki/open-index ()
@@ -657,7 +657,7 @@ This assumes ID is present in the cache database."
               ;; Locate ID's location in FILE
               (let ((file (minaduki-db//fetch-file :id id)))
                 (when file
-                  (org-roam-with-file file t
+                  (minaduki//with-file file t
                     (org-id-find-id-in-file id file t))))))
     (org-mark-ring-push)
     (org-goto-marker-or-bmk marker)

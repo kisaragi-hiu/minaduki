@@ -38,7 +38,7 @@
 (require 'org-element)
 (require 'org-id)
 (require 'ob-core) ;for org-babel-parse-header-arguments
-(require 'ansi-color) ; org-roam--list-files strip ANSI color codes
+
 (require 'cl-lib)
 (require 'dash)
 (require 'f)
@@ -212,7 +212,7 @@ When NEW-FILE-OR-DIR is a directory, we use it to compute the new file path."
       ;; will break. Fix all file-relative links:
       (unless (string= (file-name-directory old-file)
                        (file-name-directory new-file))
-        (org-roam-with-file new-file nil
+        (minaduki//with-file new-file nil
           (org-roam--fix-relative-links old-file)))
       (when (org-roam--org-roam-file-p new-file)
         (minaduki-db//update-file new-file))
@@ -221,7 +221,7 @@ When NEW-FILE-OR-DIR is a directory, we use it to compute the new file path."
               (setq file (if (string-equal (car file) old-file)
                              new-file
                            (car file)))
-              (org-roam-with-file file nil
+              (minaduki//with-file file nil
                 (org-roam--replace-link old-file new-file)
                 (save-buffer)
                 (minaduki-db//update-file)))
