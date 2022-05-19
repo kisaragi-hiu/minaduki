@@ -538,48 +538,10 @@ are named with a YYYYMMDD prefix (optionally with dashes)."
    (minaduki-templates//read-template "Open template: ")))
 
 ;;;###autoload
-(defun minaduki/open-non-literature-note (&optional initial-prompt)
-  ;; `orb-find-non-ref-file'
-  "Open a note that isn't a literature note.
-
-INITIAL-PROMPT is the initial title prompt. See
-`org-roam-find-files' and `minaduki-completion//get-non-literature' for
-details."
-  (interactive)
-  (minaduki/open
-   (minaduki-completion//read-note
-    :initial-input initial-prompt
-    :completions (car (minaduki-completion//get-non-literature))
-    :prompt "Open non-literature note: ")))
-
-;;;###autoload
 (defun minaduki/open-directory ()
   "Open `org-directory'."
   (interactive)
   (find-file org-directory))
-
-;;;###autoload
-(defun minaduki/open-literature-note (interactive? &optional filter)
-  ;; Originally `org-roam-find-ref'
-  "Open a literature note, allowing search for their ROAM_KEYs.
-
-INTERACTIVE? is passed to `minaduki//get-ref-path-completions'.
-
-FILTER is used to filter results, and can either be a string or a function:
-
-- If it is a string, it should be the type of refs to include as
-candidates (e.g. \"cite\" ,\"website\" ,etc.)
-
-- If it is a function, it should be the name of a function that
-takes three arguments: the type, the ref, and the file of the
-current candidate.  It should return t if that candidate is to be
-included as a candidate."
-  (interactive (list t))
-  (let* ((completions (minaduki//get-ref-path-completions interactive? filter))
-         (ref (completing-read "Literature note: " completions nil t))
-         (file (-> (cdr (assoc ref completions))
-                   (plist-get :path))))
-    (minaduki//find-file file)))
 
 ;;;###autoload
 (defun minaduki/open-random-note ()
@@ -782,6 +744,7 @@ CITEKEY is a list whose car is a citation key."
     ;; Save the buffer
     (basic-save-buffer)))
 
+;;;###autoload
 (defun minaduki/new-literature-note ()
   "Create a new literature note.
 
@@ -802,8 +765,7 @@ This first adds an entry for it into a file in
     ("Create a new note with the \"daily\" template" . minaduki/new-daily-note)
     ("Find broken local links"            . minaduki/fix-broken-links)
     ("Open the index file"                . minaduki/open-index)
-    ("Open a literature note"             . minaduki/open-literature-note)
-    ("Open a non-literature note"         . minaduki/open-non-literature-note)
+    ("Create a new literature"            . minaduki/new-literature-note)
     ("Open a random note"                 . minaduki/open-random-note)
     ("Switch to a buffer visiting a note" . org-roam-switch-to-buffer)
     ("Refresh cache"                      . minaduki-db/build-cache))
