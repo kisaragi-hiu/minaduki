@@ -305,7 +305,7 @@ Return added tag."
        for f in all-files
        do
        (cl-incf i)
-       (org-roam-message "(%s/%s) Looking for broken links in %s"
+       (minaduki-message "(%s/%s) Looking for broken links in %s"
                          i length f)
        (minaduki//with-temp-buffer f
          (save-excursion

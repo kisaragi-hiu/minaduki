@@ -20,10 +20,10 @@
 (require 'org)
 
 ;;;; Error and progress reporting
-(defun org-roam-message (format-string &rest args)
+(defun minaduki-message (format-string &rest args)
   "Pass FORMAT-STRING and ARGS to `message' when `minaduki-verbose' is t."
   (when minaduki-verbose
-    (apply #'message `(,(concat "(org-roam) " format-string) ,@args))))
+    (apply #'message `(,(concat "(minaduki) " format-string) ,@args))))
 
 (defun minaduki//warn (level message &rest args)
   "Display a warning for minaduki at LEVEL.
@@ -32,10 +32,10 @@ MESSAGE and ARGS are formatted by `format-message'.
 
 This is a convenience wrapper around `lwarn'. Difference:
 
-- TYPE is always '(org-roam). (This will be renamed later.)
+- TYPE is always '(minaduki).
 - This always returns nil."
   (prog1 nil
-    (apply #'lwarn '(org-roam) level message args)))
+    (apply #'lwarn '(minaduki) level message args)))
 
 ;; From `orb--with-message!'
 (defmacro minaduki//with-message (message &rest body)
@@ -64,7 +64,7 @@ SEQUENCE."
             with length = (length ,sequence)
             do
             (progn
-              (org-roam-message ,message (1+ i) length)
+              (minaduki-message ,message (1+ i) length)
               ,@body)))
 
 ;;;; String manipulation

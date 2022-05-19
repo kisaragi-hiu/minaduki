@@ -153,7 +153,7 @@ SQL can be either the emacsql vector representation, or a string."
     'ignore
     (if (< version minaduki-db//version)
         (progn
-          (org-roam-message (format "Upgrading the Org-roam database from version %d to version %d"
+          (minaduki-message (format "Upgrading the cache database from version %d to version %d"
                                     version minaduki-db//version))
           (minaduki-db/build-cache t))))
   version)
@@ -520,18 +520,18 @@ If FORCE, force a rebuild of the cache from scratch."
     (setq dir-files (org-roam--list-all-files)
           db-files (minaduki-db//fetch-all-files-hash))
     (dolist-with-progress-reporter (file dir-files)
-        "(org-roam) Finding modified files"
+        "(minaduki) Finding modified files"
       (let ((content-hash (minaduki//compute-content-hash file)))
         (unless (string= content-hash (gethash file db-files))
           (push (cons file content-hash) modified-files)))
       (remhash file db-files))
     (dolist-with-progress-reporter (file (hash-table-keys db-files))
-        "(org-roam) Removing deleted files from cache"
+        "(minaduki) Removing deleted files from cache"
       ;; These files are no longer around, remove from cache...
       (minaduki-db//clear-file file)
       (setq deleted-count (1+ deleted-count)))
     (setq count-plist (minaduki-db//update-files modified-files))
-    (org-roam-message "total: Δ%s, files-modified: Δ%s, ids: Δ%s, links: Δ%s, tags: Δ%s, titles: Δ%s, refs: Δ%s, lit: Δ%s, deleted: Δ%s"
+    (minaduki-message "total: Δ%s, files-modified: Δ%s, ids: Δ%s, links: Δ%s, tags: Δ%s, titles: Δ%s, refs: Δ%s, lit: Δ%s, deleted: Δ%s"
                       (- (length dir-files) (plist-get count-plist :error-count))
                       (plist-get count-plist :modified-count)
                       (plist-get count-plist :id-count)
@@ -550,7 +550,7 @@ If the file exists, update the cache with information."
         (db-hash (minaduki-db//fetch-file-hash file-path)))
     (unless (string= content-hash db-hash)
       (minaduki-db//update-files (list (cons file-path content-hash)))
-      (org-roam-message "Updated: %s" file-path))))
+      (minaduki-message "Updated: %s" file-path))))
 
 (defun minaduki-db//update-files (file-hash-pairs)
   "Update Org-roam cache for FILE-HASH-PAIRS.
