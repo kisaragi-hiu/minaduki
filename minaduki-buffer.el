@@ -157,11 +157,20 @@ This function hooks into `org-open-at-point' via `org-open-at-point-functions'."
         (minaduki-buffer//find-file path)
         (org-show-context)
         t)))
-   ;; Org-roam preview text
+   ;; Backlinks context
    ((when-let ((file-from (get-text-property (point) 'file-from))
                (p (get-text-property (point) 'file-from-point)))
       (minaduki-buffer//find-file file-from)
       (goto-char p)
+      (org-show-context)
+      t))
+   ;; Unlinked references context
+   ((-when-let* ((file-from (get-text-property (point) 'file-from))
+                 ((line . col) (get-text-property (point) 'file-from-line/col)))
+      (minaduki-buffer//find-file file-from)
+      (goto-char (point-min))
+      (forward-line (1- line))
+      (forward-char col)
       (org-show-context)
       t))
    ;; If called via `org-open-at-point', fall back to default behavior.
@@ -430,26 +439,19 @@ or to this file's ROAM_KEY.
                             (plist-get file :title)))
             (cl-loop for ind in (plist-get file :matches)
                      do (insert
-                         (format
-                          "%s\n  %s\n\n"
-                          (let* ((file file)
-                                 (ind ind)
-                                 (path (plist-get file :path))
-                                 (line (string-to-number
-                                        (plist-get ind :line)))
-                                 (col (string-to-number
-                                       (plist-get ind :column))))
-                            (make-text-button
-                             (format "%s:%s" line col)
-                             nil
-                             'follow-link t
-                             'face '(fixed-pitch button)
-                             'action (lambda (_)
-                                       (minaduki-buffer//find-file path)
-                                       (goto-char (point-min))
-                                       (forward-line (1- line))
-                                       (forward-char col))))
-                          (plist-get ind :context))))))))
+                         (let* ((file file)
+                                (ind ind)
+                                (path (plist-get file :path))
+                                (line (string-to-number
+                                       (plist-get ind :line)))
+                                (col (string-to-number
+                                      (plist-get ind :column))))
+                           (-> (format "  %s\n\n"
+                                       (plist-get ind :context))
+                               (propertize
+                                'face 'fixed-pitch
+                                'file-from path
+                                'file-from-line/col (cons line col))))))))))
 
 (defun minaduki-buffer//insert-tag-references (tag)
   "Insert links to files tagged with TAG."
