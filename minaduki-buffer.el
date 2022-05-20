@@ -477,27 +477,10 @@ come from Reflections."
    :heading "Citation Backlink"
    :cite? t))
 
-(defun minaduki-buffer//insert-reflection-backlinks ()
-  "Insert backlinks from the \"reflections\" directory."
-  (minaduki-buffer//insert-backlinks
-   :filter (pcase-lambda (`(,from ,_to ,_plist))
-             (string-match-p "reflection/" from))
-   :heading "Reflection Backlink"))
-
-(defun minaduki-buffer//insert-diary-backlinks ()
-  "Insert backlinks from the \"diary\" directory."
-  (minaduki-buffer//insert-backlinks
-   :filter (pcase-lambda (`(,from ,_to ,_plist))
-             (string-match-p "diary/" from))
-   :heading "Diary Backlink"))
-
 (defun minaduki-buffer//insert-other-backlinks ()
   "Insert backlinks that are not from reflections or diary entries."
   (minaduki-buffer//insert-backlinks
-   :filter (pcase-lambda (`(,from ,_to ,_plist))
-             (not (or (string-match-p "reflection/" from)
-                      (string-match-p "diary/" from))))
-   :heading "Internal Backlink"))
+   :heading "Backlink"))
 
 (defun minaduki-buffer//pluralize (string number)
   "Conditionally pluralize STRING if NUMBER is above 1."
@@ -550,8 +533,6 @@ ORIG-PATH is the path where the CONTENT originated."
               minaduki-db//fetch-title
               downcase))
         (minaduki-buffer//insert-cite-backlinks)
-        (minaduki-buffer//insert-reflection-backlinks)
-        (minaduki-buffer//insert-diary-backlinks)
         (minaduki-buffer//insert-other-backlinks)
         (minaduki-buffer//insert-unlinked-references)
         ;; HACK: we should figure out we have no backlinks directly
