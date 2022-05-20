@@ -49,6 +49,8 @@
 (require 'ol)
 (require 'org-element)
 
+(require 'text-property-search)
+
 (require 'minaduki-db)
 (require 'minaduki-utils)
 (require 'minaduki-vars)
@@ -300,6 +302,88 @@ or to this file's ROAM_KEY.
                    'file-from file-from
                    'file-from-point (plist-get prop :point))))))))))
 
+(defun minaduki//unlinked-references ()
+  "Return unlinked references to the current buffer."
+  (when-let* ((file-path (buffer-file-name))
+              (titles-and-refs
+               (append (org-roam--extract-titles)
+                       (minaduki-extract/refs))))
+    (with-temp-buffer
+      (let ((default-directory org-directory))
+        ;; Do the search
+        (call-process
+         (or (and (boundp 'rg-executable)
+                  rg-executable)
+             (executable-find "rg"))
+         nil '(t t) nil
+         "--color=ansi"
+         "--colors=match:fg:red"
+         "--colors=path:fg:green"
+         "--colors=line:none"
+         "--colors=column:none"
+         "-n"
+         "--column"
+         (format "--glob=!%s" (f-relative file-path))
+         "--heading"
+         "--no-config"
+         "--fixed-strings"
+         "-e" (car titles-and-refs))
+        ;; Apply the colors and text properties
+        (let ((ansi-color-apply-face-function
+               (lambda (beg end face)
+                 (let ((path? (and (listp face)
+                                   (equal
+                                    "green3"
+                                    (plist-get face :foreground))))
+                       other-props)
+                   ;; ansi-color-bold -> bold
+                   (when (s-matches?
+                          "^ansi-color-"
+                          (format "%s" (car-safe face)))
+                     (setq face
+                           (intern
+                            (s-replace
+                             "ansi-color-" ""
+                             (format "%s" (car face))))))
+                   (when path?
+                     (setq face 'italic))
+                   (when path?
+                     (let* ((relpath (buffer-substring beg end))
+                            (expanded (f-expand relpath))
+                            (data `((path . ,expanded))))
+                       (let ((title (or (minaduki-db//fetch-title expanded)
+                                        relpath)))
+                         (push (cons 'title title) data)
+                         (setq other-props
+                               (list 'minaduki-data data
+                                     'display title)))))
+                   (add-text-properties
+                    beg end `(font-lock-face ,(list face 'fixed-pitch) ,@other-props))))))
+          (ansi-color-apply-on-region
+           (point-min) (point-max)))
+        (goto-char (point-min))
+        (cl-loop with match
+                 while (setq match (text-property-search-forward
+                                    'minaduki-data))
+                 do
+                 (setf (buffer-substring
+                        (prop-match-beginning match)
+                        (prop-match-end match))
+                       (let-alist (prop-match-value match)
+                         (format "- [[%s][%s]]\n" .path .title))))
+        (buffer-string)))))
+
+(defun minaduki-buffer//insert-unlinked-references ()
+  "Insert unlinked references to the current buffer."
+  (when-let* ((file-path (buffer-file-name minaduki-buffer//current))
+              (titles-and-refs
+               (with-current-buffer minaduki-buffer//current
+                 (append (org-roam--extract-titles)
+                         (minaduki-extract/refs)))))
+    (insert "\n\n* Unlinked references\n"
+            (with-current-buffer minaduki-buffer//current
+              (minaduki//unlinked-references)))))
+
 (defun minaduki-buffer//insert-tag-references (tag)
   "Insert links to files tagged with TAG."
   (when tag
@@ -400,6 +484,7 @@ ORIG-PATH is the path where the CONTENT originated."
         (minaduki-buffer//insert-reflection-backlinks)
         (minaduki-buffer//insert-diary-backlinks)
         (minaduki-buffer//insert-other-backlinks)
+        (minaduki-buffer//insert-unlinked-references)
         ;; HACK: we should figure out we have no backlinks directly
         (unless (< 2 (s-count-matches "\n" (buffer-string)))
           (insert "\n\n/No backlinks/"))
