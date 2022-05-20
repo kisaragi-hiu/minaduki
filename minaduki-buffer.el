@@ -302,76 +302,112 @@ or to this file's ROAM_KEY.
                    'file-from file-from
                    'file-from-point (plist-get prop :point))))))))))
 
-(defun minaduki//unlinked-references ()
-  "Return unlinked references to the current buffer."
-  (when-let* ((file-path (buffer-file-name))
-              (titles-and-refs
-               (append (org-roam--extract-titles)
-                       (minaduki-extract/refs))))
-    (with-temp-buffer
-      (let ((default-directory org-directory))
-        ;; Do the search
-        (call-process
-         (or (and (boundp 'rg-executable)
-                  rg-executable)
-             (executable-find "rg"))
-         nil '(t t) nil
-         "--color=ansi"
-         "--colors=match:fg:red"
-         "--colors=path:fg:green"
-         "--colors=line:none"
-         "--colors=column:none"
-         "-n"
-         "--column"
-         (format "--glob=!%s" (f-relative file-path))
-         "--heading"
-         "--no-config"
-         "--fixed-strings"
-         "-e" (car titles-and-refs))
-        ;; Apply the colors and text properties
-        (let ((ansi-color-apply-face-function
-               (lambda (beg end face)
-                 (let ((path? (and (listp face)
-                                   (equal
-                                    "green3"
-                                    (plist-get face :foreground))))
-                       other-props)
-                   ;; ansi-color-bold -> bold
-                   (when (s-matches?
-                          "^ansi-color-"
-                          (format "%s" (car-safe face)))
-                     (setq face
-                           (intern
-                            (s-replace
-                             "ansi-color-" ""
-                             (format "%s" (car face))))))
-                   (when path?
-                     (setq face 'italic))
-                   (when path?
-                     (let* ((relpath (buffer-substring beg end))
-                            (expanded (f-expand relpath))
-                            (data `((path . ,expanded))))
-                       (let ((title (or (minaduki-db//fetch-title expanded)
-                                        relpath)))
-                         (push (cons 'title title) data)
-                         (setq other-props
-                               (list 'minaduki-data data
-                                     'display title)))))
-                   (add-text-properties
-                    beg end `(font-lock-face ,(list face 'fixed-pitch) ,@other-props))))))
-          (ansi-color-apply-on-region
-           (point-min) (point-max)))
+(defun minaduki//unlinked-references (file-path titles)
+  "Return unlinked references of TITLES.
+
+\"Unlinked\" is determined by whether they link to FILE-PATH."
+  (with-temp-buffer
+    (when-let* ((default-directory org-directory)
+                (rg (or (and (boundp 'rg-executable) rg-executable)
+                        (executable-find "rg"))))
+      (call-process rg
+                    nil '(t nil) nil
+                    "--color=ansi"
+                    "--colors=match:none"
+                    ;; These colors are used below to mark sections
+                    "--colors=path:fg:green"
+                    "--colors=line:fg:blue"
+                    "--colors=column:fg:yellow"
+                    "-i"
+                    "-n"
+                    "--column"
+                    (format "--glob=!%s" (f-relative file-path))
+                    "--heading"
+                    "--no-config"
+                    "--fixed-strings"
+                    "-e" (car titles))
+      (unless (equal "" (s-trim (buffer-string)))
+        ;; Step 1: insert the output
+        (setf (buffer-string)
+              (--> (buffer-string)
+                   ;; Trim all starting and ending newlines for
+                   ;; consistency. All newlines will be replaced with two
+                   ;; close parens to close off the (:path) lines.
+                   s-trim
+                   ;; One is for the `search-forward' (which is me
+                   ;; attempting to go faster than forward-line +
+                   ;; line-{beginning,end}-position), the other is to be
+                   ;; replaced with the close parens.
+                   (concat it "\n\n")))
         (goto-char (point-min))
-        (cl-loop with match
-                 while (setq match (text-property-search-forward
-                                    'minaduki-data))
-                 do
-                 (setf (buffer-substring
-                        (prop-match-beginning match)
-                        (prop-match-end match))
-                       (let-alist (prop-match-value match)
-                         (format "- [[%s][%s]]\n" .path .title))))
-        (buffer-string)))))
+        ;; Step 2: convert Ripgrep's output into `read'able sexp
+        (cl-loop
+         with start = (point)
+         while (search-forward "\n" nil t)
+         do
+         (let* ((end (match-beginning 0))
+                (line (buffer-substring start end)))
+           (pcase line
+             ;; path line
+             ((rx bos
+                  "[0m[32m"
+                  (let relpath (* any))
+                  "[0m")
+              (let ((path (f-expand relpath)))
+                (setf (buffer-substring start end)
+                      (format
+                       ;; We intentionally do not close
+                       ;; it, only doing so when the
+                       ;; block is over.
+                       "(:path %S :title %S :matches ("
+                       path
+                       (or (minaduki-db//fetch-title path)
+                           relpath)))))
+             ;; matches lines
+             ((rx bos
+                  "[0m[34m"
+                  (let ln (*? any))
+                  "[0m" ":"
+                  "[0m[33m"
+                  (let col (*? any))
+                  "[0m" ":"
+                  (let context (* any)))
+              ;; Mark contexts that reference the path of the
+              ;; target as ones to be ignored.
+              ;;
+              ;; HACK: this breaks for relative links!
+              (if (s-matches?
+                   (rx-to-string
+                    `(or
+                      ,file-path
+                      ,(minaduki//apply-link-abbrev
+                        file-path)))
+                   context)
+                  (setf (buffer-substring (1- start) end)
+                        ;; Two consecutive matches to be
+                        ;; ignored would become "ignoreignore"
+                        ;; if the space isn't here.
+                        "ignore ")
+                (setf (buffer-substring start end)
+                      (prin1-to-string
+                       (list :line ln :column col
+                             :context context)))))
+             ;; Empty lines between files
+             (pass
+              (setf (buffer-substring start end)
+                    "))"))))
+         do (setq start (point))))
+      ;; Step 3: wrap the whole buffer in a set of parens so we
+      ;; can read it in one go
+      (progn
+        (goto-char (point-min))
+        (insert "(")
+        (goto-char (point-max))
+        (insert ")"))
+      (goto-char (point-min))
+      ;; Step 4: Read!
+      (->> (read (current-buffer))
+           (--remove (memq 'ignore (plist-get it :matches)))))))
 
 (defun minaduki-buffer//insert-unlinked-references ()
   "Insert unlinked references to the current buffer."
@@ -379,10 +415,41 @@ or to this file's ROAM_KEY.
               (titles-and-refs
                (with-current-buffer minaduki-buffer//current
                  (append (org-roam--extract-titles)
-                         (minaduki-extract/refs)))))
-    (insert "\n\n* Unlinked references\n"
-            (with-current-buffer minaduki-buffer//current
-              (minaduki//unlinked-references)))))
+                         (minaduki-extract/refs))))
+              (references
+               (with-current-buffer minaduki-buffer//current
+                 (minaduki//unlinked-references
+                  file-path
+                  titles-and-refs))))
+    (insert "\n\n* Unlinked references\n")
+    (cl-loop
+     for file in references
+     do
+     (progn (insert (format "** [[%s][%s]]\n\n"
+                            (plist-get file :path)
+                            (plist-get file :title)))
+            (cl-loop for ind in (plist-get file :matches)
+                     do (insert
+                         (format
+                          "%s\n  %s\n\n"
+                          (let* ((file file)
+                                 (ind ind)
+                                 (path (plist-get file :path))
+                                 (line (string-to-number
+                                        (plist-get ind :line)))
+                                 (col (string-to-number
+                                       (plist-get ind :column))))
+                            (make-text-button
+                             (format "%s:%s" line col)
+                             nil
+                             'follow-link t
+                             'face '(fixed-pitch button)
+                             'action (lambda (_)
+                                       (minaduki-buffer//find-file path)
+                                       (goto-char (point-min))
+                                       (forward-line (1- line))
+                                       (forward-char col))))
+                          (plist-get ind :context))))))))
 
 (defun minaduki-buffer//insert-tag-references (tag)
   "Insert links to files tagged with TAG."
