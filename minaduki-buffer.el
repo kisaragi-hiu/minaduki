@@ -59,9 +59,6 @@
 (defvar org-link-frame-setup)
 (defvar org-return-follows-link)
 
-(declare-function minaduki//find-file         "org-roam")
-(declare-function org-roam-link-get-path      "kisaragi-notes-wikilink")
-
 (defcustom minaduki-buffer/position 'right
   "Where the metadata buffer should be placed.
 

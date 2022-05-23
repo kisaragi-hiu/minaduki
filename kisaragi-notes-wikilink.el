@@ -130,19 +130,6 @@ If there is no corresponding headline, return nil."
                 (when org-roam-link-auto-replace
                   (org-id-get-create))))))))
 
-;;; Path-related functions
-(defun org-roam-link-get-path (path &optional type)
-  "Return the PATH of the link to use.
-If TYPE is non-nil, create a link of TYPE. Otherwise, respect
-`org-link-file-path-type'."
-  (pcase (or type org-roam-link-file-path-type)
-    ('absolute
-     (abbreviate-file-name (expand-file-name path)))
-    ('noabbrev
-     (expand-file-name path))
-    ('relative
-     (file-relative-name path))))
-
 (defun org-roam-link--split-path (path)
   "Splits PATH into title and headline.
 Return a list of the form (type title has-headline-p headline star-idx).

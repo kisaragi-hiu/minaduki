@@ -313,6 +313,18 @@ means tomorrow, and N = -1 means yesterday."
          0)))))
 
 ;;;; File utilities
+(defun org-roam-link-get-path (path &optional type)
+  "Return the PATH of the link to use.
+If TYPE is non-nil, create a link of TYPE. Otherwise, respect
+`org-link-file-path-type'."
+  (pcase (or type org-roam-link-file-path-type)
+    ('absolute
+     (abbreviate-file-name (expand-file-name path)))
+    ('noabbrev
+     (expand-file-name path))
+    ('relative
+     (file-relative-name path))))
+
 (defun org-roam--org-file-p (path)
   "Check if PATH is pointing to an org file."
   (let ((ext (org-roam--file-name-extension path)))
