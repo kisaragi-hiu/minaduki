@@ -275,7 +275,8 @@ are returned."
              "--heading"
              "--no-config"
              "--fixed-strings"
-             "-e" ,(car titles)))
+             ,@(cl-loop for it in (append titles refs)
+                        append (list "-e" it))))
           (unless (equal "" (s-trim (buffer-string)))
             ;; Step 1: insert the output
             (setf (buffer-string)
