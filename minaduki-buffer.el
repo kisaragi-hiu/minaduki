@@ -221,6 +221,128 @@ This function hooks into `org-open-at-point' via `org-open-at-point-functions'."
 
 ;;;; Inserting backlinks
 
+(defun minaduki//backlinks (&optional type)
+  "Return backlinks of TYPE to the current buffer.
+
+TYPE can be:
+
+- `titles': titles and aliases from `org-roam--extract-titles'
+- `refs': references to keys from `minaduki-extract/refs', or
+- anything else: return both."
+  (pcase type
+    (`titles (minaduki-db//fetch-backlinks
+              (cons (buffer-file-name)
+                    (org-roam--extract-titles))))
+    (`refs (mapcan
+            #'minaduki-db//fetch-backlinks
+            (mapcar #'cdr (minaduki-extract/refs))))
+    (_ (append (minaduki//backlinks 'titles)
+               (minaduki//backlinks 'refs)))))
+
+(defun minaduki//unlinked-references ()
+  "Return unlinked references to the current buffer.
+
+Only references from files without links to the current buffer
+are returned."
+  (let ((file-path (buffer-file-name))
+        (titles (org-roam--extract-titles))
+        (refs (mapcar #'cdr (minaduki-extract/refs)))
+        (files-linking-here
+         (-uniq (mapcar #'car (minaduki//backlinks))))
+        (rg-cmd (or (and (boundp 'rg-executable) rg-executable)
+                    (executable-find "rg"))))
+    (when (and rg-cmd
+               file-path
+               (or titles refs))
+      (with-temp-buffer
+        (let ((default-directory org-directory))
+          (apply
+           #'call-process
+           rg-cmd
+           nil '(t nil) nil
+           `("--color=ansi"
+             "--colors=match:none"
+             ;; These colors are used below to mark sections
+             "--colors=path:fg:green"
+             "--colors=line:fg:blue"
+             "--colors=column:fg:yellow"
+             "-i"
+             "-n"
+             "--column"
+             ,@(--map
+                (format "--glob=!%s" (f-relative it))
+                (cons file-path files-linking-here))
+             "--heading"
+             "--no-config"
+             "--fixed-strings"
+             "-e" ,(car titles)))
+          (unless (equal "" (s-trim (buffer-string)))
+            ;; Step 1: insert the output
+            (setf (buffer-string)
+                  (--> (buffer-string)
+                       ;; Trim all starting and ending newlines for
+                       ;; consistency. All newlines will be replaced with two
+                       ;; close parens to close off the (:path) lines.
+                       s-trim
+                       ;; One is for the `search-forward' (which is me
+                       ;; attempting to go faster than forward-line +
+                       ;; line-{beginning,end}-position), the other is to be
+                       ;; replaced with the close parens.
+                       (concat it "\n\n")))
+            (goto-char (point-min))
+            ;; Step 2: convert Ripgrep's output into `read'able sexp
+            (cl-loop
+             with start = (point)
+             while (search-forward "\n" nil t)
+             do
+             (let* ((end (match-beginning 0))
+                    (line (buffer-substring start end)))
+               (pcase line
+                 ;; path line
+                 ((rx bos
+                      "[0m[32m"
+                      (let relpath (* any))
+                      "[0m")
+                  (let ((path (f-expand relpath)))
+                    (setf (buffer-substring start end)
+                          (format
+                           ;; We intentionally do not close
+                           ;; it, only doing so when the
+                           ;; block is over.
+                           "(:path %S :title %S :matches ("
+                           path
+                           (or (minaduki-db//fetch-title path)
+                               relpath)))))
+                 ;; matches lines
+                 ((rx bos
+                      "[0m[34m"
+                      (let ln (*? any))
+                      "[0m" ":"
+                      "[0m[33m"
+                      (let col (*? any))
+                      "[0m" ":"
+                      (let context (* any)))
+                  (setf (buffer-substring start end)
+                        (prin1-to-string
+                         (list :line ln :column col
+                               :context context))))
+                 ;; Empty lines between files
+                 (_
+                  (setf (buffer-substring start end)
+                        "))"))))
+             do (setq start (point))))
+          ;; Step 3: wrap the whole buffer in a set of parens so we
+          ;; can read it in one go
+          (progn
+            (goto-char (point-min))
+            (insert "(")
+            (goto-char (point-max))
+            (insert ")"))
+          (goto-char (point-min))
+          ;; Step 4: Read!
+          (->> (read (current-buffer))
+               (--remove (memq 'ignore (plist-get it :matches)))))))))
+
 (cl-defun minaduki-buffer//insert-backlinks (&key cite? filter (heading "Backlink"))
   "Insert the minaduki-buffer backlinks string for the current buffer.
 
@@ -250,16 +372,10 @@ or to this file's ROAM_KEY.
 6. Links in titles are removed."
   (let (props file-from)
     (when-let* ((file-path (buffer-file-name minaduki-buffer//current))
-                (titles-and-refs
-                 (with-current-buffer minaduki-buffer//current
-                   (cons (org-roam--extract-titles)
-                         (minaduki-extract/refs))))
                 (backlinks
-                 (if cite?
-                     (mapcan #'minaduki-db//fetch-backlinks
-                             (-map #'cdr (cdr titles-and-refs)))
-                   (minaduki-db//fetch-backlinks
-                    (push file-path (car titles-and-refs)))))
+                 (with-current-buffer minaduki-buffer//current
+                   (minaduki//backlinks
+                    (if cite? 'refs 'titles))))
                 (backlinks (if filter (-filter filter backlinks) backlinks))
                 (backlink-groups (--group-by (nth 0 it) backlinks)))
       ;; The heading
@@ -311,125 +427,11 @@ or to this file's ROAM_KEY.
                    'file-from file-from
                    'file-from-point (plist-get prop :point))))))))))
 
-(defun minaduki//unlinked-references (file-path titles)
-  "Return unlinked references of TITLES.
-
-\"Unlinked\" is determined by whether they link to FILE-PATH."
-  (with-temp-buffer
-    (when-let* ((default-directory org-directory)
-                (rg (or (and (boundp 'rg-executable) rg-executable)
-                        (executable-find "rg"))))
-      (call-process rg
-                    nil '(t nil) nil
-                    "--color=ansi"
-                    "--colors=match:none"
-                    ;; These colors are used below to mark sections
-                    "--colors=path:fg:green"
-                    "--colors=line:fg:blue"
-                    "--colors=column:fg:yellow"
-                    "-i"
-                    "-n"
-                    "--column"
-                    (format "--glob=!%s" (f-relative file-path))
-                    "--heading"
-                    "--no-config"
-                    "--fixed-strings"
-                    "-e" (car titles))
-      (unless (equal "" (s-trim (buffer-string)))
-        ;; Step 1: insert the output
-        (setf (buffer-string)
-              (--> (buffer-string)
-                   ;; Trim all starting and ending newlines for
-                   ;; consistency. All newlines will be replaced with two
-                   ;; close parens to close off the (:path) lines.
-                   s-trim
-                   ;; One is for the `search-forward' (which is me
-                   ;; attempting to go faster than forward-line +
-                   ;; line-{beginning,end}-position), the other is to be
-                   ;; replaced with the close parens.
-                   (concat it "\n\n")))
-        (goto-char (point-min))
-        ;; Step 2: convert Ripgrep's output into `read'able sexp
-        (cl-loop
-         with start = (point)
-         while (search-forward "\n" nil t)
-         do
-         (let* ((end (match-beginning 0))
-                (line (buffer-substring start end)))
-           (pcase line
-             ;; path line
-             ((rx bos
-                  "[0m[32m"
-                  (let relpath (* any))
-                  "[0m")
-              (let ((path (f-expand relpath)))
-                (setf (buffer-substring start end)
-                      (format
-                       ;; We intentionally do not close
-                       ;; it, only doing so when the
-                       ;; block is over.
-                       "(:path %S :title %S :matches ("
-                       path
-                       (or (minaduki-db//fetch-title path)
-                           relpath)))))
-             ;; matches lines
-             ((rx bos
-                  "[0m[34m"
-                  (let ln (*? any))
-                  "[0m" ":"
-                  "[0m[33m"
-                  (let col (*? any))
-                  "[0m" ":"
-                  (let context (* any)))
-              ;; Mark contexts that reference the path of the
-              ;; target as ones to be ignored.
-              ;;
-              ;; HACK: this breaks for relative links!
-              (if (s-matches?
-                   (rx-to-string
-                    `(or
-                      ,file-path
-                      ,(minaduki//apply-link-abbrev
-                        file-path)))
-                   context)
-                  (setf (buffer-substring (1- start) end)
-                        ;; Two consecutive matches to be
-                        ;; ignored would become "ignoreignore"
-                        ;; if the space isn't here.
-                        "ignore ")
-                (setf (buffer-substring start end)
-                      (prin1-to-string
-                       (list :line ln :column col
-                             :context context)))))
-             ;; Empty lines between files
-             (pass
-              (setf (buffer-substring start end)
-                    "))"))))
-         do (setq start (point))))
-      ;; Step 3: wrap the whole buffer in a set of parens so we
-      ;; can read it in one go
-      (progn
-        (goto-char (point-min))
-        (insert "(")
-        (goto-char (point-max))
-        (insert ")"))
-      (goto-char (point-min))
-      ;; Step 4: Read!
-      (->> (read (current-buffer))
-           (--remove (memq 'ignore (plist-get it :matches)))))))
-
 (defun minaduki-buffer//insert-unlinked-references ()
   "Insert unlinked references to the current buffer."
-  (when-let* ((file-path (buffer-file-name minaduki-buffer//current))
-              (titles-and-refs
-               (with-current-buffer minaduki-buffer//current
-                 (append (org-roam--extract-titles)
-                         (minaduki-extract/refs))))
-              (references
-               (with-current-buffer minaduki-buffer//current
-                 (minaduki//unlinked-references
-                  file-path
-                  titles-and-refs))))
+  (-when-let (references
+              (with-current-buffer minaduki-buffer//current
+                (minaduki//unlinked-references)))
     (insert "\n\n* Unlinked references\n")
     (cl-loop
      for file in references
