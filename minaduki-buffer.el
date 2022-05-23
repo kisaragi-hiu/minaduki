@@ -313,12 +313,19 @@ are returned."
                                relpath)))))
                  ;; matches lines
                  ((rx bos
-                      "[0m[34m"
+                      ;; \x1b is ESC; we could write it literally but
+                      ;; good luck reading it anywhere else other than
+                      ;; Emacs as most editors / viewers do not render
+                      ;; control chars in a meaningful way.
+                      ;;
+                      ;; Case in point: look at the diff for these
+                      ;; lines with a tool that isn't Emacs.
+                      "\x1b[0m\x1b[34m"
                       (let ln (*? any))
-                      "[0m" ":"
-                      "[0m[33m"
+                      "\x1b[0m" ":"
+                      "\x1b[0m\x1b[33m"
                       (let col (*? any))
-                      "[0m" ":"
+                      "\x1b[0m" ":"
                       (let context (* any)))
                   (setf (buffer-substring start end)
                         (prin1-to-string
