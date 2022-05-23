@@ -304,7 +304,7 @@ members that should be equal."
               '("Headline")))
 
     (it "extracts all titles and aliases"
-      (expect (test #'org-roam--extract-titles
+      (expect (test #'minaduki-extract/titles
                     "titles/combination.org")
               :to-equal
               '("TITLE PROP" "roam" "alias"))))

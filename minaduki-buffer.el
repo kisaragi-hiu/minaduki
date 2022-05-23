@@ -124,7 +124,7 @@ For example: (setq minaduki-buffer/window-parameters '((no-other-window . t)))"
 (defun minaduki-buffer//find-file (file)
   "Open FILE in the other window."
   (setq file (expand-file-name file))
-  (let ((last-window org-roam-last-window))
+  (let ((last-window minaduki//last-window))
     (if (window-valid-p last-window)
         (progn (with-selected-window last-window
                  (minaduki//find-file file))
@@ -223,13 +223,13 @@ This function hooks into `org-open-at-point' via `org-open-at-point-functions'."
 
 TYPE can be:
 
-- `titles': titles and aliases from `org-roam--extract-titles'
+- `titles': titles and aliases from `minaduki-extract/titles'
 - `refs': references to keys from `minaduki-extract/refs', or
 - anything else: return both."
   (pcase type
     (`titles (minaduki-db//fetch-backlinks
               (cons (buffer-file-name)
-                    (org-roam--extract-titles))))
+                    (minaduki-extract/titles))))
     (`refs (mapcan
             #'minaduki-db//fetch-backlinks
             (mapcar #'cdr (minaduki-extract/refs))))
@@ -242,7 +242,7 @@ TYPE can be:
 Only references from files without links to the current buffer
 are returned."
   (let ((file-path (buffer-file-name))
-        (titles (org-roam--extract-titles))
+        (titles (minaduki-extract/titles))
         (refs (mapcar #'cdr (minaduki-extract/refs)))
         (files-linking-here
          (-uniq (mapcar #'car (minaduki//backlinks))))
@@ -588,7 +588,7 @@ what."
 (defun minaduki-buffer/activate ()
   "Activate display of the `minaduki-buffer'."
   (interactive)
-  (setq org-roam-last-window (get-buffer-window))
+  (setq minaduki//last-window (get-buffer-window))
   ;; Set up the window
   (let ((position (if (functionp minaduki-buffer/position)
                       (funcall minaduki-buffer/position)
@@ -614,7 +614,7 @@ what."
 (defun minaduki-buffer/deactivate ()
   "Deactivate display of the `minaduki-buffer'."
   (interactive)
-  (setq org-roam-last-window (get-buffer-window))
+  (setq minaduki//last-window (get-buffer-window))
   (delete-window (get-buffer-window minaduki-buffer/name)))
 
 (defun minaduki-buffer/toggle-display ()

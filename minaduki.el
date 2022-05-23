@@ -299,7 +299,7 @@ what they want to do with it."
 (define-minor-mode minaduki-local-mode
   "Minor mode active in files tracked by minaduki."
   :global nil
-  (setq org-roam-last-window (get-buffer-window))
+  (setq minaduki//last-window (get-buffer-window))
   ;; TODO: use minaduki-local-mode-hook
   (run-hooks 'minaduki/file-setup-hook) ; Run user hooks
   (add-hook 'post-command-hook #'minaduki-buffer//update-maybe nil t)

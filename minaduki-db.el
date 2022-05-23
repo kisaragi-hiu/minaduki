@@ -232,7 +232,7 @@ If UPDATE-P is non-nil, first remove the meta for the file in the database."
 If UPDATE-P is non-nil, first remove titles for the file in the database.
 Returns the number of rows inserted."
   (let* ((file (or minaduki//file-name (buffer-file-name)))
-         (titles (or (org-roam--extract-titles)
+         (titles (or (minaduki-extract/titles)
                      (list (minaduki//path-to-title file))))
          (rows (mapcar (lambda (title)
                          (vector file title))

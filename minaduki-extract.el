@@ -368,7 +368,7 @@ Return a list of [ID FILE LEVEL] vectors."
         (list (or (match-string-no-properties 1)
                   (match-string-no-properties 4))))))))
 
-(defun org-roam--extract-titles ()
+(defun minaduki-extract/titles ()
   "Extract the titles from current buffer.
 
 This extracts the aliases plus either the title or the first

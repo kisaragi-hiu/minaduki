@@ -528,7 +528,7 @@ information."
 This is set by `minaduki//with-temp-buffer', to allow throwing of
 descriptive warnings when certain operations fail (e.g. parsing).")
 
-(defvar org-roam-last-window nil
+(defvar minaduki//last-window nil
   "Last window `org-roam' was called from.")
 
 (defvar org-roam--org-link-bracket-typed-re
