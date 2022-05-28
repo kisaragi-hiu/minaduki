@@ -150,7 +150,7 @@ This function hooks into `org-open-at-point' via `org-open-at-point-functions'."
    ((let* ((context (org-element-context))
            (path (org-element-property :path context)))
       (when (and (eq (org-element-type context) 'link)
-                 (org-roam--org-roam-file-p path))
+                 (minaduki//in-vault? path))
         (minaduki-buffer//find-file path)
         (org-show-context)
         t)))

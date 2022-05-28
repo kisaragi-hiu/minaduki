@@ -325,39 +325,50 @@ If TYPE is non-nil, create a link of TYPE. Otherwise, respect
     ('relative
      (file-relative-name path))))
 
-(defun org-roam--org-file-p (path)
-  "Check if PATH is pointing to an org file."
-  (let ((ext (org-roam--file-name-extension path)))
-    (when (string= ext "gpg")           ; Handle encrypted files
-      (setq ext (org-roam--file-name-extension (file-name-sans-extension path))))
-    (member ext org-roam-file-extensions)))
-
 (defsubst minaduki//excluded? (path)
   "Should PATH be excluded from indexing?"
-  (and org-roam-file-exclude-regexp
-       (string-match-p org-roam-file-exclude-regexp path)))
+  (and minaduki-file-exclude-regexp
+       (string-match-p minaduki-file-exclude-regexp path)))
 
-(defun org-roam--org-roam-file-p (&optional path)
-  "Return t if PATH is part of Org-roam system, nil otherwise.
-If PATH is not specified, use the current buffer's file-path."
+(defun minaduki//in-vault? (&optional path)
+  "Return t if PATH is in a vault.
+
+If PATH is not specified, use the current buffer's file-path.
+
+Currently only one vault is supported, which is specified by
+`org-directory'.
+
+A path is in a vault if it has the right extension, is not
+excluded (by `minaduki-file-exclude-regexp'), and is located
+under the vault (`org-directory')."
   (when-let ((path (or path
                        minaduki//file-name
                        (-> (buffer-base-buffer)
                            (buffer-file-name)))))
     (save-match-data
       (and
-       (org-roam--org-file-p path)
+       (member (minaduki//file-name-extension path)
+               minaduki-file-extensions)
        (not (minaduki//excluded? path))
        (f-descendant-of-p path (expand-file-name org-directory))))))
 
-(defun org-roam--file-name-extension (path)
-  "Return file name extension for PATH.
-Like `file-name-extension', but does not strip version number."
-  (save-match-data
-    (let ((file (file-name-nondirectory path)))
-      (if (and (string-match "\\.[^.]*\\'" file)
-               (not (eq 0 (match-beginning 0))))
-          (substring file (+ (match-beginning 0) 1))))))
+(defun minaduki//file-name-extension (path)
+  "Return the extension of PATH.
+
+Like `file-name-extension', but:
+
+- this does not strip version number, and
+- this strips the .gpg extension."
+  (let (file ext)
+    (save-match-data
+      (setq file (file-name-nondirectory path))
+      (when (and (string-match "\\.[^.]*\\'" file)
+                 (not (eq 0 (match-beginning 0))))
+        (setq ext (substring file (1+ (match-beginning 0))))))
+    ;; This will do it more than once. Is this a problem?
+    (if (equal ext "gpg")
+        (minaduki//file-name-extension (f-no-ext path))
+      ext)))
 
 ;;;; File functions
 (defun minaduki//find-file (file)
@@ -385,7 +396,7 @@ E.g. (\".org\") => (\"*.org\" \"*.org.gpg\")"
   "List all tracked files in DIR with Ripgrep.
 
 EXECUTABLE is the Ripgrep executable."
-  (let* ((globs (org-roam--list-files-search-globs org-roam-file-extensions))
+  (let* ((globs (org-roam--list-files-search-globs minaduki-file-extensions))
          (arguments `("-L" ,dir "--files"
                       ,@(cons "-g" (-interpose "-g" globs)))))
     (with-temp-buffer
@@ -400,7 +411,7 @@ EXECUTABLE is the Ripgrep executable."
 (defun minaduki//list-files/elisp (dir)
   "List all tracked files in DIR with `directory-files-recursively'."
   (let ((regexp (concat "\\.\\(?:"
-                        (mapconcat #'regexp-quote org-roam-file-extensions "\\|")
+                        (mapconcat #'regexp-quote minaduki-file-extensions "\\|")
                         "\\)\\(?:\\.gpg\\)?\\'"))
         result)
     (dolist (file (directory-files-recursively dir regexp nil nil t))
@@ -569,7 +580,7 @@ If BUFFER is not specified, use the current buffer."
         path)
     (with-current-buffer buffer
       (and (setq path (buffer-file-name (buffer-base-buffer)))
-           (org-roam--org-roam-file-p path)))))
+           (minaduki//in-vault? path)))))
 
 (defun org-roam--get-roam-buffers ()
   "Return a list of buffers that are Org-roam files."

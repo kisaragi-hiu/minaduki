@@ -384,7 +384,7 @@ The file is saved if the original value of :no-save is not t and
 
 (defun minaduki-capture//get-file-path (basename)
   "Return path for Org-roam file with BASENAME."
-  (let* ((ext (or (car org-roam-file-extensions)
+  (let* ((ext (or (car minaduki-file-extensions)
                   "org"))
          (file (concat basename "." ext)))
     (expand-file-name

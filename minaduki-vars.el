@@ -99,7 +99,7 @@ value like `most-positive-fixnum'."
   :type 'boolean
   :group 'minaduki)
 
-(defcustom org-roam-file-extensions `("org" "md" "bib")
+(defcustom minaduki-file-extensions `("org" "md" "bib")
   "Only files with these extensions are indexed.
 
 The first item in the list is used as the default file extension.
@@ -109,7 +109,7 @@ file formats are Org-mode and Markdown (partially)."
   :type '(repeat string)
   :group 'minaduki)
 
-(defcustom org-roam-file-exclude-regexp nil
+(defcustom minaduki-file-exclude-regexp nil
   "Files matching this regular expression are excluded from the Org-roam."
   :type '(choice
           (string :tag "Regular expression matching files to ignore")
