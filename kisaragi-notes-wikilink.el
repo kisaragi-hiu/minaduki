@@ -179,7 +179,7 @@ the target of LINK (title or heading content)."
              ('title+headline
               (let ((file (minaduki-link//get-file-from-title title)))
                 (if (not file)
-                    (minaduki-message "Cannot find matching file")
+                    (minaduki//message "Cannot find matching file")
                   (setq mkr (org-roam-link--get-id-from-headline headline file))
                   (pcase mkr
                     (`(,marker . ,target-id)
@@ -188,7 +188,7 @@ the target of LINK (title or heading content)."
                              loc target-id
                              desc (or desc headline)
                              link-type "id")))
-                    (_ (minaduki-message "Cannot find matching id"))))))
+                    (_ (minaduki//message "Cannot find matching id"))))))
              ('title
               (setq loc (minaduki-link//get-file-from-title title)
                     link-type "file"
@@ -201,7 +201,7 @@ the target of LINK (title or heading content)."
                        loc target-id
                        link-type "id"
                        desc (or desc headline)))
-                (_ (minaduki-message "Cannot find matching headline")))))))))
+                (_ (minaduki//message "Cannot find matching headline")))))))))
     (list link-type loc desc mkr)))
 
 ;;; Conversion Functions

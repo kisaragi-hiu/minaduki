@@ -153,8 +153,8 @@ SQL can be either the emacsql vector representation, or a string."
     'ignore
     (if (< version minaduki-db//version)
         (progn
-          (minaduki-message (format "Upgrading the cache database from version %d to version %d"
-                                    version minaduki-db//version))
+          (minaduki//message (format "Upgrading the cache database from version %d to version %d"
+                                     version minaduki-db//version))
           (minaduki-db/build-cache t))))
   version)
 
@@ -531,16 +531,16 @@ If FORCE, force a rebuild of the cache from scratch."
       (minaduki-db//clear-file file)
       (setq deleted-count (1+ deleted-count)))
     (setq count-plist (minaduki-db//update-files modified-files))
-    (minaduki-message "total: Δ%s, files-modified: Δ%s, ids: Δ%s, links: Δ%s, tags: Δ%s, titles: Δ%s, refs: Δ%s, lit: Δ%s, deleted: Δ%s"
-                      (- (length dir-files) (plist-get count-plist :error-count))
-                      (plist-get count-plist :modified-count)
-                      (plist-get count-plist :id-count)
-                      (plist-get count-plist :link-count)
-                      (plist-get count-plist :tag-count)
-                      (plist-get count-plist :title-count)
-                      (plist-get count-plist :ref-count)
-                      (plist-get count-plist :lit-count)
-                      deleted-count)))
+    (minaduki//message "total: Δ%s, files-modified: Δ%s, ids: Δ%s, links: Δ%s, tags: Δ%s, titles: Δ%s, refs: Δ%s, lit: Δ%s, deleted: Δ%s"
+                       (- (length dir-files) (plist-get count-plist :error-count))
+                       (plist-get count-plist :modified-count)
+                       (plist-get count-plist :id-count)
+                       (plist-get count-plist :link-count)
+                       (plist-get count-plist :tag-count)
+                       (plist-get count-plist :title-count)
+                       (plist-get count-plist :ref-count)
+                       (plist-get count-plist :lit-count)
+                       deleted-count)))
 
 (defun minaduki-db/update-file (file-path)
   "Update Org-roam cache for FILE-PATH.
@@ -550,7 +550,7 @@ If the file exists, update the cache with information."
         (db-hash (minaduki-db//fetch-file-hash file-path)))
     (unless (string= content-hash db-hash)
       (minaduki-db//update-files (list (cons file-path content-hash)))
-      (minaduki-message "Updated: %s" file-path))))
+      (minaduki//message "Updated: %s" file-path))))
 
 (defun minaduki-db//update-files (file-hash-pairs)
   "Update Org-roam cache for FILE-HASH-PAIRS.

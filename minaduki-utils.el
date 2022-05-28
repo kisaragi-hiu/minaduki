@@ -20,7 +20,7 @@
 (require 'org)
 
 ;;;; Error and progress reporting
-(defun minaduki-message (format-string &rest args)
+(defun minaduki//message (format-string &rest args)
   "Pass FORMAT-STRING and ARGS to `message' when `minaduki-verbose' is t."
   (when minaduki-verbose
     (apply #'message `(,(concat "(minaduki) " format-string) ,@args))))
@@ -64,7 +64,7 @@ SEQUENCE."
             with length = (length ,sequence)
             do
             (progn
-              (minaduki-message ,message (1+ i) length)
+              (minaduki//message ,message (1+ i) length)
               ,@body)))
 
 ;;;; String manipulation

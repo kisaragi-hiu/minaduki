@@ -119,7 +119,7 @@ REPLACE?: if non-nil, delete active region before inserting the new link."
             (minaduki/new-concept-note
              :title title
              :visit? nil))
-      (minaduki-message "Created new note \"%s\"" title))
+      (minaduki//message "Created new note \"%s\"" title))
     (when lowercase?
       (setq desc (downcase desc)))
     (when replace?
@@ -241,8 +241,8 @@ Return added tag."
        for f in all-files
        do
        (cl-incf i)
-       (minaduki-message "(%s/%s) Looking for broken links in %s"
-                         i length f)
+       (minaduki//message "(%s/%s) Looking for broken links in %s"
+                          i length f)
        (minaduki//with-temp-buffer f
          (save-excursion
            (goto-char (point-min))
