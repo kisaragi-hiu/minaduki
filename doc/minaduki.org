@@ -11,3 +11,13 @@ Minaduki is my fork of Org-roam v1.
 - alias :: an alternative title.
 - (to be renamed) =roam_key= :: a unique identifier for this file. Could be a link or any other ID. This is used to associate bibliography items with note files, as well as for citation backlinks.
 - (to be renamed) =roam_tags= :: a list of tags.
+
+* Browsing notes
+
+Use =minaduki/open= to see a list of indexed notes. Select one to open.
+
+If [[https://github.com/minad/marginalia/][Marginalia]] is installed, you'll see the file name listed in the completion as well.
+
+Press RET to visit the note.
+
+Headline notes are indicated with a leading star (regardless of heading level or whether it's Markdown or Org). Headline notes are headlines that have an =ID= property.
