@@ -442,7 +442,16 @@ or to this file's ROAM_KEY.
      for file in references
      do
      (progn (insert (format "** [[%s][%s]]\n\n"
-                            (plist-get file :path)
+                            ;; If there is only one match, make this
+                            ;; link go point to it
+                            (if (= 1 (length (plist-get file :matches)))
+                                (format "%s::%s"
+                                        (plist-get file :path)
+                                        (-> file
+                                            (plist-get :matches)
+                                            car
+                                            (plist-get :line)))
+                              (plist-get file :path))
                             (plist-get file :title)))
             (cl-loop for ind in (plist-get file :matches)
                      do (insert
