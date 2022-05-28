@@ -402,7 +402,7 @@ or to this file's ROAM_KEY.
                                       :desc (minaduki//remove-org-links
                                              (minaduki-db//fetch-title file-from)))
                 ;; tags
-                (or (-some->> (minaduki-db/query [:select tags :from tags
+                (or (-some->> (minaduki-db/query [:select tags :from files
                                                   :where (= file $s1)]
                                                  file-from)
                       caar

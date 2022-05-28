@@ -37,29 +37,25 @@
   "Return an alist for completion.
 The car is the displayed title for completion, and the cdr is a
 plist containing the path and title for the file."
-  (let* ((file-nodes (minaduki-db/query [:select [files:file titles:title tags:tags files:meta] :from titles
-                                         :left :join tags
-                                         :on (= titles:file tags:file)
-                                         :left :join files
-                                         :on (= titles:file files:file)]))
+  (let* ((file-nodes (minaduki-db/query [:select [file titles tags meta]
+                                         :from files]))
          (id-nodes (minaduki-db/query
-                    [:select [ids:id ids:title titles:title files:meta]
+                    [:select [ids:id ids:title files:titles files:meta]
                      :from ids
-                     :left :join titles
-                     :on (= titles:file ids:file)
                      :left :join files
                      :on (= files:file ids:file)]))
          rows)
     (cl-loop for x in file-nodes
-             do (push (list :path (elt x 0)
-                            :title (elt x 1)
-                            :tags (elt x 2)
-                            :meta (elt x 3))
-                      rows))
+             do (dolist (title (elt x 1))
+                  (push (list :path (elt x 0)
+                              :title title
+                              :tags (elt x 2)
+                              :meta (elt x 3))
+                        rows)))
     (cl-loop for x in id-nodes
              do (push (list :path (elt x 0)
                             :title (format "* %s - %s"
-                                           (elt x 2)
+                                           (car (elt x 2))
                                            (elt x 1))
                             :tags nil
                             :meta (elt x 3)
@@ -101,11 +97,9 @@ FILTER can either be a string or a function:
   current candidate. It should return t if that candidate is to
   be included as a candidate."
   (let ((rows (minaduki-db/query
-               [:select [refs:type refs:ref refs:file titles:title tags:tags]
-                :from titles
-                :left :join tags
-                :on (= titles:file tags:file)
-                :left :join refs :on (= titles:file refs:file)
+               [:select [refs:type refs:ref refs:file files:title files:tags]
+                :from files
+                :left :join refs :on (= files:file refs:file)
                 :where refs:file :is :not :null]))
         completions)
     (setq rows (seq-sort-by (lambda (x)
@@ -138,11 +132,9 @@ FILTER can either be a string or a function:
 Each note is a list (STR :path PATH :title TITLE), where STR is
 displayed in `completing-read'."
   (let* ((rows (minaduki-db/query
-                [:select [titles:file titles:title tags:tags]
-                 :from titles
-                 :left :join tags
-                 :on (= titles:file tags:file)
-                 :left :join refs :on (= titles:file refs:file)
+                [:select [file title tags]
+                 :from files
+                 :left :join refs :on (= files:file refs:file)
                  :where refs:file :is :null]))
          completions)
     (dolist (row rows)
@@ -224,7 +216,9 @@ This is active when `org-roam-completion-everywhere' is non-nil."
             (--> (completion-table-dynamic
                   ;; Get our own completion request string
                   (lambda (_)
-                    (->> (-map #'car (minaduki-db/query [:select [title] :from titles]))
+                    (->> (minaduki-db/query
+                          [:select [titles] :from files])
+                         -flatten
                          (--remove (string= prefix it)))))
                  (completion-table-case-fold it (not org-roam-completion-ignore-case)))
             :exit-function (lambda (str _status)

@@ -538,8 +538,7 @@ members that should be equal."
     ;; Cache
     (expect (caar (minaduki-db/query [:select (funcall count) :from files])) :to-be 8)
     (expect (caar (minaduki-db/query [:select (funcall count) :from links])) :to-be 5)
-    (expect (caar (minaduki-db/query [:select (funcall count) :from titles])) :to-be 8)
-    (expect (caar (minaduki-db/query [:select (funcall count) :from titles
+    (expect (caar (minaduki-db/query [:select (funcall count) :from files
                                       :where titles :is-null])) :to-be 1)
     (expect (caar (minaduki-db/query [:select (funcall count) :from refs])) :to-be 1)
 
@@ -561,7 +560,7 @@ members that should be equal."
     (expect (caar (minaduki-db/query [:select (funcall count) :from links
                                       :where (= dest $s1)]
                                      (test-minaduki--abs-path "unlinked.org"))) :to-be 0)
-    ;; TODO Test titles
+    ;; FIXME: titles has been merged into files
     (expect (minaduki-db/query [:select * :from titles])
             :to-have-same-items-as
             (list (list (test-minaduki--abs-path "alias.org")

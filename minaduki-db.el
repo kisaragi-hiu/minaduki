@@ -53,7 +53,7 @@
 
 ;;;; Options
 
-(defconst minaduki-db//version 13)
+(defconst minaduki-db//version 14)
 
 (defvar minaduki-db//connection nil
   "Database connection to the cache.")
@@ -105,7 +105,9 @@ SQL can be either the emacsql vector representation, or a string."
   '((files
      [(file :unique :primary-key)
       (hash :not-null)
-      (meta :not-null)])
+      (meta :not-null)
+      tags
+      titles])
 
     (ids
      [(id :unique :primary-key)
@@ -118,14 +120,6 @@ SQL can be either the emacsql vector representation, or a string."
       (dest :not-null)
       (type :not-null)
       (properties :not-null)])
-
-    (tags
-     [(file :unique :primary-key)
-      (tags)])
-
-    (titles
-     [(file :not-null)
-      title])
 
     ;; TODO: "keys" maps keys to literature entry listings; "refs"
     ;; maps keys to note files. These should be in the same table.
@@ -184,7 +178,7 @@ This function is called on `minaduki-db/file-update-timer'."
 (defun minaduki-db//initialized-p ()
   "Whether the Org-roam cache has been initialized."
   (and (file-exists-p minaduki/db-location)
-       (> (caar (minaduki-db/query [:select (funcall count) :from titles]))
+       (> (caar (minaduki-db/query [:select (funcall count) :from files]))
           0)))
 
 (defun minaduki-db//ensure-built ()
@@ -217,7 +211,10 @@ If UPDATE-P is non-nil, first remove the meta for the file in the database."
          (attr (file-attributes file))
          (atime (file-attribute-access-time attr))
          (mtime (file-attribute-modification-time attr))
-         (hash (minaduki//compute-content-hash)))
+         (hash (minaduki//compute-content-hash))
+         (tags (org-roam--extract-tags file))
+         (titles (or (minaduki-extract/titles)
+                     (list (minaduki//path-to-title file)))))
     (when update-p
       (minaduki-db/query [:delete :from files
                           :where (= file $s1)]
@@ -225,27 +222,8 @@ If UPDATE-P is non-nil, first remove the meta for the file in the database."
     (minaduki-db/query
      [:insert :into files
       :values $v1]
-     (list (vector file hash (list :atime atime :mtime mtime))))))
-
-(defun minaduki-db//insert-titles (&optional update-p)
-  "Update the titles of the current buffer into the cache.
-If UPDATE-P is non-nil, first remove titles for the file in the database.
-Returns the number of rows inserted."
-  (let* ((file (or minaduki//file-name (buffer-file-name)))
-         (titles (or (minaduki-extract/titles)
-                     (list (minaduki//path-to-title file))))
-         (rows (mapcar (lambda (title)
-                         (vector file title))
-                       titles)))
-    (when update-p
-      (minaduki-db/query [:delete :from titles
-                          :where (= file $s1)]
-                         file))
-    (minaduki-db/query
-     [:insert :into titles
-      :values $v1]
-     rows)
-    (length rows)))
+     (list (vector file hash (list :atime atime :mtime mtime)
+                   tags titles)))))
 
 (defun minaduki-db//insert-lit-entries (&optional update-p)
   "Update the lit-entries of the current buffer into the cache.
@@ -344,24 +322,6 @@ Returns the number of rows inserted."
            0))
       0)))
 
-(defun minaduki-db//insert-tags (&optional update-p)
-  "Insert tags for the current buffer into the Org-roam cache.
-If UPDATE-P is non-nil, first remove tags for the file in the database.
-Return the number of rows inserted."
-  (let* ((file (or minaduki//file-name (buffer-file-name)))
-         (tags (org-roam--extract-tags file)))
-    (when update-p
-      (minaduki-db/query [:delete :from tags
-                          :where (= file $s1)]
-                         file))
-    (if tags
-        (progn (minaduki-db/query
-                [:insert :into tags
-                 :values $v1]
-                (list (vector file tags)))
-               1)
-      0)))
-
 ;;;;; Fetching
 (defun minaduki-db//file-present? (file)
   "Does FILE exist in the cache DB?"
@@ -388,14 +348,16 @@ When NOCASE? is non-nil, match case-insentively.
                ,@maybe-nocase]
              id)))
      (title
-      (->> (minaduki-db/query
-            `[:select [file] :from titles
-              :where (= title $s0)
-              ,@maybe-nocase]
-            title)
-           ;; The above returns ((path1) (path2) ...).
-           ;; Turn it into (path1 path2 ...).
-           (apply #'nconc)))
+      ;; Narrow down possible candidates with SQLite first before
+      ;; finding accurate matches in Emacs Lisp; first done in
+      ;; `minaduki-db//fetch-tag-references'.
+      (let ((possible (minaduki-db/query
+                       `[:select [file titles] :from files
+                         :where (like titles (quote ,(concat "%" title "%")))
+                         ,@maybe-nocase])))
+        (cl-loop for (file titles) in possible
+                 when (member title titles)
+                 collect file)))
      (key
       (caar (minaduki-db/query
              `[:select [file] :from refs
@@ -420,14 +382,15 @@ When NOCASE? is non-nil, match case-insentively.
 
 (defun minaduki-db//fetch-title (file)
   "Return the main title of FILE from the cache."
-  (caar (minaduki-db/query [:select [title] :from titles
-                            :where (= file $s1)
-                            :limit 1]
-                           file)))
+  (car
+   (caar
+    (minaduki-db/query [:select [titles] :from files
+                        :where (= file $s1)]
+                       file))))
 
 (defun minaduki-db//fetch-all-tags ()
   "Return all distinct tags from the cache."
-  (let ((rows (minaduki-db/query [:select :distinct [tags] :from tags]))
+  (let ((rows (minaduki-db/query [:select :distinct [tags] :from files]))
         acc)
     (dolist (row rows)
       (dolist (tag (car row))
@@ -442,7 +405,7 @@ When NOCASE? is non-nil, match case-insentively.
   ;; Lisp afterwards.
   ;;
   ;; This seems to indeed be faster: try this (the 2 variant is with
-  ;; the while clause removed)
+  ;; the where clause removed)
   ;;
   ;; (list
   ;;  (benchmark-run-compiled 1000
@@ -452,7 +415,7 @@ When NOCASE? is non-nil, match case-insentively.
   ;; ; -> ((1.961452458 2 0.3958529560000006)
   ;;       (12.077074859 12 2.0858843059999987)))
   (let ((candidates
-         (minaduki-db/query `[:select [file tags] :from tags
+         (minaduki-db/query `[:select [file tags] :from files
                               :where (like tags (quote ,(concat "%" tag "%")))])))
     (cl-loop for cand in candidates
              when (member tag (cadr cand))
@@ -500,8 +463,6 @@ If the file exists, update the cache with information."
           (minaduki-db//insert-lit-entries 'update))
         (unless (eq major-mode 'bibtex-mode)
           (minaduki-db//insert-meta 'update)
-          (minaduki-db//insert-tags 'update)
-          (minaduki-db//insert-titles 'update)
           (minaduki-db//insert-refs 'update)
           (minaduki-db//insert-ids 'update)
           (minaduki-db//insert-links 'update))))))
@@ -531,13 +492,11 @@ If FORCE, force a rebuild of the cache from scratch."
       (minaduki-db//clear-file file)
       (setq deleted-count (1+ deleted-count)))
     (setq count-plist (minaduki-db//update-files modified-files))
-    (minaduki//message "total: Δ%s, files-modified: Δ%s, ids: Δ%s, links: Δ%s, tags: Δ%s, titles: Δ%s, refs: Δ%s, lit: Δ%s, deleted: Δ%s"
+    (minaduki//message "total: Δ%s, files-modified: Δ%s, ids: Δ%s, links: Δ%s, refs: Δ%s, lit: Δ%s, deleted: Δ%s"
                        (- (length dir-files) (plist-get count-plist :error-count))
                        (plist-get count-plist :modified-count)
                        (plist-get count-plist :id-count)
                        (plist-get count-plist :link-count)
-                       (plist-get count-plist :tag-count)
-                       (plist-get count-plist :title-count)
                        (plist-get count-plist :ref-count)
                        (plist-get count-plist :lit-count)
                        deleted-count)))
@@ -560,8 +519,6 @@ FILE-HASH-PAIRS is a list of (file . hash) pairs."
          (error-count 0)
          (id-count 0)
          (link-count 0)
-         (tag-count 0)
-         (title-count 0)
          (ref-count 0)
          (lit-count 0)
          (modified-count 0))
@@ -569,23 +526,15 @@ FILE-HASH-PAIRS is a list of (file . hash) pairs."
     (minaduki//for "Clearing files (%s/%s)..."
         (file . _) file-hash-pairs
       (minaduki-db//clear-file file))
-    ;; Process titles and tags first to allow links to depend on
-    ;; titles later; process IDs first so IDs are already cached
-    ;; during link extraction
+    ;; Process file metadata (titles, tags) first to allow links to
+    ;; depend on titles later; process IDs first so IDs are already
+    ;; cached during link extraction
     (minaduki//for "Processing titles, tags, and lit-entries (%s/%s)..."
         (file . contents-hash) file-hash-pairs
       (condition-case nil
           (minaduki//with-temp-buffer file
-            (let* ((attr (file-attributes file))
-                   (atime (file-attribute-access-time attr))
-                   (mtime (file-attribute-modification-time attr)))
-              (minaduki-db/query
-               [:insert :into files
-                :values $v1]
-               (vector file contents-hash (list :atime atime :mtime mtime))))
+            (minaduki-db//insert-meta)
             (setq id-count (+ id-count (minaduki-db//insert-ids)))
-            (setq tag-count (+ tag-count (minaduki-db//insert-tags)))
-            (setq title-count (+ title-count (minaduki-db//insert-titles)))
             (setq lit-count (+ lit-count (minaduki-db//insert-lit-entries))))
         (file-error
          (setq error-count (1+ error-count))
@@ -611,8 +560,6 @@ FILE-HASH-PAIRS is a list of (file . hash) pairs."
     (list :error-count error-count
           :modified-count modified-count
           :id-count id-count
-          :title-count title-count
-          :tag-count tag-count
           :link-count link-count
           :ref-count ref-count
           :lit-count lit-count)))
