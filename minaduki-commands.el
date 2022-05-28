@@ -106,7 +106,6 @@ REPLACE?: if non-nil, delete active region before inserting the new link."
                              (prog1 (-> (buffer-substring-no-properties
                                          (region-beginning)
                                          (region-end))
-                                        downcase
                                         s-trim)))
             :prompt "Insert link to note: ")
     :lowercase? current-prefix-arg
