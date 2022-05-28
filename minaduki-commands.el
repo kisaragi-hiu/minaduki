@@ -351,6 +351,28 @@ Return added tag."
     (minaduki/literature-note-actions key)))
 
 ;;;###autoload
+(cl-defun minaduki/new-concept-note (&key title visit?)
+  "Create a new concept note with TITLE.
+
+Return the path of the newly created note.
+
+If VISIT? is non-nil, go to the newly created note."
+  (interactive
+   (list :title (read-string "Title: ")
+         :visit? t))
+  (let* ((file (-> (minaduki//title-to-slug title)
+                   (f-expand org-directory)
+                   (concat ".org")))
+         (org-capture-templates
+          `(("a" "" plain
+             (file ,file)
+             ,(format "#+title: %s\n" title)
+             :jump-to-captured ,visit?
+             :immediate-finish t))))
+    (org-capture nil "a")
+    file))
+
+;;;###autoload
 (defun minaduki/new-daily-note (&optional day)
   "Create a new daily note on DAY.
 
@@ -516,15 +538,9 @@ one."
   (let ((path (plist-get entry :path))
         (title (plist-get entry :title)))
     (cond ((plist-get entry :new?)
-           (let ((org-capture-templates
-                  `(("a" "" plain
-                     (file ,(-> (minaduki//title-to-slug title)
-                                (f-expand org-directory)
-                                (concat ".org")))
-                     ,(format "#+title: %s\n" title)
-                     :jump-to-captured t
-                     :immediate-finish t))))
-             (org-capture nil "a")))
+           (minaduki/new-concept-note
+            :title title
+            :visit? t))
           ((plist-get entry :id?)
            (minaduki/open-id path))
           (t
@@ -681,6 +697,7 @@ This first adds an entry for it into a file in
     ("Open notes directory"               . minaduki/open-directory)
     ("Open or create a template"          . minaduki/open-template)
     ("Create a new diary entry"           . minaduki/new-diary-entry)
+    ("Create a new concept note"          . minaduki/new-concept-note)
     ("Create a new note with the \"daily\" template" . minaduki/new-daily-note)
     ("Find broken local links"            . minaduki/fix-broken-links)
     ("Open the index file"                . minaduki/open-index)
