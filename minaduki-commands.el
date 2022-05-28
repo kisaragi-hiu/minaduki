@@ -85,30 +85,47 @@ Interactively, please use the transient command instead."
   ["Command"
    ("e" "Export" minaduki/org-heading-to-file//suffix)])
 
-(cl-defun minaduki/insert (&key entry lowercase?)
+(cl-defun minaduki/insert (&key entry lowercase? replace?)
   "Insert a link to a note.
 
-If region is active, the selected text is used as the link description.
+If region is active, the new link uses the selected text as the
+description. For example, if the text \"hello world\" is
+selected, and the user chooses to insert a link to
+./programming.org, the region would be replaced with
+\"[[file:programming.org][hello world]]\".
+
+If the note with the provided title does not exist, a new one is created.
 
 ENTRY: the note entry (as returned by `minaduki-completion/read-note')
-LOWERCASE?: if non-nil, the link description will be downcased."
-  (interactive (list :lowercase? current-prefix-arg))
-  (unless entry
-    (setq entry (minaduki-completion//read-note
-                 :prompt "Insert link to note: ")))
-  (let ((desc (plist-get entry :title)))
-    (when (region-active-p)
-      (setq desc
-            (s-trim
-             (buffer-substring-no-properties
-              (region-beginning)
-              (region-end))))
-      (delete-active-region))
+LOWERCASE?: if non-nil, the link description will be downcased.
+REPLACE?: if non-nil, delete active region before inserting the new link."
+  (interactive
+   (list
+    :entry (minaduki-completion//read-note
+            :initial-input (when (region-active-p)
+                             (prog1 (-> (buffer-substring-no-properties
+                                         (region-beginning)
+                                         (region-end))
+                                        downcase
+                                        s-trim)))
+            :prompt "Insert link to note: ")
+    :lowercase? current-prefix-arg
+    :replace? (region-active-p)))
+  (let* ((title (plist-get entry :title))
+         (path (plist-get entry :path))
+         (desc title))
+    (when (plist-get entry :new?)
+      (setq path
+            (minaduki/new-concept-note
+             :title title
+             :visit? nil))
+      (minaduki-message "Created new note \"%s\"" title))
     (when lowercase?
       (setq desc (downcase desc)))
-    (message "id?: %s" (plist-get entry :id?))
+    (when replace?
+      (delete-active-region))
     (insert (minaduki/format-link
-             :target (plist-get entry :path)
+             :target path
              :desc desc
              :id? (plist-get entry :id?)))))
 
