@@ -1,0 +1,13 @@
+#+title: Minaduki
+
+* Introduction
+
+Minaduki is my fork of Org-roam v1.
+
+* Keywords
+
+- title :: the main title of the file. (TODO: multiple title keywords should be concatenated)
+- created :: the timestamp (in =YYYY-MM-DDThh:mm:ssZ=) when the file was first created
+- alias :: an alternative title.
+- (to be renamed) =roam_key= :: a unique identifier for this file. Could be a link or any other ID. This is used to associate bibliography items with note files, as well as for citation backlinks.
+- (to be renamed) =roam_tags= :: a list of tags.
