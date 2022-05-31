@@ -356,7 +356,10 @@ When NOCASE? is non-nil, match case-insentively.
                          :where (like titles (quote ,(concat "%" title "%")))
                          ,@maybe-nocase])))
         (cl-loop for (file titles) in possible
-                 when (member title titles)
+                 when (if nocase?
+                          (member (downcase title)
+                                  (mapcar #'downcase titles))
+                        (member title titles))
                  collect file)))
      (key
       (caar (minaduki-db/query
