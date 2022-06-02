@@ -29,6 +29,7 @@
 (require 'minaduki-vars)
 (require 'minaduki-utils)
 (require 'minaduki-db)
+(require 'minaduki-lit)
 
 ;;;; Completion utils
 (defun minaduki//get-title-path-completions ()
@@ -200,6 +201,26 @@ PROMPT: the prompt to use during completion. Default: \"Note: \""
         ;; TODO: the path should be resolved relative to `org-directory'
         ;;       (unless it's a url or an absolute path)
         `(:title ,selection :path ,selection :new? t))))
+
+(cl-defun minaduki-completion//read-lit-entry
+    (multiple &key (prompt "Entry: "))
+  "Read a literature entry.
+
+MULTIPLE: if non-nil, try to read multiple values with
+`completing-read-multiple'. This allows this function to be used
+for the `minaduki' org-cite insert processor.
+
+PROMPT: the text shown in the prompt."
+  (let* ((entries (->> (minaduki-db/query [:select [props] :from keys])
+                       (mapcar #'car)))
+         (alist (--map (cons (map-elt it "key")
+                             (minaduki-lit/format-entry it))
+                       entries))
+         (completions (map-values alist)))
+    (-some->> (if multiple
+                  (completing-read-multiple prompt completions)
+                (completing-read prompt completions))
+      (--map (car (rassoc it alist))))))
 
 ;;;; `completion-at-point' completions
 

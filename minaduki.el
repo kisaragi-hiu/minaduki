@@ -341,8 +341,12 @@ Ensure it is installed and can be found within `exec-path'."))
       (progn
         (with-eval-after-load 'oc
           (org-cite-register-processor 'minaduki
-            :follow #'minaduki-cite//follow)
-          (setq org-cite-follow-processor 'minaduki))
+            :follow #'minaduki-cite//follow
+            :insert (org-cite-make-insert-processor
+                     #'minaduki-completion//read-lit-entry
+                     #'org-cite-basic--complete-style))
+          (setq org-cite-follow-processor 'minaduki
+                org-cite-insert-processor 'minaduki))
         (add-hook 'after-change-major-mode-hook 'minaduki-initialize)
         (add-hook 'find-file-hook 'minaduki-initialize)
         (add-hook 'kill-emacs-hook #'minaduki-db//close)
@@ -366,7 +370,8 @@ Ensure it is installed and can be found within `exec-path'."))
             (minaduki-initialize))))
     (with-eval-after-load 'oc
       (org-cite-unregister-processor 'minaduki)
-      (setq org-cite-follow-processor 'basic))
+      (setq org-cite-follow-processor 'basic
+            org-cite-insert-processor 'basic))
     (remove-hook 'after-change-major-mode-hook 'minaduki-initialize)
     (remove-hook 'find-file-hook 'minaduki-initialize)
     (remove-hook 'kill-emacs-hook #'minaduki-db//close)

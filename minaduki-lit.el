@@ -55,13 +55,14 @@
 
 ;;; Code:
 
+
+;; For `eww-parse-headers'
+(require 'eww)
+(require 'org)
 (require 'dash)
 
 (require 'minaduki-utils)
 (require 'minaduki-vars)
-
-;; For `eww-parse-headers'
-(require 'eww)
 
 ;;;; Type definition
 
