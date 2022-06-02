@@ -202,15 +202,33 @@ PROMPT: the prompt to use during completion. Default: \"Note: \""
         ;;       (unless it's a url or an absolute path)
         `(:title ,selection :path ,selection :new? t))))
 
+(defvar minaduki-completion//read-list-entry//citekey nil
+  "Let-bind this variable to use `org-cite-insert' on a particular citekey.
+
+For example:
+
+  (let ((minaduki-completion//read-list-entry//citekey \"iso20041201\"))
+    (org-cite-insert nil))")
+
 (cl-defun minaduki-completion//read-lit-entry
     (multiple &key (prompt "Entry: "))
-  "Read a literature entry.
+  "Read a literature entry and return its citekey.)))
+
+If `minaduki-completion//read-list-entry//citekey' is non-nil,
+return that instead. This allows us to call `org-cite-insert'
+without prompting.
 
 MULTIPLE: if non-nil, try to read multiple values with
 `completing-read-multiple'. This allows this function to be used
 for the `minaduki' org-cite insert processor.
 
 PROMPT: the text shown in the prompt."
+  (when minaduki-completion//read-list-entry//citekey
+    (cl-return-from minaduki-completion//read-lit-entry
+      ;; org-cite expects a list if it asked for one
+      (if multiple
+          (list minaduki-completion//read-list-entry//citekey)
+        minaduki-completion//read-list-entry//citekey)))
   (let* ((entries (->> (minaduki-db/query [:select [props] :from keys])
                        (mapcar #'car)))
          (alist (--map (cons (map-elt it "key")

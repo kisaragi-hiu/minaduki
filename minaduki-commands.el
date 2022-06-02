@@ -530,6 +530,13 @@ This function hooks into `org-open-at-point' via
 
 ;;;; Literature note actions
 
+(defun minaduki/insert-citation (citekey)
+  "Insert a citation to CITEKEY."
+  (cond ((derived-mode-p 'org-mode)
+         (let ((minaduki-completion//read-list-entry//citekey citekey))
+           (org-cite-insert nil)))
+        (t (insert "@" citekey))))
+
 (defun minaduki/copy-citekey (citekey)
   "Save note's citation key to `kill-ring' and copy it to clipboard.
 CITEKEY is a list whose car is a citation key."
@@ -675,7 +682,7 @@ List of (DISPLAY-NAME . COMMAND) pairs.")
     ("Show entry in the bibliography file" . minaduki/show-entry)
     ("Edit notes" . orb-edit-notes)
     ("Copy citekey" . minaduki/copy-citekey)
-    ("Insert citekey" . insert)
+    ("Insert citation" . minaduki/insert-citation)
     ("Insert link to associated notes" . minaduki/insert-note-to-citekey))
   "Commands useful inside a literature note.
 
