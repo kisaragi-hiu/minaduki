@@ -11,6 +11,7 @@
 (require 'org-id)
 (require 'org)
 
+(require 'minaduki-lit)
 (require 'minaduki-utils)
 (require 'minaduki-vars)
 
@@ -524,6 +525,7 @@ If this file is not in `minaduki-lit/bibliography', this does
 nothing and returns nil."
   (pcase major-mode
     (`bibtex-mode (minaduki-lit/parse-entries/bibtex))
+    (`json-mode (minaduki-lit/parse-entries/csl-json))
     (_ (minaduki-lit/parse-entries))))
 
 (defun minaduki-extract/refs ()

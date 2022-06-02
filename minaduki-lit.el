@@ -64,6 +64,9 @@
 (require 'minaduki-utils)
 (require 'minaduki-vars)
 
+(declare-function parsebib-find-next-item "parsebib")
+(declare-function parsebib-read-entry "parsebib")
+
 ;;;; Type definition
 
 (defvar minaduki-lit//cache nil)
@@ -277,6 +280,8 @@ to fill them in."
               (org-entry-put nil prop value))))
         (minaduki-lit/generate-key-at-point)))))
 
+;;;; Parsing
+
 (defun minaduki-lit/parse-entries ()
   "Parse entries in the current buffer into entry objects.
 
@@ -329,10 +334,6 @@ like `minaduki-lit/entry' objects."
              (push (cons "sources" sources) props)))
          (cons (point) (map-into props '(hash-table :test equal))))))))
 
-(declare-function parsebib-find-next-item "parsebib")
-(declare-function parsebib-read-entry "parsebib")
-
-;;;; Reading from BibTeX
 (defun minaduki-lit/parse-entries/bibtex ()
   "Parse a BIBTEX-FILE into a list of (POINT . PROPS).
 
@@ -368,8 +369,71 @@ POINT is where the entry is in the file. PROPS is a
                                          unless (member k '(author =type= =key= title keywords url link))
                                          collect (cons k (minaduki//remove-curly v))))))))))
 
-;;;; The search interface
+(defun minaduki-lit/csl-json/process-author (value)
+  "Convert CSL-JSON's author VALUE to our format."
+  (s-join " and "
+          (--map
+           (let-alist it
+             (concat .family " " .given))
+           value)))
 
+(defun minaduki-lit/csl-json/process-date (value)
+  "Convert CSL-JSON's date VALUE to our format."
+  ;; CSL-JSON date fields:
+  ;; https://citeproc-js.readthedocs.io/en/latest/csl-json/markup.html#date-fields
+  ;;
+  ;; Possible cases:
+  ;;
+  ;; "2020-03-15" ;; EDTF*
+  ;; {"raw": "2020-03-15"} ;; EDTF under key "raw"
+  ;; {"literal": "2020-03-15"} ;; EDTF under key "literal"
+  ;; {"date-parts": [[2020, 3, 15]]} ;; one or two arrays of Y, M, D
+  ;;
+  ;; *EDTF is a standardized extension to ISO 8601:
+  ;;  https://en.wikipedia.org/wiki/ISO_8601#EDTF
+  (cond ((stringp value)
+         value)
+        ((consp value)
+         (let-alist value
+           (or .raw
+               .literal
+               (->>
+                .date-parts
+                (--map
+                 (-let (((y m d) (cl-coerce it 'list)))
+                   (s-join "-" `(,(when y (format "%04d" y))
+                                 ,(when m (format "%02d" m))
+                                 ,(when d (format "%02d" d))))))
+                (s-join "--")))))
+        (t (error "Unknown CSL-JSON date format: %S"
+                  value))))
+
+(defun minaduki-lit/parse-entries/csl-json ()
+  "Parse JSON entries in the current buffer.
+
+Return a list of entries."
+  ;; This is not quite correct. The proper way would be to use
+  ;; `json-read' or `json-parse-buffer' and iterate over the result.
+  ;; But that doesn't allow me to record cursor locations.
+  (save-excursion
+    (goto-char (point-min))
+    (let ((json-object-type 'alist)
+          (json-array-type 'vector)
+          item ret)
+      (while (and (search-forward "{" nil t)
+                  (setq item (json-read-object)))
+        (-->
+         (cl-loop
+          for (field . value) in item
+          collect
+          (pcase field
+            ('author (cons "author" (minaduki-lit/csl-json/process-author value)))
+            ('issued (cons "date" (minaduki-lit/csl-json/process-date value)))
+            ('id (cons "key" value))
+            (_ (cons (format "%s" field) value))))
+         (map-into it '(hash-table :test equal))
+         (push (cons (point) it) ret)))
+      (nreverse ret))))
 
 (provide 'minaduki-lit)
 
