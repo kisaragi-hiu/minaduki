@@ -153,23 +153,6 @@ Return added tag."
 ;;;; Global commands
 
 ;;;###autoload
-(defun org-roam-switch-to-buffer ()
-  "Switch to an existing Org-roam buffer."
-  (interactive)
-  (let* ((roam-buffers (org-roam--get-roam-buffers))
-         (names-and-buffers (mapcar (lambda (buffer)
-                                      (cons (or (minaduki-db//fetch-title
-                                                 (buffer-file-name buffer))
-                                                (buffer-name buffer))
-                                            buffer))
-                                    roam-buffers)))
-    (unless roam-buffers
-      (user-error "No roam buffers"))
-    (when-let ((name (completing-read "Buffer: " names-and-buffers
-                                      nil t)))
-      (switch-to-buffer (cdr (assoc name names-and-buffers))))))
-
-;;;###autoload
 (defun minaduki/fix-broken-links ()
   "List all broken links in a new buffer."
   (interactive)
@@ -671,7 +654,6 @@ This first adds an entry for it into a file in
     ("Open the index file"                . minaduki/open-index)
     ("Create a new literature"            . minaduki/new-literature-note)
     ("Open a random note"                 . minaduki/open-random-note)
-    ("Switch to a buffer visiting a note" . org-roam-switch-to-buffer)
     ("Refresh cache"                      . minaduki-db/build-cache))
   "Global commands shown in `minaduki/command-palette'.
 

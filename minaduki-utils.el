@@ -582,11 +582,6 @@ If BUFFER is not specified, use the current buffer."
       (and (setq path (buffer-file-name (buffer-base-buffer)))
            (minaduki//in-vault? path)))))
 
-(defun org-roam--get-roam-buffers ()
-  "Return a list of buffers that are Org-roam files."
-  (--filter (org-roam--org-roam-buffer-p it)
-            (buffer-list)))
-
 (provide 'minaduki-utils)
 
 ;;; minaduki-utils.el ends here
