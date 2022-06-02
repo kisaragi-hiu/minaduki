@@ -80,34 +80,33 @@ REGION: the selected text."
              :id? (plist-get entry :id?)))))
 
 ;;;###autoload
-(defun org-roam-alias-add ()
-  "Add an alias.
-
-Return added alias."
+(defun minaduki-add-alias ()
+  "Add an alias."
   (interactive)
   (let ((alias (read-string "Alias: ")))
     (when (string-empty-p alias)
       (user-error "Alias can't be empty"))
     (org-with-point-at 1
       (let ((case-fold-search t))
-        (if (re-search-forward "^\\(#\\+alias:.*\\)" (point-max) t)
-            (replace-match (format "#+alias: %s\n\\1" alias)
-                           'fixedcase)
+        (if (re-search-forward "^#\\+alias: .*" nil t)
+            (insert "\n")
+          ;; Skip past the first block of keywords and property drawer
           (while (and (not (eobp))
                       (looking-at "^[#:]"))
-            (if (save-excursion (end-of-line) (eobp))
+            (if (> (line-end-position) (1- (buffer-size)))
                 (progn
                   (end-of-line)
                   (insert "\n"))
               (forward-line)
-              (beginning-of-line)))
-          (insert "#+alias: " alias "\n"))))
-    (minaduki-db//update-file (buffer-file-name (buffer-base-buffer)))
+              (beginning-of-line))))
+        (insert "#+alias: " alias)))
+    (when (minaduki//in-vault?)
+      (minaduki-db//insert-meta 'update))
     alias))
 
 ;;;###autoload
-(defun org-roam-alias-delete ()
-  "Delete an alias from Org-roam file."
+(defun minaduki-delete-alias ()
+  "Delete an alias."
   (interactive)
   (if-let ((aliases (minaduki-extract/aliases)))
       (let ((alias (completing-read "Alias: " aliases nil 'require-match)))
@@ -116,14 +115,13 @@ Return added alias."
             (when (search-forward (concat "#+alias: " alias) (point-max) t)
               (delete-region (line-beginning-position)
                              (1+ (line-end-position))))))
-        (minaduki-db//update-file (buffer-file-name (buffer-base-buffer))))
+        (when (minaduki//in-vault?)
+          (minaduki-db//insert-meta 'update)))
     (user-error "No aliases to delete")))
 
 ;;;###autoload
-(defun org-roam-tag-add ()
-  "Add a tag to Org-roam file.
-
-Return added tag."
+(defun minaduki-add-tag ()
+  "Add a tag."
   (interactive)
   (let* ((all-tags (minaduki-db//fetch-all-tags))
          (tag (completing-read "Tag: " all-tags))
@@ -132,22 +130,24 @@ Return added tag."
     (when (string-empty-p tag)
       (user-error "Tag can't be empty"))
     (org-roam--set-global-prop
-     "roam_tags"
+     "tags[]"
      (combine-and-quote-strings (seq-uniq (cons tag existing-tags))))
-    (minaduki-db//insert-meta 'update)
+    (when (minaduki//in-vault?)
+      (minaduki-db//insert-meta 'update))
     tag))
 
 ;;;###autoload
-(defun org-roam-tag-delete ()
+(defun minaduki-delete-tag ()
   "Delete a tag from Org-roam file."
   (interactive)
   (if-let* ((file (buffer-file-name (buffer-base-buffer)))
             (tags (org-roam--extract-tags-prop file)))
       (let ((tag (completing-read "Tag: " tags nil 'require-match)))
         (org-roam--set-global-prop
-         "roam_tags"
+         "tags[]"
          (combine-and-quote-strings (delete tag tags)))
-        (minaduki-db//insert-tags 'update))
+        (when (minaduki//in-vault?)
+          (minaduki-db//insert-meta 'update)))
     (user-error "No tag to delete")))
 
 ;;;; Global commands
