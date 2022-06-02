@@ -200,7 +200,7 @@ PROMPT: the prompt to use during completion. Default: \"Note: \""
         ;;
         ;; TODO: the path should be resolved relative to `org-directory'
         ;;       (unless it's a url or an absolute path)
-        `(:title ,selection :path ,selection :new? t))))
+        `(:title ,selection :path ,(s-trim selection) :new? t))))
 
 (defvar minaduki-completion//read-list-entry//citekey nil
   "Let-bind this variable to use `org-cite-insert' on a particular citekey.
