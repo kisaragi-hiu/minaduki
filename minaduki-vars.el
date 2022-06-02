@@ -99,13 +99,18 @@ value like `most-positive-fixnum'."
   :type 'boolean
   :group 'minaduki)
 
-(defcustom minaduki-file-extensions `("org" "md" "bib")
+(defcustom minaduki-file-extensions `("org" "md" "bib" "json")
   "Only files with these extensions are indexed.
 
 The first item in the list is used as the default file extension.
 
 While the file extensions may be different, the only supported
-file formats are Org-mode and Markdown (partially)."
+file formats are:
+
+- Org-mode
+- Markdown (partially)
+- CSL-JSON (only as `minaduki-lit/bibliography')
+- BibTeX / Biblatex (only as `minaduki-lit/bibliography')"
   :type '(repeat string)
   :group 'minaduki)
 
