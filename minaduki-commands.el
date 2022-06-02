@@ -85,7 +85,7 @@ Interactively, please use the transient command instead."
   ["Command"
    ("e" "Export" minaduki/org-heading-to-file//suffix)])
 
-(cl-defun minaduki/insert (&key entry lowercase? replace?)
+(cl-defun minaduki/insert (&key entry lowercase? region)
   "Insert a link to a note.
 
 If region is active, the new link uses the selected text as the
@@ -100,29 +100,37 @@ ENTRY: the note entry (as returned by `minaduki-completion/read-note')
 LOWERCASE?: if non-nil, the link description will be downcased.
 REPLACE?: if non-nil, delete active region before inserting the new link."
   (interactive
-   (list
-    :entry (minaduki-completion//read-note
-            :initial-input (when (region-active-p)
-                             (prog1 (-> (buffer-substring-no-properties
-                                         (region-beginning)
-                                         (region-end))
-                                        s-trim)))
-            :prompt "Insert link to note: ")
-    :lowercase? current-prefix-arg
-    :replace? (region-active-p)))
+   (let (region)
+     (when (region-active-p)
+       (setq region (-> (buffer-substring-no-properties
+                         (region-beginning)
+                         (region-end))
+                        s-trim)))
+     (list
+      :entry (minaduki-completion//read-note
+              :initial-input region
+              :prompt "Insert link to note: ")
+      :lowercase? current-prefix-arg
+      :region region)))
   (let* ((title (plist-get entry :title))
          (path (plist-get entry :path))
          (desc title))
-    (when (plist-get entry :new?)
+    ;; We avoid creating a new note if the path is a URL.
+    ;;
+    ;; This also allows inserting references to existing notes whose
+    ;; title happens to be a URL without issue.
+    (when (and (plist-get entry :new?)
+               (not (minaduki//url? path)))
       (setq path
             (minaduki/new-concept-note
              :title title
              :visit? nil))
       (minaduki//message "Created new note \"%s\"" title))
+    (when region
+      (delete-active-region)
+      (setq desc region))
     (when lowercase?
       (setq desc (downcase desc)))
-    (when replace?
-      (delete-active-region))
     (insert (minaduki/format-link
              :target path
              :desc desc
