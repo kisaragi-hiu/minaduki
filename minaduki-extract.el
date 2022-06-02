@@ -321,7 +321,7 @@ Return a list of [ID FILE LEVEL] vectors."
    ((derived-mode-p 'markdown-mode)
     (condition-case nil
         (-some-> (minaduki-extract//markdown-props "alias")
-          json-parse-string)
+          (json-parse-string :array-type 'list))
       (json-parse-error
        (minaduki//warn
         :error
@@ -374,10 +374,12 @@ Return a list of [ID FILE LEVEL] vectors."
 
 This extracts the aliases plus either the title or the first
 headline."
-  (org-with-wide-buffer
-   (-uniq (append (or (minaduki-extract/main-title)
-                      (minaduki-extract/first-headline))
-                  (minaduki-extract/aliases)))))
+  (save-excursion
+    (save-restriction
+      (widen)
+      (-uniq (append (or (minaduki-extract/main-title)
+                         (minaduki-extract/first-headline))
+                     (minaduki-extract/aliases))))))
 
 ;; TODO: use project root
 (defun org-roam--extract-tags-all-directories (file)
