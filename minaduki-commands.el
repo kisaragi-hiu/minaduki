@@ -40,7 +40,7 @@ If the note with the provided title does not exist, a new one is created.
 
 ENTRY: the note entry (as returned by `minaduki-completion/read-note')
 LOWERCASE?: if non-nil, the link description will be downcased.
-REPLACE?: if non-nil, delete active region before inserting the new link."
+REGION: the selected text."
   (interactive
    (let (region)
      (when (region-active-p)
