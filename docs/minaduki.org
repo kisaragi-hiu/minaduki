@@ -12,6 +12,27 @@ Minaduki is my fork of Org-roam v1.
 - (to be renamed) =roam_key= :: a unique identifier for this file. Could be a link or any other ID. This is used to associate bibliography items with note files, as well as for citation backlinks.
 - (to be renamed) =roam_tags= :: a list of tags.
 
+* Bibliography
+
+Bibliography entries are written in a custom Org-based format. Support for other formats like BibTeX is planned.
+
+Set bibliography files with =minaduki-lit/bibliography=.
+
+Use =minaduki/literature-sources= to browse all literature sources. After you select an entry, you can:
+
+- insert a citation to the entry
+- copy its key
+- edit its associated note (the one that has a =roam_key= equal to this entry)
+- insert a link to its associated note
+- show the definition of the entry in the bibliography, or
+- open its associated URL, DOI, or PDF.
+
+This is essentially my reimplementation of =bibtex-completion=.
+
+Org-cite is supported: instead of using =org-cite-global-bibliography= you can just use =minaduki-lit/bibliography= and =org-cite-insert= will offer completions from the right place. This is accomplished with a custom Org-cite processor.
+
+Reading from Org-cite's local bibliography is not yet supported though.
+
 * Browsing notes
 
 Use =minaduki/open= to see a list of indexed notes. Select one to open.
