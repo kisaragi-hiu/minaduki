@@ -24,6 +24,7 @@
 (require 'minaduki-extract)
 (require 'minaduki-db)
 (require 'org-roam-capture)
+(require 'minaduki-bibtex)
 
 ;;;; Local commands
 
@@ -653,7 +654,8 @@ This first adds an entry for it into a file in
 `minaduki-lit/bibliography'."
   (interactive)
   (call-interactively #'minaduki-lit/new-entry)
-  (orb-edit-notes (org-entry-get nil minaduki-lit/key-prop)))
+  (-when-let (citekey (org-entry-get nil minaduki-lit/key-prop))
+    (orb-edit-notes citekey)))
 
 ;;;; Actions
 
