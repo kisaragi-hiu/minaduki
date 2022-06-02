@@ -1,0 +1,5 @@
+* CSL-JSON sample data
+
+These are used to test =minaduki-lit/parse-entries/csl-json=.
+
+The JSON data is from [[https://github.com/citation-style-language/test-suite/][the CSL test suite]], extracted from the text files at [[https://github.com/citation-style-language/test-suite/blob/3be4027034e6e3affa604caaaffbb14e7fbb856d/processor-tests/humans/][processor-tests/humans/]].

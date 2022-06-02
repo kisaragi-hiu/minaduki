@@ -1,0 +1,22 @@
+[
+  {
+    "author": [
+      {
+        "family": "al-Aswānī",
+        "given": "ʿAlāʾ"
+      }
+    ],
+    "id": "ITEM-1",
+    "type": "book"
+  },
+  {
+    "author": [
+      {
+        "family": "al-Aswānī",
+        "given": "`Alā'"
+      }
+    ],
+    "id": "ITEM-2",
+    "type": "book"
+  }
+]

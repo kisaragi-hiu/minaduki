@@ -71,7 +71,7 @@
 
 (defvar minaduki-lit//cache nil)
 
-(cl-defun minaduki-lit/entry (&key author type title key sources tags others)
+(cl-defun minaduki-lit/entry (&key author date type title key sources tags others)
   "Return a hash table representing a source.
 
 AUTHOR: the main entity responsible for the source.
@@ -90,6 +90,8 @@ OTHERS: other key -> value pairs."
       (puthash "type" type obj))
     (when title
       (puthash "title" title obj))
+    (when date
+      (puthash "date" date obj))
     (when key
       (puthash "key" key obj))
     (when sources

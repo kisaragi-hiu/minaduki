@@ -34,6 +34,9 @@
 (defvar test-repository (expand-file-name "tests/minaduki-files")
   "Directory containing minaduki test org files.")
 
+(defvar test-lit-directory (expand-file-name "lit" test-repository)
+  "Directory containing minaduki-lit test files.")
+
 (defun test-minaduki--init ()
   "."
   (let ((original-dir test-repository)
@@ -66,11 +69,26 @@ members that should be equal."
 (buttercup-define-matcher-for-binary-function :to-equal/ht test-equal-ht)
 
 (describe "minaduki-lit"
+  (it "parses CSL-JSON"
+    (expect
+     (with-temp-buffer
+       (insert-file-contents (expand-file-name
+                              "date_LocalizedDateFormats-zh-TW.json"
+                              test-lit-directory))
+       (minaduki-lit/parse-entries/csl-json))
+     :to-equal/ht
+     '((110 . #s(hash-table
+                 size 65 test equal rehash-size 1.5
+                 rehash-threshold 0.8125
+                 data ("key" "ITEM-1"
+                       "date" "1998-04-10"
+                       "title" "BookA"))))))
+
   (it "parses a bibtex file"
     (expect
      (with-temp-buffer
        (insert-file-contents
-        (expand-file-name "entries.bib" test-repository))
+        (expand-file-name "entries.bib" test-lit-directory))
        (minaduki-lit/parse-entries/bibtex))
      :to-equal/ht
      '((8 . #s(hash-table

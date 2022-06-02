@@ -1,0 +1,20 @@
+[
+  {
+    "author": [
+      {
+        "family": "Zither",
+        "given": "Ziggy"
+      },
+      {
+        "family": "Yoda",
+        "given": "Yossarian"
+      },
+      {
+        "family": "Xylophone",
+        "given": "Xerxes"
+      }
+    ],
+    "id": "ITEM-1",
+    "type": "book"
+  }
+]

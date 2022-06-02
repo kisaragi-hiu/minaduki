@@ -1,0 +1,691 @@
+[
+  {
+    "author": [
+      {
+        "family": "Smith",
+        "given": "John"
+      }
+    ],
+    "issued": {
+      "date-parts": [[1986]]
+    },
+    "type": "book",
+    "id": "ITEM-1"
+  },
+  {
+    "author": [
+      {
+        "family": "Smith",
+        "given": "John"
+      }
+    ],
+    "issued": {
+      "date-parts": [[1986]]
+    },
+    "type": "book",
+    "id": "ITEM-2"
+  },
+  {
+    "author": [
+      {
+        "family": "Smith",
+        "given": "John"
+      }
+    ],
+    "issued": {
+      "date-parts": [[1986]]
+    },
+    "type": "book",
+    "id": "ITEM-3"
+  },
+  {
+    "author": [
+      {
+        "family": "Smith",
+        "given": "John"
+      }
+    ],
+    "issued": {
+      "date-parts": [[1986]]
+    },
+    "type": "book",
+    "id": "ITEM-4"
+  },
+  {
+    "author": [
+      {
+        "family": "Smith",
+        "given": "John"
+      }
+    ],
+    "issued": {
+      "date-parts": [[1986]]
+    },
+    "type": "book",
+    "id": "ITEM-5"
+  },
+  {
+    "author": [
+      {
+        "family": "Smith",
+        "given": "John"
+      }
+    ],
+    "issued": {
+      "date-parts": [[1986]]
+    },
+    "type": "book",
+    "id": "ITEM-6"
+  },
+  {
+    "author": [
+      {
+        "family": "Smith",
+        "given": "John"
+      }
+    ],
+    "issued": {
+      "date-parts": [[1986]]
+    },
+    "type": "book",
+    "id": "ITEM-7"
+  },
+  {
+    "author": [
+      {
+        "family": "Smith",
+        "given": "John"
+      }
+    ],
+    "issued": {
+      "date-parts": [[1986]]
+    },
+    "type": "book",
+    "id": "ITEM-8"
+  },
+  {
+    "author": [
+      {
+        "family": "Smith",
+        "given": "John"
+      }
+    ],
+    "issued": {
+      "date-parts": [[1986]]
+    },
+    "type": "book",
+    "id": "ITEM-9"
+  },
+  {
+    "author": [
+      {
+        "family": "Smith",
+        "given": "John"
+      }
+    ],
+    "issued": {
+      "date-parts": [[1986]]
+    },
+    "type": "book",
+    "id": "ITEM-10"
+  },
+  {
+    "author": [
+      {
+        "family": "Smith",
+        "given": "John"
+      }
+    ],
+    "issued": {
+      "date-parts": [[1986]]
+    },
+    "type": "book",
+    "id": "ITEM-11"
+  },
+  {
+    "author": [
+      {
+        "family": "Smith",
+        "given": "John"
+      }
+    ],
+    "issued": {
+      "date-parts": [[1986]]
+    },
+    "type": "book",
+    "id": "ITEM-12"
+  },
+  {
+    "author": [
+      {
+        "family": "Smith",
+        "given": "John"
+      }
+    ],
+    "issued": {
+      "date-parts": [[1986]]
+    },
+    "type": "book",
+    "id": "ITEM-13"
+  },
+  {
+    "author": [
+      {
+        "family": "Smith",
+        "given": "John"
+      }
+    ],
+    "issued": {
+      "date-parts": [[1986]]
+    },
+    "type": "book",
+    "id": "ITEM-14"
+  },
+  {
+    "author": [
+      {
+        "family": "Smith",
+        "given": "John"
+      }
+    ],
+    "issued": {
+      "date-parts": [[1986]]
+    },
+    "type": "book",
+    "id": "ITEM-15"
+  },
+  {
+    "author": [
+      {
+        "family": "Smith",
+        "given": "John"
+      }
+    ],
+    "issued": {
+      "date-parts": [[1986]]
+    },
+    "type": "book",
+    "id": "ITEM-16"
+  },
+  {
+    "author": [
+      {
+        "family": "Smith",
+        "given": "John"
+      }
+    ],
+    "issued": {
+      "date-parts": [[1986]]
+    },
+    "type": "book",
+    "id": "ITEM-17"
+  },
+  {
+    "author": [
+      {
+        "family": "Smith",
+        "given": "John"
+      }
+    ],
+    "issued": {
+      "date-parts": [[1986]]
+    },
+    "type": "book",
+    "id": "ITEM-18"
+  },
+  {
+    "author": [
+      {
+        "family": "Smith",
+        "given": "John"
+      }
+    ],
+    "issued": {
+      "date-parts": [[1986]]
+    },
+    "type": "book",
+    "id": "ITEM-19"
+  },
+  {
+    "author": [
+      {
+        "family": "Smith",
+        "given": "John"
+      }
+    ],
+    "issued": {
+      "date-parts": [[1986]]
+    },
+    "type": "book",
+    "id": "ITEM-20"
+  },
+  {
+    "author": [
+      {
+        "family": "Smith",
+        "given": "John"
+      }
+    ],
+    "issued": {
+      "date-parts": [[1986]]
+    },
+    "type": "book",
+    "id": "ITEM-21"
+  },
+  {
+    "author": [
+      {
+        "family": "Smith",
+        "given": "John"
+      }
+    ],
+    "issued": {
+      "date-parts": [[1986]]
+    },
+    "type": "book",
+    "id": "ITEM-22"
+  },
+  {
+    "author": [
+      {
+        "family": "Smith",
+        "given": "John"
+      }
+    ],
+    "issued": {
+      "date-parts": [[1986]]
+    },
+    "type": "book",
+    "id": "ITEM-23"
+  },
+  {
+    "author": [
+      {
+        "family": "Smith",
+        "given": "John"
+      }
+    ],
+    "issued": {
+      "date-parts": [[1986]]
+    },
+    "type": "book",
+    "id": "ITEM-24"
+  },
+  {
+    "author": [
+      {
+        "family": "Smith",
+        "given": "John"
+      }
+    ],
+    "issued": {
+      "date-parts": [[1986]]
+    },
+    "type": "book",
+    "id": "ITEM-25"
+  },
+  {
+    "author": [
+      {
+        "family": "Smith",
+        "given": "John"
+      }
+    ],
+    "issued": {
+      "date-parts": [[1986]]
+    },
+    "type": "book",
+    "id": "ITEM-26"
+  },
+  {
+    "author": [
+      {
+        "family": "Smith",
+        "given": "John"
+      }
+    ],
+    "issued": {
+      "date-parts": [[1986]]
+    },
+    "type": "book",
+    "id": "ITEM-27"
+  },
+  {
+    "author": [
+      {
+        "family": "Smith",
+        "given": "John"
+      }
+    ],
+    "issued": {
+      "date-parts": [[1986]]
+    },
+    "type": "book",
+    "id": "ITEM-28"
+  },
+  {
+    "author": [
+      {
+        "family": "Smith",
+        "given": "John"
+      }
+    ],
+    "issued": {
+      "date-parts": [[1986]]
+    },
+    "type": "book",
+    "id": "ITEM-29"
+  },
+  {
+    "author": [
+      {
+        "family": "Smith",
+        "given": "John"
+      }
+    ],
+    "issued": {
+      "date-parts": [[1986]]
+    },
+    "type": "book",
+    "id": "ITEM-30"
+  },
+  {
+    "author": [
+      {
+        "family": "Smith",
+        "given": "John"
+      }
+    ],
+    "issued": {
+      "date-parts": [[1986]]
+    },
+    "type": "book",
+    "id": "ITEM-31"
+  },
+  {
+    "author": [
+      {
+        "family": "Smith",
+        "given": "John"
+      }
+    ],
+    "issued": {
+      "date-parts": [[1986]]
+    },
+    "type": "book",
+    "id": "ITEM-32"
+  },
+  {
+    "author": [
+      {
+        "family": "Smith",
+        "given": "John"
+      }
+    ],
+    "issued": {
+      "date-parts": [[1986]]
+    },
+    "type": "book",
+    "id": "ITEM-33"
+  },
+  {
+    "author": [
+      {
+        "family": "Smith",
+        "given": "John"
+      }
+    ],
+    "issued": {
+      "date-parts": [[1986]]
+    },
+    "type": "book",
+    "id": "ITEM-34"
+  },
+  {
+    "author": [
+      {
+        "family": "Smith",
+        "given": "John"
+      }
+    ],
+    "issued": {
+      "date-parts": [[1986]]
+    },
+    "type": "book",
+    "id": "ITEM-35"
+  },
+  {
+    "author": [
+      {
+        "family": "Smith",
+        "given": "John"
+      }
+    ],
+    "issued": {
+      "date-parts": [[1986]]
+    },
+    "type": "book",
+    "id": "ITEM-36"
+  },
+  {
+    "author": [
+      {
+        "family": "Smith",
+        "given": "John"
+      }
+    ],
+    "issued": {
+      "date-parts": [[1986]]
+    },
+    "type": "book",
+    "id": "ITEM-37"
+  },
+  {
+    "author": [
+      {
+        "family": "Smith",
+        "given": "John"
+      }
+    ],
+    "issued": {
+      "date-parts": [[1986]]
+    },
+    "type": "book",
+    "id": "ITEM-38"
+  },
+  {
+    "author": [
+      {
+        "family": "Smith",
+        "given": "John"
+      }
+    ],
+    "issued": {
+      "date-parts": [[1986]]
+    },
+    "type": "book",
+    "id": "ITEM-39"
+  },
+  {
+    "author": [
+      {
+        "family": "Smith",
+        "given": "John"
+      }
+    ],
+    "issued": {
+      "date-parts": [[1986]]
+    },
+    "type": "book",
+    "id": "ITEM-40"
+  },
+  {
+    "author": [
+      {
+        "family": "Smith",
+        "given": "John"
+      }
+    ],
+    "issued": {
+      "date-parts": [[1986]]
+    },
+    "type": "book",
+    "id": "ITEM-41"
+  },
+  {
+    "author": [
+      {
+        "family": "Smith",
+        "given": "John"
+      }
+    ],
+    "issued": {
+      "date-parts": [[1986]]
+    },
+    "type": "book",
+    "id": "ITEM-42"
+  },
+  {
+    "author": [
+      {
+        "family": "Smith",
+        "given": "John"
+      }
+    ],
+    "issued": {
+      "date-parts": [[1986]]
+    },
+    "type": "book",
+    "id": "ITEM-43"
+  },
+  {
+    "author": [
+      {
+        "family": "Smith",
+        "given": "John"
+      }
+    ],
+    "issued": {
+      "date-parts": [[1986]]
+    },
+    "type": "book",
+    "id": "ITEM-44"
+  },
+  {
+    "author": [
+      {
+        "family": "Smith",
+        "given": "John"
+      }
+    ],
+    "issued": {
+      "date-parts": [[1986]]
+    },
+    "type": "book",
+    "id": "ITEM-45"
+  },
+  {
+    "author": [
+      {
+        "family": "Smith",
+        "given": "John"
+      }
+    ],
+    "issued": {
+      "date-parts": [[1986]]
+    },
+    "type": "book",
+    "id": "ITEM-46"
+  },
+  {
+    "author": [
+      {
+        "family": "Smith",
+        "given": "John"
+      }
+    ],
+    "issued": {
+      "date-parts": [[1986]]
+    },
+    "type": "book",
+    "id": "ITEM-47"
+  },
+  {
+    "author": [
+      {
+        "family": "Smith",
+        "given": "John"
+      }
+    ],
+    "issued": {
+      "date-parts": [[1986]]
+    },
+    "type": "book",
+    "id": "ITEM-48"
+  },
+  {
+    "author": [
+      {
+        "family": "Smith",
+        "given": "John"
+      }
+    ],
+    "issued": {
+      "date-parts": [[1986]]
+    },
+    "type": "book",
+    "id": "ITEM-49"
+  },
+  {
+    "author": [
+      {
+        "family": "Smith",
+        "given": "John"
+      }
+    ],
+    "issued": {
+      "date-parts": [[1986]]
+    },
+    "type": "book",
+    "id": "ITEM-50"
+  },
+  {
+    "author": [
+      {
+        "family": "Smith",
+        "given": "John"
+      }
+    ],
+    "issued": {
+      "date-parts": [[1986]]
+    },
+    "type": "book",
+    "id": "ITEM-51"
+  },
+  {
+    "author": [
+      {
+        "family": "Smith",
+        "given": "John"
+      }
+    ],
+    "issued": {
+      "date-parts": [[1986]]
+    },
+    "type": "book",
+    "id": "ITEM-52"
+  },
+  {
+    "author": [
+      {
+        "family": "Smith",
+        "given": "John"
+      }
+    ],
+    "issued": {
+      "date-parts": [[1986]]
+    },
+    "type": "book",
+    "id": "ITEM-53"
+  }
+]
