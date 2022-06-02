@@ -22,6 +22,7 @@
 (require 'kisaragi-notes-templates)
 
 (require 'minaduki-extract)
+(require 'minaduki-db)
 (require 'org-roam-capture)
 
 ;;;; Local commands
@@ -132,7 +133,7 @@ Return added tag."
     (org-roam--set-global-prop
      "roam_tags"
      (combine-and-quote-strings (seq-uniq (cons tag existing-tags))))
-    (minaduki-db//insert-tags 'update)
+    (minaduki-db//insert-meta 'update)
     tag))
 
 ;;;###autoload
