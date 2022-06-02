@@ -561,7 +561,9 @@ Assume buffer is widened and point is on a headline."
 If the property is already set, it's value is replaced."
   (org-with-point-at 1
     (let ((case-fold-search t))
-      (if (re-search-forward (concat "^#\\+" name ":\\(.*\\)") (point-max) t)
+      (if (re-search-forward (format "^#\\+%s:\\(.*\\)"
+                                     (regexp-quote name))
+                             (point-max) t)
           (replace-match (concat " " value) 'fixedcase nil nil 1)
         (while (and (not (eobp))
                     (looking-at "^[#:]"))
