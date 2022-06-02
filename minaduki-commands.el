@@ -535,7 +535,8 @@ This function hooks into `org-open-at-point' via
 CITEKEY is a list whose car is a citation key."
   (with-temp-buffer
     (insert citekey)
-    (copy-region-as-kill (point-min) (point-max))))
+    (copy-region-as-kill (point-min) (point-max)))
+  (message "Copied \"%s\"" citekey))
 
 (defun minaduki/visit-source (citekey)
   "Visit the source (URL, file path, DOI...) of CITEKEY."
