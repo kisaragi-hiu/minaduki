@@ -99,6 +99,38 @@ OTHERS: other key -> value pairs."
      others)
     obj))
 
+(defun minaduki-lit/format-entry (entry)
+  "Format ENTRY for display."
+  (s-format "${date:4} ${todo}@${type} ${author} - ${title:100} ${tags}"
+            (lambda (key table)
+              (let* ((split (s-split ":" key))
+                     (width (cadr split))
+                     (real-key (car split)))
+                (let ((value (gethash real-key table "")))
+                  (cond
+                   ((equal real-key "todo")
+                    (unless (equal value "")
+                      (setq value (concat value " "))))
+                   ((equal real-key "date")
+                    (when (equal value "")
+                      (setq value (gethash "year" table ""))))
+                   ((equal real-key "tags")
+                    (setq value (->> value
+                                     (--map (concat "#" it))
+                                     (s-join " "))))
+                   (t
+                    (setq value (format "%s" value))))
+                  (when width
+                    (setq width (string-to-number width))
+                    (setq value (concat (minaduki//truncate-string width value "")
+                                        (make-string
+                                         (max 0
+                                              (- width
+                                                 (string-width value)))
+                                         ?\s))))
+                  value)))
+            entry))
+
 ;;;; Bibliography
 
 ;;;; Reading from Org
@@ -338,34 +370,6 @@ POINT is where the entry is in the file. PROPS is a
 
 ;;;; The search interface
 
-(defun minaduki-lit/format-entry (entry)
-  "Format ENTRY for display."
-  (s-format "${date:4} ${todo}@${type} ${author} - ${title:100} ${tags}"
-            (lambda (key table)
-              (let* ((split (s-split ":" key))
-                     (width (cadr split))
-                     (real-key (car split)))
-                (let ((value (gethash real-key table "")))
-                  (cond
-                   ((equal key "todo")
-                    (unless (equal value "")
-                      (setq value (concat value " "))))
-                   ((equal key "tags")
-                    (setq value (->> value
-                                     (--map (concat "#" it))
-                                     (s-join " "))))
-                   (t
-                    (setq value (format "%s" value))))
-                  (when width
-                    (setq width (string-to-number width))
-                    (setq value (concat (minaduki//truncate-string width value "")
-                                        (make-string
-                                         (max 0
-                                              (- width
-                                                 (string-width value)))
-                                         ?\s))))
-                  value)))
-            entry))
 
 (provide 'minaduki-lit)
 
