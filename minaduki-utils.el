@@ -76,6 +76,7 @@ width (`string-width') to determine whether to truncate."
   (declare (pure t) (side-effect-free t))
   (unless ellipsis
     (setq ellipsis "..."))
+  (setq len (floor len))
   (if (<= (string-width str) len)
       str
     (condition-case nil
@@ -90,6 +91,14 @@ width (`string-width') to determine whether to truncate."
                           (- len (string-width ellipsis)))
                 do (setq str (substring str 0 (1- (length str))))
                 finally return (format "%s%s" str ellipsis))))))
+
+(defun minaduki//ensure-width (len str &optional ellipsis)
+  "Truncate or lengthen STR to LEN (with ELLIPSIS)."
+  (setq len (floor len))
+  (concat (minaduki//truncate-string len str ellipsis)
+          (make-string
+           (max 0 (- len (string-width str)))
+           ?\s)))
 
 (defun minaduki//remove-curly (str)
   "Remove curly braces from STR."

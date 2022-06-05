@@ -119,6 +119,11 @@ OTHERS: other key -> value pairs."
                    ((equal real-key "date")
                     (when (equal value "")
                       (setq value (gethash "year" table ""))))
+                   ((equal real-key "author")
+                    (setq value
+                          (minaduki//ensure-width
+                           (max 20 (* 0.2 (frame-width)))
+                           (gethash "author" table ""))))
                    ((equal real-key "tags")
                     (setq value (->> value
                                      (--map (concat "#" it))
@@ -127,12 +132,7 @@ OTHERS: other key -> value pairs."
                     (setq value (format "%s" value))))
                   (when width
                     (setq width (string-to-number width))
-                    (setq value (concat (minaduki//truncate-string width value "")
-                                        (make-string
-                                         (max 0
-                                              (- width
-                                                 (string-width value)))
-                                         ?\s))))
+                    (setq value (minaduki//ensure-width width value "")))
                   value)))
             entry))
 
