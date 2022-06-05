@@ -147,37 +147,43 @@ OTHERS: other key -> value pairs."
                  (not (string= "" value)))
         value))))
 
+(cl-defun minaduki-lit/generate-key (&key author date)
+  "Generate a key from AUTHOR and DATE."
+  (let* ((author
+          (-some->> author
+            (s-replace-all '((" " . "")
+                             ("," . "")
+                             ("/" . "")
+                             ("?" . "")))
+            downcase))
+         (date
+          (-some->> date
+            (s-replace "--" "–")
+            (s-replace "-" "")
+            (s-replace "–" "--")
+            ;; this should handle ISO 8601 timestamps
+            (s-replace-regexp "T[[:digit:]].*" "")))
+         (new-id
+          (concat author (or date ""))))
+    (unless (and author date)
+      (setq new-id
+            (read-string "The currently generated ID is too general. Make it more specific: " new-id)))
+    new-id))
+
 (defun minaduki-lit/generate-key-at-point ()
-  "Generate a key for the headline at point."
+  "Set a key for the headline at point.
+
+Return the generated key."
   (unless (org-entry-get nil minaduki-lit/key-prop)
-    (let* ((author
-            (-some->> (org-entry-get nil "author")
-              (s-replace-all '((" " . "")
-                               ("," . "")
-                               ("/" . "")
-                               ("?" . "")))
-              downcase))
-           (date
-            (-some->> (or (org-entry-get nil "date")
-                          (org-entry-get nil "year"))
-              (s-replace "--" "–")
-              (s-replace "-" "")
-              (s-replace "–" "--")
-              ;; this should handle ISO 8601 timestamps
-              (s-replace-regexp "T[[:digit:]].*" "")))
-           (new-id
-            (concat author (or date ""))))
-      (unless (and author date)
-        (setq new-id (read-string "The currently generated ID is too general. Make it more specific: " new-id)))
-      (org-entry-put nil minaduki-lit/key-prop new-id))))
+    (let ((new-id
+           (minaduki-lit/generate-key :author (org-entry-get nil "author")
+                                      :date (or (org-entry-get nil "date")
+                                                (org-entry-get nil "year")))))
+      (org-entry-put nil minaduki-lit/key-prop new-id)
+      new-id)))
 
-(defun minaduki-lit/insert-new-entry-from-url (url)
-  "Fetch information from URL and insert a new literature entry.
-
-The entry is an Org heading.
-
-If the author or publish date cannot be determined, ask the user
-to fill them in."
+(defun minaduki-lit/fetch-new-entry-from-url (url)
+  "Fetch information from URL for a new entry."
   (let (dom)
     (message "Retrieving entry from %s..." url)
     (when-let ((buf (url-retrieve-synchronously url :silent)))
@@ -264,23 +270,12 @@ to fill them in."
                                   .frontMatter.updated
                                   ;; vercel.com
                                   .post.date))))))
-        (unless (eq ?\n (char-before))
-          (insert "\n"))
-        (insert (format "%s %s\n"
-                        (make-string (1+ (or (org-current-level)
-                                             0))
-                                     ?*)
-                        title))
-        (org-entry-put nil "url" url)
-        (org-entry-put nil "author" author)
-        (org-entry-put nil "date" publishdate)
         (message "Retrieving entry from %s...done" url)
-        (dolist (prop '("url" "author" "date"))
-          (let ((value (org-read-property-value prop)))
-            (unless (or (null value)
-                        (string= value ""))
-              (org-entry-put nil prop value))))
-        (minaduki-lit/generate-key-at-point)))))
+        (list
+         :author author
+         :date publishdate
+         :url url
+         :title (s-replace-regexp "　" "" title))))))
 
 ;;;; Parsing
 
@@ -376,7 +371,8 @@ POINT is where the entry is in the file. PROPS is a
   (s-join " and "
           (--map
            (let-alist it
-             (concat .family " " .given))
+             (or .literal
+                 (concat .family " " .given)))
            value)))
 
 (defun minaduki-lit/csl-json/process-date (value)

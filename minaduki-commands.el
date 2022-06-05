@@ -603,8 +603,12 @@ CITEKEY is a list whose car is a citation key."
   (cl-loop for prop in (list minaduki-lit/key-prop "date")
            do (org-entry-put nil prop (org-read-property-value prop))))
 
-(defun minaduki-lit/new-entry ()
-  "Add a new literature entry."
+;;;###autoload
+(defun minaduki/new-literature-note ()
+  "Create a new literature note.
+
+This first adds an entry for it into a file in
+`minaduki-lit/bibliography'."
   (interactive)
   (let ((target-biblio
          (cond
@@ -624,29 +628,67 @@ CITEKEY is a list whose car is a citation key."
               maybe-relative
               (minaduki-completion//mark-category it 'file)
               (completing-read "Which bibliography? " it nil t)
-              f-expand))))))
+              f-expand)))))
+        (info (minaduki-lit/fetch-new-entry-from-url
+               (read-string "Create new literature entry for URL: "))))
     ;; Use find-file to ensure we save into it
     (find-file target-biblio)
-    ;; Go to just before the first heading
-    (goto-char (point-min))
-    (outline-next-heading)
-    (forward-char -1)
-    ;; Actually insert the new entry
-    (minaduki-lit/insert-new-entry-from-url
-     (read-string "Create new literature entry for URL: "))
+    (cond
+     ((derived-mode-p 'org-mode)
+      ;; Go to just before the first heading
+      (goto-char (point-min))
+      (outline-next-heading)
+      (forward-char -1)
+      (unless (eq ?\n (char-before))
+        (insert "\n"))
+      (insert (format "%s %s\n"
+                      (make-string (1+ (or (org-current-level)
+                                           0))
+                                   ?*)
+                      (plist-get info :title)))
+      (org-entry-put nil "url"    (plist-get info :url))
+      (org-entry-put nil "author" (plist-get info :author))
+      (org-entry-put nil "date"   (plist-get info :date))
+      (dolist (prop '("url" "author" "date"))
+        (let ((value (org-read-property-value prop)))
+          (unless (or (null value)
+                      (string= value ""))
+            (org-entry-put nil prop value)
+            (setq info (plist-put info prop value)))))
+      (setq info (plist-put info
+                            :citekey (minaduki-lit/generate-key-at-point))))
+     ((f-ext? (buffer-file-name) "json")
+      (goto-char (point-min))
+      (let ((v (json-read)))
+        (dolist (prop '(:author :date))
+          (let ((value (read-string (substring (format "%s: " prop) 1)
+                                    (plist-get info prop))))
+            (unless (or (null value)
+                        (string= value ""))
+              (setq info (plist-put info prop value)))))
+        (setq info (plist-put info :citekey (minaduki-lit/generate-key
+                                             :author (plist-get info :author)
+                                             :date (plist-get info :date))))
+        (replace-region-contents
+         (point-min) (point-max)
+         (lambda ()
+           (let ((json-encoding-pretty-print t))
+             (json-encode
+              (vconcat
+               (list `((author . ,(->> (plist-get info :author)
+                                       (s-split " and ")
+                                       (--map `((literal . ,it)))
+                                       vconcat))
+                       (date . ,(plist-get info :date))
+                       (url . ,(plist-get info :url))
+                       (type . ,(f-base target-biblio))
+                       (id . ,(plist-get info :citekey))
+                       (title . ,(plist-get info :title))))
+               v))))))))
     ;; Save the buffer
-    (basic-save-buffer)))
-
-;;;###autoload
-(defun minaduki/new-literature-note ()
-  "Create a new literature note.
-
-This first adds an entry for it into a file in
-`minaduki-lit/bibliography'."
-  (interactive)
-  (call-interactively #'minaduki-lit/new-entry)
-  (-when-let (citekey (org-entry-get nil minaduki-lit/key-prop))
-    (orb-edit-notes citekey)))
+    (basic-save-buffer)
+    (-when-let (citekey (plist-get info :citekey))
+      (orb-edit-notes citekey))))
 
 ;;;; Actions
 
