@@ -119,6 +119,11 @@ REGION: the selected text."
           (minaduki-db//insert-meta 'update)))
     (user-error "No aliases to delete")))
 
+(defun minaduki//current-file-name ()
+  "Return current file name in a consistent way."
+  (or minaduki//file-name
+      (buffer-file-name (buffer-base-buffer))))
+
 ;;;###autoload
 (defun minaduki-add-tag ()
   "Add a tag."
@@ -321,6 +326,26 @@ If VISIT? is non-nil, go to the newly created note."
              :immediate-finish t))))
     (org-capture nil "a")
     file))
+
+;;;###autoload
+(cl-defun minaduki/diary-next (&optional (n 1))
+  "Go to the Nth next diary entry."
+  (interactive "p")
+  (let* ((current-file (minaduki//current-file-name))
+         (siblings (directory-files (f-dirname current-file))))
+    (--> (cl-position (f-filename current-file)
+                      siblings
+                      :test #'equal)
+         (+ it n)
+         (% it (length siblings))
+         (nth it siblings)
+         minaduki//find-file)))
+
+;;;###autoload
+(cl-defun minaduki/diary-prev (&optional (n 1))
+  "Go to the Nth previous diary entry."
+  (interactive "p")
+  (minaduki/diary-next (- n)))
 
 ;;;###autoload
 (defun minaduki/new-daily-note (&optional day)
