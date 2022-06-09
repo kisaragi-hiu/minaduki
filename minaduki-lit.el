@@ -431,16 +431,28 @@ Return a list of entries."
           item ret)
       (while (and (search-forward "{" nil t)
                   (setq item (json-read-object)))
+        (setq item (cl-loop
+                    for (field . value) in item
+                    collect
+                    (pcase field
+                      ('author (cons "author" (minaduki-lit/csl-json/process-author value)))
+                      ('issued (cons "date" (minaduki-lit/csl-json/process-date value)))
+                      ('id (cons "key" value))
+                      (_ (cons (format "%s" field) value)))))
+        (let (sources)
+          (when-let (pair (assoc "link" item))
+            (push (cdr pair)
+                  sources))
+          (when-let (pair (assoc "url" item))
+            (push (cdr pair)
+                  sources))
+          (when-let (pair (assoc "doi" item))
+            (push (concat "https://doi.org/" (cdr pair))
+                  sources))
+          (when sources
+            (push (cons "sources" sources) item)))
         (-->
-         (cl-loop
-          for (field . value) in item
-          collect
-          (pcase field
-            ('author (cons "author" (minaduki-lit/csl-json/process-author value)))
-            ('issued (cons "date" (minaduki-lit/csl-json/process-date value)))
-            ('id (cons "key" value))
-            (_ (cons (format "%s" field) value))))
-         (map-into it '(hash-table :test equal))
+         (map-into item '(hash-table :test equal))
          (push (cons (point) it) ret)))
       (nreverse ret))))
 
