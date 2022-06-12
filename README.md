@@ -1,10 +1,14 @@
-# Kisaragi Hiu's Org-roam v1 fork
+# Minaduki
 
-I don't want to adapt to Org-roam v2 because I have built a file-based no-ID workflow in my notes and don't want to change it.
+I like Org-roam v1, but I have different ideas of what could make it better in my opinion. So this is my fork.
 
 I plan to also merge other v1 packages into this repository.
 
-I cannot guarantee that this version will be useful for anybody other than me. There are many itches that I had with Org-roam v1 that conflicted with what other users expected, and those are the changes that I might make in this fork.
+## Features
+
+- Clone Obsidian vaults into your notes to be indexed
+- Markdown and Org support
+- Yet another literature entries system
 
 ## Credits
 
