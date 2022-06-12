@@ -13,3 +13,34 @@ The vast majority of the work comes from [Org-roam](https://github.com/org-roam/
 I also merged Org-roam-bibtex ([5236917](https://github.com/org-roam/org-roam-bibtex/commit/5236917e1d8a4f88daadacc690248854f53facb4)) into this repository.
 
 Markdown support was added largely by adapting md-roam logic into extraction functions.
+
+## Development setup
+
+```elisp
+(require 'emacsql)
+(emacsql-fix-vector-indentation)
+
+(defun k/inside-plist? ()
+  "Is point situated inside a plist?
+
+We determine a plist to be a list that starts with a keyword."
+  (let ((start (point)))
+    (save-excursion
+      (beginning-of-defun)
+      (let ((sexp (nth 1 (parse-partial-sexp (point) start))))
+        (when sexp
+          (setf (point) sexp)
+          (looking-at (rx "(" (* (syntax whitespace)) ":")))))))
+
+(define-advice calculate-lisp-indent (:around (func &rest args)
+                                      plist)
+  "Indent plists in a sane way."
+  (if (save-excursion
+        (beginning-of-line)
+        (k/inside-plist?))
+      (let ((lisp-indent-offset 1))
+        (apply func args))
+    (apply func args)))
+
+
+```
