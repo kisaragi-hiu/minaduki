@@ -57,6 +57,4 @@ Obsidian links are supported. You can follow them, and they are tracked by backl
 
 In an Obsidian vault, the file name is used as the main title.
 
-Try cloning a public Obsidian vault like [[https://github.com/sw-yx/brain][sw-yx/brain]]. Backlinks and title search should just work.
-
-Public vaults without a =.obsidian= folder such as [[https://help.obsidian.md/][Obsidian Help]] need a little more work from my end.
+Try cloning a public Obsidian vault like [[https://github.com/sw-yx/brain][sw-yx/brain]] or [[https://help.obsidian.md/][Obsidian Help]]. Backlinks and title search should just work.
