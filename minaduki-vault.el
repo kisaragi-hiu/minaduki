@@ -98,11 +98,12 @@ If PATH is nil, use `default-directory'."
 ;; closest to the current path.
 (defun minaduki-obsidian-path (written)
   "Convert WRITTEN path to actual path."
-  (let ((split (f-split written)))
+  (let ((split (f-split written))
+        (closest-vault (minaduki//closest-vault)))
     (if (> (length split) 1)
         ;; Not just a base name -> just a local-absolute path
-        (f-join (minaduki//closest-vault) written)
-      (let ((files (->> (minaduki//list-files (minaduki//closest-vault))
+        (f-join closest-vault written)
+      (let ((files (->> (minaduki//list-files closest-vault)
                         (--filter (or (equal (f-filename it) written)
                                       (equal (f-base it) written))))))
         (when files
