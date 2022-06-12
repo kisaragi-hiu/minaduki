@@ -4,6 +4,8 @@
 
 Minaduki is my fork of Org-roam v1.
 
+It has support for reading Obsidian vaults.
+
 * Keywords
 
 - title :: the main title of the file. (TODO: multiple title keywords should be concatenated)
@@ -51,9 +53,7 @@ Subdirectories containing ~minaduki-nested-vault-root-files~ are considered /nes
 
 * Obsidian support
 
-Obsidian links cannot yet be followed.
-
-Obsidian links establish backlinks as well.
+Obsidian links are supported. You can follow them, and they are tracked by backlinks.
 
 In an Obsidian vault, the file name is used as the main title.
 

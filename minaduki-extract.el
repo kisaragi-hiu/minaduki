@@ -178,25 +178,6 @@ Links are assumed to originate from FILE-FROM."
                "file"
                `(:point ,(point)))))))
 
-;; From my own notes:
-;;
-;; "shortest link when possible": When following, if the path isn't
-;; just a basename, then it's treated as a normal local-absolute path;
-;; if it is just a basename, if there is only one file with that
-;; basename, it visits that, otherwise it's just `root/<basename>`.
-(defun minaduki-obsidian-path (written)
-  "Convert WRITTEN path to actual path."
-  (let ((split (f-split written)))
-    (if (> (length split) 1)
-        ;; Not just a base name -> just a local-absolute path
-        (concat (minaduki//closest-vault) written)
-      (let ((files (->> (minaduki//list-files (minaduki//closest-vault))
-                        (--filter (or (equal (f-filename it) written)
-                                      (equal (f-base it) written))))))
-        (if (= 1 (length files))
-            (car files)
-          (concat (minaduki//closest-vault) written))))))
-
 ;; Modified from md-roam's `md-roam--extract-file-links'
 (defun minaduki-extract//markdown-links (file-from)
   "Extract Markdown links from current buffer.

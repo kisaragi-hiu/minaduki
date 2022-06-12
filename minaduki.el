@@ -56,6 +56,9 @@
 (require 'minaduki-utils)
 (require 'minaduki-vault)
 
+(require 'minaduki-org)
+(require 'minaduki-markdown)
+
 (when (featurep 'marginalia)
   (require 'kisaragi-notes-marginalia))
 
@@ -303,6 +306,11 @@ what they want to do with it."
 (define-minor-mode minaduki-local-mode
   "Minor mode active in files tracked by minaduki."
   :global nil
+  :keymap (let ((map (make-sparse-keymap)))
+            (define-key map
+              [remap markdown-follow-thing-at-point]
+              #'minaduki-markdown-follow)
+            map)
   (setq minaduki//last-window (get-buffer-window))
   ;; TODO: use minaduki-local-mode-hook
   (run-hooks 'minaduki/file-setup-hook) ; Run user hooks
