@@ -558,6 +558,12 @@ If the property is already set, it's value is replaced."
             (beginning-of-line)))
         (insert "#+" name ": " value "\n")))))
 
+(defun minaduki//collate-types (type)
+  "Collate TYPE into a parent type."
+  (cond ((member type '("http" "https"))
+         "website")
+        (t type)))
+
 (provide 'minaduki-utils)
 
 ;;; minaduki-utils.el ends here

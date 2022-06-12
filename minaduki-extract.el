@@ -136,7 +136,7 @@ Assume links come from FILE-FROM."
                                  (equal "ROAM_KEY"
                                         (org-element-property :key elem-at-point)))))
               (goto-char (org-element-property :begin link))
-              (let* ((type (org-roam--collate-types (org-element-property :type link)))
+              (let* ((type (minaduki//collate-types (org-element-property :type link)))
                      (path (org-element-property :path link))
                      (content (minaduki-extract//org-links-context))
                      (properties (list :outline (org-roam--get-outline-path)
@@ -187,7 +187,7 @@ Links are assumed to originate from FILE-FROM."
                                  (match-string-no-properties 13)))
                     (link-type-raw (url-type
                                     (url-generic-parse-url file-to)))
-                    (link-type (org-roam--collate-types
+                    (link-type (minaduki//collate-types
                                 (or link-type-raw "file")))
                     end-of-block begin-of-block
                     content)
@@ -484,18 +484,6 @@ If file-path FILE is non-nil, use it to determine the directory tags."
      (t
       (cl-sort tags #'string-lessp :key #'downcase)))))
 
-(defun org-roam--collate-types (type)
-  "Collate TYPE into a parent type.
-Packages like `org-ref' introduce many different link prefixes,
-but we collate them under the same parent type to clean up
-backlinks."
-  (cond ((and (boundp 'org-ref-cite-types)
-              (member type org-ref-cite-types))
-         "cite")
-        ((member type '("http" "https"))
-         "website")
-        (t type)))
-
 (defun minaduki-extract//process-ref (ref)
   "Processes REF into its type and path.
 
@@ -503,10 +491,10 @@ Returns a cons cell '(TYPE . PATH) if ref is a valid ref.
 
 REF is either a plain link or a plain string. If it's a link, the
 protocol is treated as the TYPE (after processing through
-`org-roam--collate-types'). Otherwise, REF is assumed to be a cite ref."
+`minaduki//collate-types'). Otherwise, REF is assumed to be a cite ref."
   (save-match-data
     (if (string-match org-link-plain-re ref)
-        (cons (org-roam--collate-types (match-string 1 ref))
+        (cons (minaduki//collate-types (match-string 1 ref))
               (match-string 2 ref))
       (cons "cite" ref))))
 
