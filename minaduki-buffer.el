@@ -153,14 +153,12 @@ This function hooks into `org-open-at-point' via `org-open-at-point-functions'."
       (when (and (eq (org-element-type context) 'link)
                  (minaduki//in-vault? path))
         (minaduki-buffer//find-file path)
-        (org-show-context)
         t)))
    ;; Backlinks context
    ((when-let ((file-from (get-text-property (point) 'file-from))
                (p (get-text-property (point) 'file-from-point)))
       (minaduki-buffer//find-file file-from)
       (goto-char p)
-      (org-show-context)
       t))
    ;; Unlinked references context
    ((-when-let* ((file-from (get-text-property (point) 'file-from))
@@ -169,7 +167,6 @@ This function hooks into `org-open-at-point' via `org-open-at-point-functions'."
       (goto-char (point-min))
       (forward-line (1- line))
       (forward-char col)
-      (org-show-context)
       t))
    ;; If called via `org-open-at-point', fall back to default behavior.
    (t nil)))
