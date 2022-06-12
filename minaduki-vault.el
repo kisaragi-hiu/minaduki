@@ -90,24 +90,27 @@ If PATH is nil, use `default-directory'."
   "Return PATH's relative path in the current vault."
   (f-relative path (f-expand org-directory)))
 
-;; From my own notes:
+;; When following, if the path isn't just a basename, then it's
+;; treated as a normal local-absolute path.
 ;;
-;; "shortest link when possible": When following, if the path isn't
-;; just a basename, then it's treated as a normal local-absolute path;
-;; if it is just a basename, if there is only one file with that
-;; basename, it visits that, otherwise it's just `root/<basename>`.
+;; If it is just a basename, if there is only one file with that
+;; basename, it visits that; otherwise return the candidate that is
+;; closest to the current path.
 (defun minaduki-obsidian-path (written)
   "Convert WRITTEN path to actual path."
   (let ((split (f-split written)))
     (if (> (length split) 1)
         ;; Not just a base name -> just a local-absolute path
-        (concat (minaduki//closest-vault) written)
+        (f-join (minaduki//closest-vault) written)
       (let ((files (->> (minaduki//list-files (minaduki//closest-vault))
                         (--filter (or (equal (f-filename it) written)
                                       (equal (f-base it) written))))))
-        (if (= 1 (length files))
-            (car files)
-          (concat (minaduki//closest-vault) written))))))
+        (when files
+          (if (= 1 (length files))
+              (car files)
+            (--max-by
+             (length (f-common-parent (list it default-directory)))
+             files)))))))
 
 (provide 'minaduki-vault)
 

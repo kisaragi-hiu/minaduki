@@ -114,8 +114,10 @@ file formats are:
   :type '(repeat string)
   :group 'minaduki)
 
+;; TODO: this should be a vault setting
+;; Perhaps in <vault>/.minaduki/ignore as a gitignore-style file
 (defcustom minaduki-file-exclude-regexp nil
-  "Files matching this regular expression are excluded from the Org-roam."
+  "Files matching this regular expression are not indexed."
   :type '(choice
           (string :tag "Regular expression matching files to ignore")
           (const :tag "Include everything" nil))
