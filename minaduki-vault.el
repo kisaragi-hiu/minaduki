@@ -9,6 +9,16 @@
 (require 'minaduki-utils)
 (require 'minaduki-vars)
 
+(require 'f)
+(require 's)
+
+(defcustom minaduki-nested-vault-root-files
+  (list ".obsidian"
+        "config.yaml")
+  "Files that mark a nested vault."
+  :group 'minaduki
+  :type '(repeat string))
+
 (defsubst minaduki//excluded? (path)
   "Should PATH be excluded from indexing?"
   (and minaduki-file-exclude-regexp
@@ -36,14 +46,22 @@ under the vault (`org-directory')."
        (not (minaduki//excluded? path))
        (f-descendant-of-p path (expand-file-name org-directory))))))
 
-(defun org-roam--org-roam-buffer-p (&optional buffer)
-  "Return t if BUFFER is accessing a part of Org-roam system.
-If BUFFER is not specified, use the current buffer."
-  (let ((buffer (or buffer (current-buffer)))
-        path)
-    (with-current-buffer buffer
-      (and (setq path (buffer-file-name (buffer-base-buffer)))
-           (minaduki//in-vault? path)))))
+(defun minaduki//closest-vault (&optional path)
+  "Return the innermost vault that contains PATH."
+  (unless path
+    (setq path default-directory))
+  (catch 'ret
+    (while t
+      (when (f-same? path org-directory)
+        (throw 'ret path))
+      (when (not (s-starts-with?
+                  (f-full org-directory)
+                  (f-full path)))
+        (throw 'ret nil))
+      (if (--any? (f-exists? (f-join path it))
+                  minaduki-nested-vault-root-files)
+          (throw 'ret path)
+        (setq path (f-dirname path))))))
 
 (provide 'minaduki-vault)
 
