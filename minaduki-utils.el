@@ -19,6 +19,10 @@
 ;; `org-mode-hook' and `org-inhibit-startup' as dynamic variables,
 ;; regardless of whether Org is loaded before their compilation.
 (require 'org)
+(require 'markdown-mode)
+(require 'org-element)
+
+(defvar markdown-mode-hook)
 
 ;;;; Error and progress reporting
 (defun minaduki//message (format-string &rest args)
@@ -367,54 +371,6 @@ Like `file-name-extension', but:
         (secure-hash 'sha1 (current-buffer)))
     (org-with-wide-buffer
      (secure-hash 'sha1 (current-buffer)))))
-
-(defun org-roam--list-files-search-globs (exts)
-  "Given EXTS, return a list of search globs.
-E.g. (\".org\") => (\"*.org\" \"*.org.gpg\")"
-  (append
-   (mapcar (lambda (ext) (concat "*." ext)) exts)
-   (mapcar (lambda (ext) (concat "*." ext ".gpg")) exts)))
-
-(defun minaduki//list-files/rg (executable dir)
-  "List all tracked files in DIR with Ripgrep.
-
-EXECUTABLE is the Ripgrep executable."
-  (let* ((globs (org-roam--list-files-search-globs minaduki-file-extensions))
-         (arguments `("-L" ,dir "--files"
-                      ,@(cons "-g" (-interpose "-g" globs)))))
-    (with-temp-buffer
-      (apply #'call-process executable
-             nil '(t nil) nil
-             arguments)
-      (-some--> (buffer-string)
-        (s-split "\n" it :omit-nulls)
-        (-remove #'minaduki//excluded? it)
-        (-map #'f-expand it)))))
-
-(defun minaduki//list-files/elisp (dir)
-  "List all tracked files in DIR with `directory-files-recursively'."
-  (let ((regexp (concat "\\.\\(?:"
-                        (mapconcat #'regexp-quote minaduki-file-extensions "\\|")
-                        "\\)\\(?:\\.gpg\\)?\\'"))
-        result)
-    (dolist (file (directory-files-recursively dir regexp nil nil t))
-      (when (and (file-readable-p file)
-                 (not (minaduki//excluded? file)))
-        (push file result)))
-    result))
-
-(defun minaduki//list-files (dir)
-  "List tracked files in DIR.
-
-Uses either Ripgrep or `directory-files-recursively'."
-  (let ((cmd (executable-find "rg")))
-    (if cmd
-        (minaduki//list-files/rg cmd dir)
-      (minaduki//list-files/elisp dir))))
-
-(defun minaduki//list-all-files ()
-  "Return a list of all tracked files within `org-directory'."
-  (minaduki//list-files (expand-file-name org-directory)))
 
 ;;;; Macros
 (defmacro minaduki//with-file (file keep-buf-p &rest body)

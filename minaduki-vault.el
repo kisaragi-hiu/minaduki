@@ -9,6 +9,8 @@
 (require 'minaduki-utils)
 (require 'minaduki-vars)
 
+(require 'org)
+
 (require 'f)
 (require 's)
 (require 'dash)
@@ -35,6 +37,55 @@ nested vaults regardless of whether they contain
   "Should PATH be excluded from indexing?"
   (and minaduki-file-exclude-regexp
        (string-match-p minaduki-file-exclude-regexp path)))
+
+(defun org-roam--list-files-search-globs (exts)
+  "Given EXTS, return a list of search globs.
+E.g. (\".org\") => (\"*.org\" \"*.org.gpg\")"
+  (append
+   (mapcar (lambda (ext) (concat "*." ext)) exts)
+   (mapcar (lambda (ext) (concat "*." ext ".gpg")) exts)))
+
+(defun minaduki//list-files/rg (executable dir)
+  "List all tracked files in DIR with Ripgrep.
+
+EXECUTABLE is the Ripgrep executable."
+  (let* ((globs (org-roam--list-files-search-globs minaduki-file-extensions))
+         (arguments `("-L" ,dir "--files"
+                      ,@(cons "-g" (-interpose "-g" globs)))))
+    (with-temp-buffer
+      (apply #'call-process executable
+             nil '(t nil) nil
+             arguments)
+      (goto-char (point-min))
+      (-some--> (buffer-string)
+        (s-split "\n" it :omit-nulls)
+        (-remove #'minaduki//excluded? it)
+        (-map #'f-expand it)))))
+
+(defun minaduki//list-files/elisp (dir)
+  "List all tracked files in DIR with `directory-files-recursively'."
+  (let ((regexp (concat "\\.\\(?:"
+                        (mapconcat #'regexp-quote minaduki-file-extensions "\\|")
+                        "\\)\\(?:\\.gpg\\)?\\'"))
+        result)
+    (dolist (file (directory-files-recursively dir regexp nil nil t))
+      (when (and (file-readable-p file)
+                 (not (minaduki//excluded? file)))
+        (push file result)))
+    result))
+
+(defun minaduki//list-files (dir)
+  "List tracked files in DIR.
+
+Uses either Ripgrep or `directory-files-recursively'."
+  (let ((cmd (executable-find "rg")))
+    (if cmd
+        (minaduki//list-files/rg cmd dir)
+      (minaduki//list-files/elisp dir))))
+
+(defun minaduki//list-all-files ()
+  "Return a list of all tracked files within `org-directory'."
+  (minaduki//list-files (expand-file-name org-directory)))
 
 (defun minaduki//in-vault? (&optional path)
   "Return t if PATH is in a vault.
