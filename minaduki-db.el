@@ -213,8 +213,7 @@ If UPDATE-P is non-nil, first remove the meta for the file in the database."
          (mtime (file-attribute-modification-time attr))
          (hash (minaduki//compute-content-hash))
          (tags (minaduki-extract/tags file))
-         (titles (or (minaduki-extract/titles)
-                     (list (minaduki//path-to-title file)))))
+         (titles (minaduki-extract/titles)))
     (when update-p
       (minaduki-db/query [:delete :from files
                           :where (= file $s1)]

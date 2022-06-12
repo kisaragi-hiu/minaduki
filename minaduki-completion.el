@@ -140,13 +140,12 @@ displayed in `completing-read'."
          completions)
     (dolist (row rows)
       (pcase-let ((`(,file-path ,title ,tags) row))
-        (let ((title (or title (minaduki//path-to-title file-path))))
-          (let ((k (concat
-                    (when tags
-                      (format "(%s) " (s-join org-roam-tag-separator tags)))
-                    title))
-                (v (list :path file-path :title title)))
-            (push (cons k v) completions)))))
+        (let ((k (concat
+                  (when tags
+                    (format "(%s) " (s-join org-roam-tag-separator tags)))
+                  title))
+              (v (list :path file-path :title title)))
+          (push (cons k v) completions))))
     completions))
 
 ;;;; `completing-read' completions

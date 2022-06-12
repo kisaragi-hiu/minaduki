@@ -42,3 +42,21 @@ If [[https://github.com/minad/marginalia/][Marginalia]] is installed, you'll see
 Press RET to visit the note.
 
 Headline notes are indicated with a leading star (regardless of heading level or whether it's Markdown or Org). Headline notes are headlines that have an =ID= property.
+
+* Vaults
+
+Right now only one vault can be open at one time. Set it with =org-directory=.
+
+Subdirectories containing ~minaduki-nested-vault-root-files~ are considered /nested vaults/. Right now this is only used to implement Obsidian's default /shortest link when possible/ links.
+
+* Obsidian support
+
+Obsidian links cannot yet be followed.
+
+Obsidian links establish backlinks as well.
+
+In an Obsidian vault, the file name is used as the main title.
+
+Try cloning a public Obsidian vault like [[https://github.com/sw-yx/brain][sw-yx/brain]]. Backlinks and title search should just work.
+
+Public vaults without a =.obsidian= folder such as [[https://help.obsidian.md/][Obsidian Help]] need a little more work from my end.

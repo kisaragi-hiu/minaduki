@@ -346,8 +346,12 @@ Return a list of [ID FILE LEVEL] vectors."
     (-some-> (cdr (assoc "TITLE" (minaduki//org-props '("TITLE"))))
       list))
    ((derived-mode-p 'markdown-mode)
-    (-some-> (minaduki-extract//markdown-props "title")
-      list))))
+    (let ((prop (minaduki-extract//markdown-props "title")))
+      ;; In Obsidian, the main title is the file name.
+      (cond ((minaduki--in-obsidian-vault?)
+             (list (f-base (buffer-file-name))))
+            (prop
+             (list prop)))))))
 
 (defun minaduki-extract/aliases ()
   "Return a list of aliases from the current buffer."
@@ -413,9 +417,12 @@ headline."
   (save-excursion
     (save-restriction
       (widen)
-      (-uniq (append (or (minaduki-extract/main-title)
-                         (minaduki-extract/first-headline))
-                     (minaduki-extract/aliases))))))
+      (-uniq
+       (append
+        (or (minaduki-extract/main-title)
+            (minaduki-extract/first-headline)
+            (list (minaduki//path-to-title (buffer-file-name))))
+        (minaduki-extract/aliases))))))
 
 (defun minaduki-extract//tags/nested-vault (path)
   "If PATH is in a nested vault, return the vault's name as a tag."
