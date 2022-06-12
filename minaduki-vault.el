@@ -19,6 +19,17 @@
   :group 'minaduki
   :type '(repeat string))
 
+(defcustom minaduki-nested-vault-search-path
+  (list "external")
+  "Folders below these paths in the vault are nested vaults.
+
+For example, when \"external\" is part of this list,
+<vault>/external/a and <vault>/external/b are both considered
+nested vaults regardless of whether they contain
+`minaduki-nested-vault-root-files'."
+  :group 'minaduki
+  :type '(repeat string))
+
 (defsubst minaduki//excluded? (path)
   "Should PATH be excluded from indexing?"
   (and minaduki-file-exclude-regexp
@@ -50,18 +61,24 @@ under the vault (`org-directory')."
   "Return the innermost vault that contains PATH."
   (unless path
     (setq path default-directory))
-  (catch 'ret
-    (while t
-      (when (f-same? path org-directory)
-        (throw 'ret path))
-      (when (not (s-starts-with?
-                  (f-full org-directory)
-                  (f-full path)))
-        (throw 'ret nil))
-      (if (--any? (f-exists? (f-join path it))
-                  minaduki-nested-vault-root-files)
-          (throw 'ret path)
-        (setq path (f-dirname path))))))
+  (let ((nested-vaults
+         ;; These folders are nested vaults no matter what.
+         (mapcan (lambda (x) (f-directories (f-join org-directory x)))
+                 minaduki-nested-vault-search-path)))
+    (catch 'ret
+      (while t
+        (when (f-same? path org-directory)
+          (throw 'ret path))
+        (when (not (s-starts-with?
+                    (f-full org-directory)
+                    (f-full path)))
+          (throw 'ret nil))
+        (if (or
+             (member path nested-vaults)
+             (--any? (f-exists? (f-join path it))
+                     minaduki-nested-vault-root-files))
+            (throw 'ret path)
+          (setq path (f-dirname path)))))))
 
 (defun minaduki--in-obsidian-vault? (&optional path)
   "Is PATH in an Obsidian vault?
