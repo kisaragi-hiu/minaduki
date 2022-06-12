@@ -341,8 +341,9 @@ Return a list of [ID FILE LEVEL] vectors."
     (minaduki//org-prop "ALIAS"))
    ((derived-mode-p 'markdown-mode)
     (condition-case nil
-        (-some-> (minaduki-extract//markdown-props "alias")
-          (json-parse-string :array-type 'list))
+        (let ((aliases (-some-> (minaduki-extract//markdown-props "alias")
+                         (json-parse-string :array-type 'list))))
+          (if (listp aliases) aliases (list aliases)))
       (json-parse-error
        (minaduki//warn
         :error
