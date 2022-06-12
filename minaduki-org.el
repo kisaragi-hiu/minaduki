@@ -45,11 +45,11 @@ Interactively, please use the transient command instead."
          (filename (->> (if full?
                             title
                           (car (s-split " " title)))
-                        (s-replace-regexp (rx (any "-/,:?\"!'\\")) "")
-                        (s-replace-regexp " +" "-")
+                        (replace-regexp-in-string (rx (any "-/,:?\"!'\\")) "")
+                        (replace-regexp-in-string " +" "-")
                         downcase
-                        (s-replace-regexp (rx (group digit) "t" (group digit))
-                                          "\\1T\\2")
+                        (replace-regexp-in-string (rx (group digit) "t" (group digit))
+                                                  "\\1T\\2")
                         (format "%s.org")))
          (path (f-join dir filename))
          (content (save-mark-and-excursion

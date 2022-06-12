@@ -173,7 +173,7 @@ OTHERS: other key -> value pairs."
             (s-replace "-" "")
             (s-replace "–" "--")
             ;; this should handle ISO 8601 timestamps
-            (s-replace-regexp "T[[:digit:]].*" "")))
+            (replace-regexp-in-string "T[[:digit:]].*" "")))
          (new-id
           (concat author (or date ""))))
     (unless (and author date)
@@ -286,7 +286,7 @@ Return the generated key."
          :author author
          :date publishdate
          :url url
-         :title (s-replace-regexp "　" "" title))))))
+         :title (replace-regexp-in-string "　" "" title))))))
 
 ;;;; Parsing
 

@@ -195,7 +195,7 @@ Links are assumed to originate from FILE-FROM."
                  ;; https://... -> remove ^https: ->  //...
                  ;; http://... -> remove ^http: ->  //...
                  (setq file-to
-                       (s-replace-regexp
+                       (replace-regexp-in-string
                         (format "^%s:" (regexp-quote link-type-raw))
                         ""
                         file-to)))

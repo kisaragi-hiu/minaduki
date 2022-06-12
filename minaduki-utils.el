@@ -7,9 +7,10 @@
 
 ;;; Code:
 
+(require 'cl-lib)
 (require 'dash)
-(require 's)
 (require 'f)
+(require 's)
 
 (require 'minaduki-vars)
 (require 'ucs-normalize)
@@ -215,7 +216,7 @@ If ID? is non-nil and we're in Org mode, return an ID link instead."
   (let ((url? (minaduki//url? target))
         ;; - Allow `minaduki//apply-link-abbrev' to work even on file: links
         ;; - Allow f.el to work in general
-        (target (s-replace-regexp "^file://" "" target)))
+        (target (replace-regexp-in-string "^file://" "" target)))
     (cond ((derived-mode-p 'org-mode)
            ;; Don't apply link-abbrev if TARGET is https or http
            (unless (or url? id?)
