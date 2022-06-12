@@ -11,6 +11,7 @@
 
 (require 'f)
 (require 's)
+(require 'dash)
 
 (defcustom minaduki-nested-vault-root-files
   (list ".obsidian"
@@ -110,7 +111,9 @@ If PATH is nil, use `default-directory'."
           (if (= 1 (length files))
               (car files)
             (--max-by
-             (length (f-common-parent (list it default-directory)))
+             (>
+              (length (f-common-parent (list it default-directory)))
+              (length (f-common-parent (list other default-directory))))
              files)))))))
 
 (provide 'minaduki-vault)
