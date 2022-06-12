@@ -452,6 +452,7 @@ If FILE, set `minaduki//file-name' and variable
        (with-temp-buffer
          (let ((org-directory ,current-org-directory)
                (org-mode-hook nil)
+               (markdown-mode-hook nil)
                (org-inhibit-startup t)
                (after-change-major-mode-hook '(minaduki-initialize))
                ,@(when file
