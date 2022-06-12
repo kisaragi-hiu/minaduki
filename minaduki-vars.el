@@ -162,7 +162,7 @@ whose title is 'Index'."
   :type 'boolean)
 
 (defcustom org-roam-tag-separator ","
-  "String to use to separate tags when `minaduki/tag-sources' is non-nil."
+  "String to use to separate tags when `minaduki-tag-sources' is non-nil."
   :type 'string
   :group 'minaduki)
 
@@ -240,7 +240,7 @@ Otherwise, do not apply custom faces to Org-roam links."
           (const :tag "Do not apply custom faces" nil))
   :group 'minaduki)
 
-(defcustom minaduki/tag-sources
+(defcustom minaduki-tag-sources
   '(org-prop nested-vault)
   "Sources to obtain tags from.
 
@@ -284,7 +284,7 @@ Currently available sources:
           (const :tag "Last directory" last-directory)
           (const :tag "First directory" first-directory)))
 
-(defcustom org-roam-tag-sort nil
+(defcustom minaduki-tag-sort nil
   "When non-nil, sort tags in completions.
 
 When t, sort the tags alphabetically, regardless of case.
