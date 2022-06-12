@@ -163,6 +163,40 @@ Assume links come from FILE-FROM."
                     (push (vector file-from name type properties) links))))))))
       links)))
 
+(defun minaduki-extract//obsidian-links (file-from)
+  "Extract Obsidian links from current buffer.
+
+Links are assumed to originate from FILE-FROM."
+  (save-excursion
+    (goto-char (point-min))
+    (cl-loop
+     while (re-search-forward markdown-regex-wiki-link nil t)
+     collect
+     (let ((file-to (minaduki-obsidian-path (match-string 3))))
+       (vector file-from
+               file-to
+               "file"
+               `(:point ,(point)))))))
+
+;; From my own notes:
+;;
+;; "shortest link when possible": When following, if the path isn't
+;; just a basename, then it's treated as a normal local-absolute path;
+;; if it is just a basename, if there is only one file with that
+;; basename, it visits that, otherwise it's just `root/<basename>`.
+(defun minaduki-obsidian-path (written)
+  "Convert WRITTEN path to actual path."
+  (let ((split (f-split written)))
+    (if (> (length split) 1)
+        ;; Not just a base name -> just a local-absolute path
+        (concat (minaduki//closest-vault) written)
+      (let ((files (->> (minaduki//list-files (minaduki//closest-vault))
+                        (--filter (or (equal (f-filename it) written)
+                                      (equal (f-base it) written))))))
+        (if (= 1 (length files))
+            (car files)
+          (concat (minaduki//closest-vault) written))))))
+
 ;; Modified from md-roam's `md-roam--extract-file-links'
 (defun minaduki-extract//markdown-links (file-from)
   "Extract Markdown links from current buffer.
@@ -277,6 +311,7 @@ it as FILE-FROM."
     (append
      ;; I won't bother to support Org links in Markdown.
      (minaduki-extract//markdown-links file-from)
+     (minaduki-extract//obsidian-links file-from)
      (minaduki-extract//pandoc-citation file-from)))))
 
 (defun minaduki-extract/ids (&optional file-path)
@@ -462,6 +497,7 @@ If file-path FILE is non-nil, use it to determine the directory tags."
     (when (memq 'nested-vault minaduki-tag-sources)
       (setq tags (append (minaduki-extract//tags/nested-vault file) tags)))
     (when (memq 'all-directores minaduki-tag-sources)
+      t
       (setq tags (append (minaduki-extract//tags/all-directories file) tags)))
     (when (memq 'first-directory minaduki-tag-sources)
       (setq tags (append (minaduki-extract//tags/first-directory file) tags)))
