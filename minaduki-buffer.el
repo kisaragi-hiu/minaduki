@@ -53,6 +53,7 @@
 
 (require 'minaduki-db)
 (require 'minaduki-utils)
+(require 'minaduki-vault)
 (require 'minaduki-vars)
 (require 'minaduki-extract)
 

@@ -54,6 +54,7 @@
 (require 'minaduki-completion)
 (require 'minaduki-commands)
 (require 'minaduki-utils)
+(require 'minaduki-vault)
 
 (when (featurep 'marginalia)
   (require 'kisaragi-notes-marginalia))

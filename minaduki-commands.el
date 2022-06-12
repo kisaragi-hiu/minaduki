@@ -19,6 +19,7 @@
 (require 'minaduki-lit)
 
 (require 'minaduki-utils)
+(require 'minaduki-vault)
 (require 'kisaragi-notes-templates)
 
 (require 'minaduki-extract)
