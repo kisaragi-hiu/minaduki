@@ -279,7 +279,7 @@ what they want to do with it."
       (re-search-forward (rx bol "#+" (or "tags[]" "roam_tags") ":") nil t)
       (cl-loop for tag in (--sort (> (length it)
                                      (length other))
-                                  (org-roam--extract-tags-prop buffer-file-name))
+                                  (minaduki-extract//tags/org-prop))
                do (save-excursion
                     (search-forward tag)
                     (let* ((end (point))

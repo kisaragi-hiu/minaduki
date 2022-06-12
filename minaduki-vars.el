@@ -241,48 +241,48 @@ Otherwise, do not apply custom faces to Org-roam links."
   :group 'minaduki)
 
 (defcustom minaduki/tag-sources
-  '(org-roam--extract-tags-prop)
+  '(org-prop nested-vault)
   "Sources to obtain tags from.
 
 This should be a list of functions that will extract tags from a buffer.
 
 Currently available sources:
 
-  `org-roam--extract-tags-prop'
-    Extract tags from the #+roam_tags property.
-    Tags are space delimited.
-    Tags may contain spaces if they are double-quoted.
-    e.g. #+roam_tags: TAG \"tag with spaces\"
 
-  `org-roam--extract-tags-vanilla'
-    Extract vanilla `org-mode' tags, including #+FILETAGS and
-    inherited tags.
-
-  `org-roam--extract-tags-all-directories'
-    Extract sub-directories relative to `org-directory'.
-    That is, if a file is located at relative path foo/bar/file.org,
-    the file will have tags \"foo\" and \"bar\".
-
-  `org-roam--extract-tags-last-directory'
-    Extract the last directory relative to `org-directory'.
-    That is, if a file is located at relative path foo/bar/file.org,
-    the file will have tag \"bar\".
-
-  `org-roam--extract-tags-first-directory'
-    Extract the first directory relative to `org-directory'.
-    That is, if a file is located at relative path foo/bar/file.org,
-    the file will have tag \"foo\"."
+`hashtag':
+ All occurances of hashtags like \"#tag\".
+`hashtag-frontmatter':
+ All occurances of hashtags in the Markdown frontmatter.
+`org-prop':
+ The #+roam_tags and #+tags[] properties.
+ Tags are space delimited. Tags may contain spaces if they are double-quoted.
+ e.g. #+roam_tags: TAG \"tag with spaces\"
+`org-tags':
+ Vanilla `org-mode' tags, including #+FILETAGS and inherited tags.
+`nested-vault'
+ If the file is in a nested vault, the name of the nested vault.
+ <vault>/a/b/.obsidian ; assuming this file exists,
+                       ; marking it as a nested vault
+ <vault>/a/b/c/d.org -> \"b\"
+`all-directories'
+ All directories in the vault path.
+ <vault>/a/b/c/d.org -> \"a\", \"b\", \"c\"
+`last-directory'
+ The last directory in the vault path.
+ <vault>/a/b/c/d.org -> \"d\"
+`first-directory'
+ The first directory in the vault path.
+ <vault>/a/b/c/d.org -> \"a\""
   :group 'minaduki
-  :type '(set (const :tag "#+roam_tags"
-                     org-roam--extract-tags-prop)
-              (const :tag "buffer org tags"
-                     org-roam--extract-tags-vanilla)
-              (const :tag "sub-directories"
-                     org-roam--extract-tags-all-directories)
-              (const :tag "parent directory"
-                     org-roam--extract-tags-last-directory)
-              (const :tag "first sub-directory"
-                     org-roam--extract-tags-first-directory)))
+  :type '(set
+          (const :tag "Hashtags" hashtag)
+          (const :tag "Hashtags in frontmatter" hashtag-frontmatter)
+          (const :tag "Org props" org-prop)
+          (const :tag "Vanilla Org tags" org-tags)
+          (const :tag "Nested vault name" nested-vault)
+          (const :tag "All directories" all-directories)
+          (const :tag "Last directory" last-directory)
+          (const :tag "First directory" first-directory)))
 
 (defcustom org-roam-tag-sort nil
   "When non-nil, sort tags in completions.

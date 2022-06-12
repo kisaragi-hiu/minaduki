@@ -134,8 +134,7 @@ REGION: the selected text."
   (interactive)
   (let* ((all-tags (minaduki-db//fetch-all-tags))
          (tag (completing-read "Tag: " all-tags))
-         (file (buffer-file-name (buffer-base-buffer)))
-         (existing-tags (org-roam--extract-tags-prop file)))
+         (existing-tags (minaduki-extract//tags/org-prop)))
     (when (string-empty-p tag)
       (user-error "Tag can't be empty"))
     (org-roam--set-global-prop
@@ -149,8 +148,7 @@ REGION: the selected text."
 (defun minaduki-delete-tag ()
   "Delete a tag from Org-roam file."
   (interactive)
-  (if-let* ((file (buffer-file-name (buffer-base-buffer)))
-            (tags (org-roam--extract-tags-prop file)))
+  (if-let* ((tags (minaduki-extract//tags/org-prop)))
       (let ((tag (completing-read "Tag: " tags nil 'require-match)))
         (org-roam--set-global-prop
          "tags[]"

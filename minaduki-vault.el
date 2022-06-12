@@ -63,6 +63,10 @@ under the vault (`org-directory')."
           (throw 'ret path)
         (setq path (f-dirname path))))))
 
+(defun minaduki//vault-path (path)
+  "Return PATH's relative path in the current vault."
+  (f-relative path (f-expand org-directory)))
+
 (provide 'minaduki-vault)
 
 ;;; minaduki-vault.el ends here

@@ -2,4 +2,4 @@
 #+roam_tags: "t4 second-line"
 #+title: Tags
 
-This file is used to test functionality for =(org-roam--extract-tags)=
+This file is used to test functionality for =(minaduki-extract/tags)=

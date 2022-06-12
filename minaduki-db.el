@@ -212,7 +212,7 @@ If UPDATE-P is non-nil, first remove the meta for the file in the database."
          (atime (file-attribute-access-time attr))
          (mtime (file-attribute-modification-time attr))
          (hash (minaduki//compute-content-hash))
-         (tags (org-roam--extract-tags file))
+         (tags (minaduki-extract/tags file))
          (titles (or (minaduki-extract/titles)
                      (list (minaduki//path-to-title file)))))
     (when update-p

@@ -13,6 +13,7 @@
 
 (require 'minaduki-lit)
 (require 'minaduki-utils)
+(require 'minaduki-vault)
 (require 'minaduki-vars)
 
 ;; Markdown
@@ -380,78 +381,41 @@ headline."
                          (minaduki-extract/first-headline))
                      (minaduki-extract/aliases))))))
 
-;; TODO: use project root
-(defun org-roam--extract-tags-all-directories (file)
-  "Extract tags from using the directory path FILE.
-All sub-directories relative to `org-directory' are used as tags."
-  (when-let ((dir-relative (file-name-directory
-                            (f-relative file (f-expand org-directory)))))
-    (f-split dir-relative)))
+(defun minaduki-extract//tags/nested-vault (path)
+  "If PATH is in a nested vault, return the vault's name as a tag."
+  (-some-> (minaduki//closest-vault path)
+    f-filename
+    list))
+(defun minaduki-extract//tags/all-directories (path)
+  "Return PATH's relative path in the vault in segments."
+  (-some-> (file-name-directory
+            (minaduki//vault-path path))
+    f-split))
+(defun minaduki-extract//tags/first-directory (path)
+  "Return PATH's first directory in the vault."
+  (-some-> (minaduki//vault-path path)
+    f-split
+    car
+    list))
+(defun minaduki-extract//tags/last-directory (path)
+  "Return PATH's last directory in the vault."
+  (-some-> (minaduki//vault-path path)
+    f-split
+    last))
+(defun minaduki-extract//tags/org-tags ()
+  "Return all Org tags in current buffer.
 
-(defun org-roam--extract-tags-last-directory (file)
-  "Extract tags from using the directory path FILE.
-The final directory component is used as a tag."
-  (when-let ((dir-relative (file-name-directory
-                            (f-relative file (f-expand org-directory)))))
-    (last (f-split dir-relative))))
-
-(defun org-roam--extract-tags-first-directory (file)
-  "Extract tags from path FILE.
-The first directory component after `org-directory' is used as a
-tag."
-  (when-let ((dir-relative (file-name-directory
-                            (f-relative file (f-expand org-directory)))))
-    (list (car (f-split dir-relative)))))
-
-(defun org-roam--extract-tags-prop (_file)
-  "Extract tags from the current buffer's \"#+roam_tags\" global property.
-
-This also extracts from the #+tags[] property, which is what Hugo expects."
-  (condition-case nil
-      (append (minaduki-extract//org-prop-as-list "ROAM_TAGS")
-              ;; Extracting hugo style #+tags[].
-              ;; Concept from http://www.sidpatil.com/posts/org-roam-and-hugo-tags/
-              ;; (The fact that you simply need to change the prop it uses.)
-              (minaduki-extract//org-prop-as-list "TAGS[]"))
-    (error
-     (minaduki//warn
-      :error
-      "Failed to parse tags for buffer: %s. Skipping"
-      (or minaduki//file-name
-          (buffer-file-name))))))
-
-(defun org-roam--extract-tags-vanilla (_file)
-  "Extract vanilla `org-mode' tags.
-This includes all tags used in the buffer."
+Org tags are fetched with `org-get-buffer-tags'."
   (org-set-regexps-and-options 'tags-only)
   (-flatten (org-get-buffer-tags)))
-
-(defun org-roam--extract-tags (&optional file)
-  "Extract tags from the current buffer.
-
-If file-path FILE is non-nil, use it to determine the directory tags.
-
-Tags are obtained via:
-
-1. Directory tags: Relative to `org-directory': each folder
-   path is considered a tag.
-2. The key #+roam_tags."
-  (let* ((file (or file (buffer-file-name (buffer-base-buffer))))
-         (tags (->> minaduki/tag-sources
-                    (mapcan (lambda (it) (funcall it file)))
-                    -uniq)))
-    (cond
-     ((not org-roam-tag-sort)
-      tags)
-     ((listp org-roam-tag-sort)
-      (apply #'cl-sort tags org-roam-tag-sort))
-     (t
-      (cl-sort tags #'string-lessp :key #'downcase)))))
-
-;; Modified from md-roam's `org-roam--extract-tags-md-buffer'
-(defun minaduki-extract/tags-hashtag (&optional _file)
-  ;; This is referred to "Zettlr style" in `md-roam'; as I've never
-  ;; used Zettlr, I should probably not claim that this is like Zettlr.
+(defun minaduki-extract//tags/org-prop ()
+  "Return tags from the #+roam_tags and #+tags[] properties."
+  (append (minaduki-extract//org-prop-as-list "ROAM_TAGS")
+          ;; Extracting hugo style #+tags[].
+          ;; Concept from http://www.sidpatil.com/posts/org-roam-and-hugo-tags/
+          ;; (The fact that you simply need to change the prop it uses.)
+          (minaduki-extract//org-prop-as-list "TAGS[]")))
+(defun minaduki-extract//tags/hashtag ()
   "Extracts tags written with hashtags.
 
 Tags are specified like this:
@@ -462,13 +426,12 @@ Tags are specified like this:
     (cl-loop while (re-search-forward "\\([^/s]\\)\\([#][[:alnum:]_-]+\\)" nil t)
              when (match-string-no-properties 2)
              collect it)))
-
 ;; Modified from md-roam's `org-roam--extract-tags-md-frontmatter'
 ;;
 ;; Right now this doesn't actually read YAML because there is no YAML
 ;; parser in Emacs Lisp, apart from maybe
 ;; https://github.com/syohex/emacs-libyaml.
-(defun minaduki-extract/tags-hashtag-frontmatter (&optional _file)
+(defun minaduki-extract//tags/hashtag-frontmatter ()
   "Extract hashtags in a YAML frontmatter.
 
 Tags are specified like this at the beginning of the buffer:
@@ -488,7 +451,38 @@ Tags are specified like this at the beginning of the buffer:
                   (re-search-forward "^---$" nil t)))
       (save-restriction
         (narrow-to-region start end)
-        (minaduki-extract/tags-hashtag)))))
+        (minaduki-extract//tags/hashtag)))))
+
+(defun minaduki-extract/tags (&optional file)
+  "Extract file tags from the current buffer.
+
+If file-path FILE is non-nil, use it to determine the directory tags."
+  (let* ((file (or file (buffer-file-name (buffer-base-buffer))))
+         tags)
+    (when (memq 'nested-vault minaduki/tag-sources)
+      (setq tags (append (minaduki-extract//tags/nested-vault file) tags)))
+    (when (memq 'all-directores minaduki/tag-sources)
+      (setq tags (append (minaduki-extract//tags/all-directories file) tags)))
+    (when (memq 'first-directory minaduki/tag-sources)
+      (setq tags (append (minaduki-extract//tags/first-directory file) tags)))
+    (when (memq 'last-directory minaduki/tag-sources)
+      (setq tags (append (minaduki-extract//tags/last-directory file) tags)))
+    (when (memq 'org-tags minaduki/tag-sources)
+      (setq tags (append (minaduki-extract//tags/org-tags) tags)))
+    (when (memq 'org-prop minaduki/tag-sources)
+      (setq tags (append (minaduki-extract//tags/org-prop) tags)))
+    (when (memq 'hashtag minaduki/tag-sources)
+      (setq tags (append (minaduki-extract//tags/hashtag) tags)))
+    (when (memq 'hashtag-frontmatter minaduki/tag-sources)
+      (setq tags (append (minaduki-extract//tags/hashtag-frontmatter) tags)))
+    (setq tags (cl-remove-duplicates tags))
+    (cond
+     ((not org-roam-tag-sort)
+      tags)
+     ((listp org-roam-tag-sort)
+      (apply #'cl-sort tags org-roam-tag-sort))
+     (t
+      (cl-sort tags #'string-lessp :key #'downcase)))))
 
 (defun org-roam--collate-types (type)
   "Collate TYPE into a parent type.
