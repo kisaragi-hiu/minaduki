@@ -51,7 +51,7 @@
                  nil t)
             (match-string-no-properties 1)))))))
 
-(defun org-roam--extract-prop-as-list (prop)
+(defun minaduki-extract//org-prop-as-list (prop)
   "Extract PROP from the current Org buffer as a list.
 
 This is used to extract #+roam_tags."
@@ -73,7 +73,7 @@ This is used to extract #+roam_tags."
        ;; We have a list of lists at this point. Join them.
        (apply #'append it)))
 
-(defun minaduki-extract/citation (file-from)
+(defun minaduki-extract//org-citation (file-from)
   "Extract Org 9.5+ citations.
 
 Currently citations are treated as links of the `cite' type, from
@@ -118,10 +118,10 @@ FILE-FROM to the key."
            (hash-table-p org-id-locations)
            (gethash id org-id-locations))))
 
-(defun org-roam--extract-links-org (file-path)
+(defun minaduki-extract//org-links (file-from)
   "Extract links in current buffer in Org mode format ([[target][desc]]).
 
-Assume links come from FILE-PATH."
+Assume links come from FILE-FROM."
   (save-excursion
     (goto-char (point-min))
     (let (links)
@@ -144,8 +144,8 @@ Assume links come from FILE-PATH."
                      (names (pcase type
                               ("id"
                                ;; The cache is not available yet
-                               (when-let ((file-path (minaduki-extract//id-file path)))
-                                 (list file-path)))
+                               (when-let ((file-from (minaduki-extract//id-file path)))
+                                 (list file-from)))
                               ("cite" (list path))
                               ("website" (list path))
                               ("fuzzy" (list path))
@@ -153,20 +153,20 @@ Assume links come from FILE-PATH."
                               (_ (if (or (file-remote-p path)
                                          (minaduki//url? path))
                                      (list path)
-                                   (let ((file-maybe (expand-file-name path (file-name-directory file-path))))
+                                   (let ((file-maybe (expand-file-name path (file-name-directory file-from))))
                                      (if (f-exists? file-maybe)
                                          (list file-maybe)
                                        (list path))))))))
                 (dolist (name names)
                   (when name
-                    (push (vector file-path name type properties) links))))))))
+                    (push (vector file-from name type properties) links))))))))
       links)))
 
 ;; Modified from md-roam's `md-roam--extract-file-links'
-(defun org-roam--extract-links-markdown (file-path)
+(defun minaduki-extract//markdown-links (file-from)
   "Extract Markdown links from current buffer.
 
-Links are assumed to originate from FILE-PATH."
+Links are assumed to originate from FILE-FROM."
   (save-excursion
     (goto-char (point-min))
     ;; Adadpted from `markdown-get-used-uris'
@@ -205,7 +205,7 @@ Links are assumed to originate from FILE-PATH."
                        (file-truename
                         (expand-file-name
                          (url-filename (url-generic-parse-url file-to))
-                         (file-name-directory file-path))))
+                         (file-name-directory file-from))))
                  (save-excursion
                    ;; get the text block = content around the link as context
                    (unless (eobp)
@@ -216,17 +216,17 @@ Links are assumed to originate from FILE-PATH."
                    (setq content
                          (buffer-substring-no-properties begin-of-block
                                                          end-of-block))))
-               (vector file-path
+               (vector file-from
                        file-to
                        link-type
                        (list :content content
                              :point begin-of-block))))))
 
 ;; Modified from md-roam's `md-roam--extract-cite-links'
-(defun org-roam--extract-links-pandoc-cite (file-path)
+(defun minaduki-extract//pandoc-citation (file-from)
   "Extract cite links defined like this: @bibkey.
 
-Assume links come from FILE-PATH."
+Assume links come from FILE-FROM."
   (save-excursion
     (goto-char (point-min))
     (cl-loop while (re-search-forward
@@ -246,12 +246,12 @@ Assume links come from FILE-PATH."
                  (backward-paragraph)
                  (setq begin-of-block (point))
                  (setq content (buffer-substring-no-properties begin-of-block end-of-block)))
-               (vector file-path ; file-from
+               (vector file-from
                        target
                        link-type
                        (list :content content :point begin-of-block))))))
 
-(defun org-roam--extract-links (&optional file-path)
+(defun minaduki-extract/links (&optional file-from)
   "Extracts all link items within the current buffer.
 Link items are of the form:
 
@@ -260,24 +260,23 @@ Link items are of the form:
 This is the format that emacsql expects when inserting into the database.
 FILE-FROM is typically the buffer file path, but this may not exist, for example
 in temp buffers.  In cases where this occurs, we do know the file path, and pass
-it as FILE-PATH."
-  (setq file-path (or file-path minaduki//file-name (buffer-file-name)))
+it as FILE-FROM."
+  (setq file-from (or file-from minaduki//file-name (buffer-file-name)))
   (cond
    ;; Using `derived-mode-p' maybe adds 3 seconds per call to the
    ;; cache build when there are a million links. At that point 3
    ;; seconds is probably not that much of a deal.
    ((derived-mode-p 'org-mode)
     (append
-     (org-roam--extract-links-org file-path)
-     ;; Tracking this as links, as always; we should probably look at
-     ;; Org-roam v2 and how it handles Org 9.5 citations.
+     (minaduki-extract//org-links file-from)
+     ;; FIXME: citation references should not be tracked as links
      (when (featurep 'oc)
-       (minaduki-extract/citation file-path))))
+       (minaduki-extract//org-citation file-from))))
    ((derived-mode-p 'markdown-mode)
     (append
      ;; I won't bother to support Org links in Markdown.
-     (org-roam--extract-links-markdown file-path)
-     (org-roam--extract-links-pandoc-cite file-path)))))
+     (minaduki-extract//markdown-links file-from)
+     (minaduki-extract//pandoc-citation file-from)))))
 
 (defun minaduki-extract/ids (&optional file-path)
   "Extract all IDs within the current buffer.
@@ -409,11 +408,11 @@ tag."
 
 This also extracts from the #+tags[] property, which is what Hugo expects."
   (condition-case nil
-      (append (org-roam--extract-prop-as-list "ROAM_TAGS")
+      (append (minaduki-extract//org-prop-as-list "ROAM_TAGS")
               ;; Extracting hugo style #+tags[].
               ;; Concept from http://www.sidpatil.com/posts/org-roam-and-hugo-tags/
               ;; (The fact that you simply need to change the prop it uses.)
-              (org-roam--extract-prop-as-list "TAGS[]"))
+              (minaduki-extract//org-prop-as-list "TAGS[]"))
     (error
      (minaduki//warn
       :error

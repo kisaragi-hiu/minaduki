@@ -286,7 +286,7 @@ Return the number of rows inserted."
       (minaduki-db/query [:delete :from links
                           :where (= source $s1)]
                          file))
-    (if-let ((links (org-roam--extract-links)))
+    (if-let ((links (minaduki-extract/links)))
         (progn
           (minaduki-db/query
            [:insert :into links

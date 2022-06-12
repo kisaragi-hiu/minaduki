@@ -334,7 +334,7 @@ members that should be equal."
                (with-current-buffer buf
                  (funcall fn)))))
     (it "extracts links from Markdown files"
-      (expect (->> (test #'org-roam--extract-links
+      (expect (->> (test #'minaduki-extract/links
                          "baz.md")
                    (--map (seq-take it 3)))
               :to-have-same-items-as
@@ -348,7 +348,7 @@ members that should be equal."
                  "quro2017"
                  "cite"])))
     (it "extracts links from Org files"
-      (expect (->> (test #'org-roam--extract-links
+      (expect (->> (test #'minaduki-extract/links
                          "foo.org")
                    ;; Drop the link type and properties
                    (--map (seq-take it 2)))
@@ -362,7 +362,7 @@ members that should be equal."
                 [,(test-minaduki--abs-path "foo.org")
                  ,(test-minaduki--abs-path "bar.org")])))
     (xit "extracts Org citations"
-      (expect (->> (test #'minaduki-extract/citation
+      (expect (->> (test #'minaduki-extract//org-citation
                          "org-cite.org")
                    ;; Drop the link properties
                    (--map (seq-take it 3)))
