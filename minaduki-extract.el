@@ -311,7 +311,8 @@ it as FILE-FROM."
     (append
      ;; I won't bother to support Org links in Markdown.
      (minaduki-extract//markdown-links file-from)
-     (minaduki-extract//obsidian-links file-from)
+     (when (minaduki--in-obsidian-vault? file-from)
+       (minaduki-extract//obsidian-links file-from))
      (minaduki-extract//pandoc-citation file-from)))))
 
 (defun minaduki-extract/ids (&optional file-path)

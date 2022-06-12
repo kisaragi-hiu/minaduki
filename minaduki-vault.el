@@ -63,6 +63,12 @@ under the vault (`org-directory')."
           (throw 'ret path)
         (setq path (f-dirname path))))))
 
+(defun minaduki--in-obsidian-vault? (&optional path)
+  "Is PATH in an Obsidian vault?
+
+If PATH is nil, use `default-directory'."
+  (f-exists? (f-join (minaduki//closest-vault path) ".obsidian")))
+
 (defun minaduki//vault-path (path)
   "Return PATH's relative path in the current vault."
   (f-relative path (f-expand org-directory)))
