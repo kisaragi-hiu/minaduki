@@ -204,14 +204,16 @@ This is equivalent to removing the node from the graph."
                        file)))
 
 ;;;;; Inserting
-(defun minaduki-db//insert-meta (&optional update-p)
+(defun minaduki-db//insert-meta (&optional update-p hash)
   "Update the metadata of the current buffer into the cache.
-If UPDATE-P is non-nil, first remove the meta for the file in the database."
+
+If UPDATE-P is non-nil, first remove the meta for the file in the database.
+If HASH is non-nil, assume that is the file's hash without recomputing it."
   (let* ((file (or minaduki//file-name (buffer-file-name)))
          (attr (file-attributes file))
          (atime (file-attribute-access-time attr))
          (mtime (file-attribute-modification-time attr))
-         (hash (minaduki//compute-content-hash))
+         (hash (or hash (minaduki//compute-content-hash file)))
          (tags (minaduki-extract/tags file))
          (titles (minaduki-extract/titles)))
     (when update-p
@@ -535,7 +537,7 @@ FILE-HASH-PAIRS is a list of (file . hash) pairs."
         (file . contents-hash) file-hash-pairs
       (condition-case nil
           (minaduki//with-temp-buffer file
-            (minaduki-db//insert-meta)
+            (minaduki-db//insert-meta nil contents-hash)
             (setq id-count (+ id-count (minaduki-db//insert-ids)))
             (setq lit-count (+ lit-count (minaduki-db//insert-lit-entries))))
         (file-error

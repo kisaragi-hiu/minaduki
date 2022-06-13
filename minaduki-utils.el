@@ -362,15 +362,12 @@ Like `file-name-extension', but:
   "Open FILE using `org-roam-find-file-function' or `find-file'."
   (funcall (or org-roam-find-file-function #'find-file) file))
 
-(defun minaduki//compute-content-hash (&optional file)
-  "Compute the hash of the contents of FILE or the current buffer."
-  (if file
-      (with-temp-buffer
-        (set-buffer-multibyte nil)
-        (insert-file-contents-literally file)
-        (secure-hash 'sha1 (current-buffer)))
-    (org-with-wide-buffer
-     (secure-hash 'sha1 (current-buffer)))))
+(defun minaduki//compute-content-hash (file)
+  "Compute the hash of the raw bytes of FILE."
+  (with-temp-buffer
+    (set-buffer-multibyte nil)
+    (insert-file-contents-literally file)
+    (secure-hash 'sha1 (current-buffer))))
 
 ;;;; Macros
 (defmacro minaduki//with-file (file keep-buf-p &rest body)
