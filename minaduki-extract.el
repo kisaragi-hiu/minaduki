@@ -301,22 +301,29 @@ If FILE-PATH is nil, use the current file.
 Return a list of [ID FILE LEVEL] vectors."
   (setq file-path (or file-path minaduki//file-name (buffer-file-name)))
   (let (result)
-    ;; Handle the file property drawer (outline level 0)
-    (org-with-point-at (point-min)
-      (when-let ((before-first-heading (= 0 (org-outline-level)))
-                 (id (org-entry-get nil "ID")))
-        (push (vector id file-path 0)
-              result)))
-    ;; Extract every other ID
-    (org-map-region
-     (lambda ()
-       (when-let ((id (org-entry-get nil "ID")))
-         (push (vector id
-                       file-path
-                       (org-outline-level)
-                       (org-entry-get nil "ITEM"))
-               result)))
-     (point-min) (point-max))
+    (cond
+     ((derived-mode-p 'markdown-mode)
+      (goto-char (point-min))
+      (while (re-search-forward markdown-regex-header nil t)
+        (-when-let* (((id text level) (minaduki-markdown-get-id t)))
+          (push (vector id file-path level text) result))))
+     ((derived-mode-p 'org-mode)
+      ;; Handle the file property drawer (outline level 0)
+      (org-with-point-at (point-min)
+        (when-let ((before-first-heading (= 0 (org-outline-level)))
+                   (id (org-entry-get nil "ID")))
+          (push (vector id file-path 0)
+                result)))
+      ;; Extract every other ID
+      (org-map-region
+       (lambda ()
+         (when-let ((id (org-entry-get nil "ID")))
+           (push (vector id
+                         file-path
+                         (org-outline-level)
+                         (org-entry-get nil "ITEM"))
+                 result)))
+       (point-min) (point-max))))
     result))
 
 (defun minaduki-extract/main-title ()

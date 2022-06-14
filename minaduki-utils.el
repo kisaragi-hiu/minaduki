@@ -4,6 +4,8 @@
 
 ;; Miscellaneous macros and utility functions. These cannot depend on
 ;; the cache.
+;;
+;; TODO: minaduki-mode-case
 
 ;;; Code:
 

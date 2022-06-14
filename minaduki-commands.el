@@ -22,6 +22,8 @@
 (require 'minaduki-vault)
 (require 'kisaragi-notes-templates)
 
+(require 'minaduki-markdown)
+
 (require 'minaduki-extract)
 (require 'minaduki-db)
 (require 'org-roam-capture)
@@ -31,6 +33,20 @@
 (defvar selectrum-should-sort)
 
 ;;;; Local commands
+
+;; TODO: Specify what you want with a C-u; reject existing IDs
+(defun minaduki/id ()
+  "Assign an ID to the current heading."
+  (interactive)
+  (cond
+   ((derived-mode-p 'markdown-mode)
+    (unless (minaduki-markdown-get-id)
+      (save-excursion
+        (outline-back-to-heading)
+        (end-of-line)
+        (insert (format " {#%s}" (org-id-new))))))
+   ((derived-mode-p 'org-mode)
+    (org-id-get-create))))
 
 (cl-defun minaduki/insert (&key entry lowercase? region)
   "Insert a link to a note.
@@ -527,15 +543,13 @@ one."
   "Open an ID.
 
 This assumes ID is present in the cache database."
-  (when-let ((marker
-              ;; Locate ID's location in FILE
-              (let ((file (minaduki-db//fetch-file :id id)))
-                (when file
-                  (minaduki//with-file file t
-                    (org-id-find-id-in-file id file t))))))
-    (org-mark-ring-push)
-    (org-goto-marker-or-bmk marker)
-    (set-marker marker nil)))
+  ;; Locate ID's location in FILE
+  (when-let (file (minaduki-db//fetch-file :id id))
+    (minaduki//find-file file)
+    ;; FIXME: This is wrong.
+    ;; TODO: Please store point location of IDs.
+    (goto-char (point-min))
+    (search-forward id)))
 
 (defun minaduki/open-id-at-point ()
   "Open the ID link at point.

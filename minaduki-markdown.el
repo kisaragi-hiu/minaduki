@@ -26,6 +26,20 @@ open in another window instead of in the current one."
         (minaduki//find-file path))
     (markdown-follow-thing-at-point other)))
 
+(defun minaduki-markdown-get-id (&optional skip-match)
+  "Return (ID TEXT LEVEL) if current heading has an ID.
+
+If SKIP-MATCH is non-nil, assume the caller has already matched
+on `markdown-regex-header.'"
+  (when (or skip-match
+            (save-excursion
+              (and (outline-back-to-heading)
+                   (looking-at markdown-regex-header))))
+    (-when-let* ((whole (or (match-string-no-properties 1)
+                            (match-string-no-properties 5)))
+                 ((_ text id) (s-match "\\(.*\\) {#\\(.*?\\)}" whole)))
+      (list id text (markdown-outline-level)))))
+
 (provide 'minaduki-markdown)
 
 ;;; minaduki-markdown.el ends here
