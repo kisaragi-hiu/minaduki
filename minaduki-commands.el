@@ -298,7 +298,7 @@ REGION: the selected text."
     (display-buffer list-buffer)))
 
 ;;;###autoload
-(defun minaduki/literature-sources ()
+(defun minaduki/literature-entries ()
   "List all sources for browsing interactively."
   (interactive)
   (let ((selection
@@ -825,7 +825,7 @@ This first adds an entry for it into a file in
 
 (defvar minaduki/global-commands
   '(("Open or create a note"              . minaduki/open)
-    ("Browse literature sources"          . minaduki/literature-sources)
+    ("Browse literature entries"          . minaduki/literature-entries)
     ("Open notes directory"               . minaduki/open-directory)
     ("Open or create a template"          . minaduki/open-template)
     ("Create a new diary entry"           . minaduki/new-diary-entry)

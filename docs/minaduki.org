@@ -20,7 +20,7 @@ Bibliography entries are written in a custom Org-based format. Support for other
 
 Set bibliography files with =minaduki-lit/bibliography=.
 
-Use =minaduki/literature-sources= to browse all literature sources. After you select an entry, you can:
+Use =minaduki/literature-entries= to browse all literature entries. After you select an entry, you can:
 
 - insert a citation to the entry
 - copy its key
