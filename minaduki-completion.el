@@ -31,6 +31,9 @@
 (require 'minaduki-db)
 (require 'minaduki-lit)
 
+(defvar selectrum-should-sort nil)
+(defvar ivy-sort-functions-alist nil)
+
 ;;;; Completion utils
 (defun minaduki//get-title-path-completions ()
   ;; TODO: include headlines with IDs. Might have to think about how a
@@ -38,66 +41,53 @@
   "Return an alist for completion.
 The car is the displayed title for completion, and the cdr is a
 plist containing the path and title for the file."
-  (let* ((file-nodes (minaduki-db/query [:select [file titles tags meta]
-                                         :from files]))
+  (let* ((file-nodes (minaduki-db/query
+                      [:select [files:file
+                                files:titles
+                                files:tags
+                                files:meta
+                                ;; FIXME: this gives us one entry per
+                                ;; key for a file with multiple keys
+                                refs:ref
+                                refs:type]
+                       :from files
+                       :left :join refs
+                       :on (= refs:file files:file)]))
          (id-nodes (minaduki-db/query
-                    [:select [ids:id ids:title files:titles files:meta]
+                    [:select
+                     [ids:id ids:title files:titles files:meta ids:file]
                      :from ids
                      :left :join files
                      :on (= files:file ids:file)]))
          rows)
     (cl-loop for x in file-nodes
              do (dolist (title (elt x 1))
-                  (push (list :path (elt x 0)
-                              :title title
-                              :tags (elt x 2)
-                              :meta (elt x 3))
-                        rows)))
+                  (push
+                   (minaduki-node
+                    :path (elt x 0)
+                    :title title
+                    :tags (elt x 2)
+                    :meta (elt x 3)
+                    :key (elt x 4)
+                    :key-type (elt x 5))
+                   rows)))
     (cl-loop for x in id-nodes
-             do (push (list :path (elt x 0)
-                            :title (format "* %s - %s"
-                                           (car (elt x 2))
-                                           (elt x 1))
-                            :tags nil
-                            :meta (elt x 3)
-                            :id? t)
-                      rows))
+             do (push
+                 (minaduki-node
+                  :id (elt x 0)
+                  :path (elt x 4)
+                  :title (format "* %s - %s"
+                                 (car (elt x 2))
+                                 (elt x 1))
+                  :tags nil
+                  :meta (elt x 3))
+                 rows))
     (setq rows (sort rows
                      (lambda (a b)
                        (time-less-p
-                        (plist-get (plist-get a :meta) :mtime)
-                        (plist-get (plist-get b :meta) :mtime)))))
-    (cl-loop for row in rows
-             collect (let ((path (plist-get row :path))
-                           (title (plist-get row :title))
-                           (tags (plist-get row :tags)))
-                       (cons (-> (minaduki//add-tag-string title tags)
-                                 (propertize :metadata `((path . ,path)
-                                                         (title . ,title)
-                                                         (tags . ,tags))))
-                             row)))))
-
-;; `orb--get-non-ref-path-completions'
-(defun minaduki-completion//get-non-literature ()
-  "Return a list of non-literature notes for completion.
-
-Each note is a list (STR :path PATH :title TITLE), where STR is
-displayed in `completing-read'."
-  (let* ((rows (minaduki-db/query
-                [:select [file title tags]
-                 :from files
-                 :left :join refs :on (= files:file refs:file)
-                 :where refs:file :is :null]))
-         completions)
-    (dolist (row rows)
-      (pcase-let ((`(,file-path ,title ,tags) row))
-        (let ((k (concat
-                  (when tags
-                    (format "(%s) " (s-join org-roam-tag-separator tags)))
-                  title))
-              (v (list :path file-path :title title)))
-          (push (cons k v) completions))))
-    completions))
+                        (plist-get (oref a meta) :mtime)
+                        (plist-get (oref b meta) :mtime)))))
+    rows))
 
 ;;;; `completing-read' completions
 (defun minaduki-completion//mark-category (seq category)
@@ -121,44 +111,6 @@ Embark to create what are in effect context menus."
        `(metadata (category . ,category)))
       (_
        (all-completions str seq pred)))))
-
-(cl-defun minaduki-completion//read-note
-    (&key initial-input completions filter-fn (prompt "Note: "))
-  "Read a note from the repository.
-
-INITIAL-INPUT: passed to `completing-read'.
-
-COMPLETIONS: if non-nil a list of note entries in the format
-returned by `minaduki//get-title-path-completions'. When nil,
-`minaduki//get-title-path-completions' will be queried.
-
-FILTER-FN: completions will pass through this function first
-before being prompted for selection.
-
-PROMPT: the prompt to use during completion. Default: \"Note: \""
-  (let* ((completions (--> (or completions (minaduki//get-title-path-completions))
-                           (if filter-fn
-                               (funcall filter-fn it)
-                             it)))
-         (selection (completing-read prompt
-                                     (minaduki-completion//mark-category
-                                      completions 'note)
-                                     nil nil initial-input)))
-    (or (cdr (assoc selection completions))
-        ;; When there is no existing match, the entered text is both
-        ;; the title and the path.
-        ;;
-        ;; TODO: the path should be resolved relative to `org-directory'
-        ;;       (unless it's a url or an absolute path)
-        `(:title ,selection :path ,(s-trim selection) :new? t))))
-
-(defvar minaduki-completion//read-list-entry//citekey nil
-  "Let-bind this variable to use `org-cite-insert' on a particular citekey.
-
-For example:
-
-  (let ((minaduki-completion//read-list-entry//citekey \"iso20041201\"))
-    (org-cite-insert nil))")
 
 (defun minaduki--format-lit-entry (entry)
   "Format ENTRY for display."
@@ -184,10 +136,64 @@ For example:
                     (s-join " " it)
                     (propertize it 'face 'minaduki-tag))
                ""))))
+(defun minaduki--format-node (node)
+  (format "%s %s%s %s"
+          (minaduki--ensure-char-width
+           (* 0.4 (frame-width))
+           (oref node title))
+          (or (and (equal (oref node key-type) "cite")
+                   (--> (oref node key)
+                        (concat "@" it " ")
+                        ;; FIXME: new face
+                        (propertize it 'face 'minaduki-type)))
+              "")
+          (--> (oref node tags)
+               (--map (concat "#" it) it)
+               (s-join " " it)
+               (propertize it 'face 'minaduki-tag))
+          (or (oref node id)
+              (oref node path))))
+
+(cl-defun minaduki-completion//read-note
+    (&key initial-input (prompt "Note: "))
+  "Read a note from the repository.
+
+Return the `minaduki-node' object.
+
+INITIAL-INPUT: passed to `completing-read'.
+
+PROMPT: the prompt to use during completion. Default: \"Note: \""
+  (let* ((selectrum-should-sort nil)
+         (ivy-sort-functions-alist nil)
+         (entries (minaduki//get-title-path-completions))
+         (alist (--map (cons (minaduki--format-node it)
+                             it)
+                       entries))
+         (completions (map-keys alist))
+         (selection
+          (completing-read prompt completions nil nil initial-input)))
+    (or (cdr (assoc selection alist))
+        ;; When there is no existing match, the entered text is both
+        ;; the title and the path.
+        ;;
+        ;; TODO: the path should be resolved relative to `org-directory'
+        ;;       (unless it's a url or an absolute path)
+        (minaduki-node
+         :title selection
+         :path (s-trim selection)
+         :new? t))))
+
+(defvar minaduki-completion//read-list-entry//citekey nil
+  "Let-bind this variable to use `org-cite-insert' on a particular citekey.
+
+For example:
+
+  (let ((minaduki-completion//read-list-entry//citekey \"iso20041201\"))
+    (org-cite-insert nil))")
 
 (cl-defun minaduki-completion//read-lit-entry
     (multiple &key (prompt "Entry: "))
-  "Read a literature entry and return its citekey.)))
+  "Read a literature entry and return its citekey.
 
 If `minaduki-completion//read-list-entry//citekey' is non-nil,
 return that instead. This allows us to call `org-cite-insert'
@@ -204,18 +210,20 @@ PROMPT: the text shown in the prompt."
       (if multiple
           (list minaduki-completion//read-list-entry//citekey)
         minaduki-completion//read-list-entry//citekey)))
-  (let* ((entries (->> (minaduki-db/query [:select [props] :from keys])
+  (let* ((selectrum-should-sort nil)
+         (ivy-sort-functions-alist nil)
+         (entries (->> (minaduki-db/query [:select [props] :from keys])
                        (mapcar #'car)))
-         (alist (--map (cons (map-elt it "key")
-                             (minaduki--format-lit-entry it))
+         (alist (--map (cons (minaduki--format-lit-entry it)
+                             (map-elt it "key"))
                        entries))
-         (completions (map-values alist)))
+         (completions (map-keys alist)))
     (-when-let (answer (if multiple
                            (completing-read-multiple prompt completions)
                          (completing-read prompt completions)))
       (unless (listp answer)
         (setq answer (list answer)))
-      (--map (car (rassoc it alist)) answer))))
+      (--map (cdr (assoc it alist)) answer))))
 
 ;;;; `completion-at-point' completions
 

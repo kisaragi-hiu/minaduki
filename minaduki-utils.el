@@ -98,34 +98,40 @@ SEQUENCE."
                                     'invisible t)))))
 (defun minaduki--ensure-pixel-width (len str)
   "Make sure STR is LEN wide."
+  (setq len (floor len))
   (let ((w (minaduki--pixel-width str))
         (one-char (minaduki--pixel-width "x")))
     (cond ((> w len)
-           (->>
-            ;; Not pixel-wise. That is too slow.
-            (minaduki--truncate (floor (/ len one-char)) str)
-            ;; But do pad it out again.
-            (minaduki--ensure-pixel-width len)))
+           (let ((truncated
+                  ;; Not pixel-wise. That is too slow.
+                  (minaduki--truncate (floor (/ len one-char)) str)))
+             ;; But do pad it out again.
+             (if (equal truncated str)
+                 truncated
+               (minaduki--ensure-pixel-width len truncated))))
           ((< w len)
            ;; Add len - w pixels
            (concat str (propertize
                         (make-string (- len w) ?\s)
                         'face '(:height 1))))
           (t str))))
+(defun minaduki--ensure-char-width (len str)
+  "Ensure STR is LEN number of characters wide."
+  (setq len (floor len))
+  (let* ((truncated (truncate-string-to-width str len))
+         (display (truncate-string-to-width str len 0 ?\s)))
+    (if (<= (string-width str) len)
+        display
+      (concat display (propertize (substring str (length truncated))
+                                  'invisible t)))))
 (defun minaduki--ensure-width (len str)
   "Ensure STR is LEN number of pixels wide."
   (setq len (floor len))
   (if (display-graphic-p)
       (minaduki--ensure-pixel-width len str)
     ;; `citar--fit-to-width'
-    (let* ((one-char (minaduki--pixel-width "x"))
-           (chars (floor (/ len one-char)))
-           (truncated (truncate-string-to-width str chars))
-           (display (truncate-string-to-width str chars 0 ?\s)))
-      (if (<= (string-width str) chars)
-          display
-        (concat display (propertize (substring str (length truncated))
-                                    'invisible t))))))
+    (minaduki--ensure-char-width
+     (floor (/ len (minaduki--pixel-width "x"))))))
 
 (defun minaduki//remove-curly (str)
   "Remove curly braces from STR."

@@ -8,6 +8,19 @@
 
 (require 'f)
 (require 'org)
+(require 'eieio)
+
+;;;; Type definitions
+
+(defclass minaduki-node ()
+  ((path :initarg :path :initform nil)
+   (title :initarg :title :initform nil)
+   (tags :initarg :tags :initform nil)
+   (id :initarg :id :initform nil)
+   (meta :initarg :meta :initform nil)
+   (key :initarg :key :initform nil)
+   (key-type :initarg :key-type :initform nil)
+   (new? :initarg :new? :initform nil)))
 
 ;;;; Groups
 (defgroup minaduki nil

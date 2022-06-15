@@ -75,14 +75,14 @@ REGION: the selected text."
               :prompt "Insert link to note: ")
       :lowercase? current-prefix-arg
       :region region)))
-  (let* ((title (plist-get entry :title))
-         (path (plist-get entry :path))
+  (let* ((title (oref entry title))
+         (path (oref entry path))
          (desc title))
     ;; We avoid creating a new note if the path is a URL.
     ;;
     ;; This also allows inserting references to existing notes whose
     ;; title happens to be a URL without issue.
-    (when (and (plist-get entry :new?)
+    (when (and (oref entry new?)
                (not (minaduki//url? path)))
       (setq path
             (minaduki/new-concept-note
@@ -95,9 +95,10 @@ REGION: the selected text."
     (when lowercase?
       (setq desc (downcase desc)))
     (insert (minaduki/format-link
-             :target path
+             :target (or (oref entry id)
+                         (oref entry path))
              :desc desc
-             :id? (plist-get entry :id?)))))
+             :id? (oref entry id)))))
 
 ;;;###autoload
 (defun minaduki-add-alias ()
@@ -508,16 +509,17 @@ one."
    (list (minaduki-completion//read-note)))
   (when (stringp entry)
     (setq entry
-          (list :path (car (minaduki-db//fetch-file :title entry))
-                :title entry)))
-  (let ((path (plist-get entry :path))
-        (title (plist-get entry :title)))
-    (cond ((plist-get entry :new?)
+          (minaduki-node
+           :path (car (minaduki-db//fetch-file :title entry))
+           :title entry)))
+  (let ((path (oref entry path))
+        (title (oref entry title)))
+    (cond ((oref entry new?)
            (minaduki/new-concept-note
             :title title
             :visit? t))
-          ((plist-get entry :id?)
-           (minaduki/open-id path))
+          ((oref entry id)
+           (minaduki/open-id (oref entry id)))
           (t
            (minaduki//find-file path)))))
 
