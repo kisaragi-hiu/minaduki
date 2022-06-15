@@ -74,38 +74,58 @@ SEQUENCE."
               (minaduki//message ,message (1+ i) length)
               ,@body)))
 
-;;;; String manipulation
-(defun minaduki//truncate-string (len str &optional ellipsis)
-  "Truncate STR to LEN, adding ELLIPSIS (default `...').
-
-Like `s-truncate', except we use the display
-width (`string-width') to determine whether to truncate."
-  (declare (pure t) (side-effect-free t))
-  (unless ellipsis
-    (setq ellipsis "..."))
+(defun minaduki--pixel-width (str)
+  "Return pixel width of STR."
+  (cl-letf ((shr-use-fonts t)
+            ;; - evil assumes `set-window-buffer' is only used for
+            ;;   windows that are to be displayed - -
+            ;; - `shr-string-pixel-width' relies on
+            ;;   `window-text-pixel-size' which requires a live,
+            ;;   selected window, thus uses `set-window-buffer'
+            ;;
+            ;; So this function would waste a ton of time initializing
+            ;; evil in a temporary buffer without this.
+            (evil-mode nil))
+    (shr-string-pixel-width str)))
+(defun minaduki--truncate (len str)
+  "Truncate STR to LEN number of characters."
+  ;; `citar--fit-to-width'
   (setq len (floor len))
-  (if (<= (string-width str) len)
-      str
-    (condition-case nil
-        (format "%s%s"
-                (substring str 0 (- len (string-width ellipsis)))
-                ellipsis)
-      ;; There is no version of `substring' that is based on the
-      ;; display width, so this is the hack around it. We only run
-      ;; this if `substring' barfs.
-      (args-out-of-range
-       (cl-loop until (<= (string-width str)
-                          (- len (string-width ellipsis)))
-                do (setq str (substring str 0 (1- (length str))))
-                finally return (format "%s%s" str ellipsis))))))
-
-(defun minaduki//ensure-width (len str &optional ellipsis)
-  "Truncate or lengthen STR to LEN (with ELLIPSIS)."
+  (let ((truncated (truncate-string-to-width str len)))
+    (if (<= (string-width str) len)
+        str
+      (concat truncated (propertize (substring str (length truncated))
+                                    'invisible t)))))
+(defun minaduki--ensure-pixel-width (len str)
+  "Make sure STR is LEN wide."
+  (let ((w (minaduki--pixel-width str))
+        (one-char (minaduki--pixel-width "x")))
+    (cond ((> w len)
+           (->>
+            ;; Not pixel-wise. That is too slow.
+            (minaduki--truncate (floor (/ len one-char)) str)
+            ;; But do pad it out again.
+            (minaduki--ensure-pixel-width len)))
+          ((< w len)
+           ;; Add len - w pixels
+           (concat str (propertize
+                        (make-string (- len w) ?\s)
+                        'face '(:height 1))))
+          (t str))))
+(defun minaduki--ensure-width (len str)
+  "Ensure STR is LEN number of pixels wide."
   (setq len (floor len))
-  (concat (minaduki//truncate-string len str ellipsis)
-          (make-string
-           (max 0 (- len (string-width str)))
-           ?\s)))
+  (if (display-graphic-p)
+      (minaduki--ensure-pixel-width len str)
+    ;; `citar--fit-to-width'
+    (let* ((one-char (minaduki--pixel-width "x"))
+           (chars (floor (/ len one-char)))
+           (truncated (truncate-string-to-width str chars))
+           (display (truncate-string-to-width str chars 0 ?\s)))
+      (if (<= (string-width str) chars)
+          display
+        (concat display (propertize (substring str (length truncated))
+                                    'invisible t))))))
 
 (defun minaduki//remove-curly (str)
   "Remove curly braces from STR."
@@ -121,12 +141,12 @@ prepends TAGS to STR, appends TAGS to STR or omits TAGS from STR."
   (pcase org-roam-file-completion-tag-position
     ('prepend (concat
                (when tags (propertize (format "(%s) " (s-join org-roam-tag-separator tags))
-                                      'face 'org-roam-tag))
+                                      'face 'minaduki-tag))
                str))
     ('append (concat
               str
               (when tags (propertize (format " (%s)" (s-join org-roam-tag-separator tags))
-                                     'face 'org-roam-tag))))
+                                     'face 'minaduki-tag))))
     ('omit str)))
 
 (defun minaduki//remove-org-links (str)

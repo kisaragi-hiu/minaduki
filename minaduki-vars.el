@@ -558,8 +558,13 @@ descriptive warnings when certain operations fail (e.g. parsing).")
   "Face for Org-roam links."
   :group 'minaduki-faces)
 
-(defface org-roam-tag
-  '((t :weight bold))
+(defface minaduki-type
+  '((t :inherit shadow))
+  "Face for highlighting literature entry types."
+  :group 'minaduki-faces)
+
+(defface minaduki-tag
+  '((t :inherit shadow :slant italic))
   "Face for Org-roam tags in minibuffer commands."
   :group 'minaduki-faces)
 

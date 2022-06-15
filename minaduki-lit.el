@@ -106,35 +106,28 @@ OTHERS: other key -> value pairs."
 
 (defun minaduki-lit/format-entry (entry)
   "Format ENTRY for display."
-  (s-format "${date:4} ${todo}@${type} ${author} - ${title:100} ${tags}"
-            (lambda (key table)
-              (let* ((split (s-split ":" key))
-                     (width (cadr split))
-                     (real-key (car split)))
-                (let ((value (gethash real-key table "")))
-                  (cond
-                   ((equal real-key "todo")
-                    (unless (equal value "")
-                      (setq value (concat value " "))))
-                   ((equal real-key "date")
-                    (when (equal value "")
-                      (setq value (gethash "year" table ""))))
-                   ((equal real-key "author")
-                    (setq value
-                          (minaduki//ensure-width
-                           (max 20 (* 0.2 (frame-width)))
-                           (gethash "author" table ""))))
-                   ((equal real-key "tags")
-                    (setq value (->> value
-                                     (--map (concat "#" it))
-                                     (s-join " "))))
-                   (t
-                    (setq value (format "%s" value))))
-                  (when width
-                    (setq width (string-to-number width))
-                    (setq value (minaduki//ensure-width width value "")))
-                  value)))
-            entry))
+  (concat
+   (minaduki--ensure-width
+    (* 0.3 (frame-pixel-width))
+    (format "%.4s %s%s %s"
+            (or (gethash "date" entry)
+                (gethash "year" entry)
+                "")
+            (or (-some-> (gethash "todo" entry)
+                  (concat " "))
+                "")
+            (or (-some--> (gethash "type" entry)
+                  (concat "@" it)
+                  (propertize it 'face 'minaduki-type))
+                "")
+            (gethash "author" entry "")))
+   (format "  %s %s"
+           (gethash "title" entry "")
+           (or (--> (gethash "tags" entry)
+                    (--map (concat "#" it) it)
+                    (s-join " " it)
+                    (propertize it 'face 'minaduki-tag))
+               ""))))
 
 ;;;; Bibliography
 
