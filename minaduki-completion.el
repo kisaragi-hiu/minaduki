@@ -210,10 +210,12 @@ PROMPT: the text shown in the prompt."
                              (minaduki--format-lit-entry it))
                        entries))
          (completions (map-values alist)))
-    (-some->> (if multiple
-                  (completing-read-multiple prompt completions)
-                (completing-read prompt completions))
-      (--map (car (rassoc it alist))))))
+    (-when-let (answer (if multiple
+                           (completing-read-multiple prompt completions)
+                         (completing-read prompt completions)))
+      (unless (listp answer)
+        (setq answer (list answer)))
+      (--map (car (rassoc it alist)) answer))))
 
 ;;;; `completion-at-point' completions
 
