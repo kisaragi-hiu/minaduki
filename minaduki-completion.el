@@ -209,6 +209,31 @@ For example:
   (let ((minaduki-completion//read-list-entry//citekey \"iso20041201\"))
     (org-cite-insert nil))")
 
+(defun minaduki--format-lit-entry (entry)
+  "Format ENTRY for display."
+  (concat
+   (minaduki--ensure-width
+    (min 400 (* 0.3 (frame-pixel-width)))
+    (format "%-4.4s %s%s %s"
+            (or (gethash "date" entry)
+                (gethash "year" entry)
+                "")
+            (or (-some-> (gethash "todo" entry)
+                  (concat " "))
+                "")
+            (or (-some--> (gethash "type" entry)
+                  (concat "@" it)
+                  (propertize it 'face 'minaduki-type))
+                "")
+            (gethash "author" entry "")))
+   (format "  %s %s"
+           (gethash "title" entry "")
+           (or (--> (gethash "tags" entry)
+                    (--map (concat "#" it) it)
+                    (s-join " " it)
+                    (propertize it 'face 'minaduki-tag))
+               ""))))
+
 (cl-defun minaduki-completion//read-lit-entry
     (multiple &key (prompt "Entry: "))
   "Read a literature entry and return its citekey.)))
@@ -231,7 +256,7 @@ PROMPT: the text shown in the prompt."
   (let* ((entries (->> (minaduki-db/query [:select [props] :from keys])
                        (mapcar #'car)))
          (alist (--map (cons (map-elt it "key")
-                             (minaduki-lit/format-entry it))
+                             (minaduki--format-lit-entry it))
                        entries))
          (completions (map-values alist)))
     (-some->> (if multiple

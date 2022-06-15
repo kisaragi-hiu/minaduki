@@ -104,31 +104,6 @@ OTHERS: other key -> value pairs."
      others)
     obj))
 
-(defun minaduki-lit/format-entry (entry)
-  "Format ENTRY for display."
-  (concat
-   (minaduki--ensure-width
-    (* 0.3 (frame-pixel-width))
-    (format "%.4s %s%s %s"
-            (or (gethash "date" entry)
-                (gethash "year" entry)
-                "")
-            (or (-some-> (gethash "todo" entry)
-                  (concat " "))
-                "")
-            (or (-some--> (gethash "type" entry)
-                  (concat "@" it)
-                  (propertize it 'face 'minaduki-type))
-                "")
-            (gethash "author" entry "")))
-   (format "  %s %s"
-           (gethash "title" entry "")
-           (or (--> (gethash "tags" entry)
-                    (--map (concat "#" it) it)
-                    (s-join " " it)
-                    (propertize it 'face 'minaduki-tag))
-               ""))))
-
 ;;;; Bibliography
 
 ;;;; Reading from Org

@@ -308,7 +308,7 @@ REGION: the selected text."
                   collect
                   (cons
                    (gethash "key" s)
-                   (minaduki-lit/format-entry s))))
+                   (minaduki--format-lit-entry s))))
         key)
     (let ((selectrum-should-sort nil)
           (ivy-sort-functions-alist nil))
@@ -318,7 +318,7 @@ REGION: the selected text."
                                       (-some->
                                           (minaduki-db//fetch-lit-entry
                                            (minaduki-lit/key-at-point))
-                                        minaduki-lit/format-entry))
+                                        minaduki--format-lit-entry))
                      (rassoc it key->formatted)
                      car)))
     (minaduki/literature-note-actions key)))
