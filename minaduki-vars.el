@@ -134,13 +134,6 @@ If nil, `find-file' is used."
   :group 'minaduki
   :type 'hook)
 
-(defcustom org-roam-include-type-in-ref-path-completions nil
-  "When t, include the type in ref-path completions.
-Note that this only affects interactive calls.
-See `minaduki//get-ref-path-completions' for details."
-  :type 'boolean
-  :group 'minaduki)
-
 (defcustom org-roam-index-file "index.org"
   "Path to the Org-roam index file.
 The path can be a string or a function.

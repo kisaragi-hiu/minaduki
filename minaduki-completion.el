@@ -77,55 +77,6 @@ plist containing the path and title for the file."
                                                          (tags . ,tags))))
                              row)))))
 
-(defun minaduki//get-ref-path-completions (&optional arg filter)
-  "Return an alist of refs to absolute path of Org-roam files.
-
-When called interactively (i.e. when ARG is 1), formats the car
-of the completion-candidates with extra information: title, tags,
-and type \(when `org-roam-include-type-in-ref-path-completions'
-is non-nil).
-
-When called with a `C-u' prefix (i.e. when ARG is 4), forces the
-default format without the formatting.
-
-FILTER can either be a string or a function:
-
-- If it is a string, it should be the type of refs to include as
-  candidates \(e.g. \"cite\", \"website\", etc.)
-
-- If it is a function, it should be the name of a function that
-  takes three arguments: the type, the ref, and the file of the
-  current candidate. It should return t if that candidate is to
-  be included as a candidate."
-  (let ((rows (minaduki-db/query
-               [:select [refs:type refs:ref refs:file files:title files:tags]
-                :from files
-                :left :join refs :on (= files:file refs:file)
-                :where refs:file :is :not :null]))
-        completions)
-    (setq rows (seq-sort-by (lambda (x)
-                              (plist-get (nth 3 x) :mtime))
-                            #'time-less-p
-                            rows))
-    (dolist (row rows completions)
-      (pcase-let ((`(,type ,ref ,file-path ,title ,tags) row))
-        (when (pcase filter
-                ('nil t)
-                ((pred stringp) (string= type filter))
-                ((pred functionp) (funcall filter type ref file-path))
-                (wrong-type (signal 'wrong-type-argument
-                                    `((stringp functionp)
-                                      ,wrong-type))))
-          (let ((k (if (eq arg 1)
-                       (concat
-                        (when org-roam-include-type-in-ref-path-completions
-                          (format "{%s} " type))
-                        (minaduki//add-tag-string (format "%s (%s)" title ref)
-                                                  tags))
-                     ref))
-                (v (list :path file-path :type type :ref ref)))
-            (push (cons k v) completions)))))))
-
 ;; `orb--get-non-ref-path-completions'
 (defun minaduki-completion//get-non-literature ()
   "Return a list of non-literature notes for completion.
