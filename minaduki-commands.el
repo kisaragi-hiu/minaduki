@@ -301,27 +301,9 @@ REGION: the selected text."
 (defun minaduki/literature-sources ()
   "List all sources for browsing interactively."
   (interactive)
-  (let ((key->formatted
-         ;; Use an alist here so that we can retrieve the key from the
-         ;; selected item
-         (cl-loop for (s) in (minaduki-db/query [:select [props] :from keys])
-                  collect
-                  (cons
-                   (gethash "key" s)
-                   (minaduki--format-lit-entry s))))
-        key)
-    (let ((selectrum-should-sort nil)
-          (ivy-sort-functions-alist nil))
-      (setq key (--> (completing-read "Source: "
-                                      (mapcar #'cdr key->formatted)
-                                      nil t nil nil
-                                      (-some->
-                                          (minaduki-db//fetch-lit-entry
-                                           (minaduki-lit/key-at-point))
-                                        minaduki--format-lit-entry))
-                     (rassoc it key->formatted)
-                     car)))
-    (minaduki/literature-note-actions key)))
+  (let ((selection
+         (minaduki-completion//read-lit-entry nil :prompt "Entry: ")))
+    (minaduki/literature-note-actions (car selection))))
 
 ;;;###autoload
 (cl-defun minaduki/new-concept-note (&key title visit?)
