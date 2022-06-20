@@ -137,22 +137,24 @@ Embark to create what are in effect context menus."
                     (propertize it 'face 'minaduki-tag))
                ""))))
 (defun minaduki--format-node (node)
+  "Format NODE for use in a completion interface."
   (format "%s %s%s %s"
           (minaduki--ensure-char-width
            (* 0.4 (frame-width))
            (oref node title))
           (or (and (equal (oref node key-type) "cite")
                    (--> (oref node key)
-                        (concat "@" it " ")
-                        ;; FIXME: new face
-                        (propertize it 'face 'minaduki-type)))
+                        (concat "@" it)
+                        (propertize it 'face 'minaduki-key)
+                        (concat it " ")))
               "")
           (--> (oref node tags)
                (--map (concat "#" it) it)
                (s-join " " it)
                (propertize it 'face 'minaduki-tag))
-          (or (oref node id)
-              (oref node path))))
+          (--> (or (oref node id)
+                   (f-relative (oref node path) org-directory))
+               (propertize it 'face 'minaduki-path))))
 
 (cl-defun minaduki-completion//read-note
     (&key initial-input (prompt "Note: "))

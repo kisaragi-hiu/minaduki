@@ -564,9 +564,19 @@ descriptive warnings when certain operations fail (e.g. parsing).")
   "Face for Org-roam links."
   :group 'minaduki-faces)
 
+(defface minaduki-key
+  '((t :inherit org-cite))
+  "Face for highlighting literature entry keys."
+  :group 'minaduki-faces)
+
 (defface minaduki-type
   '((t :inherit shadow))
   "Face for highlighting literature entry types."
+  :group 'minaduki-faces)
+
+(defface minaduki-path
+  '((t :inherit shadow))
+  "Face for paths in Minaduki's completion."
   :group 'minaduki-faces)
 
 (defface minaduki-tag
