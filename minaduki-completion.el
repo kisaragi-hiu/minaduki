@@ -31,9 +31,6 @@
 (require 'minaduki-db)
 (require 'minaduki-lit)
 
-(defvar selectrum-should-sort nil)
-(defvar ivy-sort-functions-alist nil)
-
 ;;;; Completion utils
 (defun minaduki//get-title-path-completions ()
   ;; TODO: include headlines with IDs. Might have to think about how a
@@ -165,25 +162,26 @@ Return the `minaduki-node' object.
 INITIAL-INPUT: passed to `completing-read'.
 
 PROMPT: the prompt to use during completion. Default: \"Note: \""
-  (let* ((selectrum-should-sort nil)
-         (ivy-sort-functions-alist nil)
-         (entries (minaduki//get-title-path-completions))
-         (alist (--map (cons (minaduki--format-node it)
-                             it)
-                       entries))
-         (completions (map-keys alist))
-         (selection
-          (completing-read prompt completions nil nil initial-input)))
-    (or (cdr (assoc selection alist))
-        ;; When there is no existing match, the entered text is both
-        ;; the title and the path.
-        ;;
-        ;; TODO: the path should be resolved relative to `org-directory'
-        ;;       (unless it's a url or an absolute path)
-        (minaduki-node
-         :title selection
-         :path (s-trim selection)
-         :new? t))))
+  (minaduki--with-comp-setup
+      ((ivy-sort-functions-alist . nil)
+       (ivy-sort-matches-functions-alist . #'ivy--shorter-matches-first))
+    (let* ((entries (minaduki//get-title-path-completions))
+           (alist (--map (cons (minaduki--format-node it)
+                               it)
+                         entries))
+           (completions (map-keys alist))
+           (selection
+            (completing-read prompt completions nil nil initial-input)))
+      (or (cdr (assoc selection alist))
+          ;; When there is no existing match, the entered text is both
+          ;; the title and the path.
+          ;;
+          ;; TODO: the path should be resolved relative to `org-directory'
+          ;;       (unless it's a url or an absolute path)
+          (minaduki-node
+           :title selection
+           :path (s-trim selection)
+           :new? t)))))
 
 (defvar minaduki-completion//read-list-entry//citekey nil
   "Let-bind this variable to use `org-cite-insert' on a particular citekey.
@@ -212,20 +210,21 @@ PROMPT: the text shown in the prompt."
       (if multiple
           (list minaduki-completion//read-list-entry//citekey)
         minaduki-completion//read-list-entry//citekey)))
-  (let* ((selectrum-should-sort nil)
-         (ivy-sort-functions-alist nil)
-         (entries (->> (minaduki-db/query [:select [props] :from keys])
-                       (mapcar #'car)))
-         (alist (--map (cons (minaduki--format-lit-entry it)
-                             (map-elt it "key"))
-                       entries))
-         (completions (map-keys alist)))
-    (-when-let (answer (if multiple
-                           (completing-read-multiple prompt completions)
-                         (completing-read prompt completions)))
-      (unless (listp answer)
-        (setq answer (list answer)))
-      (--map (cdr (assoc it alist)) answer))))
+  (minaduki--with-comp-setup
+      ((ivy-sort-functions-alist . nil)
+       (ivy-sort-matches-functions-alist . #'ivy--shorter-matches-first))
+    (let* ((entries (->> (minaduki-db/query [:select [props] :from keys])
+                         (mapcar #'car)))
+           (alist (--map (cons (minaduki--format-lit-entry it)
+                               (map-elt it "key"))
+                         entries))
+           (completions (map-keys alist)))
+      (-when-let (answer (if multiple
+                             (completing-read-multiple prompt completions)
+                           (completing-read prompt completions)))
+        (unless (listp answer)
+          (setq answer (list answer)))
+        (--map (cdr (assoc it alist)) answer)))))
 
 ;;;; `completion-at-point' completions
 

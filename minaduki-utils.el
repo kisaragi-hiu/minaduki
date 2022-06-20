@@ -26,6 +26,33 @@
 
 (defvar markdown-mode-hook)
 
+(defmacro minaduki--with-comp-setup (defaults &rest body)
+  "Run BODY with completion frameworks set up according to DEFAULTS.
+
+Example:
+
+  (minaduki--with-comp-setup
+      ((ivy-sort-functions-alist . nil)
+       (ivy-sort-matches-functions-alist . #'ivy--shorter-matches-first))
+    BODY)
+
+This will run BODY with Ivy set to not sort the initial
+collection, and to sort matches with `ivy--shorter-matches-first'."
+  (declare (indent 1))
+  `(progn
+     ;; The keys are never supposed to be lexical variables.
+     ,@(cl-loop for (key . _) in defaults
+                collect `(defvar ,key))
+     (defvar selectrum-should-sort)
+     (let ((selectrum-should-sort nil)
+           ,@(cl-loop for (key . value) in defaults
+                      collect `(,key
+                                (if (assoc this-command ,key)
+                                    ,key
+                                  (list (cons this-command
+                                              ,(alist-get key defaults)))))))
+       ,@body)))
+
 ;;;; Error and progress reporting
 (defun minaduki//message (format-string &rest args)
   "Pass FORMAT-STRING and ARGS to `message' when `minaduki-verbose' is t."
