@@ -38,14 +38,14 @@
 (defun minaduki/id ()
   "Assign an ID to the current heading."
   (interactive)
-  (cond
-   ((derived-mode-p 'markdown-mode)
+  (pcase (minaduki--file-type)
+   ('markdown
     (unless (minaduki-markdown-get-id)
       (save-excursion
         (outline-back-to-heading)
         (end-of-line)
         (insert (format " {#%s}" (org-id-new))))))
-   ((derived-mode-p 'org-mode)
+   ('org
     (org-id-get-create))))
 
 (cl-defun minaduki/insert (&key entry lowercase? region)
@@ -665,10 +665,11 @@ or `title' should be used for slug: %s not supported" orb-slug-source))))
 
 (defun minaduki/insert-citation (citekey)
   "Insert a citation to CITEKEY."
-  (cond ((derived-mode-p 'org-mode)
-         (let ((minaduki-completion//read-list-entry//citekey citekey))
-           (org-cite-insert nil)))
-        (t (insert "@" citekey))))
+  (pcase (minaduki--file-type)
+    ('org
+     (let ((minaduki-completion//read-list-entry//citekey citekey))
+       (org-cite-insert nil)))
+    (_ (insert "@" citekey))))
 
 (defun minaduki/copy-citekey (citekey)
   "Save note's citation key to `kill-ring' and copy it to clipboard.
@@ -766,58 +767,58 @@ This first adds an entry for it into a file in
                (read-string "Create new literature entry for URL: "))))
     ;; Use find-file to ensure we save into it
     (find-file target-biblio)
-    (cond
-     ((derived-mode-p 'org-mode)
-      ;; Go to just before the first heading
-      (goto-char (point-min))
-      (outline-next-heading)
-      (forward-char -1)
-      (unless (eq ?\n (char-before))
-        (insert "\n"))
-      (insert (format "%s %s\n"
-                      (make-string (1+ (or (org-current-level)
-                                           0))
-                                   ?*)
-                      (plist-get info :title)))
-      (org-entry-put nil "url"    (plist-get info :url))
-      (org-entry-put nil "author" (plist-get info :author))
-      (org-entry-put nil "date"   (plist-get info :date))
-      (dolist (prop '("url" "author" "date"))
-        (let ((value (org-read-property-value prop)))
-          (unless (or (null value)
-                      (string= value ""))
-            (org-entry-put nil prop value)
-            (setq info (plist-put info prop value)))))
-      (setq info (plist-put info
-                            :citekey (minaduki-lit/generate-key-at-point))))
-     ((f-ext? (buffer-file-name) "json")
-      (goto-char (point-min))
-      (let ((v (json-read)))
-        (dolist (prop '(:author :date))
-          (let ((value (read-string (substring (format "%s: " prop) 1)
-                                    (plist-get info prop))))
-            (unless (or (null value)
-                        (string= value ""))
-              (setq info (plist-put info prop value)))))
-        (setq info (plist-put info :citekey (minaduki-lit/generate-key
-                                             :author (plist-get info :author)
-                                             :date (plist-get info :date))))
-        (replace-region-contents
-         (point-min) (point-max)
-         (lambda ()
-           (let ((json-encoding-pretty-print t))
-             (json-encode
-              (vconcat
-               (list `((author . ,(->> (plist-get info :author)
-                                       (s-split " and ")
-                                       (--map `((literal . ,it)))
-                                       vconcat))
-                       (date . ,(plist-get info :date))
-                       (url . ,(plist-get info :url))
-                       (type . ,(f-base target-biblio))
-                       (id . ,(plist-get info :citekey))
-                       (title . ,(plist-get info :title))))
-               v))))))))
+    (pcase (minaduki--file-type)
+      ('org
+       ;; Go to just before the first heading
+       (goto-char (point-min))
+       (outline-next-heading)
+       (forward-char -1)
+       (unless (eq ?\n (char-before))
+         (insert "\n"))
+       (insert (format "%s %s\n"
+                       (make-string (1+ (or (org-current-level)
+                                            0))
+                                    ?*)
+                       (plist-get info :title)))
+       (org-entry-put nil "url"    (plist-get info :url))
+       (org-entry-put nil "author" (plist-get info :author))
+       (org-entry-put nil "date"   (plist-get info :date))
+       (dolist (prop '("url" "author" "date"))
+         (let ((value (org-read-property-value prop)))
+           (unless (or (null value)
+                       (string= value ""))
+             (org-entry-put nil prop value)
+             (setq info (plist-put info prop value)))))
+       (setq info (plist-put info
+                             :citekey (minaduki-lit/generate-key-at-point))))
+      ('json
+       (goto-char (point-min))
+       (let ((v (json-read)))
+         (dolist (prop '(:author :date))
+           (let ((value (read-string (substring (format "%s: " prop) 1)
+                                     (plist-get info prop))))
+             (unless (or (null value)
+                         (string= value ""))
+               (setq info (plist-put info prop value)))))
+         (setq info (plist-put info :citekey (minaduki-lit/generate-key
+                                              :author (plist-get info :author)
+                                              :date (plist-get info :date))))
+         (replace-region-contents
+          (point-min) (point-max)
+          (lambda ()
+            (let ((json-encoding-pretty-print t))
+              (json-encode
+               (vconcat
+                (list `((author . ,(->> (plist-get info :author)
+                                        (s-split " and ")
+                                        (--map `((literal . ,it)))
+                                        vconcat))
+                        (date . ,(plist-get info :date))
+                        (url . ,(plist-get info :url))
+                        (type . ,(f-base target-biblio))
+                        (id . ,(plist-get info :citekey))
+                        (title . ,(plist-get info :title))))
+                v))))))))
     ;; Save the buffer
     (basic-save-buffer)
     (-when-let (citekey (plist-get info :citekey))

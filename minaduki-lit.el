@@ -109,22 +109,23 @@ OTHERS: other key -> value pairs."
 ;;;; Reading from Org
 (defun minaduki-lit/key-at-point ()
   "Return the key of the literature entry at point."
-  (cond ((derived-mode-p 'org-mode)
-         (let ((value (org-entry-get nil minaduki-lit/key-prop t)))
-           (when (and value
-                      (not (string= "" value)))
-             value)))
-        ((derived-mode-p 'json-mode)
-         (save-excursion
-           (let (here doc)
-             (setq here (point))
-             (goto-char (point-min))
-             (setq doc (json-read))
-             (->> (-> (json-path-to-position here)
-                      (plist-get :path)
-                      car)
-                  (elt doc)
-                  (alist-get 'id)))))))
+  (pcase (minaduki--file-type)
+    ('org
+     (let ((value (org-entry-get nil minaduki-lit/key-prop t)))
+       (when (and value
+                  (not (string= "" value)))
+         value)))
+    ('json
+     (save-excursion
+       (let (here doc)
+         (setq here (point))
+         (goto-char (point-min))
+         (setq doc (json-read))
+         (->> (-> (json-path-to-position here)
+                  (plist-get :path)
+                  car)
+              (elt doc)
+              (alist-get 'id)))))))
 
 (cl-defun minaduki-lit/generate-key (&key author date)
   "Generate a key from AUTHOR and DATE."

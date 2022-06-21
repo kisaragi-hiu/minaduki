@@ -278,22 +278,19 @@ FILE-FROM is typically the buffer file path, but this may not exist, for example
 in temp buffers.  In cases where this occurs, we do know the file path, and pass
 it as FILE-FROM."
   (setq file-from (or file-from minaduki//file-name (buffer-file-name)))
-  (cond
-   ;; Using `derived-mode-p' maybe adds 3 seconds per call to the
-   ;; cache build when there are a million links. At that point 3
-   ;; seconds is probably not that much of a deal.
-   ((derived-mode-p 'org-mode)
-    (append
-     (minaduki-extract//org-links file-from)
-     ;; FIXME: citation references should not be tracked as links
-     (when (featurep 'oc)
-       (minaduki-extract//org-citation file-from))))
-   ((derived-mode-p 'markdown-mode)
-    (append
-     ;; I won't bother to support Org links in Markdown.
-     (minaduki-extract//markdown-links file-from)
-     (minaduki-extract//obsidian-links file-from)
-     (minaduki-extract//pandoc-citation file-from)))))
+  (pcase (minaduki--file-type)
+    ('org
+     (append
+      (minaduki-extract//org-links file-from)
+      ;; FIXME: citation references should not be tracked as links
+      (when (featurep 'oc)
+        (minaduki-extract//org-citation file-from))))
+    ('markdown
+     (append
+      ;; I won't bother to support Org links in Markdown.
+      (minaduki-extract//markdown-links file-from)
+      (minaduki-extract//obsidian-links file-from)
+      (minaduki-extract//pandoc-citation file-from)))))
 
 (defun minaduki-extract/ids (&optional file-path)
   "Extract all IDs within the current buffer.
@@ -301,101 +298,101 @@ If FILE-PATH is nil, use the current file.
 Return a list of [ID FILE LEVEL] vectors."
   (setq file-path (or file-path minaduki//file-name (buffer-file-name)))
   (let (result)
-    (cond
-     ((derived-mode-p 'markdown-mode)
-      (goto-char (point-min))
-      (while (re-search-forward markdown-regex-header nil t)
-        (-when-let* (((id text level) (minaduki-markdown-get-id t)))
-          (push (vector id file-path level text) result))))
-     ((derived-mode-p 'org-mode)
-      ;; Handle the file property drawer (outline level 0)
-      (org-with-point-at (point-min)
-        (when-let ((before-first-heading (= 0 (org-outline-level)))
-                   (id (org-entry-get nil "ID")))
-          (push (vector id file-path 0)
-                result)))
-      ;; Extract every other ID
-      (org-map-region
-       (lambda ()
-         (when-let ((id (org-entry-get nil "ID")))
-           (push (vector id
-                         file-path
-                         (org-outline-level)
-                         (org-entry-get nil "ITEM"))
+    (pcase (minaduki--file-type)
+      ('markdown
+       (goto-char (point-min))
+       (while (re-search-forward markdown-regex-header nil t)
+         (-when-let* (((id text level) (minaduki-markdown-get-id t)))
+           (push (vector id file-path level text) result))))
+      ('org
+       ;; Handle the file property drawer (outline level 0)
+       (org-with-point-at (point-min)
+         (when-let ((before-first-heading (= 0 (org-outline-level)))
+                    (id (org-entry-get nil "ID")))
+           (push (vector id file-path 0)
                  result)))
-       (point-min) (point-max))))
+       ;; Extract every other ID
+       (org-map-region
+        (lambda ()
+          (when-let ((id (org-entry-get nil "ID")))
+            (push (vector id
+                          file-path
+                          (org-outline-level)
+                          (org-entry-get nil "ITEM"))
+                  result)))
+        (point-min) (point-max))))
     result))
 
 (defun minaduki-extract/main-title ()
   "Return the title of the current buffer."
-  (cond
-   ((derived-mode-p 'org-mode)
-    (-some-> (cdr (assoc "TITLE" (minaduki//org-props '("TITLE"))))
-      list))
-   ((derived-mode-p 'markdown-mode)
-    (let ((prop (minaduki-extract//markdown-props "title")))
-      ;; In Obsidian, the main title is the file name.
-      (cond ((minaduki--in-obsidian-vault?)
-             (list (f-base (buffer-file-name))))
-            (prop
-             (list prop)))))))
+  (pcase (minaduki--file-type)
+    ('org
+     (-some-> (cdr (assoc "TITLE" (minaduki//org-props '("TITLE"))))
+       list))
+    ('markdown
+     (let ((prop (minaduki-extract//markdown-props "title")))
+       ;; In Obsidian, the main title is the file name.
+       (cond ((minaduki--in-obsidian-vault?)
+              (list (f-base (buffer-file-name))))
+             (prop
+              (list prop)))))))
 
 (defun minaduki-extract/aliases ()
   "Return a list of aliases from the current buffer."
-  (cond
-   ((derived-mode-p 'org-mode)
-    (minaduki//org-prop "ALIAS"))
-   ((derived-mode-p 'markdown-mode)
-    (condition-case nil
-        (let ((aliases (-some-> (minaduki-extract//markdown-props "alias")
-                         (json-parse-string :array-type 'list))))
-          (if (listp aliases) aliases (list aliases)))
-      (json-parse-error
-       (minaduki//warn
-        :error
-        "Failed to parse aliases for buffer: %s. Skipping"
-        (or minaduki//file-name
-            (buffer-file-name))))))))
+  (pcase (minaduki--file-type)
+    ('org
+     (minaduki//org-prop "ALIAS"))
+    ('markdown
+     (condition-case nil
+         (let ((aliases (-some-> (minaduki-extract//markdown-props "alias")
+                          (json-parse-string :array-type 'list))))
+           (if (listp aliases) aliases (list aliases)))
+       (json-parse-error
+        (minaduki//warn
+         :error
+         "Failed to parse aliases for buffer: %s. Skipping"
+         (or minaduki//file-name
+             (buffer-file-name))))))))
 
 (defun minaduki-extract/first-headline ()
   "Extract the first headline."
-  (cond
-   ((derived-mode-p 'org-mode)
-    (save-excursion
-      (goto-char (point-min))
-      ;; "What happens if a heading star was quoted
-      ;; before the first heading?"
-      ;; - `org-map-region' also does this
-      ;; - Org already breaks badly when you do that;
-      ;; precede the heading star with a ",".
-      (re-search-forward org-outline-regexp-bol nil t)
-      (-some-> (org-entry-get nil "ITEM")
-        list)))
-   ((derived-mode-p 'markdown-mode)
-    ;; from md-roam's `org-roam--extract-titles-mdheadline'
-    (save-excursion
-      (goto-char (point-min))
-      (when (re-search-forward
-             ;; Converted from md-roam's `md-roam-regex-headline'
-             (rx (or
-                  ;; Case 1:
-                  ;;
-                  ;; foo-bar    or    foo-bar
-                  ;; =======          -------
-                  ;;
-                  ;; Ensure the line before the heading text consists of
-                  ;; only whitespaces to exclude front matter openers
-                  ;; (md-roam uses "\s" which actually stands for a
-                  ;; space; I'm guessing that's a mistake)
-                  (seq bol (zero-or-more whitespace) "\n"
-                       (group (zero-or-more nonl) eol) "\n"
-                       (group bol (one-or-more (any "=-")) eol))
-                  ;; Case 2: "# Heading" style
-                  (seq (group bol (one-or-more "#") " ")
-                       (group (zero-or-more nonl) eol))))
-             nil t)
-        (list (or (match-string-no-properties 1)
-                  (match-string-no-properties 4))))))))
+  (pcase (minaduki--file-type)
+    ('org
+     (save-excursion
+       (goto-char (point-min))
+       ;; "What happens if a heading star was quoted
+       ;; before the first heading?"
+       ;; - `org-map-region' also does this
+       ;; - Org already breaks badly when you do that;
+       ;; precede the heading star with a ",".
+       (re-search-forward org-outline-regexp-bol nil t)
+       (-some-> (org-entry-get nil "ITEM")
+         list)))
+    ('markdown
+     ;; from md-roam's `org-roam--extract-titles-mdheadline'
+     (save-excursion
+       (goto-char (point-min))
+       (when (re-search-forward
+              ;; Converted from md-roam's `md-roam-regex-headline'
+              (rx (or
+                   ;; Case 1:
+                   ;;
+                   ;; foo-bar    or    foo-bar
+                   ;; =======          -------
+                   ;;
+                   ;; Ensure the line before the heading text consists of
+                   ;; only whitespaces to exclude front matter openers
+                   ;; (md-roam uses "\s" which actually stands for a
+                   ;; space; I'm guessing that's a mistake)
+                   (seq bol (zero-or-more whitespace) "\n"
+                        (group (zero-or-more nonl) eol) "\n"
+                        (group bol (one-or-more (any "=-")) eol))
+                   ;; Case 2: "# Heading" style
+                   (seq (group bol (one-or-more "#") " ")
+                        (group (zero-or-more nonl) eol))))
+              nil t)
+         (list (or (match-string-no-properties 1)
+                   (match-string-no-properties 4))))))))
 
 (defun minaduki-extract/titles ()
   "Extract the titles from current buffer.
@@ -549,23 +546,23 @@ nothing and returns nil."
 Return value: ((TYPE . KEY) (TYPE . KEY) ...)
 
 In Org mode, the keys are specified with the #+ROAM_KEY keyword."
-  (cond
-   ((derived-mode-p 'org-mode)
-    (let (refs)
-      (pcase-dolist
-          (`(,_ . ,roam-key)
-           (minaduki//org-props '("ROAM_KEY")))
-        (pcase roam-key
-          ('nil nil)
-          ((pred string-empty-p)
-           (user-error "Org property #+roam_key cannot be empty"))
-          (ref
-           (when-let ((r (minaduki-extract//process-ref ref)))
-             (push r refs)))))
-      refs))
-   ((derived-mode-p 'markdown-mode)
-    (-some--> (minaduki-extract//markdown-props "roam_key")
-      (list (cons "cite" it))))))
+  (pcase (minaduki--file-type)
+    ('org
+     (let (refs)
+       (pcase-dolist
+           (`(,_ . ,roam-key)
+            (minaduki//org-props '("ROAM_KEY")))
+         (pcase roam-key
+           ('nil nil)
+           ((pred string-empty-p)
+            (user-error "Org property #+roam_key cannot be empty"))
+           (ref
+            (when-let ((r (minaduki-extract//process-ref ref)))
+              (push r refs)))))
+       refs))
+    ('markdown
+     (-some--> (minaduki-extract//markdown-props "roam_key")
+       (list (cons "cite" it))))))
 
 (provide 'minaduki-extract)
 ;;; minaduki-extract.el ends here

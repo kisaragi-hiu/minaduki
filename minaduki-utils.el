@@ -26,6 +26,15 @@
 
 (defvar markdown-mode-hook)
 
+(defun minaduki--file-type ()
+  "Return file type of current buffer."
+  (let ((case-fold-search t))
+    (cond ((derived-mode-p 'org-mode) 'org)
+          ((derived-mode-p 'markdown-mode) 'markdown)
+          ((derived-mode-p 'bibtex-mode) 'bibtex)
+          ((derived-mode-p 'json-mode) 'json)
+          ((string-match-p "\\.json\\'" (buffer-file-name)) 'json))))
+
 (defmacro minaduki--with-comp-setup (defaults &rest body)
   "Run BODY with completion frameworks set up according to DEFAULTS.
 
@@ -237,30 +246,28 @@ If ID? is non-nil and we're in Org mode, return an ID link instead."
         ;; - Allow `minaduki//apply-link-abbrev' to work even on file: links
         ;; - Allow f.el to work in general
         (target (replace-regexp-in-string "^file://" "" target)))
-    (cond ((derived-mode-p 'org-mode)
-           ;; Don't apply link-abbrev if TARGET is https or http
-           (unless (or url? id?)
-             (setq target (minaduki//apply-link-abbrev target)))
-           (when id?
-             (setq target (concat "id:" target)))
-           (if (and (not desc) url?) ; plain url
-               target
-             (org-link-make-string target desc)))
-
-          ((derived-mode-p 'markdown-mode)
-           (cond ((and (not desc) url?)
-                  ;; plain URL links
-                  (format "<%s>" target))
-                 ((not desc)
-                  ;; Just a URL
-                  (format "[%s](%s)"
-                          (f-filename target)
-                          (f-relative target)))
-                 (t
-                  (format "[%s](%s)" desc target))))
-
-          ;; No common way to insert descriptions
-          (t target))))
+    (pcase (minaduki--file-type)
+      ('org
+       (unless (or url? id?)
+         (setq target (minaduki//apply-link-abbrev target)))
+       (when id?
+         (setq target (concat "id:" target)))
+       (if (and (not desc) url?) ; plain url
+           target
+         (org-link-make-string target desc)))
+      ('markdown
+        (cond ((and (not desc) url?)
+               ;; plain URL links
+               (format "<%s>" target))
+              ((not desc)
+               ;; Just a URL
+               (format "[%s](%s)"
+                       (f-filename target)
+                       (f-relative target)))
+              (t
+               (format "[%s](%s)" desc target))))
+      ;; No common way to insert descriptions
+      (_ target))))
 
 (defun org-roam-format-link (target &optional description type)
   "Format a link for TARGET and DESCRIPTION.
@@ -269,14 +276,14 @@ TYPE defaults to \"file\".
 
 In Markdown, TYPE has no effect."
   (setq type (or type "file"))
-  (cond
-   ((derived-mode-p 'org-mode)
+  (pcase (minaduki--file-type)
+   ('org
     (org-link-make-string
      (if (string-equal type "file")
          (minaduki//apply-link-abbrev target)
        (concat type ":" target))
      description))
-   ((derived-mode-p 'markdown-mode)
+   ('markdown
     (cond ((and (not description) target)
            (format "<%s>" target))
           ((not description)
