@@ -112,7 +112,7 @@ Embark to create what are in effect context menus."
 (defun minaduki--format-lit-entry (entry)
   "Format ENTRY for display."
   (concat
-   (minaduki--ensure-width
+   (minaduki--ensure-display-width
     (min 400 (* 0.3 (frame-pixel-width)))
     (format "%-4.4s %s%s %s"
             (or (gethash "date" entry)
@@ -136,28 +136,26 @@ Embark to create what are in effect context menus."
 
 (defun minaduki--format-node (node)
   "Format NODE for use in a completion interface."
-  (concat (oref node title)
-          (propertize
-           " "
-           'display `(space
-                      . (:align-to
-                         (,(min 800 (* 0.5 (frame-pixel-width)))))))
-          (or (and (equal (oref node key-type) "cite")
-                   (--> (oref node key)
-                        (concat "@" it)
-                        (propertize it 'face 'minaduki-key)
-                        (concat it " ")))
-              "")
-          (or (->> (oref node tags)
-                   ;; I want a trailing space here
-                   (--map (-> (concat "#" it)
-                              (propertize 'face 'minaduki-tag)
-                              (concat " ")))
-                   string-join)
-              "")
-          (--> (or (oref node id)
-                   (f-relative (oref node path) org-directory))
-               (propertize it 'face 'minaduki-path))))
+  (concat
+   (minaduki--ensure-display-width
+    (min 800 (* 0.5 (frame-pixel-width)))
+    (oref node title))
+   (or (and (equal (oref node key-type) "cite")
+            (--> (oref node key)
+                 (concat "@" it)
+                 (propertize it 'face 'minaduki-key)
+                 (concat it " ")))
+       "")
+   (or (->> (oref node tags)
+            ;; I want a trailing space here
+            (--map (-> (concat "#" it)
+                       (propertize 'face 'minaduki-tag)
+                       (concat " ")))
+            string-join)
+       "")
+   (--> (or (oref node id)
+            (f-relative (oref node path) org-directory))
+        (propertize it 'face 'minaduki-path))))
 
 (cl-defun minaduki-completion//read-note
     (&key initial-input (prompt "Note: "))

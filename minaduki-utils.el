@@ -101,37 +101,6 @@ SEQUENCE."
               (minaduki//message ,message (1+ i) length)
               ,@body)))
 
-(let ((temp-buf (generate-new-buffer " *minaduki-pixel-width*" t)))
-  (defun minaduki--pixel-width (str)
-    "Return pixel width of STR."
-    ;; Ignore the invisible part.
-    (-when-let (invis-start
-                (text-property-any 0 (length str) 'invisible t str))
-      (when invis-start
-        (setq str (substring str 0 invis-start))))
-    (defvar evil-mode)
-    (let ((pt (point))
-          ;; - evil assumes `set-window-buffer' is only used for
-          ;;   windows that are to be displayed - -
-          ;; - `shr-string-pixel-width' relies on
-          ;;   `window-text-pixel-size' which requires a live,
-          ;;   selected window, thus uses `set-window-buffer'
-          ;;
-          ;; So this function would waste a ton of time initializing
-          ;; evil in a temporary buffer without this.
-          (evil-mode nil))
-      (prog1
-          (with-current-buffer temp-buf
-            (erase-buffer)
-            (insert str)
-            (if (not (get-buffer-window (current-buffer)))
-                (save-window-excursion
-                  (set-window-dedicated-p nil nil)
-                  (set-window-buffer nil (current-buffer))
-                  (car (window-text-pixel-size nil (line-beginning-position) (point))))
-              (car (window-text-pixel-size nil (line-beginning-position) (point)))))
-        (goto-char pt)))))
-
 (defun minaduki--truncate (len str)
   "Truncate STR to LEN number of characters."
   ;; `citar--fit-to-width'
@@ -141,40 +110,16 @@ SEQUENCE."
         str
       (concat truncated (propertize (substring str (length truncated))
                                     'invisible t)))))
-(defun minaduki--ensure-pixel-width (len str)
-  "Make sure STR is LEN wide."
-  (setq len (floor len))
-  (let ((w (minaduki--pixel-width str))
-        (one-char (frame-char-width)))
-    (when (> w len)
-      ;; Not pixel-wise. That is too slow.
-      (setq str (minaduki--truncate (floor (/ len one-char)) str)
-            ;; But do pad it out again.
-            w (minaduki--pixel-width str)))
-    (if (< w len)
-        ;; Add len - w pixels
-        (concat str (propertize
-                     " "
-                     'display `(space . (:width (,(- len w))))))
-      str)))
 
-(defun minaduki--ensure-char-width (len str)
-  "Ensure STR is LEN number of characters wide."
-  (setq len (floor len))
-  (let* ((truncated (truncate-string-to-width str len))
-         (display (truncate-string-to-width str len 0 ?\s)))
-    (if (<= (string-width str) len)
-        display
-      (concat display (propertize (substring str (length truncated))
-                                  'invisible t)))))
-(defun minaduki--ensure-width (len str)
-  "Ensure STR is LEN number of pixels wide."
-  (setq len (floor len))
-  (if (display-graphic-p)
-      (minaduki--ensure-pixel-width len str)
-    ;; `citar--fit-to-width'
-    (minaduki--ensure-char-width
-     (floor (/ len (frame-char-width))))))
+(defun minaduki--ensure-display-width (pixels str)
+  "Ensure STR displays as PIXELS wide."
+  (concat
+   (minaduki--truncate
+    (floor (/ pixels (frame-char-width)))
+    str)
+   (propertize
+    " "
+    'display `(space :align-to (,pixels)))))
 
 (defun minaduki//remove-curly (str)
   "Remove curly braces from STR."
