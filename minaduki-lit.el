@@ -279,22 +279,27 @@ like `minaduki-lit/entry' objects."
          (when-let (tags (org-get-tags))
            (push (cons "tags" tags) props))
          (setq props
-               (--map
-                (let ((key (car it))
-                      (value (cdr it)))
-                  ;; Downcase all keys
-                  (setq key (downcase key))
-                  ;; Key replacements
-                  ;; (ORG_PROP . KEY)
-                  (setq key (or (cdr
-                                 (assoc
-                                  key
-                                  `(("category" . "type")
-                                    (,minaduki-lit/key-prop . "key")
-                                    ("item" . "title"))))
-                                key))
-                  (cons key value))
-                props))
+               (->> props
+                    (--map
+                     (let ((key (car it))
+                           (value (cdr it)))
+                       ;; Downcase all keys
+                       (setq key (downcase key))
+                       ;; Exclude certain keys
+                       ;;
+                       ;; Leave the "type" open to other arbitrary
+                       ;; purposes.
+                       (unless (member key '("type"))
+                         ;; Key replacements
+                         ;; (ORG_PROP . KEY)
+                         (setq key (or (cdr
+                                        (assoc
+                                         key
+                                         `(("category" . "type")
+                                           (,minaduki-lit/key-prop . "key")
+                                           ("item" . "title"))))
+                                       key))
+                         (cons key value))))))
          ;; FIXME: this overwrites preexisting :sources:... values
          (let (sources)
            (when-let (pair (assoc "link" props))
