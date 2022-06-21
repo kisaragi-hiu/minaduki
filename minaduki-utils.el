@@ -104,6 +104,11 @@ SEQUENCE."
 (let ((temp-buf (generate-new-buffer " *minaduki-pixel-width*" t)))
   (defun minaduki--pixel-width (str)
     "Return pixel width of STR."
+    ;; Ignore the invisible part.
+    (-when-let (invis-start
+                (text-property-any 0 (length str) 'invisible t str))
+      (when invis-start
+        (setq str (substring str 0 invis-start))))
     (defvar evil-mode)
     (let ((pt (point))
           ;; - evil assumes `set-window-buffer' is only used for
@@ -115,16 +120,16 @@ SEQUENCE."
           ;; So this function would waste a ton of time initializing
           ;; evil in a temporary buffer without this.
           (evil-mode nil))
-      ;; Ignore the invisible part.
-      (-when-let (invis-start
-                  (text-property-any 0 (length str) 'invisible t str))
-        (when invis-start
-          (setq str (substring str 0 invis-start))))
       (prog1
           (with-current-buffer temp-buf
             (erase-buffer)
             (insert str)
-            (shr-pixel-column))
+            (if (not (get-buffer-window (current-buffer)))
+                (save-window-excursion
+                  (set-window-dedicated-p nil nil)
+                  (set-window-buffer nil (current-buffer))
+                  (car (window-text-pixel-size nil (line-beginning-position) (point))))
+              (car (window-text-pixel-size nil (line-beginning-position) (point)))))
         (goto-char pt)))))
 
 (defun minaduki--truncate (len str)
@@ -140,7 +145,7 @@ SEQUENCE."
   "Make sure STR is LEN wide."
   (setq len (floor len))
   (let ((w (minaduki--pixel-width str))
-        (one-char (minaduki--pixel-width "x")))
+        (one-char (frame-char-width)))
     (when (> w len)
       ;; Not pixel-wise. That is too slow.
       (setq str (minaduki--truncate (floor (/ len one-char)) str)
@@ -149,9 +154,10 @@ SEQUENCE."
     (if (< w len)
         ;; Add len - w pixels
         (concat str (propertize
-                     (make-string (- len w) ?\s)
-                     'face '(:height 1)))
+                     " "
+                     'display `(space . (:width (,(- len w))))))
       str)))
+
 (defun minaduki--ensure-char-width (len str)
   "Ensure STR is LEN number of characters wide."
   (setq len (floor len))
@@ -168,7 +174,7 @@ SEQUENCE."
       (minaduki--ensure-pixel-width len str)
     ;; `citar--fit-to-width'
     (minaduki--ensure-char-width
-     (floor (/ len (minaduki--pixel-width "x"))))))
+     (floor (/ len (frame-char-width))))))
 
 (defun minaduki//remove-curly (str)
   "Remove curly braces from STR."

@@ -580,19 +580,19 @@ descriptive warnings when certain operations fail (e.g. parsing).")
   :group 'minaduki-faces)
 
 (defface minaduki-tag
-  '((t :inherit shadow :slant italic))
-  "Face for Org-roam tags in minibuffer commands."
+  '((t :inherit font-lock-keyword-face :slant italic))
+  "Face for tags in Minaduki's completion."
   :group 'minaduki-faces)
 
 (defface org-roam-link-current
   '((t :inherit org-link))
-  "Face for Org-roam links pointing to the current buffer."
+  "Face for internal links pointing to the current buffer."
   :group 'minaduki-faces)
 
 (defface org-roam-link-invalid
   '((t :inherit (error org-link)))
-  "Face for Org-roam links that are not valid.
-This face is used for links without a destination."
+  "Face for links that are not valid.
+Invalid links are those without a destination."
   :group 'minaduki-faces)
 
 (provide 'minaduki-vars)

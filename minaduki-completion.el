@@ -133,22 +133,28 @@ Embark to create what are in effect context menus."
                     (s-join " " it)
                     (propertize it 'face 'minaduki-tag))
                ""))))
+
 (defun minaduki--format-node (node)
   "Format NODE for use in a completion interface."
-  (format "%s %s%s %s"
-          (minaduki--ensure-char-width
-           (* 0.4 (frame-width))
-           (oref node title))
+  (concat (oref node title)
+          (propertize
+           " "
+           'display `(space
+                      . (:align-to
+                         (,(min 800 (* 0.5 (frame-pixel-width)))))))
           (or (and (equal (oref node key-type) "cite")
                    (--> (oref node key)
                         (concat "@" it)
                         (propertize it 'face 'minaduki-key)
                         (concat it " ")))
               "")
-          (--> (oref node tags)
-               (--map (concat "#" it) it)
-               (s-join " " it)
-               (propertize it 'face 'minaduki-tag))
+          (or (->> (oref node tags)
+                   ;; I want a trailing space here
+                   (--map (-> (concat "#" it)
+                              (propertize 'face 'minaduki-tag)
+                              (concat " ")))
+                   string-join)
+              "")
           (--> (or (oref node id)
                    (f-relative (oref node path) org-directory))
                (propertize it 'face 'minaduki-path))))
@@ -163,12 +169,13 @@ INITIAL-INPUT: passed to `completing-read'.
 
 PROMPT: the prompt to use during completion. Default: \"Note: \""
   (minaduki--with-comp-setup
-      ((ivy-sort-functions-alist . nil)
-       (ivy-sort-matches-functions-alist . #'ivy--shorter-matches-first))
+      ((ivy-sort-matches-functions-alist . #'ivy--flx-sort))
     (let* ((entries (minaduki//get-title-path-completions))
-           (alist (--map (cons (minaduki--format-node it)
-                               it)
-                         entries))
+           (alist
+            (let (ret)
+              (dolist (entry entries)
+                (push (cons (minaduki--format-node entry) entry) ret))
+              (nreverse ret)))
            (completions (map-keys alist))
            (selection
             (completing-read prompt completions nil nil initial-input)))
