@@ -122,7 +122,7 @@ Embark to create what are in effect context menus."
                   (concat " "))
                 "")
             (or (-some--> (gethash "type" entry)
-                  (concat "@" it)
+                  (concat "" it)
                   (propertize it 'face 'minaduki-type))
                 "")
             (gethash "author" entry "")))
