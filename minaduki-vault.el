@@ -115,7 +115,10 @@ under the vault (`org-directory')."
     (setq path default-directory))
   (let ((nested-vaults
          ;; These folders are nested vaults no matter what.
-         (mapcan (lambda (x) (f-directories (f-join org-directory x)))
+         (mapcan (lambda (x)
+                   (let ((d (f-join org-directory x)))
+                     (when (f-dir? d)
+                       (f-directories d))))
                  minaduki-nested-vault-search-path)))
     (catch 'ret
       (while t
