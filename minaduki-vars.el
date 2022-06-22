@@ -360,7 +360,9 @@ See `orb-edit-notes' for details."
   '("citekey" "entry-type" "date" "pdf?" "note?" "file"
     "author" "editor" "author-abbrev" "editor-abbrev"
     "author-or-editor-abbrev" "url")
-  "A list of template prompt wildcards for preformatting.
+  "(In Minaduki this is currently a giant mess.)
+
+A list of template prompt wildcards for preformatting.
 Any BibTeX field can be set for preformatting including
 `bibtex-completion` \"virtual\" fields such as '=key=' and
 '=type='.  BibTeX fields can be refered to by means of their

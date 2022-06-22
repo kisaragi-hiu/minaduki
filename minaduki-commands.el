@@ -592,6 +592,8 @@ process."
                                      (org-capture-select-template))
                                    (copy-tree it)
                                    ;; optionally preformat templates
+                                   ;; TODO: the template system needs
+                                   ;; a rebuild.
                                    (if orb-preformat-templates
                                        (orb--preformat-template it props)
                                      it)))
