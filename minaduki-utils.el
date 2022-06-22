@@ -453,35 +453,6 @@ ARGS and BODY are as in `lambda'."
      self))
 
 ;;;; Org mode local functions
-;; `org-roam--extract-global-props'
-(defun minaduki//org-props (props)
-  "Extract PROPS from the current Org buffer.
-Props are extracted from both the file-level property drawer (if
-any), and Org keywords. Org keywords take precedence."
-  (let (ret)
-    ;; Org: keyword properties
-    (pcase-dolist (`(,key . ,values) (org-collect-keywords props))
-      (dolist (value values)
-        (push (cons key value) ret)))
-    ;; Org: file-level property drawer properties
-    (org-with-point-at 1
-      (dolist (prop props)
-        (when-let ((v (org-entry-get (point) prop)))
-          (push (cons prop v) ret))))
-    ret))
-
-(defsubst minaduki//org-prop (prop)
-  "Return values of PROP as a list.
-
-Given an Org file
-
-  #+title: abc
-  #+prop1: abcdef
-  #+prop1: ghi
-
-\(minaduki//org-prop \"title\") -> '(\"abc\")
-\(minaduki//org-prop \"prop1\") -> '(\"abcdef\" \"ghi\")"
-  (nreverse (mapcar #'cdr (minaduki//org-props (list prop)))))
 
 ;; Alternative to `org-get-outline-path' that doesn't break
 (defun org-roam--get-outline-path ()

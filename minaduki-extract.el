@@ -30,27 +30,35 @@
 (declare-function org-element-citation-reference-parser "org-element")
 (defvar org-element-citation-prefix-re)
 
-(defun minaduki-extract//markdown-props (prop)
-  "Extract PROP in the Markdown front matter."
-  (save-excursion
-    (goto-char (point-min))
-    ;; FIXME: extract this into a `with-front-matter' macro
-    (-when-let* ((start
-                  ;; The beginning of the frontmatter, which has to be at the
-                  ;; beginning of the buffer (before char position 4).
-                  (re-search-forward "^---$" 4 t))
-                 (end
-                  ;; The end of the frontmatter
-                  (re-search-forward "^---$" nil t)))
-      (save-restriction
-        (narrow-to-region start end)
-        (goto-char (point-min))
-        (let ((case-fold-search t))
-          (when (re-search-forward
-                 (format (rx bol "%s:" space (group (0+ any)))
-                         prop)
-                 nil t)
-            (match-string-no-properties 1)))))))
+(defun minaduki-extract//file-prop (prop)
+  "Return values of the file level property PROP as a list."
+  (pcase (minaduki--file-type)
+    ('markdown
+     (save-excursion
+       (goto-char (point-min))
+       ;; FIXME: extract this into a `with-front-matter' macro
+       (-when-let* ((start
+                     ;; The beginning of the frontmatter, which has to be at the
+                     ;; beginning of the buffer (before char position 4).
+                     (re-search-forward "^---$" 4 t))
+                    (end
+                     ;; The end of the frontmatter
+                     (re-search-forward "^---$" nil t)))
+         (save-restriction
+           (narrow-to-region start end)
+           (goto-char (point-min))
+           (let ((case-fold-search t))
+             (when (re-search-forward
+                    (format (rx bol "%s:" space (group (0+ any)))
+                            prop)
+                    nil t)
+               (list (match-string-no-properties 1))))))))
+    ('org
+     ;; ((key . (val val val val)))
+     (let ((values (cdar (org-collect-keywords (list prop)))))
+       (-when-let (v (org-entry-get 1 prop))
+         (push v values))
+       values))))
 
 (defun minaduki-extract//org-prop-as-list (prop)
   "Extract PROP from the current Org buffer as a list.
@@ -64,12 +72,10 @@ This is used to extract #+roam_tags."
   ;;     #+prop: a b
   ;;     #+prop: c d
   ;;     -> '(\"a\" \"b\" \"c\" \"d\")
-  (--> (minaduki//org-props (list prop))
+  (--> (minaduki-extract//file-prop prop)
        ;; so that the returned order is the same as in the buffer
        nreverse
-       ;; '(("ROAM_TAGS" . "a b") ("ROAM_TAGS" . "c d"))
-       ;; -> '("a b" "c d")
-       (mapcar #'cdr it)
+       ;; '("a b" "c d")
        (mapcar #'split-string-and-unquote it)
        ;; We have a list of lists at this point. Join them.
        (apply #'append it)))
@@ -327,10 +333,10 @@ Return a list of [ID FILE LEVEL] vectors."
   "Return the title of the current buffer."
   (pcase (minaduki--file-type)
     ('org
-     (-some-> (cdr (assoc "TITLE" (minaduki//org-props '("TITLE"))))
+     (-some-> (car (minaduki-extract//file-prop "title"))
        list))
     ('markdown
-     (let ((prop (minaduki-extract//markdown-props "title")))
+     (let ((prop (car (minaduki-extract//file-prop "title"))))
        ;; In Obsidian, the main title is the file name.
        (cond ((minaduki--in-obsidian-vault?)
               (list (f-base (buffer-file-name))))
@@ -341,10 +347,11 @@ Return a list of [ID FILE LEVEL] vectors."
   "Return a list of aliases from the current buffer."
   (pcase (minaduki--file-type)
     ('org
-     (minaduki//org-prop "ALIAS"))
+     (minaduki-extract//file-prop "ALIAS"))
     ('markdown
      (condition-case nil
-         (let ((aliases (-some-> (minaduki-extract//markdown-props "alias")
+         (let ((aliases (-some-> (minaduki-extract//file-prop "alias")
+                          car
                           (json-parse-string :array-type 'list))))
            (if (listp aliases) aliases (list aliases)))
        (json-parse-error
@@ -549,10 +556,8 @@ In Org mode, the keys are specified with the #+ROAM_KEY keyword."
   (pcase (minaduki--file-type)
     ('org
      (let (refs)
-       (pcase-dolist
-           (`(,_ . ,roam-key)
-            (minaduki//org-props '("ROAM_KEY")))
-         (pcase roam-key
+       (dolist (key (minaduki-extract//file-prop "roam_key"))
+         (pcase key
            ('nil nil)
            ((pred string-empty-p)
             (user-error "Org property #+roam_key cannot be empty"))
@@ -561,7 +566,8 @@ In Org mode, the keys are specified with the #+ROAM_KEY keyword."
               (push r refs)))))
        refs))
     ('markdown
-     (-some--> (minaduki-extract//markdown-props "roam_key")
+     (-some--> (minaduki-extract//file-prop "roam_key")
+       car
        (list (cons "cite" it))))))
 
 (defun minaduki-extract/key-at-point ()

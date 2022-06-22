@@ -55,7 +55,7 @@ TEMPLATE has no extension, TEMPLATE.org or TEMPLATE.md will be used."
 ;;   (let ((file (minaduki-templates//path-to template))
 ;;         target content)
 ;;     (minaduki//with-file file nil
-;;       (-when-let* ((path (car (minaduki//org-prop "path"))))
+;;       (-when-let* ((path (car (minaduki-extract//file-prop "path"))))
 ;;         (setq target (f-expand (s-trim (org-capture-fill-template path))
 ;;                                org-directory)))
 ;;       (setq content (buffer-string)))
