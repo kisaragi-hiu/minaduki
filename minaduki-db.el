@@ -582,7 +582,7 @@ FILE-HASH-PAIRS is a list of (file . hash) pairs."
     ;; cached during link extraction
     (minaduki//for "Processing file metadata (%s/%s)..."
         (file . contents-hash) file-hash-pairs
-      (condition-case nil
+      (condition-case e
           (minaduki//with-temp-buffer file
             (minaduki-db//insert-meta nil contents-hash)
             (setq id-count (+ id-count (minaduki-db//insert-ids))))
@@ -591,7 +591,7 @@ FILE-HASH-PAIRS is a list of (file . hash) pairs."
          (minaduki-db//clear-file file)
          (minaduki//warn
           :warning
-          "Skipping unreadable file while building cache: %s" file))))
+          "Error when caching %s: %s" file e))))
     ;; Process links and ref / cite links
     (minaduki//for "Processing links (%s/%s)..."
         (file . _) file-hash-pairs
