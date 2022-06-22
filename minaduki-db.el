@@ -225,7 +225,8 @@ If HASH is non-nil, assume that is the file's hash without recomputing it."
          (mtime (file-attribute-modification-time attr))
          (hash (or hash (minaduki//compute-content-hash file)))
          (tags (minaduki-extract/tags file))
-         (titles (minaduki-extract/titles)))
+         (titles (minaduki-extract/titles))
+         (keys (minaduki-extract/refs)))
     (when update-p
       (minaduki-db/query [:delete :from files
                           :where (= file $s1)]
@@ -234,7 +235,26 @@ If HASH is non-nil, assume that is the file's hash without recomputing it."
      [:insert :into files
       :values $v1]
      (list (vector file hash (list :atime atime :mtime mtime)
-                   tags titles)))))
+                   tags titles)))
+    (let ((sources (cl-loop
+                    for (type . key) in keys
+                    when (equal type "website")
+                    collect key)))
+      (cl-loop
+       for (type . key) in keys
+       when (equal type "cite")
+       do
+       (unless (minaduki-db//fetch-lit-entry key)
+         (minaduki-db/query
+          [:insert :into keys :values $v1]
+          (list (vector key
+                        file
+                        1
+                        (minaduki-lit/entry
+                         :type "file"
+                         :title (elt titles 0)
+                         :key key
+                         :sources sources)))))))))
 
 (defun minaduki-db//insert-lit-entries (&optional update-p)
   "Update the lit-entries of the current buffer into the cache.
@@ -509,7 +529,8 @@ If FORCE, force a rebuild of the cache from scratch."
       (setq deleted-count (1+ deleted-count)))
     (setq count-plist (minaduki-db//update-files modified-files))
     (minaduki//message "total: Δ%s, files-modified: Δ%s, ids: Δ%s, links: Δ%s, refs: Δ%s, lit: Δ%s, deleted: Δ%s"
-                       (- (length dir-files) (plist-get count-plist :error-count))
+                       (- (length dir-files)
+                          (plist-get count-plist :error-count))
                        (plist-get count-plist :modified-count)
                        (plist-get count-plist :id-count)
                        (plist-get count-plist :link-count)
@@ -542,16 +563,29 @@ FILE-HASH-PAIRS is a list of (file . hash) pairs."
     (minaduki//for "Clearing files (%s/%s)..."
         (file . _) file-hash-pairs
       (minaduki-db//clear-file file))
+    ;; Process bibliographies first so that keys only in files can
+    ;; also be tracked.
+    (minaduki//message "Processing bibliographies...")
+    (cl-loop
+     for (file . _) in file-hash-pairs
+     when (member file minaduki-lit/bibliography)
+     do (condition-case nil
+            (minaduki//with-temp-buffer file
+              (cl-incf lit-count (minaduki-db//insert-lit-entries)))
+          (file-error
+           (cl-incf error-count)
+           (minaduki-db//clear-file file)
+           (minaduki//warn :warning "Skipping bibliography: %s" file))))
+    (minaduki//message "Processing bibliographies...done")
     ;; Process file metadata (titles, tags) first to allow links to
     ;; depend on titles later; process IDs first so IDs are already
     ;; cached during link extraction
-    (minaduki//for "Processing titles, tags, and lit-entries (%s/%s)..."
+    (minaduki//for "Processing file metadata (%s/%s)..."
         (file . contents-hash) file-hash-pairs
       (condition-case nil
           (minaduki//with-temp-buffer file
             (minaduki-db//insert-meta nil contents-hash)
-            (setq id-count (+ id-count (minaduki-db//insert-ids)))
-            (setq lit-count (+ lit-count (minaduki-db//insert-lit-entries))))
+            (setq id-count (+ id-count (minaduki-db//insert-ids))))
         (file-error
          (setq error-count (1+ error-count))
          (minaduki-db//clear-file file)
