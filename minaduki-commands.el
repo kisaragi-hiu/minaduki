@@ -302,9 +302,10 @@ REGION: the selected text."
 (defun minaduki/literature-entries ()
   "List all sources for browsing interactively."
   (interactive)
-  (let ((selection
-         (minaduki-completion//read-lit-entry nil :prompt "Entry: ")))
-    (minaduki/literature-note-actions (car selection))))
+  (let ((minaduki-completion//read-lit-entry//citekey
+         (minaduki-extract/key-at-point)))
+    (minaduki/literature-note-actions
+     (car (minaduki-completion//read-lit-entry nil :prompt "Entry: ")))))
 
 ;;;###autoload
 (cl-defun minaduki/new-concept-note (&key title visit?)
@@ -667,7 +668,7 @@ or `title' should be used for slug: %s not supported" orb-slug-source))))
   "Insert a citation to CITEKEY."
   (pcase (minaduki--file-type)
     ('org
-     (let ((minaduki-completion//read-list-entry//citekey citekey))
+     (let ((minaduki-completion//read-lit-entry//citekey citekey))
        (org-cite-insert nil)))
     (_ (insert "@" citekey))))
 

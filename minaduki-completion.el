@@ -188,19 +188,19 @@ PROMPT: the prompt to use during completion. Default: \"Note: \""
            :path (s-trim selection)
            :new? t)))))
 
-(defvar minaduki-completion//read-list-entry//citekey nil
+(defvar minaduki-completion//read-lit-entry//citekey nil
   "Let-bind this variable to use `org-cite-insert' on a particular citekey.
 
 For example:
 
-  (let ((minaduki-completion//read-list-entry//citekey \"iso20041201\"))
+  (let ((minaduki-completion//read-lit-entry//citekey \"iso20041201\"))
     (org-cite-insert nil))")
 
 (cl-defun minaduki-completion//read-lit-entry
     (multiple &key (prompt "Entry: "))
   "Read a literature entry and return its citekey.
 
-If `minaduki-completion//read-list-entry//citekey' is non-nil,
+If `minaduki-completion//read-lit-entry//citekey' is non-nil,
 return that instead. This allows us to call `org-cite-insert'
 without prompting.
 
@@ -209,12 +209,12 @@ MULTIPLE: if non-nil, try to read multiple values with
 for the `minaduki' org-cite insert processor.
 
 PROMPT: the text shown in the prompt."
-  (when minaduki-completion//read-list-entry//citekey
+  (when minaduki-completion//read-lit-entry//citekey
     (cl-return-from minaduki-completion//read-lit-entry
       ;; org-cite expects a list if it asked for one
       (if multiple
-          (list minaduki-completion//read-list-entry//citekey)
-        minaduki-completion//read-list-entry//citekey)))
+          (list minaduki-completion//read-lit-entry//citekey)
+        minaduki-completion//read-lit-entry//citekey)))
   (minaduki--with-comp-setup
       ((ivy-sort-functions-alist . nil)
        (ivy-sort-matches-functions-alist . #'ivy--shorter-matches-first))
