@@ -35,23 +35,12 @@
 Sources are resources like PDFs, URLs, etc. that are associated
 with a literature entry.
 
-If CITEKEY has multiple sources, prompt to select one of them.
-
-If variable `orb-file-field-extensions' is non-nil, return only
-the file paths with the respective extensions."
+If CITEKEY has multiple sources, prompt to select one of them."
   (ignore-errors
     (when-let* ((entry (minaduki-db//fetch-lit-entry citekey))
                 (props (oref entry props))
                 (paths (minaduki//resolve-org-links
                         (gethash "sources" props))))
-      (when-let ((extensions orb-file-field-extensions))
-        (unless (listp extensions)
-          (setq extensions (list extensions)))
-        (setq paths (--filter
-                     (lambda ()
-                       (when-let ((extension (file-name-extension it)))
-                         (member-ignore-case extension extensions)))
-                     paths)))
       (when paths
         (if (= (length paths) 1)
             (car paths)

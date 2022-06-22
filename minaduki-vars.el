@@ -410,13 +410,7 @@ keyword.  Thus, it will be possible to get both the raw file
 field value by expanding the %^{file} and ${file} wildcards and a
 single file name by expanding the %^{my-file} and ${my-file}
 wildcards.  The keyword, e.g. \"my-file\", must be set for
-preformatting in `orb-preformat-keywords' as usual.
-
-The variable `orb-file-field-extensions' controls which filtering
-of the file names based on file extensions.
-
-See also `orb-file-field-extensions' for filtering file names
-based on their extension."
+preformatting in `orb-preformat-keywords' as usual."
   :group 'minaduki-bibtex
   :type '(choice
           (const :tag "Yes" t)
@@ -438,20 +432,6 @@ more casual alternatives."
   :type '(repeat
           (cons (string :tag "Field name")
                 (string :tag "Alias name"))))
-
-(defcustom orb-file-field-extensions '("pdf")
-  "Extensions of file names to keep when retrieving values from the file field.
-This may be a string or a list of strings corresponding to file
-extensions without a dot.
-
-Set it to nil to keep all file names.  You will be prompted to choose one.
-
-The name of the file field is determined by
-  `bibtex-completion-pdf-field' (default \"file\")."
-  :group 'minaduki-bibtex
-  :type '(choice
-          (string)
-          (repeat :tag "List of extensions" (string))))
 
 (defcustom orb-citekey-format "%s"
   "Format string for the citekey when capturing new ref notes."
