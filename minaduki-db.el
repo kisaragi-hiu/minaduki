@@ -101,6 +101,16 @@ SQL can be either the emacsql vector representation, or a string."
       (apply #'emacsql (minaduki-db) sql args))))
 
 ;;;; Schemata
+
+;; Note that I take the shortcut of creating instances of these
+;; classes with `record' instead of through constructor. So it is
+;; absolutely crucial that the order does not change.
+(defclass minaduki-lit-entry ()
+  ((key :initarg :key :initform)
+   (file :initarg :file :initform)
+   (point :initarg :point :initform)
+   (props :initarg :props :initform)))
+
 (defconst minaduki-db//table-schemata
   '((files
      [(file :unique :primary-key)
@@ -371,10 +381,12 @@ When NOCASE? is non-nil, match case-insentively.
 
 (defun minaduki-db//fetch-lit-entry (key)
   "Fetch the literature entry with KEY in the DB."
-  (caar (minaduki-db/query
-         [:select [props] :from keys
-          :where (= key $s1)]
-         key)))
+  (-some--> (minaduki-db/query
+             [:select [key file point props] :from keys
+              :where (= key $s1)]
+             key)
+    car
+    (apply #'record 'minaduki-lit-entry it)))
 
 (defun minaduki-db//fetch-all-files-hash ()
   "Return ((path . content-hash) ...) for all cached files as a hash-table."

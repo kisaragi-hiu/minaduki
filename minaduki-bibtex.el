@@ -41,8 +41,9 @@ If variable `orb-file-field-extensions' is non-nil, return only
 the file paths with the respective extensions."
   (ignore-errors
     (when-let* ((entry (minaduki-db//fetch-lit-entry citekey))
+                (props (oref entry props))
                 (paths (minaduki//resolve-org-links
-                        (gethash "sources" entry))))
+                        (gethash "sources" props))))
       (when-let ((extensions orb-file-field-extensions))
         (unless (listp extensions)
           (setq extensions (list extensions)))
