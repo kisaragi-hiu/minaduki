@@ -346,41 +346,29 @@ are returned."
           (->> (read (current-buffer))
                (--remove (memq 'ignore (plist-get it :matches)))))))))
 
-(cl-defun minaduki-buffer//insert-backlinks (&key cite? filter (heading "Backlink"))
-  "Insert the minaduki-buffer backlinks string for the current buffer.
+(cl-defun minaduki-buffer//insert-backlinks (backlinks &key (heading "Backlink"))
+  "Insert BACKLINKS.
 
-Customized:
+Get the backlinks with this:
 
-1. If FILTER is nil, only display backlinks that, when passed to
-FILTER, returns non-nil.
+  (with-current-buffer minaduki-buffer//current
+    (minaduki//backlinks 'refs) ; only cite backlinks
+    (minaduki//backlinks 'titles) ; only non-cite backlinks
+    (minaduki//backlinks)) ; both
 
-Each backlink is a list: (LINK-FILE TO-FILE PLIST), where
-LINK-FILE is the link origin,
-TO-FILE is the target (in this case always the current file),
-and PLIST contains some properties about the link's context.
-
-2. HEADING is the \"* 3 Backlinks\" string in the backlinks buffer.
+HEADING is the \"* 3 Backlinks\" string in the backlinks buffer.
 
 It should be an English noun because it'll be turned into a
 plural automatically.
 
-3. CITE? controls whether to get backlinks to the current file,
-or to this file's ROAM_KEY.
+Nothing is inserted when there are no backlinks.
 
-4. Nothing is inserted when there are no backlinks.
+Tags are shown for each entry, except for those in
+`minaduki-buffer/hidden-tags'.
 
-5. Tags are shown for each entry, except for those in
-   `minaduki-buffer/hidden-tags'.
-
-6. Links in titles are removed."
+Links in titles are removed."
   (let (props file-from)
-    (when-let* ((file-path (buffer-file-name minaduki-buffer//current))
-                (backlinks
-                 (with-current-buffer minaduki-buffer//current
-                   (minaduki//backlinks
-                    (if cite? 'refs 'titles))))
-                (backlinks (if filter (-filter filter backlinks) backlinks))
-                (backlink-groups (--group-by (nth 0 it) backlinks)))
+    (when-let* ((backlink-groups (--group-by (nth 0 it) backlinks)))
       ;; The heading
       (insert (let ((l (length backlinks)))
                 (format "\n\n* %d %s"
@@ -430,11 +418,9 @@ or to this file's ROAM_KEY.
                    'file-from file-from
                    'file-from-point (plist-get prop :point))))))))))
 
-(defun minaduki-buffer//insert-unlinked-references ()
-  "Insert unlinked references to the current buffer."
-  (-when-let (references
-              (with-current-buffer minaduki-buffer//current
-                (minaduki//unlinked-references)))
+(defun minaduki-buffer//insert-unlinked-references (references)
+  "Insert unlinked REFERENCES."
+  (when references
     (insert "\n\n* Unlinked references\n")
     (cl-loop
      for file in references
@@ -481,21 +467,6 @@ or to this file's ROAM_KEY.
            (s-join "\n")
            insert))))
 
-(defun minaduki-buffer//insert-cite-backlinks ()
-  "Insert ref backlinks.
-
-I'm calling it \"Citation Backlinks\" because I want to
-distinguish between Org-roam's ref backlinks and backlinks that
-come from Reflections."
-  (minaduki-buffer//insert-backlinks
-   :heading "Citation Backlink"
-   :cite? t))
-
-(defun minaduki-buffer//insert-other-backlinks ()
-  "Insert backlinks that are not from reflections or diary entries."
-  (minaduki-buffer//insert-backlinks
-   :heading "Backlink"))
-
 (defun minaduki-buffer//pluralize (string number)
   "Conditionally pluralize STRING if NUMBER is above 1."
   (let ((l (pcase number
@@ -538,7 +509,14 @@ ORIG-PATH is the path where the CONTENT originated."
       ;; last window org-roam was called from
       (setq-local org-link-frame-setup
                   (cons '(file . minaduki//find-file) org-link-frame-setup))
-      (let ((inhibit-read-only t))
+      (let ((file-path (buffer-file-name minaduki-buffer//current))
+            (inhibit-read-only t)
+            backlinks cite-backlinks
+            unlinked-references)
+        (with-current-buffer minaduki-buffer//current
+          (setq cite-backlinks (minaduki//backlinks 'refs)
+                backlinks (minaduki//backlinks 'titles)
+                unlinked-references (minaduki//unlinked-references)))
         (erase-buffer)
         (run-hooks 'minaduki-buffer/before-insert-hook)
         (minaduki-buffer//insert-title)
@@ -546,11 +524,14 @@ ORIG-PATH is the path where the CONTENT originated."
          (--> (buffer-file-name minaduki-buffer//current)
               minaduki-db//fetch-title
               downcase))
-        (minaduki-buffer//insert-cite-backlinks)
-        (minaduki-buffer//insert-other-backlinks)
-        (minaduki-buffer//insert-unlinked-references)
-        ;; HACK: we should figure out we have no backlinks directly
-        (unless (< 2 (s-count-matches "\n" (buffer-string)))
+        (minaduki-buffer//insert-backlinks
+         cite-backlinks
+         :heading "Citation Backlink")
+        (minaduki-buffer//insert-backlinks
+         backlinks
+         :heading "Backlink")
+        (minaduki-buffer//insert-unlinked-references unlinked-references)
+        (unless (or backlinks cite-backlinks unlinked-references)
           (insert "\n\n/No backlinks/"))
         (minaduki-buffer//restore-point)
         (run-hooks 'minaduki-buffer/after-insert-hook)
