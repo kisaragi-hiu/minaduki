@@ -200,6 +200,8 @@ For example:
     (multiple &key (prompt "Entry: "))
   "Read a literature entry and return its citekey.
 
+Always return a list of citekeys.
+
 If `minaduki-completion//read-lit-entry//citekey' is non-nil,
 return that instead. This allows us to call `org-cite-insert'
 without prompting.
@@ -212,9 +214,9 @@ PROMPT: the text shown in the prompt."
   (when minaduki-completion//read-lit-entry//citekey
     (cl-return-from minaduki-completion//read-lit-entry
       ;; org-cite expects a list if it asked for one
-      (if multiple
-          (list minaduki-completion//read-lit-entry//citekey)
-        minaduki-completion//read-lit-entry//citekey)))
+      (if (listp minaduki-completion//read-lit-entry//citekey)
+          minaduki-completion//read-lit-entry//citekey
+        (list minaduki-completion//read-lit-entry//citekey))))
   (minaduki--with-comp-setup
       ((ivy-sort-functions-alist . nil)
        (ivy-sort-matches-functions-alist . #'ivy--shorter-matches-first))
