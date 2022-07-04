@@ -43,7 +43,7 @@
 
 (require 'org-element)
 
-(declare-function  minaduki//find-file                  "org-roam")
+(declare-function  minaduki//find-file            "org-roam")
 (declare-function  minaduki/open                  "org-roam")
 
 ;;; the roam: link

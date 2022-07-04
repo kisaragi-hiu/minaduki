@@ -22,8 +22,6 @@
 (require 'minaduki-vault)
 (require 'kisaragi-notes-templates)
 
-(require 'minaduki-markdown)
-
 (require 'minaduki-extract)
 (require 'minaduki-db)
 (require 'org-roam-capture)
@@ -31,6 +29,134 @@
 
 (defvar ivy-sort-functions-alist)
 (defvar selectrum-should-sort)
+
+;;;; Org-specific local commands
+
+(defun minaduki/org-heading-to-file//suffix (&optional dir full? visit?)
+  "Write the current heading to a file under DIR.
+
+DIR defaults to current directory (`default-directory').
+
+The name of the created file is based on the heading. By default,
+this is the first WORD of the heading; if FULL? is non-nil, this
+happens:
+
+- take the entire heading
+- dashes and colons are removed,
+- then spaces are replaced with dashes,
+- and everything is turned into lowercase (except the T in a timestamp).
+
+For example, given a heading \"2020-05-29T00:00:00+0800 my heading\",
+when FULL? is non-nil the file name will be
+\"20200529T000000+0800-my-heading.org\", otherwise it will be
+\"20200529T000000+0800.org\".
+
+When VISIT? is non-nil, visit the new file after creating it.
+
+Interactively, please use the transient command instead."
+  (interactive (let ((args (transient-args 'minaduki/org-heading-to-file)))
+                 (transient-save)
+                 (list (transient-arg-value "--dir=" args)
+                       (transient-arg-value "--full" args)
+                       (transient-arg-value "--open" args))))
+  (let* ((dir (or dir default-directory))
+         (title (org-entry-get nil "ITEM"))
+         (filename (->> (if full?
+                            title
+                          (car (s-split " " title)))
+                        (replace-regexp-in-string (rx (any "-/,:?\"!'\\")) "")
+                        (replace-regexp-in-string " +" "-")
+                        downcase
+                        (replace-regexp-in-string (rx (group digit) "t" (group digit))
+                                                  "\\1T\\2")
+                        (format "%s.org")))
+         (path (f-join dir filename))
+         (content (save-mark-and-excursion
+                    (org-mark-subtree)
+                    (buffer-substring-no-properties
+                     (region-beginning)
+                     (region-end)))))
+    (with-temp-file path
+      (insert content))
+    (when visit?
+      (find-file path))))
+
+(transient-define-prefix minaduki/org-heading-to-file ()
+  "Export heading at point to a file."
+  ["Options"
+   ("-d" "Directory to export to" "--dir=" transient-read-directory)
+   ("-f" "Use the entire heading instead of just the first WORD" "--full")
+   ("-v" "Open the exported file" "--open")]
+  ["Command"
+   ("e" "Export" minaduki/org-heading-to-file//suffix)])
+
+(defun minaduki-org//id-new-advice (&rest _args)
+  "Update the database if a new Org ID is created."
+  (when (and (minaduki//in-vault?)
+             (not (eq minaduki-db/update-method 'immediate))
+             (not (minaduki-capture/p)))
+    (minaduki-db/update)))
+
+(defun minaduki-org//move-to-row-col (s)
+  "Move to row:col if S match the row:col syntax.
+
+To be used with `org-execute-file-search-functions'."
+  (when (string-match (rx (group (1+ digit))
+                          ":"
+                          (group (1+ digit))) s)
+    (let ((row (string-to-number (match-string 1 s)))
+          (col (string-to-number (match-string 2 s))))
+      (org-goto-line row)
+      (move-to-column (- col 1))
+      t)))
+
+(defun minaduki-cite//follow (datum _)
+  "The follow function for Minaduki's Org-cite processor.
+
+This will extract the citation key from DATUM and ask the user
+what they want to do with it."
+  (let ((key
+         ;; Taken from the `basic' processor's follow function
+         (if (eq 'citation-reference (org-element-type datum))
+             (org-element-property :key datum)
+           (pcase (org-cite-get-references datum t)
+             (`(,key) key)
+             (keys
+              (or (completing-read "Select citation key: " keys nil t)
+                  (user-error "Aborted")))))))
+    (minaduki/literature-note-actions key)))
+
+;;;; Markdown-specific local commands
+
+(defun minaduki-markdown-follow (&optional other)
+  "Follow thing at point.
+
+Like `markdown-follow-thing-at-point', but with support for Obsidian links.
+
+When OTHER is non-nil (with a \\[universal-argument]),
+open in another window instead of in the current one."
+  (interactive "P")
+  (if (let ((markdown-enable-wiki-links t))
+        (markdown-wiki-link-p))
+      (let ((path (minaduki-obsidian-path (match-string 3))))
+        (when other (other-window 1))
+        (minaduki//find-file path))
+    (markdown-follow-thing-at-point other)))
+
+(defun minaduki-markdown-get-id (&optional skip-match)
+  "Return (ID TEXT LEVEL) if current heading has an ID.
+
+If SKIP-MATCH is non-nil, assume the caller has already matched
+on `markdown-regex-header.'"
+  (when (or skip-match
+            (save-excursion
+              (and (outline-back-to-heading)
+                   (looking-at markdown-regex-header))))
+    (-when-let* ((whole (or (match-string-no-properties 1)
+                            (match-string-no-properties 5)))
+                 ((_ text id) (s-match "\\(.*\\) {#\\(.*?\\)}" whole)))
+      (list id text (markdown-outline-level)))))
+
 
 ;;;; Local commands
 
