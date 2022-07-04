@@ -150,20 +150,6 @@ open in another window instead of in the current one."
                (markdown-follow-thing-at-point other))))
           (t (markdown-follow-thing-at-point other)))))
 
-(defun minaduki-markdown-get-id (&optional skip-match)
-  "Return (ID TEXT LEVEL) if current heading has an ID.
-
-If SKIP-MATCH is non-nil, assume the caller has already matched
-on `markdown-regex-header.'"
-  (when (or skip-match
-            (save-excursion
-              (and (outline-back-to-heading)
-                   (looking-at markdown-regex-header))))
-    (-when-let* ((whole (or (match-string-no-properties 1)
-                            (match-string-no-properties 5)))
-                 ((_ text id) (s-match "\\(.*\\) {#\\(.*?\\)}" whole)))
-      (list id text (markdown-outline-level)))))
-
 
 ;;;; Local commands
 
@@ -173,7 +159,7 @@ on `markdown-regex-header.'"
   (interactive)
   (pcase (minaduki--file-type)
    ('markdown
-    (unless (minaduki-markdown-get-id)
+    (unless (minaduki-extract::markdown-heading-id)
       (save-excursion
         (outline-back-to-heading)
         (end-of-line)

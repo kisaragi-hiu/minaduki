@@ -125,6 +125,20 @@ FILE-FROM to the key."
            (hash-table-p org-id-locations)
            (gethash id org-id-locations))))
 
+(defun minaduki-extract::markdown-heading-id (&optional skip-match)
+  "Return (ID TEXT LEVEL) if current heading has an ID.
+
+If SKIP-MATCH is non-nil, assume the caller has already matched
+on `markdown-regex-header.'"
+  (when (or skip-match
+            (save-excursion
+              (and (outline-back-to-heading)
+                   (looking-at markdown-regex-header))))
+    (-when-let* ((whole (or (match-string-no-properties 1)
+                            (match-string-no-properties 5)))
+                 ((_ text id) (s-match "\\(.*\\) {#\\(.*?\\)}" whole)))
+      (list id text (markdown-outline-level)))))
+
 (defun minaduki-extract//org-links (file-from)
   "Extract links in current buffer in Org mode format ([[target][desc]]).
 
@@ -308,7 +322,7 @@ Return a list of [ID FILE LEVEL] vectors."
       ('markdown
        (goto-char (point-min))
        (while (re-search-forward markdown-regex-header nil t)
-         (-when-let* (((id text level) (minaduki-markdown-get-id t)))
+         (-when-let* (((id text level) (minaduki-extract::markdown-heading-id t)))
            (push (vector id file-path level text) result))))
       ('org
        ;; Handle the file property drawer (outline level 0)
