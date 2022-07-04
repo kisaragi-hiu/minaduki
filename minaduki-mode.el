@@ -210,9 +210,11 @@ When NEW-FILE-OR-DIR is a directory, we use it to compute the new file path."
 (defun minaduki::local-mode-enable ()
   "Do the actual work to enable `minaduki-local-mode'."
   (setq minaduki//last-window (get-buffer-window))
+  (pcase (minaduki--file-type)
+    ('org
+     (add-hook 'before-save-hook #'org-roam-link--replace-link-on-save nil t)
+     (add-hook 'post-command-hook #'minaduki-org::buttonize-tags nil t)))
   (add-hook 'post-command-hook #'minaduki-buffer//update-maybe nil t)
-  (add-hook 'post-command-hook #'minaduki-org::buttonize-tags nil t)
-  (add-hook 'before-save-hook #'org-roam-link--replace-link-on-save nil t)
   (add-hook 'after-save-hook #'minaduki-db/update nil t)
   (dolist (fn '(minaduki-completion/tags-at-point
                 minaduki-completion/everywhere))

@@ -1,0 +1,9 @@
+#+title: Coding Style
+
+It is a mess.
+
+Right now I'm moving towards:
+
+- =:= as namespace separator (=::= for private functions)
+- Everything should be private by default
+- Try to add a =-org= or =-markdown= if a function is specific to that format
