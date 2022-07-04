@@ -25,21 +25,21 @@ Additionally, some commands like =minaduki/open-index= will use a default vault.
           ("cloud" "~/Dropbox")))
   #+end_src
 
-The name of a vault can be used to link to it. In Org this is the same as setting =org-link-abbrev-alist=.
+The name of a vault can be used to link to it. In Org this is the same as setting =org-link-abbrev-alist=. In this example, to link to =~/Dropbox=, write:
 
-Right now only one vault can be open at one time. Set it with =org-directory=.
+#+begin_src org
+[[cloud:myfile.org]]
+#+end_src
+
+which will refer to =~/Dropbox/myfile.org=.
+
+Right now the main vault is set with =org-directory=.
 
 Subdirectories containing ~minaduki-nested-vault-root-files~ are considered /nested vaults/. Right now this is only used to implement Obsidian's default /shortest link when possible/ links.
 
-*** DONE Org: following adheres to minaduki/vaults
-*** DONE Org: extracting adheres to minaduki/vaults
-
-This, and the previous one, can be done by applying minaduki/vaults to org-link-abbrev-alist.
-
-*** TODO Org: insertion adheres to minaduki/vaults
-*** TODO Markdown: following adheres to minaduki/vaults
-*** TODO Markdown: extracting adheres to minaduki/vaults
-*** TODO Markdown: insertion adheres to minaduki/vaults
+- [ ] Markdown: following adheres to minaduki/vaults
+- [ ] Markdown: extracting adheres to minaduki/vaults
+- [ ] Markdown: insertion adheres to minaduki/vaults
 ** Keywords
 
 - title :: the main title of the file. (TODO: multiple title keywords should be concatenated)
