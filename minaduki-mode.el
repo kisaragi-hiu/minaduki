@@ -219,7 +219,8 @@ When NEW-FILE-OR-DIR is a directory, we use it to compute the new file path."
                  ;; first element in `org-link-abbrev-alist' by
                  ;; setting it last.
                  (reverse minaduki/vaults))
-    (setf (map-elt org-link-abbrev-alist name) path))
+    (when path
+      (setf (map-elt org-link-abbrev-alist name) path)))
   (add-hook 'post-command-hook #'minaduki-buffer//update-maybe nil t)
   (add-hook 'after-save-hook #'minaduki-db/update nil t)
   (dolist (fn '(minaduki-completion/tags-at-point
