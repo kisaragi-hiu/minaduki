@@ -31,8 +31,8 @@ Right now only one vault can be open at one time. Set it with =org-directory=.
 
 Subdirectories containing ~minaduki-nested-vault-root-files~ are considered /nested vaults/. Right now this is only used to implement Obsidian's default /shortest link when possible/ links.
 
-*** TODO Org: following adheres to minaduki/vaults
-*** TODO Org: extracting adheres to minaduki/vaults
+*** DONE Org: following adheres to minaduki/vaults
+*** DONE Org: extracting adheres to minaduki/vaults
 
 This, and the previous one, can be done by applying minaduki/vaults to org-link-abbrev-alist.
 
