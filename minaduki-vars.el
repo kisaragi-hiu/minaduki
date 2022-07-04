@@ -232,13 +232,6 @@ The currently supported symbols are:
            (symbol)))
   :group 'minaduki)
 
-(defcustom org-roam-file-completion-tag-position 'prepend
-  "Prepend, append, or omit tags from the file titles during completion."
-  :type '(choice (const :tag "Prepend" prepend)
-                 (const :tag "Append" append)
-                 (const :tag "Omit" omit))
-  :group 'minaduki)
-
 (defcustom org-roam-link-use-custom-faces t
   "Define where to apply custom faces to Org-roam links.
 

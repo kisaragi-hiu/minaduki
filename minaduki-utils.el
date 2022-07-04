@@ -80,18 +80,6 @@ This is a convenience wrapper around `lwarn'. Difference:
   (prog1 nil
     (apply #'lwarn '(minaduki) level message args)))
 
-;; From `orb--with-message!'
-(defmacro minaduki//with-message (message &rest body)
-  "Put MESSAGE before and after BODY.
-
-Echo \"MESSAGE...\", run BODY, then echo \"MESSAGE...done\"
-afterwards. The value of BODY is returned."
-  (declare (indent 1) (debug (stringp &rest form)))
-  `(prog2
-       (message "%s..." ,message)
-       (progn ,@body)
-     (message "%s...done" ,message)))
-
 (defmacro minaduki//for (message var sequence &rest body)
   "Iterate BODY over SEQUENCE.
 
@@ -135,22 +123,6 @@ SEQUENCE."
   (when str
     (save-match-data
       (replace-regexp-in-string "[{}]" "" str))))
-
-(defun minaduki//add-tag-string (str tags)
-  "Add TAGS to STR.
-
-Depending on the value of `org-roam-file-completion-tag-position', this function
-prepends TAGS to STR, appends TAGS to STR or omits TAGS from STR."
-  (pcase org-roam-file-completion-tag-position
-    ('prepend (concat
-               (when tags (propertize (format "(%s) " (s-join org-roam-tag-separator tags))
-                                      'face 'minaduki-tag))
-               str))
-    ('append (concat
-              str
-              (when tags (propertize (format " (%s)" (s-join org-roam-tag-separator tags))
-                                     'face 'minaduki-tag))))
-    ('omit str)))
 
 (defun minaduki//remove-org-links (str)
   "Remove Org bracket links from STR."
