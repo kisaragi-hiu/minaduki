@@ -109,7 +109,7 @@ under the vault (`org-directory')."
        (not (minaduki//excluded? path))
        (or (f-descendant-of? path (expand-file-name org-directory))
            (--any? (f-descendant-of? path it)
-                   (mapcar #'cdr minaduki/vaults)))))))
+                   (mapcar #'cadr minaduki/vaults)))))))
 
 (defun minaduki//closest-vault (&optional path)
   "Return the innermost vault that contains PATH."

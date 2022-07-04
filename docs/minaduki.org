@@ -6,7 +6,41 @@ Minaduki is my fork of Org-roam v1.
 
 It has support for reading Obsidian vaults.
 
-* Keywords
+* Concepts
+** Vaults
+
+A vault has a name and a path. This tells Minaduki which folders to index and how to link to each folder.
+
+Links can specify a vault. If a link doesn't specify a vault, that makes it a normal relative or absolute link, so it will refer to paths inside the current vault.
+
+Additionally, some commands like =minaduki/open-index= will use a default vault.
+
+- Variable: minaduki/vaults
+
+  A list of vaults. Each vault is represented with a list =(NAME PATH)=; more properties might be added in the future.
+
+  #+begin_src elisp
+  (setq minaduki/vaults
+        '(("notes" "~/notes")
+          ("cloud" "~/Dropbox")))
+  #+end_src
+
+The name of a vault can be used to link to it. In Org this is the same as setting =org-link-abbrev-alist=.
+
+Right now only one vault can be open at one time. Set it with =org-directory=.
+
+Subdirectories containing ~minaduki-nested-vault-root-files~ are considered /nested vaults/. Right now this is only used to implement Obsidian's default /shortest link when possible/ links.
+
+*** TODO Org: following adheres to minaduki/vaults
+*** TODO Org: extracting adheres to minaduki/vaults
+
+This, and the previous one, can be done by applying minaduki/vaults to org-link-abbrev-alist.
+
+*** TODO Org: insertion adheres to minaduki/vaults
+*** TODO Markdown: following adheres to minaduki/vaults
+*** TODO Markdown: extracting adheres to minaduki/vaults
+*** TODO Markdown: insertion adheres to minaduki/vaults
+** Keywords
 
 - title :: the main title of the file. (TODO: multiple title keywords should be concatenated)
 - created :: the timestamp (in =YYYY-MM-DDThh:mm:ssZ=) when the file was first created
@@ -14,7 +48,7 @@ It has support for reading Obsidian vaults.
 - (to be renamed) =roam_key= :: a unique identifier for this file. Could be a link or any other ID. This is used to associate bibliography items with note files, as well as for citation backlinks.
 - (to be renamed) =roam_tags= :: a list of tags.
 
-* Bibliography
+** Bibliography
 
 Bibliography entries are written in a custom Org-based format. Support for other formats like BibTeX is planned.
 
@@ -35,7 +69,8 @@ Org-cite is supported: instead of using =org-cite-global-bibliography= you can j
 
 Reading from Org-cite's local bibliography is not yet supported though.
 
-* Browsing notes
+* Tutorials
+** Browsing notes
 
 Use =minaduki/open= to see a list of indexed notes. Select one to open.
 
@@ -45,13 +80,7 @@ Press RET to visit the note.
 
 Headline notes are indicated with a leading star (regardless of heading level or whether it's Markdown or Org). Headline notes are headlines that have an =ID= property.
 
-* Vaults
-
-Right now only one vault can be open at one time. Set it with =org-directory=.
-
-Subdirectories containing ~minaduki-nested-vault-root-files~ are considered /nested vaults/. Right now this is only used to implement Obsidian's default /shortest link when possible/ links.
-
-* Obsidian support
+** Obsidian support
 
 Obsidian links are supported. You can follow them, and they are tracked by backlinks.
 
