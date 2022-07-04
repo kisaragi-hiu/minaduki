@@ -196,13 +196,16 @@ REGION: the selected text."
       :region region)))
   (let* ((title (oref entry title))
          (path (oref entry path))
+         (path (setq path (minaduki::ensure-not-file:// path)))
          (desc title))
-    ;; We avoid creating a new note if the path is a URL.
+    ;; We avoid creating a new note if the path is a URL or it refers
+    ;; to an existing file.
     ;;
     ;; This also allows inserting references to existing notes whose
     ;; title happens to be a URL without issue.
     (when (and (oref entry new?)
-               (not (minaduki//url? path)))
+               (not (minaduki//url? path))
+               (not (f-exists? path)))
       (setq path
             (minaduki/new-concept-note
              :title title

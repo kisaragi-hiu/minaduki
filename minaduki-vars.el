@@ -323,14 +323,14 @@ which case the list is passed to `cl-sort' as arguments."
 (defcustom minaduki:link-insertion-format 'relative
   "How a new link should be inserted."
   ;; - [ ] Shortest path possible
-  ;; - [ ] Relative path
-  ;; - [ ] Absolute path in vault
-  ;; - [ ] Absolute path
+  ;; - [X] Relative path
+  ;; - [X] Absolute path in vault
+  ;; - [X] Absolute path
   :group 'minaduki
   :type '(choice
-          (const relative)
-          (const absolute)
-          (const noabbrev))
+          (const absolute-in-vault :tag "Absolute path in vault")
+          (const relative :tag "Relative path")
+          (const absolute :tag "Absolute path"))
   :safe #'symbolp)
 
 ;;;;; org-roam-bibtex

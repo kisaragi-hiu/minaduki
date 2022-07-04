@@ -191,10 +191,13 @@ For example, if `org-link-abbrev-alist' maps \"x\" to \"/home/\",
 and PATH is \"/home/abc\", this returns \"x:abc\".
 
 Inverse of `org-link-expand-abbrev'."
+  ;; FIXME: this should be applied to `minaduki/vaults'.
   (catch 'ret
     (setq path (f-canonical path))
     (pcase-dolist (`(,key . ,abbrev) org-link-abbrev-alist)
       ;; Get the symbol property if the value is a function / symbol
+      ;; FIXME: this is specific to `kisaragi-file-finders'. There
+      ;; should be support for function values in `minaduki/vaults'.
       (when (symbolp abbrev)
         (setq abbrev (get abbrev 'k/file-finders-abbrev-path)))
       ;; Only do something when we actually have a string
@@ -215,13 +218,14 @@ TARGET is an HTTP link.
 
 If ID? is non-nil and we're in Org mode, return an ID link instead."
   (let ((url? (minaduki//url? target))
-        ;; - Allow `minaduki//apply-link-abbrev' to work even on file: links
-        ;; - Allow f.el to work in general
-        (target (replace-regexp-in-string "^file://" "" target)))
+        ;; Occasionally we get a file URL. Turn it back into a proper
+        ;; path.
+        (target (org-link-decode
+                 (replace-regexp-in-string "^file://" "" target))))
     (pcase (minaduki--file-type)
       ('org
        (unless (or url? id?)
-         (setq target (minaduki//apply-link-abbrev target)))
+         (setq target (minaduki::convert-path-format target)))
        (when id?
          (setq target (concat "id:" target)))
        (if (and (not desc) url?) ; plain url
@@ -252,7 +256,7 @@ In Markdown, TYPE has no effect."
    ('org
     (org-link-make-string
      (if (string-equal type "file")
-         (minaduki//apply-link-abbrev target)
+         (minaduki::convert-path-format target)
        (concat type ":" target))
      description))
    ('markdown
@@ -322,13 +326,21 @@ means tomorrow, and N = -1 means yesterday."
          0)))))
 
 ;;;; File utilities
+(defun minaduki::ensure-not-file:// (path)
+  "If PATH is a file:// URL, convert it back to a normal path."
+  (if (s-prefix? "file://" path)
+      (org-link-decode
+       (replace-regexp-in-string "^file://" "" path))
+    path))
+
 (defun minaduki::convert-path-format (path)
   "Convert PATH to the right format according to `minaduki:link-insertion-format'."
+  (setq path (minaduki::ensure-not-file:// path))
   (pcase minaduki:link-insertion-format
     ('absolute
      (abbreviate-file-name (expand-file-name path)))
-    ('noabbrev
-     (expand-file-name path))
+    ('absolute-in-vault
+     (minaduki//apply-link-abbrev (expand-file-name path)))
     ('relative
      (file-relative-name path))))
 
