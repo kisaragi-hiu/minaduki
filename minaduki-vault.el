@@ -38,18 +38,14 @@ nested vaults regardless of whether they contain
   (and minaduki-file-exclude-regexp
        (string-match-p minaduki-file-exclude-regexp path)))
 
-(defun org-roam--list-files-search-globs (exts)
-  "Given EXTS, return a list of search globs.
-E.g. (\".org\") => (\"*.org\" \"*.org.gpg\")"
-  (append
-   (mapcar (lambda (ext) (concat "*." ext)) exts)
-   (mapcar (lambda (ext) (concat "*." ext ".gpg")) exts)))
-
 (defun minaduki//list-files/rg (executable dir)
   "List all tracked files in DIR with Ripgrep.
 
 EXECUTABLE is the Ripgrep executable."
-  (let* ((globs (org-roam--list-files-search-globs minaduki-file-extensions))
+  (let* ((exts minaduki-file-extensions)
+         (globs (append
+                 (mapcar (lambda (ext) (concat "*." ext)) exts)
+                 (mapcar (lambda (ext) (concat "*." ext ".gpg")) exts)))
          (arguments `("-L" ,dir "--files"
                       ,@(cons "-g" (-interpose "-g" globs)))))
     (with-temp-buffer
