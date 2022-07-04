@@ -134,7 +134,7 @@ replaced links are made relative to the current buffer."
           (when (and (string= type "file")
                      (f-relative-p path))
             (setq new-link
-                  (concat type ":" (org-roam-link-get-path (expand-file-name path (file-name-directory old-path)))))
+                  (concat type ":" (minaduki::convert-path-format (expand-file-name path (file-name-directory old-path)))))
             (replace-match new-link nil t nil 1)))))))
 
 (defun minaduki::rename-file-advice (old-file new-file-or-dir &rest _args)

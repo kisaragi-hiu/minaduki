@@ -322,11 +322,9 @@ means tomorrow, and N = -1 means yesterday."
          0)))))
 
 ;;;; File utilities
-(defun org-roam-link-get-path (path &optional type)
-  "Return the PATH of the link to use.
-If TYPE is non-nil, create a link of TYPE. Otherwise, respect
-`org-link-file-path-type'."
-  (pcase (or type org-roam-link-file-path-type)
+(defun minaduki::convert-path-format (path)
+  "Convert PATH to the right format according to `minaduki:link-insertion-format'."
+  (pcase minaduki:link-insertion-format
     ('absolute
      (abbreviate-file-name (expand-file-name path)))
     ('noabbrev

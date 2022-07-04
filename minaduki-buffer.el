@@ -489,7 +489,7 @@ ORIG-PATH is the path where the CONTENT originated."
               link (match-string 2))
         (when (and (string-equal link-type "file")
                    (f-relative-p link))
-          (replace-match (org-roam-link-get-path (expand-file-name link (file-name-directory orig-path)))
+          (replace-match (minaduki::convert-path-format (expand-file-name link (file-name-directory orig-path)))
                          nil t nil 2))))
     (buffer-string)))
 

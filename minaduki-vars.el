@@ -320,14 +320,12 @@ which case the list is passed to `cl-sort' as arguments."
   :group 'minaduki
   :type 'boolean)
 
-(defcustom org-roam-link-file-path-type 'relative
-  "How the path name in file links should be stored.
-Valid values are:
-
-relative  Relative to the current directory, i.e. the directory of the file
-          into which the link is being inserted.
-absolute  Absolute path, if possible with ~ for home directory.
-noabbrev  Absolute path, no abbreviation of home directory."
+(defcustom minaduki:link-insertion-format 'relative
+  "How a new link should be inserted."
+  ;; - [ ] Shortest path possible
+  ;; - [ ] Relative path
+  ;; - [ ] Absolute path in vault
+  ;; - [ ] Absolute path
   :group 'minaduki
   :type '(choice
           (const relative)
