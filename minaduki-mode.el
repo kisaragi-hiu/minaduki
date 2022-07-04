@@ -7,10 +7,83 @@
 ;;; Code:
 
 (require 'dash)
+
 (require 'minaduki-extract)
 (require 'minaduki-db)
 (require 'minaduki-commands)
 (require 'minaduki-buffer)
+
+(require 'kisaragi-notes-wikilink)
+
+;;;; Function faces
+(defun minaduki::link-to-current-p ()
+  "Return t if the link at point points to the current file."
+  (save-match-data
+    (let ((current-file (buffer-file-name minaduki-buffer//current))
+          (link-dest
+           (pcase (minaduki--file-type)
+             ('org (let* ((context (org-element-context))
+                          (type (org-element-property :type context))
+                          (dest (org-element-property :path context)))
+                     (pcase type
+                       ("id" (minaduki-db//fetch-file :id dest))
+                       (_ dest))))
+             ('markdown
+              (when (markdown-link-p)
+                (let ((dest (markdown-link-url)))
+                  (if (s-prefix? "#" dest)
+                      (minaduki-db//fetch-file :id dest)
+                    (expand-file-name dest))))))))
+      (string= current-file link-dest))))
+
+(defun minaduki::file-link-face (path)
+  "Conditional face for file: links.
+Applies `org-roam-link-current' if PATH corresponds to the
+currently opened Org-roam file in the backlink buffer, or
+`org-roam-link-face' if PATH corresponds to any other Org-roam
+file."
+  (save-match-data
+    (let* ((in-note (-> (buffer-file-name (buffer-base-buffer))
+                        (minaduki//in-vault?)))
+           (custom (or (and in-note org-roam-link-use-custom-faces)
+                       (eq org-roam-link-use-custom-faces 'everywhere))))
+      (cond ((and custom
+                  (not (file-remote-p path)) ;; Prevent lockups opening Tramp links
+                  (not (file-exists-p path)))
+             'org-roam-link-invalid)
+            ((and (bound-and-true-p minaduki-buffer/mode)
+                  (minaduki::link-to-current-p))
+             'org-roam-link-current)
+            ((and custom
+                  (minaduki//in-vault? path))
+             'org-roam-link)
+            (t
+             'org-link)))))
+
+(defun minaduki::id-link-face (id)
+  "Conditional face for id links.
+Applies `org-roam-link-current' if ID corresponds to the
+currently opened Org-roam file in the backlink buffer, or
+`org-roam-link-face' if ID corresponds to any other Org-roam
+file."
+  (save-match-data
+    (let* ((in-note (-> (buffer-file-name (buffer-base-buffer))
+                        (minaduki//in-vault?)))
+           (custom (or (and in-note org-roam-link-use-custom-faces)
+                       (eq org-roam-link-use-custom-faces 'everywhere))))
+      (cond ((and (bound-and-true-p minaduki-buffer/mode)
+                  (minaduki::link-to-current-p))
+             'org-roam-link-current)
+            ((and custom
+                  (minaduki-db//fetch-file :id id))
+             'org-roam-link)
+            ;; FIXME: this breaks the display of ID links to untracked
+            ;; files.
+            ((and custom
+                  (not (minaduki-db//fetch-file :id id)))
+             'org-roam-link-invalid)
+            (t
+             'org-link)))))
 
 ;;;; Hooks and advices
 (defun minaduki::delete-file-advice (file &optional _trash)
@@ -207,8 +280,8 @@ Ensure it is installed and can be found within `exec-path'."))
         (advice-add 'org-read-date :before #'minaduki//set-calendar-mark-diary-entries-flag-nil)
         (advice-add 'org-read-date :after #'minaduki//set-calendar-mark-diary-entries-flag-t)
         (when (fboundp 'org-link-set-parameters)
-          (org-link-set-parameters "file" :face 'minaduki//file-link-face)
-          (org-link-set-parameters "id" :face 'minaduki//id-link-face))
+          (org-link-set-parameters "file" :face 'minaduki::file-link-face)
+          (org-link-set-parameters "id" :face 'minaduki::id-link-face))
         (dolist (buf (buffer-list))
           (with-current-buffer buf
             (minaduki-initialize))))

@@ -131,17 +131,24 @@ what they want to do with it."
 (defun minaduki-markdown-follow (&optional other)
   "Follow thing at point.
 
-Like `markdown-follow-thing-at-point', but with support for Obsidian links.
+Like `markdown-follow-thing-at-point', but has support for:
+
+- Obsidian links,
+- ID links (written as [text](#<ID>), ie. a path starting with a hash)
 
 When OTHER is non-nil (with a \\[universal-argument]),
 open in another window instead of in the current one."
   (interactive "P")
-  (if (let ((markdown-enable-wiki-links t))
-        (markdown-wiki-link-p))
-      (let ((path (minaduki-obsidian-path (match-string 3))))
-        (when other (other-window 1))
-        (minaduki//find-file path))
-    (markdown-follow-thing-at-point other)))
+  (let ((markdown-enable-wiki-links t))
+    (when other (other-window 1))
+    (cond ((markdown-wiki-link-p)
+           (minaduki//find-file (minaduki-obsidian-path (match-string 3))))
+          ((markdown-link-p)
+           (let ((url (markdown-link-url)))
+             (if (s-prefix? "#" url)
+                 (minaduki/open-id (substring url 1))
+               (markdown-follow-thing-at-point other))))
+          (t (markdown-follow-thing-at-point other)))))
 
 (defun minaduki-markdown-get-id (&optional skip-match)
   "Return (ID TEXT LEVEL) if current heading has an ID.
@@ -650,13 +657,16 @@ one."
           (t
            (minaduki//find-file path)))))
 
-(defun minaduki/open-id (id)
+(defun minaduki/open-id (id &optional other?)
   "Open an ID.
 
-This assumes ID is present in the cache database."
+This assumes ID is present in the cache database.
+
+If OTHER? is non-nil, open it in another window, otherwise in the
+current window."
   ;; Locate ID's location in FILE
   (when-let (file (minaduki-db//fetch-file :id id))
-    (minaduki//find-file file)
+    (minaduki//find-file file other?)
     ;; FIXME: This is wrong.
     ;; TODO: Please store point location of IDs.
     (goto-char (point-min))

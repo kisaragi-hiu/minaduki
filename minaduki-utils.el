@@ -381,8 +381,13 @@ Like `file-name-extension', but:
       ext)))
 
 ;;;; File functions
-(defun minaduki//find-file (file)
-  "Open FILE using `org-roam-find-file-function' or `find-file'."
+(defun minaduki//find-file (file &optional other?)
+  "Open FILE using `org-roam-find-file-function' or `find-file'.
+
+If OTHER? is non-nil, open FILE in another window, otherwise open
+it in the current window."
+  ;; `other-window' is from Emacs 17. It's fine.
+  (when other? (other-window 1))
   (funcall (or org-roam-find-file-function #'find-file) file))
 
 (defun minaduki//compute-content-hash (file)
