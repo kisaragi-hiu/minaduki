@@ -153,11 +153,6 @@ If nil, `find-file' is used."
   :type 'function
   :group 'minaduki)
 
-(defcustom minaduki/file-setup-hook nil
-  "Hook that is run on setting up an Org-roam file."
-  :group 'minaduki
-  :type 'hook)
-
 (defcustom org-roam-index-file "index.org"
   "Path to the Org-roam index file.
 The path can be a string or a function.

@@ -207,6 +207,18 @@ When NEW-FILE-OR-DIR is a directory, we use it to compute the new file path."
                          'face 'button))))))))
 
 ;;;; The minor mode itself
+(defun minaduki::local-mode-enable ()
+  "Do the actual work to enable `minaduki-local-mode'."
+  (setq minaduki//last-window (get-buffer-window))
+  (add-hook 'post-command-hook #'minaduki-buffer//update-maybe nil t)
+  (add-hook 'post-command-hook #'minaduki-org::buttonize-tags nil t)
+  (add-hook 'before-save-hook #'org-roam-link--replace-link-on-save nil t)
+  (add-hook 'after-save-hook #'minaduki-db/update nil t)
+  (dolist (fn '(minaduki-completion/tags-at-point
+                minaduki-completion/everywhere))
+    (add-hook 'completion-at-point-functions fn nil t))
+  (minaduki-buffer//update-maybe :redisplay t))
+
 (define-minor-mode minaduki-local-mode
   "Minor mode active in files tracked by minaduki."
   ;; FIXME: this doesn't actually turn itself off. You have to turn
@@ -217,17 +229,7 @@ When NEW-FILE-OR-DIR is a directory, we use it to compute the new file path."
               [remap markdown-follow-thing-at-point]
               #'minaduki-markdown-follow)
             map)
-  (setq minaduki//last-window (get-buffer-window))
-  ;; TODO: use minaduki-local-mode-hook
-  (run-hooks 'minaduki/file-setup-hook) ; Run user hooks
-  (add-hook 'post-command-hook #'minaduki-buffer//update-maybe nil t)
-  (add-hook 'post-command-hook #'minaduki-org::buttonize-tags nil t)
-  (add-hook 'before-save-hook #'org-roam-link--replace-link-on-save nil t)
-  (add-hook 'after-save-hook #'minaduki-db/update nil t)
-  (dolist (fn '(minaduki-completion/tags-at-point
-                minaduki-completion/everywhere))
-    (add-hook 'completion-at-point-functions fn nil t))
-  (minaduki-buffer//update-maybe :redisplay t))
+  (minaduki::local-mode-enable))
 
 (defun minaduki-initialize ()
   "Initialize minaduki for this buffer."
