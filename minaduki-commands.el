@@ -1008,7 +1008,10 @@ given or can be retrieved, actions from
                             minaduki/literature-note-actions))))
          (selection (completing-read prompt candidates))
          (func (cdr (assoc selection candidates))))
-    (funcall func citekey)))
+    (if (= (car (func-arity func))
+           1)
+        (funcall func citekey)
+      (funcall func))))
 
 (provide 'minaduki-commands)
 
