@@ -258,7 +258,7 @@ See `minaduki-local-mode' for more information on Minaduki-Local mode."
   :global t
   :group 'minaduki
   :keymap (let ((map (make-sparse-keymap)))
-            (define-key map (kbd "C-c ) a") #'minaduki/literature-note-actions)
+            (define-key map (kbd "C-c ) a") #'minaduki/local-commands)
             map)
   :require 'minaduki
   (unless (or (and (bound-and-true-p emacsql-sqlite3-executable)

@@ -124,7 +124,7 @@ what they want to do with it."
              (keys
               (or (completing-read "Select citation key: " keys nil t)
                   (user-error "Aborted")))))))
-    (minaduki/literature-note-actions key)))
+    (minaduki/local-commands key)))
 
 ;;;; Markdown-specific local commands
 
@@ -426,7 +426,7 @@ REGION: the selected text."
   (interactive)
   (let ((minaduki-completion//read-lit-entry//citekey
          (minaduki-extract/key-at-point)))
-    (minaduki/literature-note-actions
+    (minaduki/local-commands
      (car (minaduki-completion//read-lit-entry nil :prompt "Entry: ")))))
 
 ;;;###autoload
@@ -978,22 +978,37 @@ one argument, the citekey.
 
 Equivalent to `orb-note-actions-default'.")
 
+(defvar minaduki::local-commands
+  '(("Create ID for current heading" . minaduki/id)
+    ("Insert a link"                 . minaduki/insert)
+    ("Add an alias"                  . minaduki-add-alias)
+    ("Delete an alias"               . minaduki-delete-alias)
+    ("Add a tag"                     . minaduki-add-tag)
+    ("Delete a tag"                  . minaduki-delete-tag))
+  "Local commands that act on the current file or heading.")
+
 ;; TODO: Try the selected action for all keys
-(defun minaduki/literature-note-actions (&optional citekey)
-  ;; `orb-note-actions'
-  "Prompt for note-related actions on CITEKEY.
+(defun minaduki/local-commands (&optional citekey)
+  "Prompt for note-related actions.
 
-CITEKEY is, by default, the first ROAM_KEY in the buffer.
+CITEKEY defaults to the first ROAM_KEY in the buffer.
 
-Actions are defined in `minaduki/literature-note-actions'."
+Actions are defined in `minaduki::local-commands'. If CITEKEY is
+given or can be retrieved, actions from
+`minaduki/literature-note-actions' are also used."
   (interactive)
-  (-if-let* ((citekey (or citekey (cdar (minaduki-extract/refs)))))
-      (let* ((prompt (format "Actions for %s: " citekey))
-             (candidates minaduki/literature-note-actions)
-             (selection (completing-read prompt candidates))
-             (func (cdr (assoc selection candidates))))
-        (funcall func citekey))
-    (user-error "Could not retrieve the citekey, is ROAM_KEY specified?")))
+  (let* ((citekey (or citekey (cdar (minaduki-extract/refs))))
+         (prompt (format "Actions for %s: "
+                         (or citekey
+                             (minaduki-extract/main-title))))
+         (candidates (-sort
+                      (-on #'string< #'car)
+                      `(,@minaduki::local-commands
+                        ,@(when citekey
+                            minaduki/literature-note-actions))))
+         (selection (completing-read prompt candidates))
+         (func (cdr (assoc selection candidates))))
+    (funcall func citekey)))
 
 (provide 'minaduki-commands)
 
