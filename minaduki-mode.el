@@ -214,13 +214,14 @@ When NEW-FILE-OR-DIR is a directory, we use it to compute the new file path."
     ('org
      (add-hook 'before-save-hook #'org-roam-link--replace-link-on-save nil t)
      (add-hook 'post-command-hook #'minaduki-org::buttonize-tags nil t)))
-  (pcase-dolist (`(,name ,path)
-                 ;; Ensure first element in `minaduki/vaults' is the
-                 ;; first element in `org-link-abbrev-alist' by
-                 ;; setting it last.
-                 (reverse minaduki/vaults))
-    (when path
-      (setf (map-elt org-link-abbrev-alist name) path)))
+  (dolist (vault
+           ;; Ensure first element in `minaduki/vaults' is the
+           ;; first element in `org-link-abbrev-alist' by
+           ;; setting it last.
+           (reverse minaduki/vaults))
+    (when (minaduki-vault-path vault)
+      (setf (map-elt org-link-abbrev-alist (minaduki-vault-name vault))
+            (minaduki-vault-path vault))))
   (add-hook 'post-command-hook #'minaduki-buffer//update-maybe nil t)
   (add-hook 'after-save-hook #'minaduki-db/update nil t)
   (dolist (fn '(minaduki-completion/tags-at-point

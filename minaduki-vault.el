@@ -15,6 +15,52 @@
 (require 's)
 (require 'dash)
 
+;;;; Vault objects
+(defcustom minaduki/vaults nil
+  "A list of vaults that are tracked by Minaduki.
+
+Each vault is either a string, representing the path of the
+vault, or a plist with the keys `:name', `:path', and `:skipped'.
+
+A vault with a name can be linked to. Right now this is only
+supported in Org mode by being added to `org-link-abbrev-alist'.
+
+Files under the paths are indexed by Minaduki.
+
+Each vault is represented with a list (NAME PATH).
+Files under any PATH are indexed by Minaduki.
+Each NAME is added to `org-link-abbrev-alist'.
+
+Note that right now `org-directory' is still treated as the main
+vault."
+  :group 'minaduki
+  :type '(repeat
+          (choice (directory :tag "Path without other properties")
+                  (list :tag "A vault with a name and whether it's skipped"
+                        (const :name)
+                        (string :tag "Name")
+                        (const :path)
+                        (directory :tag "path")
+                        (const :skipped)
+                        (boolean :tag "Skipped?")))))
+
+(defun minaduki-vault-path (vault)
+  "Return the path of VAULT."
+  (if (stringp vault)
+      vault
+    (plist-get vault :path)))
+
+(defun minaduki-vault-name (vault)
+  "Return the name of VAULT."
+  (when (listp vault)
+    (plist-get vault :name)))
+
+(defun minaduki-vault-skipped (vault)
+  "Return whether VAULT is skipped by `minaduki-db/build-cache'."
+  (when (listp vault)
+    (plist-get vault :skipped)))
+
+;;;; etc.
 (defcustom minaduki-nested-vault-root-files
   (list ".obsidian"
         "config.yaml")
@@ -80,8 +126,18 @@ Uses either Ripgrep or `directory-files-recursively'."
       (minaduki//list-files/elisp dir))))
 
 (defun minaduki//list-all-files ()
-  "Return a list of all tracked files within `org-directory'."
-  (minaduki//list-files (expand-file-name org-directory)))
+  "Return a list of all tracked files.
+
+Tracked files are those within `org-directory' or one of
+`minaduki/vaults' that isn't skipped."
+  (apply #'append
+         (--map
+          (minaduki//list-files (expand-file-name
+                                 (minaduki-vault-path it)))
+          (->> minaduki/vaults
+               (--remove (minaduki-vault-skipped it))
+               (cons org-directory)
+               -uniq))))
 
 (defun minaduki//in-vault? (&optional path)
   "Return t if PATH is in a vault.

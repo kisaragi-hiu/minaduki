@@ -9,7 +9,11 @@ It has support for reading Obsidian vaults.
 * Concepts
 ** Vaults
 
-A vault has a name and a path. This tells Minaduki which folders to index and how to link to each folder.
+A vault represents a path full of notes.
+
+If a vault has a name, it can be linked to from other places.
+
+There will also be other vault properties. =skipped= means the vault is not automatically indexed when =minaduki-db/build-cache= runs. Instead, files are only cached when you visit and edit them.
 
 Links can specify a vault. If a link doesn't specify a vault, that makes it a normal relative or absolute link, so it will refer to paths inside the current vault.
 
@@ -17,12 +21,12 @@ Additionally, some commands like =minaduki/open-index= will use a default vault.
 
 - Variable: minaduki/vaults
 
-  A list of vaults. Each vault is represented with a list =(NAME PATH)=; more properties might be added in the future.
+  A list of vaults. Each vault is either a path or a plist =(:name NAME :path PATH :skipped SKIPPED)=.
 
   #+begin_src elisp
   (setq minaduki/vaults
-        '(("notes" "~/notes")
-          ("cloud" "~/Dropbox")))
+        '((:name "notes" :path "~/notes" :skipped nil)
+          (:name "cloud" :path "~/Dropbox" :skipped t)))
   #+end_src
 
 The name of a vault can be used to link to it. In Org this is the same as setting =org-link-abbrev-alist=. In this example, to link to =~/Dropbox=, write:

@@ -41,19 +41,6 @@
 
 ;;;; User Options
 
-(defcustom minaduki/vaults nil
-  "A list of vaults that are tracked by Minaduki.
-
-Each vault is represented with a list (NAME PATH).
-Files under any PATH are indexed by Minaduki.
-Each NAME is added to `org-link-abbrev-alist'.
-
-Note that right now `org-directory' is still treated as the main
-vault."
-  :group 'minaduki
-  :type '(repeat (list (string :tag "Name")
-                       (directory :tag "Path"))))
-
 (defcustom minaduki/db-location (expand-file-name "minaduki.db" user-emacs-directory)
   "Full path to the cache database.
 
