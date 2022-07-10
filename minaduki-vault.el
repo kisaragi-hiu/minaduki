@@ -130,14 +130,18 @@ Uses either Ripgrep or `directory-files-recursively'."
 
 Tracked files are those within `org-directory' or one of
 `minaduki/vaults' that isn't skipped."
-  (apply #'append
-         (--map
-          (minaduki//list-files (expand-file-name
-                                 (minaduki-vault-path it)))
-          (->> minaduki/vaults
-               (--remove (minaduki-vault-skipped it))
-               (cons org-directory)
-               -uniq))))
+  (let ((paths (->> minaduki/vaults
+                    (--remove (minaduki-vault-skipped it))
+                    (cons org-directory)
+                    (-map #'minaduki-vault-path)
+                    -uniq)))
+    ;;   (--reduce-from (append <BODY> acc) nil list)
+    ;; is the same as
+    ;;   (apply #'append (--map <BODY> list))
+    ;; .
+    (--reduce-from (append (minaduki//list-files (expand-file-name it))
+                           acc)
+                   nil paths)))
 
 (defun minaduki//in-vault? (&optional path)
   "Return t if PATH is in a vault.
