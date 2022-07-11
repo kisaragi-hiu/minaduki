@@ -147,32 +147,60 @@ members that should be equal."
 
 (describe "minaduki/format-link"
   (it "formats Org links"
-    (cl-flet ((test-org (&rest args)
-                        (let ((major-mode 'org-mode))
-                          (apply #'minaduki/format-link args))))
-      (expect
-       (test-org :target "file:///tmp/abc.org")
-       :to-equal
-       "[[/tmp/abc.org]]")
-      (expect
-       (test-org :target "file:///tmp/abc.org"
-                 :desc "ABC")
-       :to-equal
-       "[[/tmp/abc.org][ABC]]")
-      (expect
-       (test-org :target "https://kisaragi-hiu.com"
-                 :desc "ABC")
-       :to-equal
-       "[[https://kisaragi-hiu.com][ABC]]")))
+    (expect
+     (let ((minaduki:link-insertion-format 'absolute)
+           (major-mode 'org-mode))
+       (minaduki/format-link :target "file:///tmp/abc.org"))
+     :to-equal
+     "[[/tmp/abc.org]]")
+    (expect
+     (let ((minaduki:link-insertion-format 'absolute)
+           (major-mode 'org-mode))
+       (minaduki/format-link :target "file:///tmp/abc.org"
+                             :desc "ABC"))
+     :to-equal
+     "[[/tmp/abc.org][ABC]]")
+    (expect
+     (let ((minaduki:link-insertion-format 'absolute)
+           (major-mode 'org-mode))
+       (minaduki/format-link :target "https://kisaragi-hiu.com"
+                             :desc "ABC"))
+     :to-equal
+     "[[https://kisaragi-hiu.com][ABC]]"))
   (it "formats Markdown links"
-    (cl-flet ((test-markdown (&rest args)
-                             (let ((major-mode 'markdown-mode))
-                               (apply #'minaduki/format-link args))))
-      (expect
-       (test-markdown :target "https://kisaragi-hiu.com"
-                      :desc "ABC")
-       :to-equal
-       "[ABC](https://kisaragi-hiu.com)"))))
+    (expect
+     (let ((minaduki:link-insertion-format 'absolute)
+           (major-mode 'markdown-mode))
+       (minaduki/format-link :target "https://kisaragi-hiu.com"
+                             :desc "ABC"))
+     :to-equal
+     "[ABC](https://kisaragi-hiu.com)"))
+  (it "formats local absolute links"
+    (expect
+     (with-temp-buffer
+       (let ((minaduki:link-insertion-format 'absolute-in-vault)
+             (minaduki/vaults '((:name "tmp" :path "/tmp/")))
+             (default-directory "/"))
+         (org-mode)
+         (minaduki-local-mode) ; this applies `minaduki/vaults'
+         (minaduki/format-link :target "file:///tmp/abc.org")))
+     :to-equal
+     "[[tmp:abc.org]]"))
+  (it "formats relative links"
+    (expect
+     (let ((minaduki:link-insertion-format 'relative)
+           (major-mode 'org-mode)
+           (default-directory "/"))
+       (minaduki/format-link :target "file:///tmp/abc.org"))
+     :to-equal
+     "[[tmp/abc.org]]")
+    (expect
+     (let ((minaduki:link-insertion-format 'relative)
+           (major-mode 'markdown-mode)
+           (default-directory "/"))
+       (minaduki/format-link :target "/tmp/abc.md"))
+     :to-equal
+     "[abc.md](tmp/abc.md)")))
 
 (describe "Utils"
   (before-all

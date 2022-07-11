@@ -308,7 +308,13 @@ which case the list is passed to `cl-sort' as arguments."
   :type 'boolean)
 
 (defcustom minaduki:link-insertion-format 'relative
-  "How a new link should be inserted."
+  "How a new link should be inserted.
+
+Options:
+
+`absolute-in-vault': Absolute path in the containing vault
+`relative': Relative to the current path
+`absolute': Absolute path starting from root"
   ;; - [ ] Shortest path possible
   ;; - [X] Relative path
   ;; - [X] Absolute path in vault
