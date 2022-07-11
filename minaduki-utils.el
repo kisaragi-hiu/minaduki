@@ -33,7 +33,9 @@
           ((derived-mode-p 'markdown-mode) 'markdown)
           ((derived-mode-p 'bibtex-mode) 'bibtex)
           ((derived-mode-p 'json-mode) 'json)
-          ((string-match-p "\\.json\\'" (buffer-file-name)) 'json))))
+          ((buffer-file-name)
+           (pcase (buffer-file-name)
+             ((pred (string-match-p "\\.json\\'")) 'json))))))
 
 (defmacro minaduki--with-comp-setup (defaults &rest body)
   "Run BODY with completion frameworks set up according to DEFAULTS.
