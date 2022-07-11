@@ -266,15 +266,22 @@ If UPDATE-P is non-nil, first remove the entries from the file in the database."
         (minaduki-db/query [:delete :from keys
                             :where (= file $s1)]
                            file))
-      (cl-loop for (point . entry) in (minaduki-extract/lit-entries)
-               do (progn
-                    (minaduki-db/query
-                     [:insert :into keys :values $v1]
-                     (list (vector (gethash "key" entry)
-                                   file
-                                   point
-                                   entry)))
-                    (cl-incf count)))
+      ;; entries
+      (let ((entries
+             (cl-loop for (point . entry) in (minaduki-extract/lit-entries)
+                      collect
+                      (progn
+                        (cl-incf count)
+                        (vector (gethash "key" entry)
+                                file
+                                point
+                                entry)))))
+        (minaduki-db/query
+         ;; Entries from bibliographies have priority. If there's an
+         ;; existing entry (perhaps from insert-meta), just replace
+         ;; it.
+         [:insert-or-replace :into keys :values $v1]
+         entries))
       count)))
 
 (defun minaduki-db//insert-refs (&optional update-p)
