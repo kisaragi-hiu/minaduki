@@ -44,7 +44,7 @@ currently opened Org-roam file in the backlink buffer, or
 file."
   (save-match-data
     (let* ((in-note (-> (buffer-file-name (buffer-base-buffer))
-                        (minaduki//in-vault?)))
+                        (minaduki-vault:in-vault?)))
            (custom (or (and in-note org-roam-link-use-custom-faces)
                        (eq org-roam-link-use-custom-faces 'everywhere))))
       (cond ((and custom
@@ -55,7 +55,7 @@ file."
                   (minaduki::link-to-current-p))
              'org-roam-link-current)
             ((and custom
-                  (minaduki//in-vault? path))
+                  (minaduki-vault:in-vault? path))
              'org-roam-link)
             (t
              'org-link)))))
@@ -67,9 +67,9 @@ currently opened Org-roam file in the backlink buffer, or
 `org-roam-link-face' if ID corresponds to any other Org-roam
 file."
   (save-match-data
-    (let* ((in-note (-> (buffer-file-name (buffer-base-buffer))
-                        (minaduki//in-vault?)))
-           (custom (or (and in-note org-roam-link-use-custom-faces)
+    (let* ((in-vault (-> (buffer-file-name (buffer-base-buffer))
+                         (minaduki-vault:in-vault?)))
+           (custom (or (and in-vault org-roam-link-use-custom-faces)
                        (eq org-roam-link-use-custom-faces 'everywhere))))
       (cond ((and (bound-and-true-p minaduki-buffer/mode)
                   (minaduki::link-to-current-p))
@@ -89,7 +89,7 @@ file."
 (defun minaduki::delete-file-advice (file &optional _trash)
   "Advice for maintaining cache consistency when FILE is deleted."
   (when (and (not (auto-save-file-name-p file))
-             (minaduki//in-vault? file))
+             (minaduki-vault:in-vault? file))
     (minaduki-db//clear-file (expand-file-name file))))
 
 (defun minaduki-org::get-link-replacement (old-path new-path &optional old-desc new-desc)
@@ -150,7 +150,7 @@ When NEW-FILE-OR-DIR is a directory, we use it to compute the new file path."
                (not (auto-save-file-name-p new-file))
                (not (backup-file-name-p old-file))
                (not (backup-file-name-p new-file))
-               (minaduki//in-vault? old-file))
+               (minaduki-vault:in-vault? old-file))
       (minaduki-db//ensure-built)
       (setq files-affected (minaduki-db/query [:select :distinct [source]
                                                :from links
@@ -164,7 +164,7 @@ When NEW-FILE-OR-DIR is a directory, we use it to compute the new file path."
                        (file-name-directory new-file))
         (minaduki//with-file new-file nil
           (minaduki-org::fix-relative-links old-file)))
-      (when (minaduki//in-vault? new-file)
+      (when (minaduki-vault:in-vault? new-file)
         (minaduki-db//update-file new-file))
       ;; Replace links from old-file.org -> new-file.org in all Org-roam files with these links
       (mapc (lambda (file)
@@ -243,7 +243,7 @@ When NEW-FILE-OR-DIR is a directory, we use it to compute the new file path."
 
 (defun minaduki-initialize ()
   "Initialize minaduki for this buffer."
-  (when (minaduki//in-vault?)
+  (when (minaduki-vault:in-vault?)
     (minaduki-local-mode)))
 
 (define-minor-mode minaduki-mode

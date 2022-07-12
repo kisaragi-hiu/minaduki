@@ -361,7 +361,7 @@ Return a list of `minaduki-id' objects."
     ('markdown
      (let ((prop (car (minaduki-extract//file-prop "title"))))
        ;; In Obsidian, the main title is the file name.
-       (cond ((minaduki--in-obsidian-vault?)
+       (cond ((minaduki-vault:in-obsidian-vault?)
               (list (f-base (buffer-file-name))))
              (prop
               (list prop)))))))
@@ -441,23 +441,23 @@ headline."
 
 (defun minaduki-extract//tags/nested-vault (path)
   "If PATH is in a nested vault, return the vault's name as a tag."
-  (-some-> (minaduki//closest-vault path)
+  (-some-> (minaduki-vault:closest path)
     f-filename
     list))
 (defun minaduki-extract//tags/all-directories (path)
   "Return PATH's relative path in the vault in segments."
   (-some-> (file-name-directory
-            (minaduki//vault-path path))
+            (minaduki-vault:path-relative path))
     f-split))
 (defun minaduki-extract//tags/first-directory (path)
   "Return PATH's first directory in the vault."
-  (-some-> (minaduki//vault-path path)
+  (-some-> (minaduki-vault:path-relative path)
     f-split
     car
     list))
 (defun minaduki-extract//tags/last-directory (path)
   "Return PATH's last directory in the vault."
-  (-some-> (minaduki//vault-path path)
+  (-some-> (minaduki-vault:path-relative path)
     f-split
     last))
 (defun minaduki-extract//tags/org-tags ()

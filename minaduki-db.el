@@ -515,7 +515,7 @@ If FORCE, force a rebuild of the cache from scratch."
          (org-agenda-files nil)
          (deleted-count 0)
          dir-files db-files count-plist modified-files)
-    (setq dir-files (minaduki//list-all-files)
+    (setq dir-files (minaduki-vault:all-files)
           db-files (minaduki-db//fetch-all-files-hash))
     (dolist-with-progress-reporter (file dir-files)
         "(minaduki) Finding modified files"

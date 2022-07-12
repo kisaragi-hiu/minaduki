@@ -92,7 +92,7 @@ Interactively, please use the transient command instead."
 
 (defun minaduki-org//id-new-advice (&rest _args)
   "Update the database if a new Org ID is created."
-  (when (and (minaduki//in-vault?)
+  (when (and (minaduki-vault:in-vault?)
              (not (eq minaduki-db/update-method 'immediate))
              (not (minaduki-capture/p)))
     (minaduki-db/update)))
@@ -243,7 +243,7 @@ REGION: the selected text."
               (forward-line)
               (beginning-of-line))))
         (insert "#+alias: " alias)))
-    (when (minaduki//in-vault?)
+    (when (minaduki-vault:in-vault?)
       (minaduki-db//insert-meta 'update))
     alias))
 
@@ -258,7 +258,7 @@ REGION: the selected text."
             (when (search-forward (concat "#+alias: " alias) (point-max) t)
               (delete-region (line-beginning-position)
                              (1+ (line-end-position))))))
-        (when (minaduki//in-vault?)
+        (when (minaduki-vault:in-vault?)
           (minaduki-db//insert-meta 'update)))
     (user-error "No aliases to delete")))
 
@@ -279,7 +279,7 @@ REGION: the selected text."
     (org-roam--set-global-prop
      "tags[]"
      (combine-and-quote-strings (seq-uniq (cons tag existing-tags))))
-    (when (minaduki//in-vault?)
+    (when (minaduki-vault:in-vault?)
       (minaduki-db//insert-meta 'update))
     tag))
 
@@ -292,7 +292,7 @@ REGION: the selected text."
         (org-roam--set-global-prop
          "tags[]"
          (combine-and-quote-strings (delete tag tags)))
-        (when (minaduki//in-vault?)
+        (when (minaduki-vault:in-vault?)
           (minaduki-db//insert-meta 'update)))
     (user-error "No tag to delete")))
 
@@ -313,7 +313,7 @@ REGION: the selected text."
                     revert-buffer-function (lambda (&rest _)
                                              (minaduki/fix-broken-links)))))
     ;; Collect missing links
-    (let* ((all-files (minaduki//list-all-files))
+    (let* ((all-files (minaduki-vault:all-files))
            (i 0)
            (length (length all-files)))
       (cl-loop
@@ -588,7 +588,7 @@ are named with a YYYYMMDD prefix (optionally with dashes)."
   ;; Originally `org-roam-random-note'
   "Open a random note."
   (interactive)
-  (find-file (seq-random-elt (minaduki//list-all-files))))
+  (find-file (seq-random-elt (minaduki-vault:all-files))))
 
 ;;;###autoload
 (defun minaduki/open-index ()
