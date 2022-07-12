@@ -267,15 +267,15 @@ If UPDATE-P is non-nil, first remove the entries from the file in the database."
                             :where (= file $s1)]
                            file))
       ;; entries
-      (let ((entries
-             (cl-loop for (point . entry) in (minaduki-extract/lit-entries)
-                      collect
-                      (progn
-                        (cl-incf count)
-                        (vector (gethash "key" entry)
-                                file
-                                point
-                                entry)))))
+      (-when-let (entries
+                  (cl-loop for (point . entry) in (minaduki-extract/lit-entries)
+                           collect
+                           (progn
+                             (cl-incf count)
+                             (vector (gethash "key" entry)
+                                     file
+                                     point
+                                     entry))))
         (minaduki-db/query
          ;; Entries from bibliographies have priority. If there's an
          ;; existing entry (perhaps from insert-meta), just replace
