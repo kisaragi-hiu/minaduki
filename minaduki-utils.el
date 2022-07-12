@@ -26,6 +26,21 @@
 
 (defvar markdown-mode-hook)
 
+(defun minaduki::object-to-vector (obj)
+  "Turn OBJ into a vector that emacsql accepts."
+  (let* ((len (1- (length obj)))
+         (v (make-vector len nil)))
+    (dotimes (i len)
+      (aset v i (aref obj (1+ i))))
+    v))
+
+(defun minaduki::vector-to-object (vec type)
+  "Turn VEC into an object of TYPE.
+
+This does zero type checks, and it is up to the user to make sure
+#s(TYPE (elt VEC 0) (elt VEC 1) ...) is valid for TYPE."
+  (apply #'record type (append vec nil)))
+
 (defun minaduki--file-type ()
   "Return file type of current buffer."
   (let ((case-fold-search t))

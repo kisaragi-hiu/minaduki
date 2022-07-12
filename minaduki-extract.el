@@ -315,7 +315,7 @@ it as FILE-FROM."
 (defun minaduki-extract/ids (&optional file-path)
   "Extract all IDs within the current buffer.
 If FILE-PATH is nil, use the current file.
-Return a list of [ID FILE LEVEL] vectors."
+Return a list of `minaduki-id' objects."
   (setq file-path (or file-path minaduki//file-name (buffer-file-name)))
   (let (result)
     (pcase (minaduki--file-type)
@@ -323,22 +323,31 @@ Return a list of [ID FILE LEVEL] vectors."
        (goto-char (point-min))
        (while (re-search-forward markdown-regex-header nil t)
          (-when-let* (((id text level) (minaduki-extract::markdown-heading-id t)))
-           (push (vector id file-path level text) result))))
+           (push (minaduki-id :id id
+                              :file file-path
+                              :level level
+                              :title text
+                              :point (point))
+                 result))))
       ('org
        ;; Handle the file property drawer (outline level 0)
        (org-with-point-at (point-min)
          (when-let ((before-first-heading (= 0 (org-outline-level)))
                     (id (org-entry-get nil "ID")))
-           (push (vector id file-path 0)
+           (push (minaduki-id :id id
+                              :file file-path
+                              :level 0
+                              :point (point))
                  result)))
        ;; Extract every other ID
        (org-map-region
         (lambda ()
           (when-let ((id (org-entry-get nil "ID")))
-            (push (vector id
-                          file-path
-                          (org-outline-level)
-                          (org-entry-get nil "ITEM"))
+            (push (minaduki-id :id id
+                               :file file-path
+                               :level (org-outline-level)
+                               :title (org-entry-get nil "ITEM")
+                               :point (point))
                   result)))
         (point-min) (point-max))))
     result))

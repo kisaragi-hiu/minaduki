@@ -22,6 +22,18 @@
    (key-type :initarg :key-type :initform nil)
    (new? :initarg :new? :initform nil)))
 
+;; Note that I take the shortcut of creating instances of these
+;; classes with `record' instead of through a constructor. So it is
+;; absolutely crucial that the order does not change.
+(cl-defstruct (minaduki-lit-entry
+               (:copier nil)
+               (:constructor nil))
+  key file point props)
+(cl-defstruct (minaduki-id
+               (:copier nil)
+               (:constructor minaduki-id))
+  id file point level title)
+
 ;;;; Groups
 (defgroup minaduki nil
   "Roam Research replica in Org-mode."

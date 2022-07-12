@@ -53,7 +53,7 @@
 
 ;;;; Options
 
-(defconst minaduki-db//version 14)
+(defconst minaduki-db//version 15)
 
 (defvar minaduki-db//connection nil
   "Database connection to the cache.")
@@ -102,15 +102,6 @@ SQL can be either the emacsql vector representation, or a string."
 
 ;;;; Schemata
 
-;; Note that I take the shortcut of creating instances of these
-;; classes with `record' instead of through constructor. So it is
-;; absolutely crucial that the order does not change.
-(defclass minaduki-lit-entry ()
-  ((key :initarg :key :initform)
-   (file :initarg :file :initform)
-   (point :initarg :point :initform)
-   (props :initarg :props :initform)))
-
 (defconst minaduki-db//table-schemata
   '((files
      [(file :unique :primary-key)
@@ -122,6 +113,7 @@ SQL can be either the emacsql vector representation, or a string."
     (ids
      [(id :unique :primary-key)
       (file :not-null)
+      (point :not-null)
       (level :not-null)
       title])
 
@@ -339,10 +331,12 @@ If UPDATE-P is non-nil, first remove ids for the file in the database.
 Returns the number of rows inserted."
   (let ((file (or minaduki//file-name (buffer-file-name))))
     (when update-p
-      (minaduki-db/query [:delete :from ids
-                          :where (= file $s1)]
-                         file))
-    (if-let ((ids (minaduki-extract/ids file)))
+      (minaduki-db/query
+       [:delete :from ids
+        :where (= file $s1)]
+       file))
+    (if-let ((ids (-some->> (minaduki-extract/ids file)
+                    (--map (minaduki::object-to-vector it)))))
         (condition-case nil
             (progn
               (minaduki-db/query
