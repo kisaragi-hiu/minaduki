@@ -197,13 +197,13 @@ This function is called on `minaduki-db/file-update-timer'."
       (minaduki-db/query `[:delete :from ,table]))))
 
 (defun minaduki-db//clear-file (&optional file)
-  "Remove any related links to the FILE.
-This is equivalent to removing the node from the graph."
+  "Remove any related links to the FILE."
   (setq file (or file (buffer-file-name (buffer-base-buffer))))
   (dolist (table (mapcar #'car minaduki-db//table-schemata))
-    (minaduki-db/query `[:delete :from ,table
-                         :where (= ,(if (eq table 'links) 'source 'file) $s1)]
-                       file)))
+    (minaduki-db/query
+     `[:delete :from ,table
+       :where (= ,(if (eq table 'links) 'source 'file) $s1)]
+     file)))
 
 ;;;;; Inserting
 (defun minaduki-db//insert-meta (&optional update-p hash)
@@ -528,7 +528,7 @@ If FORCE, force a rebuild of the cache from scratch."
       ;; These files are no longer around, remove from cache...
       (minaduki-db//clear-file file)
       (setq deleted-count (1+ deleted-count)))
-    (setq count-plist (minaduki-db//update-files modified-files))
+    (setq count-plist (minaduki-db//update-files modified-files force))
     (minaduki//message "total: Δ%s, files-modified: Δ%s, ids: Δ%s, links: Δ%s, refs: Δ%s, lit: Δ%s, deleted: Δ%s"
                        (- (length dir-files)
                           (plist-get count-plist :error-count))
@@ -549,9 +549,12 @@ If the file exists, update the cache with information."
       (minaduki-db//update-files (list (cons file-path content-hash)))
       (minaduki//message "Updated: %s" file-path))))
 
-(defun minaduki-db//update-files (file-hash-pairs)
+(defun minaduki-db//update-files (file-hash-pairs &optional rebuild)
   "Update Org-roam cache for FILE-HASH-PAIRS.
-FILE-HASH-PAIRS is a list of (file . hash) pairs."
+
+FILE-HASH-PAIRS is a list of (file . hash) pairs.
+REBUILD signals that the DB is empty right now and we should skip
+clearning existing file entries."
   (let* ((gc-cons-threshold minaduki-db/gc-threshold)
          (org-agenda-files nil)
          (error-count 0)
@@ -561,9 +564,10 @@ FILE-HASH-PAIRS is a list of (file . hash) pairs."
          (lit-count 0)
          (modified-count 0))
     ;; Clear existing cache entries so that we can put in new versions
-    (minaduki//for "Clearing files (%s/%s)..."
-        (file . _) file-hash-pairs
-      (minaduki-db//clear-file file))
+    (unless rebuild
+      (minaduki//for "Clearing files (%s/%s)..."
+          (file . _) file-hash-pairs
+        (minaduki-db//clear-file file)))
     ;; Process bibliographies first so that keys only in files can
     ;; also be tracked.
     (minaduki//message "Processing bibliographies...")
