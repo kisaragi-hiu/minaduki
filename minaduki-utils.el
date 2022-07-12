@@ -113,7 +113,8 @@ SEQUENCE."
             do
             (progn
               (minaduki//message ,message (1+ i) length)
-              ,@body)))
+              (let ((inhibit-message t))
+                ,@body))))
 
 (defun minaduki--truncate (len str)
   "Truncate STR to LEN number of characters."
