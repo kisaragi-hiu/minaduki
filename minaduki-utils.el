@@ -430,15 +430,17 @@ If FILE, set `minaduki//file-name' and variable
   (let ((current-org-directory (make-symbol "current-org-directory")))
     `(let ((,current-org-directory org-directory))
        (with-temp-buffer
-         (let ((org-directory ,current-org-directory)
-               (org-mode-hook nil)
-               (markdown-mode-hook nil)
-               (org-inhibit-startup t)
-               (after-change-major-mode-hook '(minaduki-initialize))
-               ,@(when file
-                   `((minaduki//file-name ,file)
-                     (default-directory (file-name-directory ,file))
-                     (buffer-file-name ,file))))
+         (cl-letf ((org-directory ,current-org-directory)
+                   (org-inhibit-startup t)
+                   (after-change-major-mode-hook '(minaduki-initialize))
+                   ,@(when file
+                       `((minaduki//file-name ,file)
+                         (default-directory (file-name-directory ,file))
+                         (buffer-file-name ,file)))
+                   ((symbol-function 'org-install-agenda-files-menu)
+                    (symbol-function #'ignore)))
+           (setq-local org-mode-hook nil)
+           (setq-local markdown-mode-hook nil)
            (funcall (or (-some-> ,file
                           (assoc-default auto-mode-alist #'string-match))
                         #'org-mode))

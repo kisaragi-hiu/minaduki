@@ -148,24 +148,25 @@ Tracked files are those within `org-directory' or one of
 
 If PATH is not specified, use the current buffer's file-path.
 
-Currently only one vault is supported, which is specified by
-`org-directory'.
+Vaults are those defined in `minaduki/vaults' plus `org-directory'.
 
-A path is in a vault if it has the right extension, is not
-excluded (by `minaduki-file-exclude-regexp'), and is located
-under the vault (`org-directory')."
-  (when-let ((path (or path
+A path is in a vault if it:
+- has the right extension,
+- is not excluded (by `minaduki-file-exclude-regexp'),
+- and is located under a vault."
+  (-when-let (path (or path
                        minaduki//file-name
                        (-> (buffer-base-buffer)
-                           (buffer-file-name)))))
+                           (buffer-file-name))))
+    (setq path (expand-file-name path))
     (save-match-data
       (and
        (member (minaduki//file-name-extension path)
                minaduki-file-extensions)
        (not (minaduki//excluded? path))
-       (or (f-descendant-of? path (expand-file-name org-directory))
-           (--any? (f-descendant-of? path it)
-                   (mapcar #'cadr minaduki/vaults)))))))
+       (--any? (s-starts-with? path (expand-file-name it))
+               (cons org-directory
+                     (mapcar #'minaduki-vault-path minaduki/vaults)))))))
 
 (defun minaduki//closest-vault (&optional path)
   "Return the innermost vault that contains PATH."
@@ -180,11 +181,12 @@ under the vault (`org-directory')."
                  minaduki-nested-vault-search-path)))
     (catch 'ret
       (while t
-        (when (f-same? path org-directory)
+        (when (equal (f-slash path)
+                     (f-slash org-directory))
           (throw 'ret path))
-        (when (not (s-starts-with?
-                    (f-full org-directory)
-                    (f-full path)))
+        (unless (s-starts-with?
+                 (f-full org-directory)
+                 (f-full path))
           (throw 'ret nil))
         (if (or
              (member path nested-vaults)
