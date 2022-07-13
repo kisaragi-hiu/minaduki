@@ -692,7 +692,7 @@ process."
     (cond
      (file (minaduki//find-file file))
      (t (let ((props (or (-some-> (minaduki-db//fetch-lit-entry citekey)
-                           (oref props))
+                           minaduki-lit-entry-props)
                          (minaduki//warn
                           :warning
                           "Could not find the literature entry %s" citekey))))
