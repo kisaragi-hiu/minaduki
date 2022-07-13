@@ -166,7 +166,8 @@ A path is in a vault if it:
        (member (minaduki//file-name-extension path)
                minaduki-file-extensions)
        (not (minaduki-vault:excluded? path))
-       (--any? (s-starts-with? path (expand-file-name it))
+       (--any? (s-prefix? (expand-file-name it)
+                          path)
                (cons org-directory
                      (mapcar #'minaduki-vault-path minaduki/vaults)))))))
 
