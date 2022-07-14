@@ -336,7 +336,8 @@ Options:
           (const absolute-in-vault :tag "Absolute path in vault")
           (const relative :tag "Relative path")
           (const absolute :tag "Absolute path"))
-  :safe #'symbolp)
+  :safe (lambda (x)
+          (memq x '(relative absolute absolute-in-vault))))
 
 ;;;;; org-roam-bibtex
 
