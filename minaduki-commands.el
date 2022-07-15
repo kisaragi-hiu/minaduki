@@ -424,10 +424,9 @@ REGION: the selected text."
 (defun minaduki/literature-entries ()
   "List all sources for browsing interactively."
   (interactive)
-  (let ((minaduki-completion//read-lit-entry//citekey
-         (minaduki-extract/key-at-point)))
-    (minaduki/local-commands
-     (car (minaduki-completion//read-lit-entry nil :prompt "Entry: ")))))
+  (let ((key (car
+              (minaduki-completion//read-lit-entry nil :prompt "Entry: "))))
+    (minaduki/local-commands key)))
 
 ;;;###autoload
 (cl-defun minaduki/new-concept-note (&key title visit?)
@@ -991,13 +990,16 @@ Equivalent to `orb-note-actions-default'.")
 (defun minaduki/local-commands (&optional citekey)
   "Prompt for note-related actions.
 
-CITEKEY defaults to the first ROAM_KEY in the buffer.
+CITEKEY defaults to the entry at point or the first ROAM_KEY in
+the buffer.
 
 Actions are defined in `minaduki::local-commands'. If CITEKEY is
 given or can be retrieved, actions from
 `minaduki/literature-note-actions' are also used."
   (interactive)
-  (let* ((citekey (or citekey (cdar (minaduki-extract/refs))))
+  (let* ((citekey (or citekey
+                      (minaduki-extract/key-at-point)
+                      (cdar (minaduki-extract/refs))))
          (prompt (format "Actions for %s: "
                          (or citekey
                              (minaduki-extract/main-title))))
