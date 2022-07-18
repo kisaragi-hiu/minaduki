@@ -7,6 +7,8 @@
 (require 'dash)
 (require 'f)
 
+(require 'yaml)
+
 (require 'org-element)
 (require 'org-id)
 (require 'org)
@@ -44,15 +46,14 @@
                     (end
                      ;; The end of the frontmatter
                      (re-search-forward "^---$" nil t)))
+         (setq end (- end (length "---")))
          (save-restriction
-           (narrow-to-region start end)
-           (goto-char (point-min))
-           (let ((case-fold-search t))
-             (when (re-search-forward
-                    (format (rx bol "%s:" space (group (0+ any)))
-                            prop)
-                    nil t)
-               (list (match-string-no-properties 1))))))))
+           ;; TODO: We might have to fold cases here ourselves;
+           ;; `case-fold-search' obviously does not affect `equal'
+           (map-elt (yaml-parse-string
+                     (buffer-substring-no-properties start end)
+                     :object-key-type 'string)
+                    prop)))))
     ('org
      ;; ((key . (val val val val)))
      (let ((values (cdar (org-collect-keywords (list prop)))))
@@ -486,9 +487,8 @@ Tags are specified like this:
              collect it)))
 ;; Modified from md-roam's `org-roam--extract-tags-md-frontmatter'
 ;;
-;; Right now this doesn't actually read YAML because there is no YAML
-;; parser in Emacs Lisp, apart from maybe
-;; https://github.com/syohex/emacs-libyaml.
+;; Right now this doesn't actually read YAML, I still have to
+;; incorporate https://github.com/zkry/yaml.el/.
 (defun minaduki-extract//tags/hashtag-frontmatter ()
   "Extract hashtags in a YAML frontmatter.
 
