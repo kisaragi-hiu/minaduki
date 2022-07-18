@@ -652,13 +652,9 @@ This assumes ID is present in the cache database.
 
 If OTHER? is non-nil, open it in another window, otherwise in the
 current window."
-  ;; Locate ID's location in FILE
-  (when-let (file (minaduki-db//fetch-file :id id))
-    (minaduki//find-file file other?)
-    ;; FIXME: This is wrong.
-    ;; TODO: Please store point location of IDs.
-    (goto-char (point-min))
-    (search-forward id)))
+  (-when-let (id (minaduki-db//fetch-id id))
+    (minaduki//find-file (minaduki-id-file id) other?)
+    (goto-char (minaduki-id-point id))))
 
 (defun minaduki/open-id-at-point ()
   "Open the ID link at point.

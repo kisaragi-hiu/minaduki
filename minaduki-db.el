@@ -400,14 +400,23 @@ When NOCASE? is non-nil, match case-insentively.
                ,@maybe-nocase]
              key))))))
 
+(defun minaduki-db//fetch-id (id)
+  "Fetch ID from the DB."
+  (-some->> (minaduki-db/query
+             [:select [id file point level title] :from ids
+              :where (= id $s1)]
+             id)
+    car
+    (apply #'record 'minaduki-id)))
+
 (defun minaduki-db//fetch-lit-entry (key)
   "Fetch the literature entry with KEY in the DB."
-  (-some--> (minaduki-db/query
+  (-some->> (minaduki-db/query
              [:select [key file point props] :from keys
               :where (= key $s1)]
              key)
     car
-    (apply #'record 'minaduki-lit-entry it)))
+    (apply #'record 'minaduki-lit-entry)))
 
 (defun minaduki-db//fetch-all-files-hash ()
   "Return ((path . content-hash) ...) for all cached files as a hash-table."
