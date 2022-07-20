@@ -47,13 +47,13 @@
                      ;; The end of the frontmatter
                      (re-search-forward "^---$" nil t)))
          (setq end (- end (length "---")))
-         (save-restriction
-           ;; TODO: We might have to fold cases here ourselves;
-           ;; `case-fold-search' obviously does not affect `equal'
-           (map-elt (yaml-parse-string
-                     (buffer-substring-no-properties start end)
-                     :object-key-type 'string)
-                    prop)))))
+         ;; TODO: We might have to fold cases here ourselves;
+         ;; `case-fold-search' obviously does not affect `equal'
+         (minaduki--ensure-list
+          (map-elt (yaml-parse-string
+                    (buffer-substring-no-properties start end)
+                    :object-key-type 'string)
+                   prop)))))
     ('org
      ;; ((key . (val val val val)))
      (let ((values (cdar (org-collect-keywords (list prop)))))

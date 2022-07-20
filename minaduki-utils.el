@@ -41,6 +41,13 @@ This does zero type checks, and it is up to the user to make sure
 #s(TYPE (elt VEC 0) (elt VEC 1) ...) is valid for TYPE."
   (apply #'record type (append vec nil)))
 
+;; `ensure-list' was added in 28.1.
+(defun minaduki--ensure-list (v)
+  "If V is a list, return it, otherwise return a list containing just V."
+  (if (listp v)
+      v
+    (list v)))
+
 (defun minaduki--file-type ()
   "Return file type of current buffer."
   (let ((case-fold-search t))
