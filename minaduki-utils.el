@@ -451,11 +451,11 @@ If FILE, set `minaduki//file-name' and variable
                     (symbol-function #'ignore)))
            (setq-local org-mode-hook nil)
            (setq-local markdown-mode-hook nil)
+           ,@(when file
+               `((insert-file-contents ,file)))
            (funcall (or (-some-> ,file
                           (assoc-default auto-mode-alist #'string-match))
                         #'org-mode))
-           ,@(when file
-               `((insert-file-contents ,file)))
            ,@body)))))
 
 (defmacro minaduki//lambda-self (args &rest body)
