@@ -445,6 +445,8 @@ If FILE, set `minaduki//file-name' and variable
                        `((minaduki//file-name ,file)
                          (default-directory (file-name-directory ,file))
                          (buffer-file-name ,file)))
+                   ((symbol-function 'run-mode-hooks)
+                    (symbol-function #'ignore))
                    ((symbol-function 'org-install-agenda-files-menu)
                     (symbol-function #'ignore)))
            (setq-local org-mode-hook nil)
