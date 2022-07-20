@@ -195,8 +195,9 @@ REGION: the selected text."
       :lowercase? current-prefix-arg
       :region region)))
   (let* ((title (oref entry title))
-         (path (oref entry path))
-         (path (setq path (minaduki::ensure-not-file:// path)))
+         (id (oref entry id))
+         (path (minaduki::ensure-not-file://
+                (oref entry path)))
          (desc title))
     ;; We avoid creating a new note if the path is a URL or it refers
     ;; to an existing file.
@@ -217,10 +218,9 @@ REGION: the selected text."
     (when lowercase?
       (setq desc (downcase desc)))
     (insert (minaduki/format-link
-             :target (or (oref entry id)
-                         (oref entry path))
+             :target (or id path)
              :desc desc
-             :id? (oref entry id)))))
+             :id? id))))
 
 ;;;###autoload
 (defun minaduki-add-alias ()
