@@ -211,7 +211,7 @@ This function is called on `minaduki-db/file-update-timer'."
 
 If UPDATE-P is non-nil, first remove the meta for the file in the database.
 If HASH is non-nil, assume that is the file's hash without recomputing it."
-  (let* ((file (or minaduki//file-name (buffer-file-name)))
+  (let* ((file (minaduki//current-file-name))
          (attr (file-attributes file))
          (atime (file-attribute-access-time attr))
          (mtime (file-attribute-modification-time attr))
@@ -279,7 +279,7 @@ If UPDATE-P is non-nil, first remove the entries from the file in the database."
 (defun minaduki-db//insert-refs (&optional update-p)
   "Update the refs of the current buffer into the cache.
 If UPDATE-P is non-nil, first remove the ref for the file in the database."
-  (let ((file (or minaduki//file-name (buffer-file-name)))
+  (let ((file (minaduki//current-file-name))
         (count 0))
     (when update-p
       (minaduki-db/query [:delete :from refs
@@ -311,7 +311,7 @@ If UPDATE-P is non-nil, first remove the ref for the file in the database."
   "Update the file links of the current buffer in the cache.
 If UPDATE-P is non-nil, first remove the links for the file in the database.
 Return the number of rows inserted."
-  (let ((file (or minaduki//file-name (buffer-file-name))))
+  (let ((file (minaduki//current-file-name)))
     (when update-p
       (minaduki-db/query [:delete :from links
                           :where (= source $s1)]
@@ -329,7 +329,7 @@ Return the number of rows inserted."
   "Update the ids of the current buffer into the cache.
 If UPDATE-P is non-nil, first remove ids for the file in the database.
 Returns the number of rows inserted."
-  (let ((file (or minaduki//file-name (buffer-file-name))))
+  (let ((file (minaduki//current-file-name)))
     (when update-p
       (minaduki-db/query
        [:delete :from ids

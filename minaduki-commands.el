@@ -262,11 +262,6 @@ REGION: the selected text."
           (minaduki-db//insert-meta 'update)))
     (user-error "No aliases to delete")))
 
-(defun minaduki//current-file-name ()
-  "Return current file name in a consistent way."
-  (or minaduki//file-name
-      (buffer-file-name (buffer-base-buffer))))
-
 ;;;###autoload
 (defun minaduki-add-tag ()
   "Add a tag."

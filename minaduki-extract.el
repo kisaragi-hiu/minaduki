@@ -382,8 +382,7 @@ Return a list of `minaduki-id' objects."
         (minaduki//warn
          :error
          "Failed to parse aliases for buffer: %s. Skipping"
-         (or minaduki//file-name
-             (buffer-file-name))))))))
+         (minaduki//current-file-name)))))))
 
 (defun minaduki-extract/first-headline ()
   "Extract the first headline."

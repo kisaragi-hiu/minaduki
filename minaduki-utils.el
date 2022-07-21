@@ -41,6 +41,11 @@ This does zero type checks, and it is up to the user to make sure
 #s(TYPE (elt VEC 0) (elt VEC 1) ...) is valid for TYPE."
   (apply #'record type (append vec nil)))
 
+(defun minaduki//current-file-name ()
+  "Return current file name in a consistent way."
+  (or minaduki//file-name
+      (buffer-file-name (buffer-base-buffer))))
+
 ;; `ensure-list' was added in 28.1.
 (defun minaduki--ensure-list (v)
   "If V is a list, return it, otherwise return a list containing just V."
