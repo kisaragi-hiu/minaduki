@@ -373,16 +373,7 @@ Return a list of `minaduki-id' objects."
     ('org
      (minaduki-extract//file-prop "ALIAS"))
     ('markdown
-     (condition-case nil
-         (let ((aliases (-some-> (minaduki-extract//file-prop "alias")
-                          car
-                          (json-parse-string :array-type 'list))))
-           (if (listp aliases) aliases (list aliases)))
-       (json-parse-error
-        (minaduki//warn
-         :error
-         "Failed to parse aliases for buffer: %s. Skipping"
-         (minaduki//current-file-name)))))))
+     (minaduki-extract//file-prop "alias"))))
 
 (defun minaduki-extract/first-headline ()
   "Extract the first headline."
