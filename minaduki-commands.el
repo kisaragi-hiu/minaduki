@@ -154,7 +154,7 @@ open in another window instead of in the current one."
 ;;;; Local commands
 
 ;; TODO: Specify what you want with a C-u; reject existing IDs
-(defun minaduki/id ()
+(defun minaduki:id ()
   "Assign an ID to the current heading."
   (interactive)
   (pcase (minaduki--file-type)
@@ -983,7 +983,7 @@ one argument, the citekey.
 Equivalent to `orb-note-actions-default'.")
 
 (defvar minaduki::local-commands
-  '(("Create ID for current heading" . minaduki/id)
+  '(("Create ID for current heading" . minaduki:id)
     ("Move file to..."               . minaduki:move-file-to-directory)
     ("Insert a link"                 . minaduki:insert)
     ("Add an alias"                  . minaduki-add-alias)
