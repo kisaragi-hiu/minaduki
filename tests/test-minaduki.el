@@ -446,8 +446,16 @@ members that should be equal."
       (expect (test #'minaduki-extract/ids
                     "headlines/headline.org")
               :to-have-same-items-as
-              `(["e84d0630-efad-4017-9059-5ef917908823" ,(test-minaduki--abs-path "headlines/headline.org") 1 "Headline 1"]
-                ["801b58eb-97e2-435f-a33e-ff59a2f0c213" ,(test-minaduki--abs-path "headlines/headline.org") 1 "Headline 2"])))))
+              (list (minaduki-id :id "e84d0630-efad-4017-9059-5ef917908823"
+                                 :file (test-minaduki--abs-path "headlines/headline.org")
+                                 :point 22
+                                 :level 1
+                                 :title "Headline 1")
+                    (minaduki-id :id "801b58eb-97e2-435f-a33e-ff59a2f0c213"
+                                 :file (test-minaduki--abs-path "headlines/headline.org")
+                                 :point 127
+                                 :level 1
+                                 :title "Headline 2"))))))
 
 (describe "Test roam links"
   (it ""
