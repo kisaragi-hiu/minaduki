@@ -167,7 +167,7 @@ open in another window instead of in the current one."
    ('org
     (org-id-get-create))))
 
-(cl-defun minaduki/insert (&key entry lowercase? region)
+(cl-defun minaduki:insert (&key entry lowercase? region)
   "Insert a link to a note.
 
 If region is active, the new link uses the selected text as the
@@ -769,7 +769,7 @@ or `title' should be used for slug: %s not supported" orb-slug-source))))
                   (orb--store-link-functions-advice 'remove)))
             (message "ORB: Something went wrong. Check the *Warnings* buffer")))))))
 
-(defun minaduki/insert-citation (citekey)
+(defun minaduki:insert-citation (citekey)
   "Insert a citation to CITEKEY."
   (pcase (minaduki--file-type)
     ('org
@@ -815,7 +815,7 @@ CITEKEY is a list whose car is a citation key."
       (org-up-element) ; up to the property drawer
       (org-up-element)))) ; up to the heading
 
-(defun minaduki/insert-note-to-citekey (citekey)
+(defun minaduki:insert-note-to-citekey (citekey)
   "Insert a link to the note associated with CITEKEY."
   (-if-let* ((path
               (caar (minaduki-db/query
@@ -824,7 +824,7 @@ CITEKEY is a list whose car is a citation key."
                      citekey)))
              (title (minaduki-db//fetch-title path)))
       ;; A corresponding note already exists. Insert a link to it.
-      (minaduki/insert :entry (list :path path :title title))
+      (minaduki:insert :entry (list :path path :title title))
     ;; There is no corresponding note. Barf about it for now. Ideally
     ;; we'd create a note as usual, and insert a link after that's
     ;; done. But I don't know how to do that with the current
@@ -964,8 +964,8 @@ List of (DISPLAY-NAME . COMMAND) pairs.")
     ("Show entry in the bibliography file" . minaduki/show-entry)
     ("Edit notes" . orb-edit-notes)
     ("Copy citekey" . minaduki/copy-citekey)
-    ("Insert citation" . minaduki/insert-citation)
-    ("Insert link to associated notes" . minaduki/insert-note-to-citekey))
+    ("Insert citation" . minaduki:insert-citation)
+    ("Insert link to associated notes" . minaduki:insert-note-to-citekey))
   "Commands useful inside a literature note.
 
 List of (DISPLAY-NAME . FUNCTION) pairs. Each function receives
@@ -975,7 +975,7 @@ Equivalent to `orb-note-actions-default'.")
 
 (defvar minaduki::local-commands
   '(("Create ID for current heading" . minaduki/id)
-    ("Insert a link"                 . minaduki/insert)
+    ("Insert a link"                 . minaduki:insert)
     ("Add an alias"                  . minaduki-add-alias)
     ("Delete an alias"               . minaduki-delete-alias)
     ("Add a tag"                     . minaduki-add-tag)
