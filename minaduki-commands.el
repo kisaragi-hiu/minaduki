@@ -222,6 +222,20 @@ REGION: the selected text."
              :desc desc
              :id? id))))
 
+(defun minaduki:move-file-to-directory ()
+  "Move the current file to a new directory."
+  (interactive)
+  (-when-let* ((file (minaduki//current-file-name))
+               (vault (minaduki-vault:closest)))
+    (let* ((newdir (read-directory-name
+                    "Move current file to directory: "
+                    vault nil t))
+           (newpath (f-join newdir (f-filename file))))
+      (cl-assert (f-descendant-of? newpath vault))
+      (rename-file file newpath)
+      (setq buffer-file-name newpath)
+      (revert-buffer))))
+
 ;;;###autoload
 (defun minaduki-add-alias ()
   "Add an alias."
@@ -970,6 +984,7 @@ Equivalent to `orb-note-actions-default'.")
 
 (defvar minaduki::local-commands
   '(("Create ID for current heading" . minaduki/id)
+    ("Move file to..."               . minaduki:move-file-to-directory)
     ("Insert a link"                 . minaduki:insert)
     ("Add an alias"                  . minaduki-add-alias)
     ("Delete an alias"               . minaduki-delete-alias)
