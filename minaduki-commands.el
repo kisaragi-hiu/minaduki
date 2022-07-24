@@ -155,17 +155,23 @@ open in another window instead of in the current one."
 
 ;; TODO: Specify what you want with a C-u; reject existing IDs
 (defun minaduki:id ()
-  "Assign an ID to the current heading."
+  "Assign an ID to the current heading.
+
+Return the new ID."
   (interactive)
   (pcase (minaduki--file-type)
-   ('markdown
-    (unless (minaduki-extract::markdown-heading-id)
-      (save-excursion
-        (outline-back-to-heading)
-        (end-of-line)
-        (insert (format " {#%s}" (org-id-new))))))
-   ('org
-    (org-id-get-create))))
+    ('markdown
+     (-let (((id) (minaduki-extract::markdown-matched-heading)))
+       (if id
+           id
+         (save-excursion
+           (outline-back-to-heading)
+           (end-of-line)
+           (let ((id (org-id-new)))
+             (insert (format " {#%s}" id))
+             id)))))
+    ('org
+     (org-id-get-create))))
 
 (cl-defun minaduki:insert (&key entry lowercase? region)
   "Insert a link to a note.
@@ -235,6 +241,44 @@ REGION: the selected text."
       (rename-file file newpath)
       (setq buffer-file-name newpath)
       (revert-buffer))))
+
+(defun minaduki--format-id (id)
+  "Format ID, a `minaduki-id' object, for completion."
+  (let ((str (minaduki-id-title id)))
+    (-when-let (lvl (minaduki-id-level id))
+      (setq str (format "%s %s" (make-string lvl ?*) str)))
+    ;; Unfortunately passing data to the caller of `completing-read'
+    ;; with a text property can only be done with Ivy.
+    (concat str (propertize (format "%S" id) 'invisible t))))
+
+(defun minaduki:insert-local ()
+  "Insert a link to a heading in the same file."
+  (interactive)
+  (-when-let (headings (mapcar #'minaduki--format-id
+                               (minaduki-extract//headings)))
+    (let (selection
+          selected-heading)
+      (minaduki--with-comp-setup
+          ((ivy-sort-functions-alist . nil)
+           (ivy-sort-matches-functions-alist . nil))
+        (setq selection (completing-read
+                         "Insert link to heading: " headings
+                         nil t))
+        (with-temp-buffer
+          (insert selection)
+          (goto-char (point-min))
+          (text-property-search-forward 'invisible t)
+          (setq selected-heading
+                ;; HACK: I wish there's a better way.
+                (read
+                 (buffer-substring-no-properties (point) (point-max))))))
+      (let ((id (save-excursion
+                  (goto-char (minaduki-id-point selected-heading))
+                  (minaduki:id))))
+        (minaduki:insert
+         :entry
+         (minaduki-node :id id
+                        :title (minaduki-id-title selected-heading)))))))
 
 ;;;###autoload
 (defun minaduki-add-alias ()
@@ -986,6 +1030,7 @@ Equivalent to `orb-note-actions-default'.")
   '(("Create ID for current heading" . minaduki:id)
     ("Move file to..."               . minaduki:move-file-to-directory)
     ("Insert a link"                 . minaduki:insert)
+    ("Insert a link to a heading in the same file" . minaduki:insert-local)
     ("Add an alias"                  . minaduki-add-alias)
     ("Delete an alias"               . minaduki-delete-alias)
     ("Add a tag"                     . minaduki-add-tag)

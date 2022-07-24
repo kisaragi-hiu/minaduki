@@ -41,9 +41,16 @@ This does zero type checks, and it is up to the user to make sure
 #s(TYPE (elt VEC 0) (elt VEC 1) ...) is valid for TYPE."
   (apply #'record type (append vec nil)))
 
-(defun minaduki//current-file-name ()
-  "Return current file name in a consistent way."
-  (or minaduki//file-name
+(defun minaduki//current-file-name (&optional fallback)
+  "Return current file name in a consistent way.
+
+FALLBACK should be a one element list containing the file name
+to use instead of `minaduki//file-name'. This allows easily
+distinguishing between a caller that does not want to use
+`minaduki//file-name' and a caller that does."
+  (or (if fallback
+          (car fallback)
+        minaduki//file-name)
       (buffer-file-name (buffer-base-buffer))))
 
 ;; `ensure-list' was added in 28.1.

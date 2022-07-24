@@ -126,8 +126,8 @@ FILE-FROM to the key."
            (hash-table-p org-id-locations)
            (gethash id org-id-locations))))
 
-(defun minaduki-extract::markdown-heading-id (&optional skip-match)
-  "Return (ID TEXT LEVEL) if current heading has an ID.
+(defun minaduki-extract::markdown-matched-heading (&optional skip-match)
+  "Return (ID TEXT LEVEL) for the current heading.
 
 If SKIP-MATCH is non-nil, assume the caller has already matched
 on `markdown-regex-header.'"
@@ -135,9 +135,9 @@ on `markdown-regex-header.'"
             (save-excursion
               (and (outline-back-to-heading)
                    (looking-at markdown-regex-header))))
-    (-when-let* ((whole (or (match-string-no-properties 1)
-                            (match-string-no-properties 5)))
-                 ((_ text id) (s-match "\\(.*\\) {#\\(.*?\\)}" whole)))
+    (-let* ((whole (or (match-string-no-properties 1)
+                       (match-string-no-properties 5)))
+            ((_ text id) (s-match "\\(.*\\) {#\\(.*?\\)}" whole)))
       (list id text (markdown-outline-level)))))
 
 (defun minaduki-extract//org-links (file-from)
@@ -298,7 +298,7 @@ This is the format that emacsql expects when inserting into the database.
 FILE-FROM is typically the buffer file path, but this may not exist, for example
 in temp buffers.  In cases where this occurs, we do know the file path, and pass
 it as FILE-FROM."
-  (setq file-from (or file-from minaduki//file-name (buffer-file-name)))
+  (setq file-from (minaduki//current-file-name file-from))
   (pcase (minaduki--file-type)
     ('org
      (append
@@ -313,17 +313,54 @@ it as FILE-FROM."
       (minaduki-extract//obsidian-links file-from)
       (minaduki-extract//pandoc-citation file-from)))))
 
-(defun minaduki-extract/ids (&optional file-path)
-  "Extract all IDs within the current buffer.
+(defun minaduki-extract//headings (&optional file-path)
+  "Extract all headings within the current buffer.
+
 If FILE-PATH is nil, use the current file.
-Return a list of `minaduki-id' objects."
-  (setq file-path (or file-path minaduki//file-name (buffer-file-name)))
+
+Return a list of `minaduki-id' objects in the order they appeared
+in the buffer.
+
+Note that this is presently not used for DB caching. Only
+headings with an ID are cached (extracted with
+`minaduki-extract/ids')."
+  (setq file-path (minaduki//current-file-name file-path))
   (let (result)
     (pcase (minaduki--file-type)
       ('markdown
        (goto-char (point-min))
        (while (re-search-forward markdown-regex-header nil t)
-         (-when-let* (((id text level) (minaduki-extract::markdown-heading-id t)))
+         (-let* (((id text level) (minaduki-extract::markdown-matched-heading t)))
+           (push (minaduki-id :id id
+                              :file file-path
+                              :level level
+                              :title text
+                              :point (point))
+                 result))))
+      ('org
+       ;; Extract every other ID
+       (org-map-region
+        (lambda ()
+          (push (minaduki-id :id (org-entry-get nil "ID")
+                             :file file-path
+                             :level (org-outline-level)
+                             :title (org-entry-get nil "ITEM")
+                             :point (point))
+                result))
+        (point-min) (point-max))))
+    (nreverse result)))
+
+(defun minaduki-extract/ids (&optional file-path)
+  "Extract all IDs within the current buffer.
+If FILE-PATH is nil, use the current file.
+Return a list of `minaduki-id' objects."
+  (setq file-path (minaduki//current-file-name file-path))
+  (let (result)
+    (pcase (minaduki--file-type)
+      ('markdown
+       (goto-char (point-min))
+       (while (re-search-forward markdown-regex-header nil t)
+         (-when-let* (((id text level) (minaduki-extract::markdown-matched-heading t)))
            (push (minaduki-id :id id
                               :file file-path
                               :level level
@@ -505,7 +542,7 @@ Tags are specified like this at the beginning of the buffer:
   "Extract file tags from the current buffer.
 
 If file-path FILE is non-nil, use it to determine the directory tags."
-  (let* ((file (or file (buffer-file-name (buffer-base-buffer))))
+  (let* ((file (minaduki//current-file-name file))
          tags)
     (when (memq 'nested-vault minaduki-tag-sources)
       (setq tags (append (minaduki-extract//tags/nested-vault file) tags)))
