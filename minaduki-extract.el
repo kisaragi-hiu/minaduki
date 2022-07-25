@@ -298,7 +298,7 @@ This is the format that emacsql expects when inserting into the database.
 FILE-FROM is typically the buffer file path, but this may not exist, for example
 in temp buffers.  In cases where this occurs, we do know the file path, and pass
 it as FILE-FROM."
-  (setq file-from (minaduki//current-file-name file-from))
+  (setq file-from (minaduki//current-file-name (list file-from)))
   (pcase (minaduki--file-type)
     ('org
      (append
@@ -324,7 +324,7 @@ in the buffer.
 Note that this is presently not used for DB caching. Only
 headings with an ID are cached (extracted with
 `minaduki-extract/ids')."
-  (setq file-path (minaduki//current-file-name file-path))
+  (setq file-path (minaduki//current-file-name (list file-path)))
   (let (result)
     (pcase (minaduki--file-type)
       ('markdown
@@ -354,7 +354,7 @@ headings with an ID are cached (extracted with
   "Extract all IDs within the current buffer.
 If FILE-PATH is nil, use the current file.
 Return a list of `minaduki-id' objects."
-  (setq file-path (minaduki//current-file-name file-path))
+  (setq file-path (minaduki//current-file-name (list file-path)))
   (let (result)
     (pcase (minaduki--file-type)
       ('markdown
@@ -542,7 +542,7 @@ Tags are specified like this at the beginning of the buffer:
   "Extract file tags from the current buffer.
 
 If file-path FILE is non-nil, use it to determine the directory tags."
-  (let* ((file (minaduki//current-file-name file))
+  (let* ((file (minaduki//current-file-name (list file)))
          tags)
     (when (memq 'nested-vault minaduki-tag-sources)
       (setq tags (append (minaduki-extract//tags/nested-vault file) tags)))
