@@ -173,7 +173,7 @@ Return the new ID."
     ('org
      (org-id-get-create))))
 
-(cl-defun minaduki:insert (&key entry lowercase? region)
+(cl-defun minaduki:insert (&key entry lowercase? replace-region?)
   "Insert a link to a note.
 
 If region is active, the new link uses the selected text as the
@@ -182,29 +182,42 @@ selected, and the user chooses to insert a link to
 ./programming.org, the region would be replaced with
 \"[[file:programming.org][hello world]]\".
 
-If the note with the provided title does not exist, a new one is created.
+If the note with the provided title does not exist, a new one is
+created.
 
-ENTRY: the note entry (as returned by `minaduki-completion/read-note')
+ENTRY: the note entry, a `minaduki-node' object.
 LOWERCASE?: if non-nil, the link description will be downcased.
-REGION: the selected text."
+REPLACE-REGION?: whether to replace selected text."
   (interactive
-   (let (region)
-     (when (region-active-p)
-       (setq region (-> (buffer-substring-no-properties
-                         (region-beginning)
-                         (region-end))
-                        s-trim)))
-     (list
-      :entry (minaduki-completion//read-note
-              :initial-input region
-              :prompt "Insert link to note: ")
-      :lowercase? current-prefix-arg
-      :region region)))
-  (let* ((title (oref entry title))
-         (id (oref entry id))
-         (path (minaduki::ensure-not-file://
+   (list
+    :entry nil
+    :lowercase? current-prefix-arg
+    :replace-region? t))
+  ;; 1. Fetch region into desc if active
+  ;; 2. Ask for an entry
+  ;; 3. Set title, id, path, desc (if applicable)
+  ;; 4. Delete region if active (done after asking to be less jarring)
+  ;; 5. Create a new note if the entry doesn't exist
+  ;; 6. Downcase desc if we should
+  ;; 7. Format entry and insert!
+  (let (title id path desc)
+    (when (and replace-region?
+               (region-active-p))
+      (setq desc (-> (buffer-substring-no-properties
+                      (region-beginning)
+                      (region-end))
+                     s-trim)))
+    (unless entry
+      (setq entry (minaduki-completion//read-note
+                   :initial-input desc
+                   :prompt "Insert link to note: ")))
+    (setq title (oref entry title)
+          id (oref entry id)
+          path (minaduki::ensure-not-file://
                 (oref entry path)))
-         (desc title))
+    (if desc
+        (delete-active-region)
+      (setq desc title))
     ;; We avoid creating a new note if the path is a URL or it refers
     ;; to an existing file.
     ;;
@@ -218,9 +231,6 @@ REGION: the selected text."
              :title title
              :visit? nil))
       (minaduki//message "Created new note \"%s\"" title))
-    (when region
-      (delete-active-region)
-      (setq desc region))
     (when lowercase?
       (setq desc (downcase desc)))
     (insert (minaduki/format-link
@@ -274,11 +284,17 @@ REGION: the selected text."
                  (buffer-substring-no-properties (point) (point-max))))))
       (let ((id (save-excursion
                   (goto-char (minaduki-id-point selected-heading))
-                  (minaduki:id))))
+                  (prog1 (minaduki:id)
+                    ;; Save it into the file & the DB so that the
+                    ;; newly inserted link will not be highlighted as
+                    ;; an invalid link.
+                    (save-buffer)))))
         (minaduki:insert
-         :entry
-         (minaduki-node :id id
-                        :title (minaduki-id-title selected-heading)))))))
+         :replace-region? t
+         :entry (minaduki-node
+                 :id id
+                 :title (minaduki//remove-org-links
+                         (minaduki-id-title selected-heading))))))))
 
 ;;;###autoload
 (defun minaduki-add-alias ()
@@ -877,7 +893,7 @@ CITEKEY is a list whose car is a citation key."
                      citekey)))
              (title (minaduki-db//fetch-title path)))
       ;; A corresponding note already exists. Insert a link to it.
-      (minaduki:insert :entry (list :path path :title title))
+      (minaduki:insert :entry (minaduki-node :path path :title title))
     ;; There is no corresponding note. Barf about it for now. Ideally
     ;; we'd create a note as usual, and insert a link after that's
     ;; done. But I don't know how to do that with the current
