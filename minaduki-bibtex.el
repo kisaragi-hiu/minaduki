@@ -38,7 +38,7 @@ with a literature entry.
 If CITEKEY has multiple sources, prompt to select one of them."
   (ignore-errors
     (when-let* ((entry (minaduki-db//fetch-lit-entry citekey))
-                (props (oref entry props))
+                (props (minaduki-lit-entry-props entry))
                 (paths (minaduki//resolve-org-links
                         (gethash "sources" props))))
       (when paths
