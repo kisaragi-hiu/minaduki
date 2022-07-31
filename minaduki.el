@@ -56,11 +56,8 @@
 (require 'minaduki-utils)
 (require 'minaduki-vault)
 
-(when (featurep 'marginalia)
-  (require 'kisaragi-notes-marginalia))
-
 (when (featurep 'embark)
-  (require 'kisaragi-notes-embark))
+  (require 'minaduki-embark))
 
 (require 'minaduki-buffer)
 (require 'minaduki-bibtex)

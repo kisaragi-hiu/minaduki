@@ -31,6 +31,31 @@
 (require 'minaduki-db)
 (require 'minaduki-lit)
 
+(require 'marginalia nil t)
+;; Keeping the `require' at top level allows the byte compiler to
+;; see the definition of `marginalia--fields' so that it doesn't
+;; report errors for `minaduki-completion--annotate-note'.
+(when (featurep 'marginalia)
+  (defvar marginalia-annotator-registry)
+  (add-to-list 'marginalia-annotator-registry
+               '(note minaduki-completion--annotate-note none)))
+
+(defun minaduki-completion--annotate-note (cand)
+  "Marginalia annotation for note entries.
+
+CAND is the entry in the completion. Metadata is passed through
+text properties to distinguish between entries with the same
+title."
+  (when (featurep 'marginalia)
+    (-when-let (metadata (get-text-property 0 :metadata cand))
+      (let-alist metadata
+        (marginalia--fields
+         ((when .tags
+            (format "(%s)" (s-join "," .tags)))
+          :width 30 :face 'marginalia-list)
+         ((f-relative .path org-directory)
+          :truncate 40 :face 'marginalia-file-name))))))
+
 ;;;; Completion utils
 (defun minaduki//get-title-path-completions ()
   ;; TODO: include headlines with IDs. Might have to think about how a

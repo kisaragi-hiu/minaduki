@@ -1,4 +1,4 @@
-;;; kisaragi-notes-embark.el --- Embark actions -*- lexical-binding: t -*-
+;;; minaduki-embark.el --- Embark actions -*- lexical-binding: t -*-
 
 ;;; Commentary:
 
@@ -29,6 +29,6 @@
 (add-to-list 'embark-keymap-alist
              '(note . minaduki-embark/note-map))
 
-(provide 'kisaragi-notes-embark)
+(provide 'minaduki-embark)
 
-;;; kisaragi-notes-embark.el ends here
+;;; minaduki-embark.el ends here
