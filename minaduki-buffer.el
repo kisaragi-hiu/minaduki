@@ -509,8 +509,7 @@ ORIG-PATH is the path where the CONTENT originated."
       ;; last window org-roam was called from
       (setq-local org-link-frame-setup
                   (cons '(file . minaduki//find-file) org-link-frame-setup))
-      (let ((file-path (buffer-file-name minaduki-buffer//current))
-            (inhibit-read-only t)
+      (let ((inhibit-read-only t)
             backlinks cite-backlinks
             unlinked-references)
         (with-current-buffer minaduki-buffer//current

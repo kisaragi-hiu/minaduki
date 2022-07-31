@@ -752,7 +752,7 @@ CITEKEY's information is extracted from files listed in
 `minaduki-lit/bibliography' during Minaduki's cache build
 process."
   (let* ((file (minaduki-db//fetch-file :key citekey))
-         (title (minaduki-db//fetch-title file)))
+         (_title (minaduki-db//fetch-title file)))
     (cond
      (file (minaduki//find-file file))
      (t (let ((props (or (-some-> (minaduki-db//fetch-lit-entry citekey)
