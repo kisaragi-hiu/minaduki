@@ -154,7 +154,7 @@ Assume links come from FILE-FROM."
                 (elem-at-point (org-element-at-point)))
             (when (and link
                        (not (and (eq 'keyword (car elem-at-point))
-                                 (equal "ROAM_KEY"
+                                 (equal "KEY"
                                         (org-element-property :key elem-at-point)))))
               (goto-char (org-element-property :begin link))
               (let* ((type (minaduki//collate-types (org-element-property :type link)))
@@ -602,21 +602,21 @@ nothing and returns nil."
 
 Return value: ((TYPE . KEY) (TYPE . KEY) ...)
 
-In Org mode, the keys are specified with the #+ROAM_KEY keyword."
+In Org mode, the keys are specified with the #+KEY keyword."
   (pcase (minaduki--file-type)
     ('org
      (let (refs)
-       (dolist (key (minaduki-extract//file-prop "roam_key"))
+       (dolist (key (minaduki-extract//file-prop "key"))
          (pcase key
            ('nil nil)
            ((pred string-empty-p)
-            (user-error "Org property #+roam_key cannot be empty"))
+            (user-error "Org property #+key cannot be empty"))
            (ref
             (when-let ((r (minaduki-extract//process-ref ref)))
               (push r refs)))))
        refs))
     ('markdown
-     (-some--> (minaduki-extract//file-prop "roam_key")
+     (-some--> (minaduki-extract//file-prop "key")
        car
        (list (cons "cite" it))))))
 

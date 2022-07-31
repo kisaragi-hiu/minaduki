@@ -217,7 +217,7 @@ Template string   :\n%v")
   '(("r" "ref" plain #'minaduki-capture//get-point
      "%?"
      :file-name "${slug}"
-     :head "#+title: ${title}\n#+roam_key: ${ref}"
+     :head "#+title: ${title}\n#+key: ${ref}"
      :unnarrowed t))
   "The Org-roam templates used during a capture from the roam-ref protocol.
 Details on how to specify for the template is given in
@@ -229,7 +229,7 @@ Details on how to specify for the template is given in
     (choice :value ("d" "default" plain (function minaduki-capture//get-point)
                     "%?"
                     :file-name "${slug}"
-                    :head "#+title: ${title}\n#+roam_key: ${ref}\n"
+                    :head "#+title: ${title}\n#+key: ${ref}\n"
                     :unnarrowed t)
             (list :tag "Multikey description"
                   (string :tag "Keys       ")

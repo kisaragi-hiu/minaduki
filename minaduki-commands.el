@@ -1057,7 +1057,7 @@ Equivalent to `orb-note-actions-default'.")
 (defun minaduki/local-commands (&optional citekey)
   "Prompt for note-related actions.
 
-CITEKEY defaults to the entry at point or the first ROAM_KEY in
+CITEKEY defaults to the entry at point or the first KEY in
 the buffer.
 
 Actions are defined in `minaduki::local-commands'. If CITEKEY is

@@ -50,7 +50,9 @@ alias: ["An alias with spaces", "Another alias"]
 ---
 #+end_src
 
-*** =#+roam_key= can now be a plain string, which is interpreted as a cite ref
+*** =#+roam_key=
+**** Renamed to =#+key=
+**** It can now be a plain string, which is interpreted as a cite ref
 
 Previously, to associate a note with a bibtex key, one would put:
 
@@ -61,7 +63,7 @@ Previously, to associate a note with a bibtex key, one would put:
 in it. Now it can be written as
 
 #+begin_src org
-,#+roam_key: miman2017
+,#+key: miman2017
 #+end_src
 
 .

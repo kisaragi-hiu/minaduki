@@ -79,7 +79,7 @@ This corresponds to the org-protocol URL
 
 TITLE: open the file with TITLE.
 FILE: a path relative to `org-directory'.
-KEY: a cite key corresponding to the ROAM_KEY keyword
+KEY: a cite key corresponding to the KEY keyword
 
 Example:
 

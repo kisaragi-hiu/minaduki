@@ -354,7 +354,7 @@ See `orb-edit-notes' for details."
      (function minaduki-capture//get-point)
      ""
      :file-name "${citekey}"
-     :head "#+TITLE: ${title}\n#+ROAM_KEY: ${ref}\n"
+     :head "#+TITLE: ${title}\n#+KEY: ${ref}\n"
      :unnarrowed t))
   "Template to use when creating a new note.
 See `orb-edit-notes' for details."
@@ -378,7 +378,7 @@ Usage example:
 \(setq orb-preformat-keywords '(\"citekey\" \"author\" \"date\"))
 \(setq orb-templates
       '((\"r\" \"reference\" plain (function minaduki-capture//get-point)
-         \"#+ROAM_KEY: %^{citekey}%?
+         \"#+KEY: %^{citekey}%?
 %^{author} published %^{entry-type} in %^{date}: fullcite:%\\1.\"
          :file-name \"references/${citekey}\"
          :head \"#+TITLE: ${title}\"
