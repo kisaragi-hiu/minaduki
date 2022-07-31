@@ -7,6 +7,21 @@ Minaduki is my fork of Org-roam v1.
 It has support for reading Obsidian vaults.
 
 * Concepts
+** Templates
+
+The templating system is a mess right now.
+
+I didn't like how org-roam-capture specifies templates in a variable, so I tried to write =kisaragi-notes-templates.el=, but it's still incomplete.
+
+Goals:
+
+- Templates stored as files in =<vault>/templates=
+- Addressed by file name
+  - todo: how to resolve multiple formats (eg. =daily.org= and =daily.md=)?
+- Command to create notes based on a template
+- Templates can specify properties
+- Can be made independent of the rest of Minaduki
+
 ** Vaults
 
 A vault represents a path full of notes.
