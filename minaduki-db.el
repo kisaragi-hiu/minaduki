@@ -1,15 +1,8 @@
-;;; minaduki-db.el --- Org-roam database API -*- coding: utf-8; lexical-binding: t; -*-
+;;; minaduki-db.el --- Cache database API -*- coding: utf-8; lexical-binding: t; -*-
 
-;; Copyright © 2020 Jethro Kuan <jethrokuan95@gmail.com>
-
-;; Author: Jethro Kuan <jethrokuan95@gmail.com>
-;; URL: https://github.com/org-roam/org-roam
-;; Keywords: org-mode, roam, convenience
-;; Version: 1.2.3
-;; Package-Requires: ((emacs "26.1") (dash "2.13") (f "0.17.2") (s "1.12.0") (org "9.3") (emacsql "3.0.0") (emacsql-sqlite3 "1.0.2"))
-
-;; This file is NOT part of GNU Emacs.
-
+;; Copyright 2020 Jethro Kuan <jethrokuan95@gmail.com>
+;; Copyright 2022 Kisaragi Hiu <mail@kisaragi-hiu.com>
+;;
 ;; This program is free software; you can redistribute it and/or modify
 ;; it under the terms of the GNU General Public License as published by
 ;; the Free Software Foundation; either version 3, or (at your option)
@@ -27,7 +20,7 @@
 
 ;;; Commentary:
 ;;
-;; This library is provides the underlying database api to org-roam.
+;; This corresponds to `org-roam-db'.
 ;;
 ;; - Low level DB interface
 ;; - minaduki-db/build-cache

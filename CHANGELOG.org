@@ -4,8 +4,6 @@ This fork starts off from Org-roam 1.2.4 and Org-roam-bibtex 0.4 ([[https://gith
 
 ** Fork 0.1
 
-+I want the version to be bigger than 1.2.4 so that it never looks like a downgrade. So an arbitrary number it is then.+ That was just silly.
-
 *** Added support for Markdown
 
 Many functions from =md-roam= were adapted into here.

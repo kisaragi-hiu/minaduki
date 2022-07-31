@@ -5,8 +5,8 @@
 ;; Author: Jethro Kuan <jethrokuan95@gmail.com>
 ;;         Kisaragi Hiu <mail@kisaragi-hiu.com>
 ;; URL: https://github.com/kisaragi-hiu/minaduki
-;; Keywords: org-mode, roam, convenience
-;; Version: 1.2.3
+;; Keywords: org-mode, convenience
+;; Version: 0.1
 ;; Package-Requires: ((emacs "27.1") (yaml "0.5.1") (dash "2.13") (f "0.17.2") (s "1.12.0") (org "9.5") (emacsql "3.0.0") (emacsql-sqlite3 "1.0.2") (markdown-mode "2.4") (transient "0.3.7"))
 
 ;; This file is NOT part of GNU Emacs.
