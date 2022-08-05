@@ -1069,7 +1069,7 @@ given or can be retrieved, actions from
                       (cdar (minaduki-extract/refs))))
          (prompt (format "Actions for %s: "
                          (or citekey
-                             (minaduki-extract/main-title))))
+                             (car (minaduki-extract/main-title)))))
          (candidates (-sort
                       (-on #'string< #'car)
                       `(,@minaduki::local-commands
