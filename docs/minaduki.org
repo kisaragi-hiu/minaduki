@@ -7,6 +7,12 @@ Minaduki is my fork of Org-roam v1.
 It has support for reading Obsidian vaults.
 
 * Concepts
+** minaduki-mode
+
+=minaduki-mode= is a global minor mode. When a buffer is visiting a file tracked by Minaduki, =minaduki-local-mode= will be enabled, which sets up local hooks to update the backlinks buffer, update the cache after save, etc.
+
+In general, do not enable =minaduki-local-mode= manually. It's only really a minor mode as an elegant way to define key bindings local to files tracked by Minaduki.
+
 ** Templates
 
 The templating system is a mess right now.
