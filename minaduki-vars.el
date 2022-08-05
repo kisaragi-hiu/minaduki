@@ -53,6 +53,14 @@
 
 ;;;; User Options
 
+(defcustom minaduki-mode:command-prefix (kbd "C-c (")
+  "The prefix for bindings in files managed by Minaduki.
+
+This should be set before `minaduki-mode' is loaded in order to
+take effect."
+  :type 'key-sequence
+  :group 'minaduki)
+
 (defcustom minaduki/db-location (expand-file-name "minaduki.db" user-emacs-directory)
   "Full path to the cache database.
 

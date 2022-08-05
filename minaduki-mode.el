@@ -230,11 +230,17 @@ When NEW-FILE-OR-DIR is a directory, we use it to compute the new file path."
   (minaduki-buffer//update-maybe :redisplay t))
 
 (define-minor-mode minaduki-local-mode
-  "Minor mode active in files tracked by minaduki."
+  "Minor mode active in files tracked by minaduki.
+
+This should not be called directly. `minaduki-mode' enables this
+when appropriate."
   ;; FIXME: this doesn't actually turn itself off. You have to turn
   ;; off the global mode and revert the file.
   :global nil
   :keymap (let ((map (make-sparse-keymap)))
+            (define-key map
+              (kbd (format "%s n" minaduki-mode:command-prefix))
+              #'minaduki/local-commands)
             (define-key map
               [remap markdown-follow-thing-at-point]
               #'minaduki-markdown-follow)
@@ -259,7 +265,9 @@ See `minaduki-local-mode' for more information on Minaduki-Local mode."
   :global t
   :group 'minaduki
   :keymap (let ((map (make-sparse-keymap)))
-            (define-key map (kbd "C-c ) a") #'minaduki/local-commands)
+            (define-key map
+              (kbd (format "%s N" minaduki-mode:command-prefix))
+              #'minaduki/command-palette)
             map)
   :require 'minaduki
   (unless (or (and (bound-and-true-p emacsql-sqlite3-executable)
