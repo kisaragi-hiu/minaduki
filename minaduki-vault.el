@@ -126,17 +126,27 @@ Uses either Ripgrep or `directory-files-recursively'."
         (minaduki-vault::list-files/rg cmd dir)
       (minaduki-vault::list-files/elisp dir))))
 
+(cl-defun minaduki-vault::paths (&key skip)
+  "Return the paths of all vaults in `minaduki/vaults'.
+
+If SKIP is non-nil, list only those whose `skipped' prop is nil.
+
+The result is guaranteed to only contain paths."
+  (let (ret)
+    (dolist (vault (cons org-directory minaduki/vaults))
+      (let ((path (minaduki-vault-path vault)))
+        (when path
+          (unless (and skip (minaduki-vault-skipped vault))
+            (cl-pushnew path ret :test #'equal)))))
+    (nreverse ret)))
+
 ;;;; Other public functions
 (defun minaduki-vault:all-files ()
   "Return a list of all tracked files.
 
 Tracked files are those within `org-directory' or one of
 `minaduki/vaults' that isn't skipped."
-  (let ((paths (->> minaduki/vaults
-                    (--remove (minaduki-vault-skipped it))
-                    (cons org-directory)
-                    (-map #'minaduki-vault-path)
-                    -uniq)))
+  (let ((paths (minaduki-vault::paths :skip t)))
     ;;   (--reduce-from (append <BODY> acc) nil list)
     ;; is the same as
     ;;   (apply #'append (--map <BODY> list))
@@ -164,10 +174,8 @@ A path is in a vault if it:
        (member (minaduki//file-name-extension path)
                minaduki-file-extensions)
        (not (minaduki-vault:excluded? path))
-       (--any? (s-prefix? (expand-file-name it)
-                          path)
-               (cons org-directory
-                     (mapcar #'minaduki-vault-path minaduki/vaults)))))))
+       (--any? (s-prefix? (expand-file-name it) path)
+               (minaduki-vault::paths))))))
 
 (defun minaduki-vault:closest (&optional path)
   "Return the innermost vault that contains PATH."
