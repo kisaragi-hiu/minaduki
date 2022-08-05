@@ -52,7 +52,8 @@
          (minaduki--ensure-list
           (map-elt (yaml-parse-string
                     (buffer-substring-no-properties start end)
-                    :object-key-type 'string)
+                    :object-key-type 'string
+                    :sequence-type 'list)
                    prop)))))
     ('org
      ;; ((key . (val val val val)))
