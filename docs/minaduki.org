@@ -60,11 +60,25 @@ Subdirectories containing ~minaduki-nested-vault-root-files~ are considered /nes
 - [ ] Markdown: extracting adheres to minaduki/vaults
 - [ ] Markdown: insertion adheres to minaduki/vaults
 ** Keywords
+*** How keywords are specified
 
-- title :: the main title of the file. (TODO: multiple title keywords should be concatenated)
+In Markdown, keywords are specified in YAML front matter. There is no special treatment for plural noun keys — yes, “aliases” is a better key for a list of aliases, but that complicates things somewhat as the same keywords have to work in Org.
+
+#+begin_src yaml
+---
+title: Hello world
+# Specified as an inline list
+key: ["key1", "https://example.com/key2"]
+---
+#+end_src
+
+In Org, keywords are specified using =#+KEYWORD: VALUE=. Multiple occurrences of the same key specifies multiple values, not concatenated into one value (this is unlike how Org itself handles =TITLE= while exporting).
+
+*** Keyword reference
+- title :: the main title of the file.
 - created :: the timestamp (in =YYYY-MM-DDThh:mm:ssZ=) when the file was first created
 - alias :: an alternative title.
-- =key= :: a unique identifier for this file. Could be a link or any other ID. This is used to associate bibliography items with note files, as well as for citation backlinks.
+- key :: a unique identifier for this file. Could be a link or any other ID. This is used to associate bibliography items with note files, as well as for citation backlinks.
 - (to be renamed) =roam_tags= :: a list of tags.
 
 ** Bibliography
