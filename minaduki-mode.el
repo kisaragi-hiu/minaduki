@@ -240,7 +240,7 @@ when appropriate."
   :keymap (let ((map (make-sparse-keymap)))
             (define-key map
               (kbd (format "%s n" minaduki-mode:command-prefix))
-              #'minaduki/local-commands)
+              #'minaduki:local-commands)
             (define-key map
               [remap markdown-follow-thing-at-point]
               #'minaduki-markdown-follow)
@@ -267,7 +267,7 @@ See `minaduki-local-mode' for more information on Minaduki-Local mode."
   :keymap (let ((map (make-sparse-keymap)))
             (define-key map
               (kbd (format "%s N" minaduki-mode:command-prefix))
-              #'minaduki/command-palette)
+              #'minaduki:global-commands)
             map)
   :require 'minaduki
   (unless (or (and (bound-and-true-p emacsql-sqlite3-executable)

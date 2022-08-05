@@ -82,7 +82,7 @@ File paths and notes completion now have additional information attached (includ
 
 *** New “Command palette” system
 
-Currently, two palettes are provided: =kisaragi-notes/command-palette=, which provides a list of global commands, and =kisaragi-notes/literature-note-actions=, which provides note-local commands for literature notes.
+Two palettes are provided: =minaduki:global-commands= and =minaduki:local-commands=.
 
 *** Replace =org-roam-dailies= with my own diary system =kisaragi-diary= ([[https://github.com/kisaragi-hiu/org-roam/commit/a6021db958f4a3c449a7fd1564e0b0c2b78cfda4][a6021db]], [[https://github.com/kisaragi-hiu/org-roam/commit/011b6087626471b0b4e46dfd3e5b7305166e0b3b][011b608]], [[https://github.com/kisaragi-hiu/org-roam/commit/9b744249ba292e9b8b1ad696e96c471859231681][9b74424]])
 

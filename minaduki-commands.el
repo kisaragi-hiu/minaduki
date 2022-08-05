@@ -124,7 +124,7 @@ what they want to do with it."
              (keys
               (or (completing-read "Select citation key: " keys nil t)
                   (user-error "Aborted")))))))
-    (minaduki/local-commands key)))
+    (minaduki:local-commands key)))
 
 ;;;; Markdown-specific local commands
 
@@ -495,7 +495,7 @@ REPLACE-REGION?: whether to replace selected text."
   (interactive)
   (let ((key (car
               (minaduki-completion//read-lit-entry nil :prompt "Entry: "))))
-    (minaduki/local-commands key)))
+    (minaduki:local-commands key)))
 
 ;;;###autoload
 (cl-defun minaduki/new-concept-note (&key title visit?)
@@ -1001,7 +1001,7 @@ This first adds an entry for it into a file in
 
 ;;;; Actions
 
-(defvar minaduki/global-commands
+(defvar minaduki::global-commands
   '(("Open or create a note"              . minaduki/open)
     ("Browse literature entries"          . minaduki/literature-entries)
     ("Open notes directory"               . minaduki/open-directory)
@@ -1014,15 +1014,15 @@ This first adds an entry for it into a file in
     ("Create a new literature"            . minaduki/new-literature-note)
     ("Open a random note"                 . minaduki/open-random-note)
     ("Refresh cache"                      . minaduki-db/build-cache))
-  "Global commands shown in `minaduki/command-palette'.
+  "Global commands shown in `minaduki:global-commands'.
 
 List of (DISPLAY-NAME . COMMAND) pairs.")
 
-(defun minaduki/command-palette ()
+(defun minaduki:global-commands ()
   "Command palette."
   (declare (interactive-only command-execute))
   (interactive)
-  (let* ((candidates minaduki/global-commands)
+  (let* ((candidates minaduki::global-commands)
          (selection (completing-read "Minaduki Global Command: " candidates))
          (func (cdr (assoc selection candidates)))
          (prefix-arg current-prefix-arg))
@@ -1054,7 +1054,7 @@ Equivalent to `orb-note-actions-default'.")
   "Local commands that act on the current file or heading.")
 
 ;; TODO: Try the selected action for all keys
-(defun minaduki/local-commands (&optional citekey)
+(defun minaduki:local-commands (&optional citekey)
   "Prompt for note-related actions.
 
 CITEKEY defaults to the entry at point or the first KEY in
