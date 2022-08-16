@@ -877,12 +877,7 @@ CITEKEY is a list whose car is a citation key."
             :where (= key $s1)]
            citekey)))
     (minaduki//find-file file)
-    (goto-char point)
-    (when (eq major-mode 'org-mode)
-      ;; Doing this because for some reason `org-back-to-heading'
-      ;; goes to the parent of the current heading
-      (org-up-element) ; up to the property drawer
-      (org-up-element)))) ; up to the heading
+    (goto-char point)))
 
 (defun minaduki:insert-note-to-citekey (citekey)
   "Insert a link to the note associated with CITEKEY."

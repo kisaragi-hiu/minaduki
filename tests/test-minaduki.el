@@ -110,16 +110,16 @@ members that should be equal."
                             test-lit-directory))
        (minaduki-lit/parse-entries))
      :to-equal/ht
-     '((180 . #s(hash-table
-                 size 65 test equal rehash-size 1.5 rehash-threshold 0.8125
-                 data ("tags" ("voice")
-                       "type" "entries"
-                       "key" "hitomine2013"
-                       "author" "大崎ひとみ"
-                       "publisher" "t2library課外活動部"
-                       "year" "2013"
-                       "title" "あたらしい女声の教科書")))
-       (439 . #s(hash-table
+     '((33 . #s(hash-table
+                size 65 test equal rehash-size 1.5 rehash-threshold 0.8125
+                data ("tags" ("voice")
+                      "type" "entries"
+                      "key" "hitomine2013"
+                      "author" "大崎ひとみ"
+                      "publisher" "t2library課外活動部"
+                      "year" "2013"
+                      "title" "あたらしい女声の教科書")))
+       (202 . #s(hash-table
                  size 65 test equal rehash-size 1.5 rehash-threshold 0.8125
                  data ("sources" ("https://www.w3.org/People/Bos/DesignGuide/designguide.html")
                        "tags" ("webdev" "css" "html")
@@ -128,7 +128,13 @@ members that should be equal."
                        "url" "https://www.w3.org/People/Bos/DesignGuide/designguide.html"
                        "author" "Bert Bos"
                        "date" "2003-03-06"
-                       "title" "An essay on W3C's design principles"))))))
+                       "title" "An essay on W3C's design principles")))
+       (436 . #s(hash-table
+                 size 65 test equal rehash-size 1.5 rehash-threshold 0.8125
+                 data ("type" "entries"
+                       "author" "シャノン"
+                       "key" "https://www.nicovideo.jp/watch/sm36143274"
+                       "title" "MV「ヨミクダリの灯」 / GUMI"))))))
   (it "parses CSL-JSON"
     (expect
      (with-temp-buffer

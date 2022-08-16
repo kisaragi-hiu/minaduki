@@ -244,57 +244,66 @@ Return the generated key."
 
 Return a list of cons cells: (POINT . PROPS), where PROPS look
 like `minaduki-lit/entry' objects."
-  (let ((case-fold-search t))
+  (let ((case-fold-search t)
+        ret)
     (save-excursion
       (goto-char (point-min))
-      (cl-loop
-       while (re-search-forward (format "^:%s:" minaduki-lit/key-prop) nil t)
-       collect
-       (let ((props (org-entry-properties)))
-         ;; Remove properties that I'm not interested in
-         (setq props
-               (--remove
-                (member (car it)
-                        (-difference org-special-properties '("ITEM" "TODO")))
-                props))
-         (when-let (tags (org-get-tags))
-           (push (cons "tags" tags) props))
-         (setq props
-               (->> props
-                    (--map
-                     (let ((key (car it))
-                           (value (cdr it)))
-                       ;; Downcase all keys
-                       (setq key (downcase key))
-                       ;; Exclude certain keys
-                       ;;
-                       ;; Leave the "type" open to other arbitrary
-                       ;; purposes.
-                       (unless (member key '("type"))
-                         ;; Key replacements
-                         ;; (ORG_PROP . KEY)
-                         (setq key (or (cdr
-                                        (assoc
-                                         key
-                                         `(("category" . "type")
-                                           (,minaduki-lit/key-prop . "key")
-                                           ("item" . "title"))))
-                                       key))
-                         (cons key value))))))
-         ;; FIXME: this overwrites preexisting :sources:... values
-         (let (sources)
-           (when-let (pair (assoc "link" props))
-             (push (cdr pair)
-                   sources))
-           (when-let (pair (assoc "url" props))
-             (push (cdr pair)
-                   sources))
-           (when-let (pair (assoc "doi" props))
-             (push (concat "https://doi.org/" (cdr pair))
-                   sources))
-           (when sources
-             (push (cons "sources" sources) props)))
-         (cons (point) (map-into props '(hash-table :test equal))))))))
+      (org-map-region
+       (lambda ()
+         (let ((props (org-entry-properties))
+               url-as-key)
+           ;; Remove properties that I'm not interested in
+           (setq props
+                 (--remove
+                  (member (car it)
+                          (-difference org-special-properties '("ITEM" "TODO")))
+                  props))
+           ;; Downcase all keys early
+           (dolist (pair props)
+             (setcar pair (downcase (car pair))))
+           (when (or (member minaduki-lit/key-prop (map-keys props))
+                     ;; HACK: this is an ugly way to also track
+                     ;; entries with only a URL and no CUSTOM_ID.
+                     (and (member "url" (map-keys props))
+                          (setq url-as-key t)))
+             (when-let (tags (org-get-tags))
+               (push (cons "tags" tags) props))
+             (dolist (pair props)
+               ;; Clear all text properties
+               (when (stringp (cdr pair))
+                 (set-text-properties 0 (length (cdr pair))
+                                      nil
+                                      (cdr pair)))
+               ;; Exclude certain keys
+               ;;
+               ;; Leave the "type" open to other arbitrary purposes.
+               (unless (member (car pair) '("type"))
+                 (when-let (new (cdr
+                                 (assoc (car pair)
+                                        ;; Key replacements
+                                        ;; (ORG_PROP . KEY)
+                                        `(("category" . "type")
+                                          (,minaduki-lit/key-prop . "key")
+                                          ,@(and url-as-key
+                                                 `(("url" . "key")))
+                                          ("item" . "title")))))
+                   (setcar pair new))))
+             ;; Collect various props into "sources"
+             (let (sources)
+               (dolist (k '("link" "url" "sources"))
+                 (when-let (pair (assoc k props))
+                   (push (cdr pair)
+                         sources)))
+               (when-let (pair (assoc "doi" props))
+                 (push (concat "https://doi.org/" (cdr pair))
+                       sources))
+               (when sources
+                 (push (cons "sources" sources) props)))
+             (push (cons (point)
+                         (map-into props '(hash-table :test equal)))
+                   ret))))
+       (point-min) (point-max)))
+    (nreverse ret)))
 
 (defun minaduki-lit/parse-entries/bibtex ()
   "Parse a BIBTEX-FILE into a list of (POINT . PROPS).
