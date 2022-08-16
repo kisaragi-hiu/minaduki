@@ -190,15 +190,20 @@ whose title is 'Index'."
   :group 'minaduki)
 
 (defcustom minaduki/slug-replacements
-  '(("[^[:alnum:][:digit:]]" . "_") ; convert anything not alphanumeric
-    ("__*" . "_") ; remove sequential underscores (perhaps from above)
-    ("^_" . "") ; remove starting underscore
-    ("_$" . "")) ; remove trailing underscore
+  '(;; Domains
+    ("https://www.nicovideo.jp/watch/" . "niconico-")
+    ("https://nico.ms/" . "niconico-")
+    ("^http[s]://" . "")
+    ;; etc.
+    ("[^[:alnum:][:digit:]]" . "-") ; convert anything not alphanumeric
+    ("--*" . "-") ; remove sequential dashes (perhaps from above)
+    ("^-" . "") ; remove starting dash
+    ("-$" . "")) ; remove trailing dash
   "Extra replacements used to convert a title to a filename-suitable slug.
 
 Replacements are applied in order. For example, by default, two
-spaces (\" \") will be replaced with two underscores (\"__\"),
-which will then be replaced with a single underscore (\"_\")."
+spaces (\" \") will be replaced with two dashes (\"--\"),
+which will then be replaced with a single dash (\"-\")."
   :type '(alist
           :key-type (string :tag "From (regexp)")
           :value-type (string :tag "To"))

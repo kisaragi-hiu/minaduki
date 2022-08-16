@@ -255,9 +255,9 @@ members that should be equal."
     (expect (minaduki//title-to-slug "English")
             :to-equal "english")
     (expect (minaduki//title-to-slug "Text with space と漢字")
-            :to-equal "text_with_space_と漢字")
+            :to-equal "text-with-space-と漢字")
     (expect (minaduki//title-to-slug "many____underscores")
-            :to-equal "many_underscores")
+            :to-equal "many-underscores")
     ;; Keep diacritics
     (expect (minaduki//title-to-slug "äöü")
             :to-equal "äöü")
@@ -265,9 +265,9 @@ members that should be equal."
     (expect (minaduki//title-to-slug (string ?て #x3099))
             :to-equal (string ?で))
     (expect (minaduki//title-to-slug "_starting and ending_")
-            :to-equal "starting_and_ending")
+            :to-equal "starting-and-ending")
     (expect (minaduki//title-to-slug "isn't alpha numeric")
-            :to-equal "isn_t_alpha_numeric"))
+            :to-equal "isn-t-alpha-numeric"))
   (describe "list-files"
     (it "using pure elisp"
       (expect
