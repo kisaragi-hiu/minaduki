@@ -519,14 +519,14 @@ If FORCE, force a rebuild of the cache from scratch."
          dir-files db-files count-plist modified-files)
     (setq dir-files (minaduki-vault:all-files)
           db-files (minaduki-db//fetch-all-files-hash))
-    (dolist-with-progress-reporter (file dir-files)
-        "(minaduki) Finding modified files"
+    (minaduki//for "Finding modified files"
+        file dir-files
       (let ((content-hash (minaduki//compute-content-hash file)))
         (unless (string= content-hash (gethash file db-files))
           (push (cons file content-hash) modified-files)))
       (remhash file db-files))
-    (dolist-with-progress-reporter (file (hash-table-keys db-files))
-        "(minaduki) Removing deleted files from cache"
+    (minaduki//for "Removing deleted files from cache"
+        file (hash-table-keys db-files)
       ;; These files are no longer around, remove from cache...
       (minaduki-db//clear-file file)
       (setq deleted-count (1+ deleted-count)))
