@@ -64,9 +64,9 @@ members that should be equal."
                   (consp b))
              (and (test-equal-ht (car a) (car b))
                   (test-equal-ht (cdr a) (cdr b))))
-            (t
-             (or (equal a b)
-                 (ht-equal? a b))))))
+            ((and (ht? a)
+                  (ht? b))
+             (ht-equal? a b)))))
 
 (buttercup-define-matcher-for-binary-function :to-equal/ht test-equal-ht)
 
