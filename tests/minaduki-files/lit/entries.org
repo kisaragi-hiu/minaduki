@@ -1,0 +1,22 @@
+* A heading that isn't an entry
+** あたらしい女声の教科書                                            :voice:
+:PROPERTIES:
+:year:  2013
+:publisher:  t2library課外活動部
+:author:  大崎ひとみ
+:custom_id:  hitomine2013
+:END:
+
+* An essay on W3C's design principles                         :webdev:css:html:
+:PROPERTIES:
+:date:  2003-03-06
+:author:  Bert Bos
+:url:   https://www.w3.org/People/Bos/DesignGuide/designguide.html
+:custom_id:  bertbos20030306
+:END:
+
+* MV「ヨミクダリの灯」 / GUMI
+:PROPERTIES:
+:url:  https://www.nicovideo.jp/watch/sm36143274
+:author:   シャノン
+:END:

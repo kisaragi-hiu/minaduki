@@ -100,6 +100,35 @@ members that should be equal."
             :to-be 'json)))
 
 (describe "minaduki-lit"
+  (it "parses our own Org-based bibliography format"
+    (expect
+     ;; This must be in org mode and must have the file name (for the
+     ;; default `type')
+     (with-current-buffer (find-file-noselect
+                           (expand-file-name
+                            "entries.org"
+                            test-lit-directory))
+       (minaduki-lit/parse-entries))
+     :to-equal/ht
+     '((180 . #s(hash-table
+                 size 65 test equal rehash-size 1.5 rehash-threshold 0.8125
+                 data ("tags" ("voice")
+                       "type" "entries"
+                       "key" "hitomine2013"
+                       "author" "大崎ひとみ"
+                       "publisher" "t2library課外活動部"
+                       "year" "2013"
+                       "title" "あたらしい女声の教科書")))
+       (439 . #s(hash-table
+                 size 65 test equal rehash-size 1.5 rehash-threshold 0.8125
+                 data ("sources" ("https://www.w3.org/People/Bos/DesignGuide/designguide.html")
+                       "tags" ("webdev" "css" "html")
+                       "type" "entries"
+                       "key" "bertbos20030306"
+                       "url" "https://www.w3.org/People/Bos/DesignGuide/designguide.html"
+                       "author" "Bert Bos"
+                       "date" "2003-03-06"
+                       "title" "An essay on W3C's design principles"))))))
   (it "parses CSL-JSON"
     (expect
      (with-temp-buffer
