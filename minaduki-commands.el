@@ -745,6 +745,8 @@ This function hooks into `org-open-at-point' via
 
 ;;;; Literature note actions
 
+;; TODO: Please tear the org-capture-based method of specifying where
+;; files should go apart.
 (defun orb-edit-notes (citekey)
   "Open a note associated with the CITEKEY or create a new one.
 

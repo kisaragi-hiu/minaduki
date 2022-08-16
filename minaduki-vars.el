@@ -361,11 +361,15 @@ See `orb-edit-notes' for details."
   '(("r" "ref" plain
      (function minaduki-capture//get-point)
      ""
-     :file-name "${citekey}"
+     :file-name "${slug}"
      :head "#+TITLE: ${title}\n#+KEY: ${ref}\n"
      :unnarrowed t))
   "Template to use when creating a new note.
-See `orb-edit-notes' for details."
+
+See `orb-edit-notes' for details.
+
+Note: Do not use `{citekey}' in `:filename', otherwise colons and
+such in citekeys will create invalid file names."
   :type '(list)
   :group 'minaduki-bibtex)
 
