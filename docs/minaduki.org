@@ -87,12 +87,15 @@ In Org, keywords are specified using =#+KEYWORD: VALUE=. Multiple occurrences of
 - key :: a unique identifier for this file. Could be a link or any other ID. This is used to associate bibliography items with note files, as well as for citation backlinks.
 - (to be renamed) =roam_tags= :: a list of tags.
 
-** Bibliography
+** Bibliography management
 
-Bibliography entries are written in a custom Org-based format. Support for other formats like BibTeX is planned.
+Minaduki manages bibliography entries in dedicated bibliography files. The entries are called /literature entries/ or sometimes just /lit-entries/, and the files they are stored in are called /bibliography files/.
+
+Bibliography files can be written in three formats: BibTeX, CSL-JSON, and a custom Org-based format.
 
 Set bibliography files with =minaduki-lit/bibliography=.
 
+*** Browsing literature entries
 Use =minaduki/literature-entries= to browse all literature entries. After you select an entry, you can:
 
 - insert a citation to the entry
@@ -104,9 +107,51 @@ Use =minaduki/literature-entries= to browse all literature entries. After you se
 
 This is essentially my reimplementation of =bibtex-completion=.
 
+*** Org-cite support
 Org-cite is supported: instead of using =org-cite-global-bibliography= you can just use =minaduki-lit/bibliography= and =org-cite-insert= will offer completions from the right place. This is accomplished with a custom Org-cite processor.
 
 Reading from Org-cite's local bibliography is not yet supported though.
+
+*** Minaduki's Org-based bibliography file format
+
+Every heading in a bibliography file with a =CUSTOM_ID= property is saved as a literature entry, with the value being the citekey.
+
+Headings in bibliography files that have a =URL= property are also saved as literature entries. The citekey is still the value of =CUSTOM_ID= if it is present, but if it isn't, the URL will be used as the citekey. This does mean that citekeys might not be filename-safe.
+
+Each entry has a (possibly absent) list of =sources=: file paths, URLs, or DOIs that the entry describes. This is used by =minaduki/visit-source= to allow quick access to the referenced resource. This list is assembled from the =sources=, =url=, =doi=, and =link= properties.
+
+The tags on the heading are included in the literature entry as well.
+
+The Org =CATEGORY= of the heading is used as the type of the literature entry. This is analogous to the type of a BibTeX entry.
+
+#+begin_src bibtex
+@Comment  this-----vvvv
+                  @book{abc}
+#+end_src
+
+
+Every other property is passed into the entry unchanged.
+
+The =CUSTOM_ID= key can be customized: set =minaduki-lit/key-prop= to something else to make Minaduki use that property instead of =CUSTOM_ID=.
+
+#+begin_src org
+,* ロウワー
+:PROPERTIES:
+:url: https://www.nicovideo.jp/watch/sm39608927
+:date:   2021-11-11
+:author:   ぬゆり
+:custom_id: ぬゆり20211111
+:END:
+
+,* 運命
+:PROPERTIES:
+:url:  https://www.nicovideo.jp/watch/sm39251865
+:date:   2021-08-28
+:author:   はるまきごはん and 煮ル果実
+:custom_id: はるまきごはんand煮ル果実20210828
+:END:
+#+end_src
+
 
 * Tutorials
 ** Browsing notes
