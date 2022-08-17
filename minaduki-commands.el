@@ -24,7 +24,6 @@
 
 (require 'minaduki-extract)
 (require 'minaduki-db)
-(require 'org-roam-capture)
 (require 'minaduki-bibtex)
 
 (defvar ivy-sort-functions-alist)
