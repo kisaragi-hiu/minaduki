@@ -221,7 +221,8 @@ When NEW-FILE-OR-DIR is a directory, we use it to compute the new file path."
            (reverse minaduki/vaults))
     (when (minaduki-vault-path vault)
       (setf (map-elt org-link-abbrev-alist (minaduki-vault-name vault))
-            (minaduki-vault-path vault))))
+            (f-slash
+             (minaduki-vault-path vault)))))
   (add-hook 'post-command-hook #'minaduki-buffer//update-maybe nil t)
   (add-hook 'after-save-hook #'minaduki-db/update nil t)
   (dolist (fn '(minaduki-completion/tags-at-point
