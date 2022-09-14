@@ -6,6 +6,28 @@ Minaduki is my fork of Org-roam v1.
 
 It has support for reading Obsidian vaults.
 
+* File formats
+
+Minaduki has support for notes written in Org and Markdown. I hope to add support for more formats (reStructuredText, AsciiDoc, etc.) in the future.
+
+** Markdown
+
+Minaduki cares about the following kinds of Markdown syntax:
+
+- Normal (=[description](path)=) links are tracked for backlinks
+- Wiki links (in the style of =[[path]]= or =[[path|description]]=) are also tracked; they are treated like Obsidian links
+- YAML front matter, delimited with =---=
+- Heading IDs are specified as =# heading {#ID}=, ie. the X in a trailing ={#X}= in a heading.
+- The main title is either the =title= key in the YAML front matter or first heading; if neither of those are present, the file name is used.
+
+** Org
+
+Minaduki is a fork of Org-roam v1, so many Org concepts remain unchanged.
+
+Instead of =org-link-abbrev-alist=, use the vaults system to add extra vaults of notes. This allows them to also be used in other formats — Minaduki will set up =org-link-abbrev-alist= based on the specified vaults.
+
+You can also use an Org file as a bibliography; see [[id:574665c1-24cd-4553-ae26-40354591f050][Minaduki's Org-based bibliography file format]]. In short, in files listed in =minaduki-lit/bibliography=, headings with a =CUSTOM_ID= are treated as literature entries, with their properties copied straight into the entry (after some processing).
+
 * Concepts
 ** minaduki-mode
 
@@ -113,6 +135,9 @@ Org-cite is supported: instead of using =org-cite-global-bibliography= you can j
 Reading from Org-cite's local bibliography is not yet supported though.
 
 *** Minaduki's Org-based bibliography file format
+:PROPERTIES:
+:ID:       574665c1-24cd-4553-ae26-40354591f050
+:END:
 
 Every heading in a bibliography file with a =CUSTOM_ID= property is saved as a literature entry, with the value being the citekey.
 
