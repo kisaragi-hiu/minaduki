@@ -4,9 +4,14 @@ I like Org-roam v1, but I have different ideas of what could make it better in m
 
 I plan to also merge other v1 packages into this repository.
 
+## Caveat
+
+I expect myself to be the only user and will ship breaking changes without warning and without much explanation.
+
 ## Features
 
 - Clone Obsidian vaults into your notes to be indexed
+- Multiple vaults
 - Markdown and Org support
 - Yet another literature entries system
 

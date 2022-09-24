@@ -569,27 +569,32 @@ fill it in with the \"daily\" template."
        (minaduki-templates//make-note "daily")))))
 
 ;;;###autoload
-(defun minaduki/new-diary-entry (&optional time)
-  "Create a new diary entry in `minaduki/diary-directory'.
+(defun minaduki/new-fleeting-note (&optional time dir)
+  "Create a new diary entry in DIR.
 
 The entry will be stored as a file named after the current time
-under `minaduki/diary-directory'. Example:
+under DIR. For example, assuming DIR is \"/path/to/diary\", the
+file will be located at something like:
 
-    diary/20211019T233513+0900.org
+    /path/to/diary/20211019T233513+0900.org
+
+DIR is `minaduki/diary-directory' by default.
 
 When TIME is non-nil, create an entry for TIME instead of
 `current-time'."
   (interactive
-   (list (and current-prefix-arg
-              (parse-iso8601-time-string
-               (read-string "Create new diary entry at (yyyymmddThhmmssz): ")))))
+   (list
+    minaduki/diary-directory
+    (and current-prefix-arg
+         (parse-iso8601-time-string
+          (read-string "Create new diary entry at (yyyymmddThhmmssz): ")))))
   (let* ((now (or time (current-time)))
          (filename (format-time-string "%Y%m%dT%H%M%S%z" now))
          (title (format-time-string "%FT%T%z" now))
          ;; Put this here so if we allow different templates later
          ;; it's easier to change
          (ext "org"))
-    (find-file (f-join minaduki/diary-directory
+    (find-file (f-join (or dir minaduki/diary-directory)
                        (concat filename "." ext)))
     (insert (concat "#+title: " title "\n"))))
 
@@ -910,7 +915,7 @@ CITEKEY is a list whose car is a citation key."
 
 ;;;###autoload
 (defun minaduki/new-literature-note ()
-  "Create a new literature note.
+  "Create a new literature note from a URL.
 
 This first adds an entry for it into a file in
 `minaduki-lit/bibliography'."
@@ -1002,7 +1007,8 @@ This first adds an entry for it into a file in
     ("Browse literature entries"          . minaduki/literature-entries)
     ("Open notes directory"               . minaduki/open-directory)
     ("Open or create a template"          . minaduki/open-template)
-    ("Create a new diary entry"           . minaduki/new-diary-entry)
+    ("Open a fleeting note"               . minaduki/open-diary-entry)
+    ("Create a new fleeting note"         . minaduki/new-fleeting-note)
     ("Create a new concept note"          . minaduki/new-concept-note)
     ("Create a new note with the \"daily\" template" . minaduki/new-daily-note)
     ("Find broken local links"            . minaduki/fix-broken-links)

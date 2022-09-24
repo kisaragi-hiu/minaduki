@@ -87,6 +87,44 @@ Subdirectories containing ~minaduki-nested-vault-root-files~ are considered /nes
 - [ ] Markdown: following adheres to minaduki/vaults
 - [ ] Markdown: extracting adheres to minaduki/vaults
 - [ ] Markdown: insertion adheres to minaduki/vaults
+** Note types
+
+=minaduki/open= does not distinguish between different types of notes, but categorizing notes into different types allows Minaduki to offer commands to quickly create them.
+
+*** Fleeting notes
+
+A /fleeting note/ is one that isn't associated with any particular concept.
+
+A /daily note/ is a fleeting note named after the /day/ it was created, instead of the moment.
+
+- Command: =minaduki/new-fleeting-note=
+
+  This command creates a fleeting note under =minaduki/diary-directory=, naming it using a timestamp marking the moment it was created (eg. ~20210102T030405+0800~).
+
+- Command: =minaduki/new-daily-note=
+
+  This command creates a daily note under =minaduki/diary-directory=, naming it using the day it was created (eg. ~20210102~). =org-extend-today-until= is honored.
+
+- Command: =minaduki/open-diary-entry=
+
+  Open (or create) a fleeting note associated with today. With a universal argument, this will prompt to select another date instead of today. =org-extend-today-until= is honored.
+
+*** Concept notes
+
+A /concept note/ is associated with some concept that isn't a moment in time.
+
+- Command: =minaduki/new-concept-note=
+
+  This command creates a new concept note at the root of the main vault (=org-directory=).
+
+*** Literature notes
+
+A /literature note/ is one that is associated with a literature entry. A literature entry represents something like a video, an article, a book, or /anything/, and allows storing some metadata along with notes about the thing itself. See [[*Bibliography management]] for details.
+
+- Command: =minaduki/new-literature-note=
+
+  Ask for a URL, then automatically create a literature entry for it along with its associated literature note.
+
 ** Keywords
 *** How keywords are specified
 
