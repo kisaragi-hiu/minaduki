@@ -20,7 +20,7 @@
 
 (require 'minaduki-utils)
 (require 'minaduki-vault)
-(require 'kisaragi-notes-templates)
+(require 'minaduki-templates)
 
 (require 'minaduki-extract)
 (require 'minaduki-db)

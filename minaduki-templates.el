@@ -1,4 +1,4 @@
-;;; kisaragi-notes-templates.el --- File templates -*- lexical-binding: t -*-
+;;; minaduki-templates.el --- File templates -*- lexical-binding: t -*-
 
 ;;; Commentary:
 
@@ -110,6 +110,6 @@ behavior does not apply when TEMPLATE is absolute."
     (org-capture-fill-template
      (f-read-text template))))
 
-(provide 'kisaragi-notes-templates)
+(provide 'minaduki-templates)
 
-;;; kisaragi-notes-templates.el ends here
+;;; minaduki-templates.el ends here

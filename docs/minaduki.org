@@ -39,7 +39,7 @@ In general, do not enable =minaduki-local-mode= manually. It's only really a min
 
 The templating system is a mess right now.
 
-I didn't like how org-roam-capture specifies templates in a variable, so I tried to write =kisaragi-notes-templates.el=, but it's still incomplete.
+I didn't like how org-roam-capture specifies templates in a variable, so I tried to write =minaduki-templates.el=, but it's still incomplete.
 
 Goals:
 
