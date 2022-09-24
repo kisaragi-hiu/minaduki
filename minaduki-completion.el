@@ -277,7 +277,7 @@ This is active when `minaduki:completion-everywhere' is non-nil."
                           [:select [titles] :from files])
                          -flatten
                          (--remove (string= prefix it)))))
-                 (completion-table-case-fold it (not org-roam-completion-ignore-case)))
+                 (completion-table-case-fold it (not minaduki:ignore-case-during-completion)))
             :exit-function (lambda (str _status)
                              (delete-char (- (length str)))
                              (insert "[[roam:" str "]]"))))))
@@ -299,7 +299,7 @@ This is active when `minaduki:completion-everywhere' is non-nil."
                     (lambda (_)
                       (->> (minaduki-db//fetch-all-tags)
                            (--remove (string= prefix it)))))
-                   (completion-table-case-fold it (not org-roam-completion-ignore-case)))
+                   (completion-table-case-fold it (not minaduki:ignore-case-during-completion)))
               :exit-function (lambda (str _status)
                                (delete-char (- (length str)))
                                (insert "\"" str "\"")))))))

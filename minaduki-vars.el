@@ -99,7 +99,7 @@ value like `most-positive-fixnum'."
   :group 'minaduki)
 
 (defcustom minaduki-db/update-idle-seconds 2
-  "Number of idle seconds before triggering an Org-roam database update."
+  "Number of idle seconds before triggering a database update."
   :type 'integer
   :group 'minaduki)
 
@@ -126,11 +126,6 @@ value like `most-positive-fixnum'."
   "Path to the Org file that stores literature entries."
   :group 'minaduki
   :type 'string)
-
-(defcustom org-roam-encrypt-files nil
-  "Whether to encrypt new files.  If true, create files with .gpg extension."
-  :type 'boolean
-  :group 'minaduki)
 
 (defcustom minaduki-file-extensions `("org" "md" "bib" "json")
   "Only files with these extensions are indexed.
@@ -163,7 +158,7 @@ If nil, `find-file' is used."
   :group 'minaduki)
 
 (defcustom minaduki:index-file "index.org"
-  "Path to the Org-roam index file.
+  "Path to the index file.
 The path can be a string or a function.
 
 If it is a string, it should be the path (absolute, or relative
@@ -280,7 +275,7 @@ which case the list is passed to `cl-sort' as arguments."
           (list :tag "Arguments to cl-loop"))
   :group 'minaduki)
 
-(defcustom org-roam-completion-ignore-case t
+(defcustom minaduki:ignore-case-during-completion t
   "Whether to ignore case in Org-roam `completion-at-point' completions."
   :group 'minaduki
   :type 'boolean)

@@ -43,8 +43,6 @@
 
 ;; Declarations
 
-(declare-function  minaduki//find-file                  "org-roam")
-
 (defvar minaduki-capture//file-path nil
   "The file path for the Org-roam capture.
 This variable is set during the Org-roam capture process.")
@@ -387,11 +385,7 @@ The file is saved if the original value of :no-save is not t and
   (let* ((ext (or (car minaduki-file-extensions)
                   "org"))
          (file (concat basename "." ext)))
-    (expand-file-name
-     (if org-roam-encrypt-files
-         (concat file ".gpg")
-       file)
-     org-directory)))
+    (expand-file-name file org-directory)))
 
 (defun minaduki-capture//new-file (&optional allow-existing-file-p)
   "Return the path to file during an Org-roam capture.
