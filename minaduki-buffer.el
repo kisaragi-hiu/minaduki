@@ -125,7 +125,7 @@ For example: (setq minaduki-buffer/window-parameters '((no-other-window . t)))"
 (defun minaduki-buffer//find-file (file)
   "Open FILE in the other window."
   (setq file (expand-file-name file))
-  (let ((last-window minaduki//last-window))
+  (let ((last-window minaduki::last-window))
     (if (window-valid-p last-window)
         (progn (with-selected-window last-window
                  (minaduki//find-file file))
@@ -484,7 +484,7 @@ ORIG-PATH is the path where the CONTENT originated."
     (insert content)
     (goto-char (point-min))
     (let (link link-type)
-      (while (re-search-forward org-roam--org-link-bracket-typed-re (point-max) t)
+      (while (re-search-forward minaduki::org-link-bracket-typed-re (point-max) t)
         (setq link-type (match-string 1)
               link (match-string 2))
         (when (and (string-equal link-type "file")
@@ -582,7 +582,7 @@ what."
 (defun minaduki-buffer/activate ()
   "Activate display of the `minaduki-buffer'."
   (interactive)
-  (setq minaduki//last-window (get-buffer-window))
+  (setq minaduki::last-window (get-buffer-window))
   ;; Set up the window
   (let ((position (if (functionp minaduki-buffer/position)
                       (funcall minaduki-buffer/position)
@@ -608,7 +608,7 @@ what."
 (defun minaduki-buffer/deactivate ()
   "Deactivate display of the `minaduki-buffer'."
   (interactive)
-  (setq minaduki//last-window (get-buffer-window))
+  (setq minaduki::last-window (get-buffer-window))
   (delete-window (get-buffer-window minaduki-buffer/name)))
 
 (defun minaduki-buffer/toggle-display ()

@@ -162,7 +162,7 @@ If nil, `find-file' is used."
   :type 'function
   :group 'minaduki)
 
-(defcustom org-roam-index-file "index.org"
+(defcustom minaduki:index-file "index.org"
   "Path to the Org-roam index file.
 The path can be a string or a function.
 
@@ -179,15 +179,10 @@ whose title is 'Index'."
           (function :tag "Function to generate the path"))
   :group 'minaduki)
 
-(defcustom org-roam-completion-everywhere nil
+(defcustom minaduki:completion-everywhere nil
   "If non-nil, provide completions from the current word at point."
   :group 'minaduki
   :type 'boolean)
-
-(defcustom org-roam-tag-separator ","
-  "String to use to separate tags when `minaduki-tag-sources' is non-nil."
-  :type 'string
-  :group 'minaduki)
 
 (defcustom minaduki/slug-replacements
   '(;; Domains
@@ -209,54 +204,22 @@ which will then be replaced with a single dash (\"-\")."
           :value-type (string :tag "To"))
   :group 'minaduki)
 
-(defcustom org-roam-title-sources '((title headline) alias)
-  "The list of sources from which to retrieve a note title.
-
-Return values from each source, which are symbols corresponding
-to a title retrieval function, are concatenated into the final
-list of titles. A source can also be a list of sources --- in
-which case the first non-nil return value is used.
-
-For example, the default setting ((title headline) alias)
-effectively stands for this:
-
-    (append (or title headline)
-            alias)
-
-So, when the title is not empty, 'title + 'alias will be
-returned; otherwise, 'headline + 'alias is the resulting list of
-titles.
-
-The currently supported symbols are:
-
-  `title'
-   The \"#+title\" property of org file.
-
-  `alias'
-   The \"#+alias\" property of the org file, using
-   space-delimited strings.
-
-   `headline'
-   The first headline in the org file."
-  :type '(repeat
-          (choice
-           (repeat symbol)
-           (symbol)))
-  :group 'minaduki)
-
-(defcustom org-roam-link-use-custom-faces t
-  "Define where to apply custom faces to Org-roam links.
+(defcustom minaduki:use-custom-link-faces t
+  "Whether to use custom link faces.
 
 Valide values are:
 
-t            Use custom faces inside Org-roam notes (i.e. files in
-             `org-directory'.)
-
+t            Use custom faces in tracked files
 everywhere   Apply custom faces everywhere.
 
-Otherwise, do not apply custom faces to Org-roam links."
+When custom faces are being used, different faces are applied to
+different links:
+
+- invalid links use the face `minaduki-link-invalid',
+- links to the current file use the face `minaduki-link-current', and
+- links to other files tracked by Minaduki use the face `minaduki-link'."
   :type '(choice
-          (const :tag "Use custom faces inside Org-roam notes" t)
+          (const :tag "Use custom faces in tracked files" t)
           (const :tag "Apply custom faces everywhere" everywhere)
           (const :tag "Do not apply custom faces" nil))
   :group 'minaduki)
@@ -540,15 +503,15 @@ information."
 
 ;;;; Internal Variables
 
-(defvar-local minaduki//file-name nil
+(defvar-local minaduki::file-name nil
   "The corresponding file for a temp buffer.
 This is set by `minaduki//with-temp-buffer', to allow throwing of
 descriptive warnings when certain operations fail (e.g. parsing).")
 
-(defvar minaduki//last-window nil
+(defvar minaduki::last-window nil
   "Last window `org-roam' was called from.")
 
-(defvar org-roam--org-link-bracket-typed-re
+(defvar minaduki::org-link-bracket-typed-re
   (rx (seq "[["
            (group (+? anything))
            ":"

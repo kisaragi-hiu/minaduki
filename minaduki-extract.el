@@ -97,7 +97,7 @@ FILE-FROM to the key."
                        file-from
                        (org-element-property :key it)
                        "cite"
-                       (list :outline (org-roam--get-outline-path)
+                       (list :outline (minaduki::get-outline-path)
                              :point (point)))
                       while (search-forward ";" (line-end-position) t)))))
 
@@ -161,7 +161,7 @@ Assume links come from FILE-FROM."
               (let* ((type (minaduki//collate-types (org-element-property :type link)))
                      (path (org-element-property :path link))
                      (content (minaduki-extract//org-links-context))
-                     (properties (list :outline (org-roam--get-outline-path)
+                     (properties (list :outline (minaduki::get-outline-path)
                                        :point (point)
                                        :content content))
                      (names (pcase type

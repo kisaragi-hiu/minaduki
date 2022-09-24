@@ -43,15 +43,16 @@ currently opened Org-roam file in the backlink buffer, or
 `org-roam-link-face' if PATH corresponds to any other Org-roam
 file."
   (save-match-data
-    (let* ((in-note (-> (buffer-file-name (buffer-base-buffer))
-                        (minaduki-vault:in-vault?)))
-           (custom (or (and in-note org-roam-link-use-custom-faces)
-                       (eq org-roam-link-use-custom-faces 'everywhere))))
+    (let* ((in-vault (-> (buffer-file-name (buffer-base-buffer))
+                         (minaduki-vault:in-vault?)))
+           (custom (or (and in-vault minaduki:use-custom-link-faces)
+                       (eq minaduki:use-custom-link-faces 'everywhere))))
       (cond ((and custom
                   (not (file-remote-p path)) ;; Prevent lockups opening Tramp links
                   (not (file-exists-p path)))
              'org-roam-link-invalid)
-            ((and (bound-and-true-p minaduki-buffer/mode)
+            ((and custom
+                  (bound-and-true-p minaduki-buffer/mode)
                   (minaduki::link-to-current-p))
              'org-roam-link-current)
             ((and custom
@@ -69,9 +70,10 @@ file."
   (save-match-data
     (let* ((in-vault (-> (buffer-file-name (buffer-base-buffer))
                          (minaduki-vault:in-vault?)))
-           (custom (or (and in-vault org-roam-link-use-custom-faces)
-                       (eq org-roam-link-use-custom-faces 'everywhere))))
-      (cond ((and (bound-and-true-p minaduki-buffer/mode)
+           (custom (or (and in-vault minaduki:use-custom-link-faces)
+                       (eq minaduki:use-custom-link-faces 'everywhere))))
+      (cond ((and custom
+                  (bound-and-true-p minaduki-buffer/mode)
                   (minaduki::link-to-current-p))
              'org-roam-link-current)
             ((and custom
@@ -209,7 +211,7 @@ When NEW-FILE-OR-DIR is a directory, we use it to compute the new file path."
 ;;;; The minor mode itself
 (defun minaduki::local-mode-enable ()
   "Do the actual work to enable `minaduki-local-mode'."
-  (setq minaduki//last-window (get-buffer-window))
+  (setq minaduki::last-window (get-buffer-window))
   (pcase (minaduki--file-type)
     ('org
      (add-hook 'before-save-hook #'org-roam-link--replace-link-on-save nil t)

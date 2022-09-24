@@ -45,12 +45,12 @@ This does zero type checks, and it is up to the user to make sure
   "Return current file name in a consistent way.
 
 FALLBACK should be a one element list containing the file name
-to use instead of `minaduki//file-name'. This allows easily
+to use instead of `minaduki::file-name'. This allows easily
 distinguishing between a caller that does not want to use
-`minaduki//file-name' and a caller that does."
+`minaduki::file-name' and a caller that does."
   (or (if fallback
           (car fallback)
-        minaduki//file-name)
+        minaduki::file-name)
       (buffer-file-name (buffer-base-buffer))))
 
 ;; `ensure-list' was added in 28.1.
@@ -381,7 +381,7 @@ means tomorrow, and N = -1 means yesterday."
     ('relative
      (file-relative-name path))))
 
-(defun minaduki//file-name-extension (path)
+(defun minaduki::file-name-extension (path)
   "Return the extension of PATH.
 
 Like `file-name-extension', but:
@@ -396,7 +396,7 @@ Like `file-name-extension', but:
         (setq ext (substring file (1+ (match-beginning 0))))))
     ;; This will do it more than once. Is this a problem?
     (if (equal ext "gpg")
-        (minaduki//file-name-extension (f-no-ext path))
+        (minaduki::file-name-extension (f-no-ext path))
       ext)))
 
 ;;;; File functions
@@ -444,7 +444,7 @@ Kills the buffer if KEEP-BUF-P is nil, and FILE is not yet visited."
 
 Like `with-temp-buffer', but propagates `org-directory'.
 
-If FILE, set `minaduki//file-name' and variable
+If FILE, set `minaduki::file-name' and variable
 `buffer-file-name' to FILE and insert its contents."
   (declare (indent 1) (debug t))
   (let ((current-org-directory (make-symbol "current-org-directory")))
@@ -454,7 +454,7 @@ If FILE, set `minaduki//file-name' and variable
                    (org-inhibit-startup t)
                    (after-change-major-mode-hook '(minaduki-initialize))
                    ,@(when file
-                       `((minaduki//file-name ,file)
+                       `((minaduki::file-name ,file)
                          (default-directory (file-name-directory ,file))
                          (buffer-file-name ,file)))
                    ((symbol-function 'run-mode-hooks)
@@ -483,7 +483,7 @@ ARGS and BODY are as in `lambda'."
 ;;;; Org mode local functions
 
 ;; Alternative to `org-get-outline-path' that doesn't break
-(defun org-roam--get-outline-path ()
+(defun minaduki::get-outline-path ()
   "Return the outline path to the current entry.
 
 An outline path is a list of ancestors for current headline, as a
@@ -514,7 +514,7 @@ Assume buffer is widened and point is on a headline."
                 while (org-up-heading-safe)
                 finally return headings)))))
 
-(defun org-roam--set-global-prop (name value)
+(defun minaduki::set-global-prop (name value)
   "Set a file property called NAME to VALUE.
 
 If the property is already set, it's value is replaced."

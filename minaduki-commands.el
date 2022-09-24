@@ -344,7 +344,7 @@ REPLACE-REGION?: whether to replace selected text."
          (existing-tags (minaduki-extract//tags/org-prop)))
     (when (string-empty-p tag)
       (user-error "Tag can't be empty"))
-    (org-roam--set-global-prop
+    (minaduki::set-global-prop
      "tags[]"
      (combine-and-quote-strings (seq-uniq (cons tag existing-tags))))
     (when (minaduki-vault:in-vault?)
@@ -357,7 +357,7 @@ REPLACE-REGION?: whether to replace selected text."
   (interactive)
   (if-let* ((tags (minaduki-extract//tags/org-prop)))
       (let ((tag (completing-read "Tag: " tags nil 'require-match)))
-        (org-roam--set-global-prop
+        (minaduki::set-global-prop
          "tags[]"
          (combine-and-quote-strings (delete tag tags)))
         (when (minaduki-vault:in-vault?)
@@ -669,15 +669,15 @@ are named with a YYYYMMDD prefix (optionally with dashes)."
 
 The index file is specified in this order:
 
-- `org-roam-index-file' (a string or function, see its docstring)
+- `minaduki:index-file' (a string or function, see its docstring)
 - A note with a title of \"Index\" in `org-directory'"
   (interactive)
   (let ((index (cond
-                ((functionp org-roam-index-file)
-                 (f-expand (funcall org-roam-index-file)
+                ((functionp minaduki:index-file)
+                 (f-expand (funcall minaduki:index-file)
                            org-directory))
-                ((stringp org-roam-index-file)
-                 (f-expand org-roam-index-file))
+                ((stringp minaduki:index-file)
+                 (f-expand minaduki:index-file))
                 (t
                  (car (minaduki-db//fetch-file :title "Index"))))))
     (if (and index (f-exists? index))

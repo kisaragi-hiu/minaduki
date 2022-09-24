@@ -245,7 +245,7 @@ If HASH is non-nil, assume that is the file's hash without recomputing it."
   "Update the lit-entries of the current buffer into the cache.
 If UPDATE-P is non-nil, first remove the entries from the file in the database."
   (cl-block nil
-    (let ((file (or minaduki//file-name (buffer-file-name)))
+    (let ((file (or minaduki::file-name (buffer-file-name)))
           (count 0))
       (when update-p
         (minaduki-db/query [:delete :from keys

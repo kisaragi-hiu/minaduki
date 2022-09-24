@@ -262,8 +262,8 @@ PROMPT: the text shown in the prompt."
 
 (defun minaduki-completion/everywhere ()
   "`completion-at-point' function for word at point.
-This is active when `org-roam-completion-everywhere' is non-nil."
-  (when (and org-roam-completion-everywhere
+This is active when `minaduki:completion-everywhere' is non-nil."
+  (when (and minaduki:completion-everywhere
              (thing-at-point 'word))
     (let* ((bounds (bounds-of-thing-at-point 'word))
            (start (car bounds))

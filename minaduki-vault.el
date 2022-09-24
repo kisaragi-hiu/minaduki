@@ -171,7 +171,7 @@ A path is in a vault if it:
     (setq path (expand-file-name path))
     (save-match-data
       (and
-       (member (minaduki//file-name-extension path)
+       (member (minaduki::file-name-extension path)
                minaduki-file-extensions)
        (not (minaduki-vault:excluded? path))
        (--any? (s-prefix? (expand-file-name it) path)
