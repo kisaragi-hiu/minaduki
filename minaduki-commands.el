@@ -1060,8 +1060,9 @@ Equivalent to `orb-note-actions-default'.")
 (defun minaduki:local-commands (&optional citekey)
   "Prompt for note-related actions.
 
-CITEKEY defaults to the entry at point or the first KEY in
-the buffer.
+CITEKEY defaults to the entry at point. If there is no entry at
+point, the KEY specified by the buffer is used. If there are
+multiple keys, the user is asked to select one.
 
 Actions are defined in `minaduki::local-commands'. If CITEKEY is
 given or can be retrieved, actions from
@@ -1069,7 +1070,14 @@ given or can be retrieved, actions from
   (interactive)
   (let* ((citekey (or citekey
                       (minaduki-extract/key-at-point)
-                      (cdar (minaduki-extract/refs))))
+                      (let ((keys (minaduki-extract/refs)))
+                        (pcase (length keys)
+                          (1 (cdar keys))
+                          (_ (progn
+                               (completing-read
+                                "Show local commands for cite key: "
+                                (mapcar #'cdr keys)
+                                nil t)))))))
          (prompt (format "Actions for %s: "
                          (or citekey
                              (car (minaduki-extract/main-title)))))
