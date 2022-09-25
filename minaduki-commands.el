@@ -1056,7 +1056,6 @@ Equivalent to `orb-note-actions-default'.")
     ("Delete a tag"                  . minaduki-delete-tag))
   "Local commands that act on the current file or heading.")
 
-;; TODO: Try the selected action for all keys
 (defun minaduki:local-commands (&optional citekey)
   "Prompt for note-related actions.
 
@@ -1071,16 +1070,13 @@ given or can be retrieved, actions from
   (let* ((citekey (or citekey
                       (minaduki-extract/key-at-point)
                       (let ((keys (minaduki-extract/refs)))
-                        (pcase (length keys)
-                          (1 (cdar keys))
-                          (_ (progn
-                               (completing-read
-                                "Show local commands for cite key: "
-                                (mapcar #'cdr keys)
-                                nil t)))))))
+                        (if (= 1 (length keys))
+                            (cdar keys)
+                          (mapcar #'cdr keys)))))
          (prompt (format "Actions for %s: "
-                         (or citekey
-                             (car (minaduki-extract/main-title)))))
+                         (cond
+                          ((stringp citekey) citekey)
+                          (t (car (minaduki-extract/main-title))))))
          (candidates (-sort
                       (-on #'string< #'car)
                       `(,@minaduki::local-commands
@@ -1088,10 +1084,15 @@ given or can be retrieved, actions from
                             minaduki/literature-note-actions))))
          (selection (completing-read prompt candidates))
          (func (cdr (assoc selection candidates))))
-    (if (= (car (func-arity func))
-           1)
-        (funcall func citekey)
-      (funcall func))))
+    (if (/= 1 (car (func-arity func)))
+        (funcall func)
+      (when (and citekey
+                 (listp citekey))
+        (setq citekey
+              (completing-read "Which cite key to run action with: "
+                               citekey
+                               nil t)))
+      (funcall func citekey))))
 
 (provide 'minaduki-commands)
 
