@@ -1,8 +1,15 @@
 * Changelog
 
-This fork starts off from Org-roam 1.2.4 and Org-roam-bibtex 0.4 ([[https://github.com/org-roam/org-roam-bibtex/commit/5236917e1d8a4f88daadacc690248854f53facb4][5236917]]).
+** 0.2
+*** Add option to use note title in place of buffer name in the frame title
+
+When =minaduki:note-title-in-frame-title= is non-nil, the note title is used in place of the buffer name in the frame title.
+
+For example, if this file is tracked by Minaduki, the frame title would be =Changelog - GNU Emacs= instead of =CHANGELOG.org - GNU Emacs=.
 
 ** Fork 0.1
+
+This fork starts off from Org-roam 1.2.4 and Org-roam-bibtex 0.4 ([[https://github.com/org-roam/org-roam-bibtex/commit/5236917e1d8a4f88daadacc690248854f53facb4][5236917]]).
 
 *** Added support for Markdown
 

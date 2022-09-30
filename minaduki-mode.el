@@ -15,6 +15,11 @@
 
 (require 'kisaragi-notes-wikilink)
 
+(defun minaduki:buffer-name-for-display ()
+  "Return a name for the current buffer suitable for display."
+  (or (car (minaduki-extract/main-title))
+      (buffer-name)))
+
 ;;;; Function faces
 (defun minaduki::link-to-current-p ()
   "Return t if the link at point points to the current file."
@@ -212,6 +217,15 @@ When NEW-FILE-OR-DIR is a directory, we use it to compute the new file path."
 (defun minaduki::local-mode-enable ()
   "Do the actual work to enable `minaduki-local-mode'."
   (setq minaduki::last-window (get-buffer-window))
+  (when minaduki:note-title-in-frame-title
+    (setq-local frame-title-format
+                (if (stringp frame-title-format)
+                    (->> frame-title-format
+                         (s-split "%b")
+                         (-interpose '(:eval (minaduki:buffer-name-for-display)))
+                         (-remove-item ""))
+                  '((:eval (minaduki:buffer-name-for-display))
+                    " - GNU Emacs"))))
   (pcase (minaduki--file-type)
     ('org
      (add-hook 'before-save-hook #'org-roam-link--replace-link-on-save nil t)

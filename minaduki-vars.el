@@ -53,6 +53,21 @@
 
 ;;;; User Options
 
+(defcustom minaduki:note-title-in-frame-title nil
+  "Use the note's declared title instead of the buffer name as frame title.
+
+When this is non-nil, in files tracked by Minaduki, occurances of
+\"%b\" in `frame-title-format' are replaced with a call to
+`minaduki:buffer-name-for-display'.
+
+For example, in a note stored as \"home.org\" that specified its
+title to be \"Index\", the frame title is:
+
+- \"home.org - GNU Emacs\" with this off,
+- \"Index - GNU Emacs\" with this on."
+  :type 'boolean
+  :group 'minaduki)
+
 (defcustom minaduki-mode:command-prefix (kbd "C-c (")
   "The prefix for bindings in files managed by Minaduki.
 
