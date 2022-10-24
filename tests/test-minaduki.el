@@ -70,32 +70,32 @@ members that should be equal."
 
 (buttercup-define-matcher-for-binary-function :to-equal/ht test-equal-ht)
 
-(describe "minaduki--file-type"
+(describe "minaduki::file-type"
   (it "checks file type"
     (expect (with-temp-buffer
               (setq major-mode 'org-mode)
-              (minaduki--file-type))
+              (minaduki::file-type))
             :to-be 'org)
     (expect (with-temp-buffer
               (gfm-mode)
-              (minaduki--file-type))
+              (minaduki::file-type))
             :to-be 'markdown)
     (expect (with-temp-buffer
               (setq major-mode 'markdown-mode)
-              (minaduki--file-type))
+              (minaduki::file-type))
             :to-be 'markdown)
     (expect (with-temp-buffer
               (setq major-mode 'bibtex-mode)
-              (minaduki--file-type))
+              (minaduki::file-type))
             :to-be 'bibtex)
     (expect (with-temp-buffer
               (setq major-mode 'json-mode)
-              (minaduki--file-type))
+              (minaduki::file-type))
             :to-be 'json)
     (expect (with-temp-buffer
               (setq buffer-file-name "hello.json"
                     major-mode 'text-mode)
-              (prog1 (minaduki--file-type)
+              (prog1 (minaduki::file-type)
                 (setq buffer-file-name nil)))
             :to-be 'json)))
 

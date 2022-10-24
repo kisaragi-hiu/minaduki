@@ -60,7 +60,7 @@ distinguishing between a caller that does not want to use
       v
     (list v)))
 
-(defun minaduki--file-type ()
+(defun minaduki::file-type ()
   "Return file type of current buffer."
   (let ((case-fold-search t))
     (cond ((derived-mode-p 'org-mode) 'org)
@@ -259,7 +259,7 @@ If ID? is non-nil and we're in Org mode, return an ID link instead."
         ;; path.
         (target (org-link-decode
                  (replace-regexp-in-string "^file://" "" target))))
-    (pcase (minaduki--file-type)
+    (pcase (minaduki::file-type)
       ('org
        (unless (or url? id?)
          (setq target (minaduki::convert-path-format target)))
@@ -289,7 +289,7 @@ TYPE defaults to \"file\".
 
 In Markdown, TYPE has no effect."
   (setq type (or type "file"))
-  (pcase (minaduki--file-type)
+  (pcase (minaduki::file-type)
    ('org
     (org-link-make-string
      (if (string-equal type "file")

@@ -26,7 +26,7 @@
   (save-match-data
     (let ((current-file (buffer-file-name minaduki-buffer//current))
           (link-dest
-           (pcase (minaduki--file-type)
+           (pcase (minaduki::file-type)
              ('org (let* ((context (org-element-context))
                           (type (org-element-property :type context))
                           (dest (org-element-property :path context)))
@@ -226,7 +226,7 @@ When NEW-FILE-OR-DIR is a directory, we use it to compute the new file path."
                          (-remove-item ""))
                   '((:eval (minaduki:buffer-name-for-display))
                     " - GNU Emacs"))))
-  (pcase (minaduki--file-type)
+  (pcase (minaduki::file-type)
     ('org
      (add-hook 'before-save-hook #'org-roam-link--replace-link-on-save nil t)
      (add-hook 'post-command-hook #'minaduki-org::buttonize-tags nil t)))

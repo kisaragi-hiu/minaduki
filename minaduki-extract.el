@@ -34,7 +34,7 @@
 
 (defun minaduki-extract//file-prop (prop)
   "Return values of the file level property PROP as a list."
-  (pcase (minaduki--file-type)
+  (pcase (minaduki::file-type)
     ('markdown
      (save-excursion
        (goto-char (point-min))
@@ -300,7 +300,7 @@ FILE-FROM is typically the buffer file path, but this may not exist, for example
 in temp buffers.  In cases where this occurs, we do know the file path, and pass
 it as FILE-FROM."
   (setq file-from (minaduki//current-file-name (list file-from)))
-  (pcase (minaduki--file-type)
+  (pcase (minaduki::file-type)
     ('org
      (append
       (minaduki-extract//org-links file-from)
@@ -327,7 +327,7 @@ headings with an ID are cached (extracted with
 `minaduki-extract/ids')."
   (setq file-path (minaduki//current-file-name (list file-path)))
   (let (result)
-    (pcase (minaduki--file-type)
+    (pcase (minaduki::file-type)
       ('markdown
        (goto-char (point-min))
        (while (re-search-forward markdown-regex-header nil t)
@@ -357,7 +357,7 @@ If FILE-PATH is nil, use the current file.
 Return a list of `minaduki-id' objects."
   (setq file-path (minaduki//current-file-name (list file-path)))
   (let (result)
-    (pcase (minaduki--file-type)
+    (pcase (minaduki::file-type)
       ('markdown
        (goto-char (point-min))
        (while (re-search-forward markdown-regex-header nil t)
@@ -393,7 +393,7 @@ Return a list of `minaduki-id' objects."
 
 (defun minaduki-extract/main-title ()
   "Return the title of the current buffer."
-  (pcase (minaduki--file-type)
+  (pcase (minaduki::file-type)
     ('org
      (-some-> (car (minaduki-extract//file-prop "title"))
        list))
@@ -407,7 +407,7 @@ Return a list of `minaduki-id' objects."
 
 (defun minaduki-extract/aliases ()
   "Return a list of aliases from the current buffer."
-  (pcase (minaduki--file-type)
+  (pcase (minaduki::file-type)
     ('org
      (minaduki-extract//file-prop "ALIAS"))
     ('markdown
@@ -415,7 +415,7 @@ Return a list of `minaduki-id' objects."
 
 (defun minaduki-extract/first-headline ()
   "Extract the first headline."
-  (pcase (minaduki--file-type)
+  (pcase (minaduki::file-type)
     ('org
      (save-excursion
        (goto-char (point-min))
@@ -604,7 +604,7 @@ nothing and returns nil."
 Return value: ((TYPE . KEY) (TYPE . KEY) ...)
 
 In Org mode, the keys are specified with the #+KEY keyword."
-  (pcase (minaduki--file-type)
+  (pcase (minaduki::file-type)
     ('org
      (let (refs)
        (dolist (key (minaduki-extract//file-prop "key"))

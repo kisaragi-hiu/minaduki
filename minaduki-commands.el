@@ -158,7 +158,7 @@ open in another window instead of in the current one."
 
 Return the new ID."
   (interactive)
-  (pcase (minaduki--file-type)
+  (pcase (minaduki::file-type)
     ('markdown
      (-let (((id) (minaduki-extract::markdown-matched-heading)))
        (if id
@@ -846,7 +846,7 @@ or `title' should be used for slug: %s not supported" orb-slug-source))))
 
 (defun minaduki:insert-citation (citekey)
   "Insert a citation to CITEKEY."
-  (pcase (minaduki--file-type)
+  (pcase (minaduki::file-type)
     ('org
      (let ((minaduki-completion//read-lit-entry//citekey citekey))
        (org-cite-insert nil)))
@@ -909,7 +909,7 @@ CITEKEY is a list whose car is a citation key."
 
 (defun minaduki::literature-key-at-point ()
   "Return the key of the literature entry at point."
-  (pcase (minaduki--file-type)
+  (pcase (minaduki::file-type)
     ('org
      (let ((value (org-entry-get nil minaduki-lit/key-prop t)))
        (when (and value
@@ -933,7 +933,7 @@ CITEKEY is a list whose car is a citation key."
 Return the key."
   (let ((key (minaduki::literature-key-at-point)))
     (unless key
-      (pcase (minaduki--file-type)
+      (pcase (minaduki::file-type)
         ('org
          (setq key
                (minaduki-lit::generate-key-from
@@ -975,7 +975,7 @@ This first adds an entry for it into a file in
                (read-string "Create new literature entry for URL: "))))
     ;; Use find-file to ensure we save into it
     (find-file target-biblio)
-    (pcase (minaduki--file-type)
+    (pcase (minaduki::file-type)
       ('org
        ;; Go to just before the first heading
        (goto-char (point-min))
