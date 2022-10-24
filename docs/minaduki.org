@@ -121,7 +121,7 @@ A /concept note/ is associated with some concept that isn't a moment in time.
 
 A /literature note/ is one that is associated with a literature entry. A literature entry represents something like a video, an article, a book, or /anything/, and allows storing some metadata along with notes about the thing itself. See [[*Bibliography management]] for details.
 
-- Command: =minaduki/new-literature-note=
+- Command: =minaduki:new-literature-note-from-url=
 
   Ask for a URL, then automatically create a literature entry for it along with its associated literature note.
 

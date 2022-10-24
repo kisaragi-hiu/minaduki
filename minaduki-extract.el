@@ -621,25 +621,5 @@ In Org mode, the keys are specified with the #+KEY keyword."
        car
        (list (cons "cite" it))))))
 
-(defun minaduki-extract/key-at-point ()
-  "Return the key of the literature entry at point."
-  (pcase (minaduki--file-type)
-    ('org
-     (let ((value (org-entry-get nil minaduki-lit/key-prop t)))
-       (when (and value
-                  (not (string= "" value)))
-         value)))
-    ('json
-     (save-excursion
-       (let (here doc)
-         (setq here (point))
-         (goto-char (point-min))
-         (setq doc (json-read))
-         (->> (-> (json-path-to-position here)
-                  (plist-get :path)
-                  car)
-              (elt doc)
-              (alist-get 'id)))))))
-
 (provide 'minaduki-extract)
 ;;; minaduki-extract.el ends here

@@ -106,8 +106,7 @@ OTHERS: other key -> value pairs."
 
 ;;;; Bibliography
 
-;;;; Reading from Org
-(cl-defun minaduki-lit/generate-key (&key author date)
+(cl-defun minaduki-lit::generate-key-from (&key author date)
   "Generate a key from AUTHOR and DATE."
   (let* ((author
           (-some->> author
@@ -129,18 +128,6 @@ OTHERS: other key -> value pairs."
       (setq new-id
             (read-string "The currently generated ID is too general. Make it more specific: " new-id)))
     new-id))
-
-(defun minaduki-lit/generate-key-at-point ()
-  "Set a key for the headline at point.
-
-Return the generated key."
-  (unless (org-entry-get nil minaduki-lit/key-prop)
-    (let ((new-id
-           (minaduki-lit/generate-key :author (org-entry-get nil "author")
-                                      :date (or (org-entry-get nil "date")
-                                                (org-entry-get nil "year")))))
-      (org-entry-put nil minaduki-lit/key-prop new-id)
-      new-id)))
 
 (defun minaduki-lit/fetch-new-entry-from-url (url)
   "Fetch information from URL for a new entry."

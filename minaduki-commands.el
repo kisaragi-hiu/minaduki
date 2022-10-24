@@ -154,7 +154,7 @@ open in another window instead of in the current one."
 
 ;; TODO: Specify what you want with a C-u; reject existing IDs
 (defun minaduki:id ()
-  "Assign an ID to the current heading.
+  "Assign an ID to the current heading if it doesn't have one yet.
 
 Return the new ID."
   (interactive)
@@ -904,17 +904,49 @@ CITEKEY is a list whose car is a citation key."
      citekey)))
 
 ;;;; Managing literature entries
-
 ;; Literature entries are like entries in a .bib file.
+;; TODO: a generic function for creating a new entry (title, author, date)
 
-(defun minaduki-lit/org-set-id ()
-  "Make the heading at point a literature entry."
-  (interactive)
-  (cl-loop for prop in (list minaduki-lit/key-prop "date")
-           do (org-entry-put nil prop (org-read-property-value prop))))
+(defun minaduki::literature-key-at-point ()
+  "Return the key of the literature entry at point."
+  (pcase (minaduki--file-type)
+    ('org
+     (let ((value (org-entry-get nil minaduki-lit/key-prop t)))
+       (when (and value
+                  (not (string= "" value)))
+         value)))
+    ('json
+     (save-excursion
+       (let (here doc)
+         (setq here (point))
+         (goto-char (point-min))
+         (setq doc (json-read))
+         (->> (-> (json-path-to-position here)
+                  (plist-get :path)
+                  car)
+              (elt doc)
+              (alist-get 'id)))))))
+
+(defun minaduki:literature-key ()
+  "Assign a literature key to the current heading if it doesn't have one yet.
+
+Return the key."
+  (let ((key (minaduki::literature-key-at-point)))
+    (unless key
+      (pcase (minaduki--file-type)
+        ('org
+         (setq key
+               (minaduki-lit::generate-key-from
+                :author (org-entry-get nil "author")
+                :date (or (org-entry-get nil "date")
+                          (org-entry-get nil "year"))))
+         (org-entry-put nil minaduki-lit/key-prop key))
+        ('json
+         (error "Support for setting the key of the CSL-JSON entry at point has not yet been implemented"))))
+    key))
 
 ;;;###autoload
-(defun minaduki/new-literature-note ()
+(defun minaduki:new-literature-note-from-url ()
   "Create a new literature note from a URL.
 
 This first adds an entry for it into a file in
@@ -966,7 +998,7 @@ This first adds an entry for it into a file in
              (org-entry-put nil prop value)
              (setq info (plist-put info prop value)))))
        (setq info (plist-put info
-                             :citekey (minaduki-lit/generate-key-at-point))))
+                             :citekey (minaduki:literature-key))))
       ('json
        (goto-char (point-min))
        (let ((v (json-read)))
@@ -976,7 +1008,7 @@ This first adds an entry for it into a file in
              (unless (or (null value)
                          (string= value ""))
                (setq info (plist-put info prop value)))))
-         (setq info (plist-put info :citekey (minaduki-lit/generate-key
+         (setq info (plist-put info :citekey (minaduki-lit::generate-key-from
                                               :author (plist-get info :author)
                                               :date (plist-get info :date))))
          (replace-region-contents
@@ -1013,7 +1045,7 @@ This first adds an entry for it into a file in
     ("Create a new note with the \"daily\" template" . minaduki/new-daily-note)
     ("Find broken local links"            . minaduki/fix-broken-links)
     ("Open the index file"                . minaduki/open-index)
-    ("Create a new literature"            . minaduki/new-literature-note)
+    ("Create a new literature note from URL" . minaduki:new-literature-note-from-url)
     ("Open a random note"                 . minaduki/open-random-note)
     ("Refresh cache"                      . minaduki-db/build-cache))
   "Global commands shown in `minaduki:global-commands'.
@@ -1030,7 +1062,7 @@ List of (DISPLAY-NAME . COMMAND) pairs.")
          (prefix-arg current-prefix-arg))
     (command-execute func)))
 
-(defvar minaduki/literature-note-actions
+(defvar minaduki::literature-note-actions
   '(("Open URL, DOI, or PDF" . minaduki/visit-source)
     ("Show entry in the bibliography file" . minaduki/show-entry)
     ("Edit notes" . orb-edit-notes)
@@ -1043,6 +1075,10 @@ List of (DISPLAY-NAME . FUNCTION) pairs. Each function receives
 one argument, the citekey.
 
 Equivalent to `orb-note-actions-default'.")
+
+(defvar minaduki::bibliography-commands
+  '(("Create bibliography ID for current heading" . minaduki:literature-key))
+  "Local commands that act on the current file or heading.")
 
 (defvar minaduki::local-commands
   '(("Create ID for current heading" . minaduki:id)
@@ -1065,10 +1101,10 @@ multiple keys, the user is asked to select one.
 
 Actions are defined in `minaduki::local-commands'. If CITEKEY is
 given or can be retrieved, actions from
-`minaduki/literature-note-actions' are also used."
+`minaduki::literature-note-actions' are also used."
   (interactive)
   (let* ((citekey (or citekey
-                      (minaduki-extract/key-at-point)
+                      (minaduki::literature-key-at-point)
                       (let ((keys (minaduki-extract/refs)))
                         (if (= 1 (length keys))
                             (cdar keys)
@@ -1081,7 +1117,10 @@ given or can be retrieved, actions from
                       (-on #'string< #'car)
                       `(,@minaduki::local-commands
                         ,@(when citekey
-                            minaduki/literature-note-actions))))
+                            minaduki::literature-note-actions)
+                        ,@(when (member (buffer-file-name)
+                                        minaduki-lit/bibliography)
+                            minaduki::bibliography-commands))))
          (selection (completing-read prompt candidates))
          (func (cdr (assoc selection candidates))))
     (if (/= 1 (car (func-arity func)))
