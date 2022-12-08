@@ -310,9 +310,11 @@ which case the list is passed to `cl-sort' as arguments."
 
 Options:
 
-`absolute-in-vault': Absolute path in the containing vault
-`relative': Relative to the current path
-`absolute': Absolute path starting from root"
+- `absolute-in-vault': Absolute path in the containing vault
+- `relative': Relative to the current path
+- `absolute': Absolute path starting from root
+
+This can be set in a directory local variable."
   ;; - [ ] Shortest path possible
   ;; - [X] Relative path
   ;; - [X] Absolute path in vault

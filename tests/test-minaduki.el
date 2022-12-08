@@ -228,7 +228,7 @@ members that should be equal."
            (default-directory "/"))
        (minaduki/format-link :target "file:///tmp/abc.org"))
      :to-equal
-     "[[tmp/abc.org]]")
+     "[[file:tmp/abc.org]]")
     (expect
      (let ((minaduki:link-insertion-format 'relative)
            (major-mode 'markdown-mode)

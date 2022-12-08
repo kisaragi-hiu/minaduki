@@ -379,7 +379,9 @@ means tomorrow, and N = -1 means yesterday."
     ('absolute-in-vault
      (minaduki//apply-link-abbrev (expand-file-name path)))
     ('relative
-     (file-relative-name path))))
+     ;; We can use "file:..." or "./..." here; the former is
+     ;; consistent with `org-insert-link'.
+     (concat "file:" (file-relative-name path)))))
 
 (defun minaduki::file-name-extension (path)
   "Return the extension of PATH.
