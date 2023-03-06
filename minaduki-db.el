@@ -519,8 +519,8 @@ If FORCE, force a rebuild of the cache from scratch."
          dir-files db-files count-plist modified-files)
     (setq dir-files (minaduki-vault:all-files)
           db-files (minaduki-db//fetch-all-files-hash))
-    (minaduki//for "Finding modified files (%s/%s)"
-        file dir-files
+    (dolist-with-progress-reporter (file dir-files)
+        "(minaduki) Finding modified files"
       (let ((content-hash (minaduki//compute-content-hash file)))
         (unless (string= content-hash (gethash file db-files))
           (push (cons file content-hash) modified-files)))
