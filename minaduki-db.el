@@ -31,7 +31,7 @@
 ;;;; Library Requires
 (eval-when-compile (require 'subr-x))
 (require 'emacsql)
-(require 'emacsql-sqlite3)
+(require 'emacsql-sqlite)
 (require 'seq)
 
 (eval-and-compile
@@ -64,7 +64,7 @@ Performs a database upgrade when required."
                (emacsql-live-p minaduki-db//connection))
     (let ((initialize? (not (file-exists-p minaduki/db-location))))
       (make-directory (file-name-directory minaduki/db-location) t)
-      (let ((conn (emacsql-sqlite3 minaduki/db-location)))
+      (let ((conn (emacsql-sqlite minaduki/db-location)))
         (set-process-query-on-exit-flag (emacsql-process conn) nil)
         (setq minaduki-db//connection conn)
         (when initialize?
