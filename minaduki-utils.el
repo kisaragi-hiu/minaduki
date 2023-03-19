@@ -247,6 +247,23 @@ Inverse of `org-link-expand-abbrev'."
           (throw 'ret (s-replace abbrev (concat key ":") path)))))
     (throw 'ret path)))
 
+(cl-defun minaduki::format-plain-link (&key target desc)
+  "Format TARGET and DESC as a link according to the major mode.
+
+Like `minaduki/format-link' but without the path magic."
+  (pcase (minaduki::file-type)
+    ('org
+     (org-link-make-string target desc))
+    ('markdown
+     (cond ((not desc)
+            ;; Just a URL
+            (format "[%s](%s)"
+                    target
+                    target))
+           (t
+            (format "[%s](%s)" desc target))))
+    (_ target)))
+
 (cl-defun minaduki/format-link (&key target desc id?)
   "Format TARGET and DESC as a link according to the major mode.
 
@@ -269,16 +286,16 @@ If ID? is non-nil and we're in Org mode, return an ID link instead."
            target
          (org-link-make-string target desc)))
       ('markdown
-        (cond ((and (not desc) url?)
-               ;; plain URL links
-               (format "<%s>" target))
-              ((not desc)
-               ;; Just a URL
-               (format "[%s](%s)"
-                       (f-filename target)
-                       (f-relative target)))
-              (t
-               (format "[%s](%s)" desc target))))
+       (cond ((and (not desc) url?)
+              ;; plain URL links
+              (format "<%s>" target))
+             ((not desc)
+              ;; Just a URL
+              (format "[%s](%s)"
+                      (f-filename target)
+                      (f-relative target)))
+             (t
+              (format "[%s](%s)" desc target))))
       ;; No common way to insert descriptions
       (_ target))))
 

@@ -43,11 +43,7 @@
 
 (require 'org-element)
 
-(declare-function  minaduki/open                  "org-roam")
-
-;;; the roam: link
-(org-link-set-parameters "roam"
-                         :follow #'minaduki-link/follow-link)
+(declare-function minaduki/open "minaduki-commands" (&optional entry))
 
 (defun minaduki-link/follow-link (_path)
   "Navigates to location in Org-roam link.

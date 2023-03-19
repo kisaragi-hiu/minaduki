@@ -17,6 +17,7 @@
 (require 'minaduki-diary)
 (require 'minaduki-completion)
 (require 'minaduki-lit)
+(require 'minaduki-btn)
 
 (require 'minaduki-utils)
 (require 'minaduki-vault)
@@ -599,18 +600,18 @@ When TIME is non-nil, create an entry for TIME instead of
     (insert (concat "#+title: " title "\n"))))
 
 ;;;###autoload
-(defun minaduki/open-diary-entry ()
+(defun minaduki/open-diary-entry (&optional noprompt)
   "Open a diary entry.
 
-By default, open one from today. With a \\[universal-argument],
-prompt to select a day first.
+Interactively, by default, NOPROMPT is t, and an entry from today
+is opened. With a \\[universal-argument], prompt to select a day
+first, as if NOPROMPT is nil.
 
 When there are multiple diary entries, prompt for selection.
 
 Diary entries are files in `minaduki/diary-directory' that
 are named with a YYYYMMDD prefix (optionally with dashes)."
-  (declare (interactive-only minaduki-diary//find-entry-for-day))
-  (interactive)
+  (interactive (list t))
   (let ((day
          ;; Why not `cond': if we're in the calendar buffer but our cursor
          ;; is not on a date (so `calendar-cursor-to-date' is nil), we want
@@ -619,7 +620,7 @@ are named with a YYYYMMDD prefix (optionally with dashes)."
                   (-some-> (calendar-cursor-to-date)
                     minaduki//date/calendar.el->ymd))
 
-             (and current-prefix-arg
+             (and (or current-prefix-arg minaduki-btn::pressed (not noprompt))
                   (minaduki//read-date "Visit diary entry from day:"))
 
              (minaduki//today))))
@@ -1034,24 +1035,6 @@ This first adds an entry for it into a file in
 
 ;;;; Actions
 
-(defvar minaduki::global-commands
-  '(("Open or create a note"              . minaduki/open)
-    ("Browse literature entries"          . minaduki/literature-entries)
-    ("Open notes directory"               . minaduki/open-directory)
-    ("Open or create a template"          . minaduki/open-template)
-    ("Open a fleeting note"               . minaduki/open-diary-entry)
-    ("Create a new fleeting note"         . minaduki/new-fleeting-note)
-    ("Create a new concept note"          . minaduki/new-concept-note)
-    ("Create a new note with the \"daily\" template" . minaduki/new-daily-note)
-    ("Find broken local links"            . minaduki/fix-broken-links)
-    ("Open the index file"                . minaduki/open-index)
-    ("Create a new literature note from URL" . minaduki:new-literature-note-from-url)
-    ("Open a random note"                 . minaduki/open-random-note)
-    ("Refresh cache"                      . minaduki-db/build-cache))
-  "Global commands shown in `minaduki:global-commands'.
-
-List of (DISPLAY-NAME . COMMAND) pairs.")
-
 (defun minaduki:global-commands ()
   "Command palette."
   (declare (interactive-only command-execute))
@@ -1061,36 +1044,6 @@ List of (DISPLAY-NAME . COMMAND) pairs.")
          (func (cdr (assoc selection candidates)))
          (prefix-arg current-prefix-arg))
     (command-execute func)))
-
-(defvar minaduki::literature-note-actions
-  '(("Open URL, DOI, or PDF" . minaduki/visit-source)
-    ("Show entry in the bibliography file" . minaduki/show-entry)
-    ("Edit notes" . orb-edit-notes)
-    ("Copy citekey" . minaduki/copy-citekey)
-    ("Insert citation" . minaduki:insert-citation)
-    ("Insert link to associated notes" . minaduki:insert-note-to-citekey))
-  "Commands useful inside a literature note.
-
-List of (DISPLAY-NAME . FUNCTION) pairs. Each function receives
-one argument, the citekey.
-
-Equivalent to `orb-note-actions-default'.")
-
-(defvar minaduki::bibliography-commands
-  '(("Create bibliography ID for current heading" . minaduki:literature-key))
-  "Local commands that act on the current file or heading.")
-
-(defvar minaduki::local-commands
-  '(("Create ID for current heading" . minaduki:id)
-    ("Move file to..."               . minaduki:move-file-to-directory)
-    ("Insert a link"                 . minaduki:insert)
-    ("Insert a link to a heading in the same file" . minaduki:insert-local)
-    ("Insert a citation"             . org-cite-insert)
-    ("Add an alias"                  . minaduki-add-alias)
-    ("Delete an alias"               . minaduki-delete-alias)
-    ("Add a tag"                     . minaduki-add-tag)
-    ("Delete a tag"                  . minaduki-delete-tag))
-  "Local commands that act on the current file or heading.")
 
 (defun minaduki:local-commands (&optional citekey)
   "Prompt for note-related actions.

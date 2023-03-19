@@ -537,6 +537,55 @@ descriptive warnings when certain operations fail (e.g. parsing).")
            "]"))
   "Matches a typed link in double brackets.")
 
+(defvar minaduki::global-commands
+  '(("Open or create a note"              . minaduki/open)
+    ("Browse literature entries"          . minaduki/literature-entries)
+    ("Open the notes directory"           . minaduki/open-directory)
+    ("Open or create a template"          . minaduki/open-template)
+    ("Open or create a diary entry"       . minaduki/open-diary-entry)
+    ("Create a new fleeting note"         . minaduki/new-fleeting-note)
+    ("Create a new concept note"          . minaduki/new-concept-note)
+    ("Create a new note with the \"daily\" template" . minaduki/new-daily-note)
+    ("Find broken local links"            . minaduki/fix-broken-links)
+    ("Open the index file"                . minaduki/open-index)
+    ("Create a new literature note from URL" . minaduki:new-literature-note-from-url)
+    ("Open a random note"                 . minaduki/open-random-note)
+    ("Refresh cache"                      . minaduki-db/build-cache))
+  "Global commands shown in `minaduki:global-commands'.
+
+List of (DISPLAY-NAME . COMMAND) pairs.")
+
+(defvar minaduki::local-commands
+  '(("Create ID for current heading" . minaduki:id)
+    ("Move file to..."               . minaduki:move-file-to-directory)
+    ("Insert a button"               . minaduki-btn:insert)
+    ("Insert a link"                 . minaduki:insert)
+    ("Insert a link to a heading in the same file" . minaduki:insert-local)
+    ("Insert a citation"             . org-cite-insert)
+    ("Add an alias"                  . minaduki-add-alias)
+    ("Delete an alias"               . minaduki-delete-alias)
+    ("Add a tag"                     . minaduki-add-tag)
+    ("Delete a tag"                  . minaduki-delete-tag))
+  "Local commands that act on the current file or heading.")
+
+(defvar minaduki::literature-note-actions
+  '(("Open URL, DOI, or PDF" . minaduki/visit-source)
+    ("Show entry in the bibliography file" . minaduki/show-entry)
+    ("Edit notes" . orb-edit-notes)
+    ("Copy citekey" . minaduki/copy-citekey)
+    ("Insert citation" . minaduki:insert-citation)
+    ("Insert link to associated notes" . minaduki:insert-note-to-citekey))
+  "Commands useful inside a literature note.
+
+List of (DISPLAY-NAME . FUNCTION) pairs. Each function receives
+one argument, the citekey.
+
+Equivalent to `orb-note-actions-default'.")
+
+(defvar minaduki::bibliography-commands
+  '(("Create bibliography ID for current heading" . minaduki:literature-key))
+  "Local commands that act on the current file or heading.")
+
 ;;;; Faces
 (defface org-roam-link
   '((t :inherit org-link))

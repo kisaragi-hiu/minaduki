@@ -10,6 +10,7 @@
 
 (require 'minaduki-extract)
 (require 'minaduki-db)
+(require 'minaduki-btn)
 (require 'minaduki-commands)
 (require 'minaduki-buffer)
 
@@ -301,6 +302,12 @@ Ensure it is installed and can be found within `exec-path'."))
                    #'org-cite-basic--complete-style))
         (setq org-cite-follow-processor 'minaduki
               org-cite-insert-processor 'minaduki)
+        (org-link-set-parameters
+         "roam"
+         :follow #'minaduki-link/follow-link)
+        (org-link-set-parameters
+         "minaduki-btn"
+         :follow #'minaduki-btn:follow)
         (add-hook 'after-change-major-mode-hook 'minaduki-initialize)
         (add-hook 'find-file-hook 'minaduki-initialize)
         (add-hook 'kill-emacs-hook #'minaduki-db//close)
