@@ -226,6 +226,21 @@ VAULT-NAME is a name in `minaduki/vaults'."
               minaduki-vault-path)))
     (expand-file-name path dir)))
 
+(defun minaduki-vault:obsidian:get-prop (namespace prop &optional vault)
+  "Get VAULT's Obsidian configuration PROP from NAMESPACE.
+This reads PROP from .obsidian/NAMESPACE.json.
+VAULT is computed from `minaduki-vault:closest' if not given."
+  (cl-block nil
+    (let* ((vault (or vault (minaduki-vault:closest)))
+           (json-file (f-join vault
+                              ".obsidian"
+                              (format "%s.json" namespace))))
+      (unless (f-file? json-file)
+        (cl-return))
+      (with-temp-buffer
+        (insert-file-contents json-file)
+        (gethash prop (json-parse-buffer))))))
+
 ;; When following, if the path isn't just a basename, then it's
 ;; treated as a normal local-absolute path.
 ;;
@@ -245,17 +260,24 @@ VAULT-NAME is a name in `minaduki/vaults'."
                         (let ((f (f-filename it)))
                           (or (equal written f)
                               (equal written (file-name-sans-extension f)))))))
-      (unless files
-        (cl-return written))
       (cond
+       ((= 0 (length files))
+        (if-let* ((attachment-folder-path
+                   (minaduki-vault:obsidian:get-prop
+                    "app" "attachmentFolderPath"
+                    closest-vault))
+                  (attachment (f-join attachment-folder-path written))
+                  ((f-file? attachment)))
+            attachment
+          (substring-no-properties written)))
        ((= 1 (length files))
         (car files))
        (t (--max-by
-            (let ((here (f-split default-directory)))
-              (>
-               (length (-common-prefix (f-split it) here))
-               (length (-common-prefix (f-split other) here))))
-            files))))))
+           (let ((here (f-split default-directory)))
+             (>
+              (length (-common-prefix (f-split it) here))
+              (length (-common-prefix (f-split other) here))))
+           files))))))
 
 (provide 'minaduki-vault)
 
