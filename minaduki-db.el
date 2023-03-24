@@ -112,7 +112,7 @@ SQL can be either the emacsql vector representation, or a string."
 
     (links
      [(source :not-null)
-      (dest :not-null)
+      (dest)
       (type :not-null)
       (properties :not-null)])
 
