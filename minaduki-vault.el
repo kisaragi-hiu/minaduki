@@ -234,24 +234,28 @@ VAULT-NAME is a name in `minaduki/vaults'."
 ;; closest to the current path.
 (defun minaduki-obsidian-path (written)
   "Convert WRITTEN path to actual path."
-  (let ((closest-vault (minaduki-vault:closest)))
-    (if (s-contains? (f-path-separator) written)
-        ;; Not just a base name -> just a local-absolute path
-        (f-join closest-vault written)
-      (let ((files (->> (minaduki-vault::list-files closest-vault)
-                        (--filter
-                         (let ((f (f-filename it)))
-                           (or (equal written f)
-                               (equal written (file-name-sans-extension f))))))))
-        (when files
-          (if (= 1 (length files))
-              (car files)
-            (--max-by
-             (let ((here (f-split default-directory)))
-               (>
-                (length (-common-prefix (f-split it) here))
-                (length (-common-prefix (f-split other) here))))
-             files)))))))
+  (cl-block nil
+    (let ((closest-vault (minaduki-vault:closest))
+          files)
+      ;; Not just a base name -> just a local-absolute path
+      (when (s-contains? (f-path-separator) written)
+        (cl-return (f-join closest-vault written)))
+      (setq files (->> (minaduki-vault::list-files closest-vault)
+                       (--filter
+                        (let ((f (f-filename it)))
+                          (or (equal written f)
+                              (equal written (file-name-sans-extension f)))))))
+      (unless files
+        (cl-return written))
+      (cond
+       ((= 1 (length files))
+        (car files))
+       (t (--max-by
+            (let ((here (f-split default-directory)))
+              (>
+               (length (-common-prefix (f-split it) here))
+               (length (-common-prefix (f-split other) here))))
+            files))))))
 
 (provide 'minaduki-vault)
 
