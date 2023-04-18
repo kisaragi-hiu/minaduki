@@ -190,8 +190,8 @@ A path is in a vault if it:
                  minaduki-nested-vault-search-path)))
     (catch 'ret
       (while t
-        (when (equal (f-slash path)
-                     (f-slash org-directory))
+        (when (equal (f-expand path)
+                     (f-expand org-directory))
           (throw 'ret path))
         (unless (s-starts-with?
                  (f-full org-directory)
