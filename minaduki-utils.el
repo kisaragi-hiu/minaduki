@@ -284,6 +284,9 @@ If ID? is non-nil and we're in Org mode, return an ID link instead."
          (setq target (concat "id:" target)))
        (if (and (not desc) url?) ; plain url
            target
+         ;; Avoid inserting [[a][a]]
+         (when (equal target desc)
+           (setq desc nil))
          (org-link-make-string target desc)))
       ('markdown
        (cond ((and (not desc) url?)
