@@ -267,7 +267,12 @@ when appropriate."
 
 (defun minaduki-initialize ()
   "Initialize minaduki for this buffer."
-  (when (minaduki-vault:in-vault?)
+  (when (if minaduki:track-files-outside-vaults
+            (and
+             (buffer-file-name)
+             (member (minaduki::file-name-extension (buffer-file-name))
+                     minaduki-file-extensions))
+          (minaduki-vault:in-vault?))
     (minaduki-local-mode)))
 
 (define-minor-mode minaduki-mode

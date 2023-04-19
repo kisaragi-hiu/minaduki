@@ -2,6 +2,8 @@
 
 ;;; Commentary:
 
+;; These functions retrieves data from the current buffer.
+
 ;;; Code:
 
 (require 'dash)
@@ -23,10 +25,8 @@
 (defvar markdown-regex-angle-uri)
 (defvar markdown-regex-uri)
 (defvar markdown-regex-email)
-
 (declare-function markdown-inline-code-at-point-p "markdown-mode")
 (declare-function markdown-code-block-at-point-p "markdown-mode")
-
 ;; Silence byte compiler on Org < 9.5. These are not present there and
 ;; aren't used.
 (declare-function org-element-citation-reference-parser "org-element")
@@ -393,17 +393,20 @@ Return a list of `minaduki-id' objects."
 
 (defun minaduki-extract/main-title ()
   "Return the title of the current buffer."
-  (pcase (minaduki::file-type)
-    ('org
-     (-some-> (car (minaduki-extract//file-prop "title"))
-       list))
-    ('markdown
-     (let ((prop (car (minaduki-extract//file-prop "title"))))
-       ;; In Obsidian, the main title is the file name.
-       (cond ((minaduki-vault:in-obsidian-vault?)
-              (list (f-base (buffer-file-name))))
-             (prop
-              (list prop)))))))
+  ;; Outside of a vault, the title is always the file name.
+  (if (not (minaduki-vault:in-vault?))
+      (list (buffer-file-name))
+    (pcase (minaduki::file-type)
+      ('org
+       (-some-> (car (minaduki-extract//file-prop "title"))
+         list))
+      ('markdown
+       (let ((prop (car (minaduki-extract//file-prop "title"))))
+         ;; In Obsidian, the main title is the file name.
+         (cond ((minaduki-vault:in-obsidian-vault?)
+                (list (f-base (buffer-file-name))))
+               (prop
+                (list prop))))))))
 
 (defun minaduki-extract/aliases ()
   "Return a list of aliases from the current buffer."

@@ -134,10 +134,10 @@ For example: (setq minaduki-buffer/window-parameters '((no-other-window . t)))"
 
 (defun minaduki-buffer//insert-title ()
   "Insert the minaduki-buffer title."
-  (insert (propertize (minaduki-db//fetch-title
-                       (buffer-file-name minaduki-buffer//current))
-                      'font-lock-face
-                      'org-document-title)))
+  (-> (minaduki-db//fetch-title
+       (buffer-file-name minaduki-buffer//current))
+      (propertize 'font-lock-face 'org-document-title)
+      insert))
 
 (defun minaduki-buffer//open-at-point ()
   "Open an Org-roam link or visit the text previewed at point.
