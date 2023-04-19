@@ -20,7 +20,10 @@
   "A list of vaults that are tracked by Minaduki.
 
 Each vault is either a string, representing the path of the
-vault, or a plist with the keys `:name', `:path', and `:skipped'.
+vault, or a plist with the keys `:name' and `:path', and
+optionally `:skipped' and `:main'.
+
+The first vault with `:main' is the main vault.
 
 A vault with a name can be linked to. Right now this is only
 supported in Org mode by being added to `org-link-abbrev-alist'.
@@ -29,20 +32,15 @@ Files under the paths are indexed by Minaduki.
 
 Each vault is represented with a list (NAME PATH).
 Files under any PATH are indexed by Minaduki.
-Each NAME is added to `org-link-abbrev-alist'.
-
-Note that right now `org-directory' is still treated as the main
-vault."
+Each NAME is added to `org-link-abbrev-alist'."
   :group 'minaduki
   :type '(repeat
           (choice (directory :tag "Path without other properties")
                   (list :tag "A vault with a name and whether it's skipped"
-                        (const :name)
-                        (string :tag "Name")
-                        (const :path)
-                        (directory :tag "path")
-                        (const :skipped)
-                        (boolean :tag "Skipped?")))))
+                        (const :name (string :tag "Name"))
+                        (const :path (directory :tag "path"))
+                        (const :skipped (boolean :tag "Skipped?"))
+                        (const :main (boolean :tag "Main?"))))))
 
 (defun minaduki-vault-path (vault)
   "Return the path of VAULT."
@@ -59,6 +57,11 @@ vault."
   "Return whether VAULT is skipped by `minaduki-db/build-cache'."
   (when (listp vault)
     (plist-get vault :skipped)))
+
+(defun minaduki-vault-main? (vault)
+  "Return whether VAULT is the main vault."
+  (when (listp vault)
+    (plist-get vault :main)))
 
 ;;;; etc.
 (defcustom minaduki-nested-vault-root-files
@@ -133,7 +136,7 @@ If SKIP is non-nil, list only those whose `skipped' prop is nil.
 
 The result is guaranteed to only contain paths."
   (let (ret)
-    (dolist (vault (cons org-directory minaduki/vaults))
+    (dolist (vault minaduki/vaults)
       (let ((path (minaduki-vault-path vault)))
         (when path
           (unless (and skip (minaduki-vault-skipped vault))
@@ -141,11 +144,18 @@ The result is guaranteed to only contain paths."
     (nreverse ret)))
 
 ;;;; Other public functions
+(defun minaduki-vault:main ()
+  "Return the path to the main vault."
+  (minaduki-vault-path
+   (or (-first #'minaduki-vault-main? minaduki/vaults)
+       org-directory
+       (car minaduki/vaults))))
+
 (defun minaduki-vault:all-files ()
   "Return a list of all tracked files.
 
-Tracked files are those within `org-directory' or one of
-`minaduki/vaults' that isn't skipped."
+Tracked files are those within one of `minaduki/vaults' that
+isn't skipped."
   (let ((paths (minaduki-vault::paths :skip t)))
     ;;   (--reduce-from (append <BODY> acc) nil list)
     ;; is the same as
@@ -160,7 +170,7 @@ Tracked files are those within `org-directory' or one of
 
 If PATH is not specified, use the current buffer's file-path.
 
-Vaults are those defined in `minaduki/vaults' plus `org-directory'.
+Vaults are those defined in `minaduki/vaults'.
 
 A path is in a vault if it:
 - has the right extension,
@@ -184,17 +194,17 @@ A path is in a vault if it:
   (let ((nested-vaults
          ;; These folders are nested vaults no matter what.
          (mapcan (lambda (x)
-                   (let ((d (f-join org-directory x)))
+                   (let ((d (f-join (minaduki-vault:main) x)))
                      (when (f-dir? d)
                        (f-directories d))))
                  minaduki-nested-vault-search-path)))
     (catch 'ret
       (while t
         (when (equal (f-expand path)
-                     (f-expand org-directory))
+                     (f-expand (minaduki-vault:main)))
           (throw 'ret path))
         (unless (s-starts-with?
-                 (f-full org-directory)
+                 (f-full (minaduki-vault:main))
                  (f-full path))
           (throw 'ret nil))
         (if (or
@@ -213,8 +223,8 @@ If PATH is nil, use `default-directory'."
 (defun minaduki-vault:path-relative (path &optional vault)
   "Return PATH's relative path in VAULT.
 
-If VAULT is not given, use `org-directory'."
-  (f-relative path (minaduki-vault-path (or vault org-directory))))
+If VAULT is not given, use the main vault."
+  (f-relative path (minaduki-vault-path (or vault (minaduki-vault:main)))))
 
 (defun minaduki-vault:path-absolute (path vault-name)
   "Given PATH relative to VAULT-NAME, return its absolute path.

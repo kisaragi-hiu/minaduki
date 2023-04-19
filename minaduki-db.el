@@ -507,7 +507,7 @@ If the file exists, update the cache with information."
           (minaduki-db//insert-links 'update))))))
 
 (defun minaduki-db/build-cache (&optional force)
-  "Build the cache for `org-directory'.
+  "Build the cache for all applicable.
 If FORCE, force a rebuild of the cache from scratch."
   (interactive "P")
   (when force (delete-file minaduki/db-location))

@@ -475,8 +475,8 @@ REPLACE-REGION?: whether to replace selected text."
            (let ((file file))
              (make-text-button
               (format "%s::C%s"
-                      (if (f-descendant-of? file org-directory)
-                          (f-relative file org-directory)
+                      (if (f-descendant-of? file (minaduki-vault:main))
+                          (f-relative file (minaduki-vault:main))
                         file)
                       point)
               nil
@@ -508,7 +508,7 @@ If VISIT? is non-nil, go to the newly created note."
    (list :title (read-string "Title: ")
          :visit? t))
   (let* ((file (-> (minaduki//title-to-slug title)
-                   (f-expand org-directory)
+                   (f-expand (minaduki-vault:main))
                    (concat ".org")))
          (org-capture-templates
           `(("a" "" plain
@@ -652,9 +652,9 @@ are named with a YYYYMMDD prefix (optionally with dashes)."
 
 ;;;###autoload
 (defun minaduki/open-directory ()
-  "Open `org-directory'."
+  "Open the main vault."
   (interactive)
-  (find-file org-directory))
+  (find-file (minaduki-vault:main)))
 
 ;;;###autoload
 (defun minaduki/open-random-note ()
@@ -671,12 +671,12 @@ are named with a YYYYMMDD prefix (optionally with dashes)."
 The index file is specified in this order:
 
 - `minaduki:index-file' (a string or function, see its docstring)
-- A note with a title of \"Index\" in `org-directory'"
+- A note with a title of \"Index\" in the main vault"
   (interactive)
   (let ((index (cond
                 ((functionp minaduki:index-file)
                  (f-expand (funcall minaduki:index-file)
-                           org-directory))
+                           (minaduki-vault:main)))
                 ((stringp minaduki:index-file)
                  (f-expand minaduki:index-file))
                 (t
@@ -960,12 +960,12 @@ This first adds an entry for it into a file in
           ((= 1 (length minaduki-lit/bibliography))
            (car minaduki-lit/bibliography))
           (t
-           (let ((default-directory org-directory)
+           (let ((default-directory (minaduki-vault:main))
                  (maybe-relative
                   (cl-loop
                    for f in minaduki-lit/bibliography
-                   collect (if (f-descendant-of? f org-directory)
-                               (f-relative f org-directory)
+                   collect (if (f-descendant-of? f (minaduki-vault:main))
+                               (f-relative f (minaduki-vault:main))
                              f))))
              (-->
               maybe-relative

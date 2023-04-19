@@ -329,7 +329,7 @@ In Markdown, TYPE has no effect."
 (defun minaduki//path-to-title (path)
   "Convert PATH to a string that's suitable as a title."
   (-> path
-      (f-relative (f-expand org-directory))
+      (f-relative (f-expand (minaduki-vault:main)))
       f-no-ext))
 
 (defun minaduki//title-to-slug (title)
@@ -464,7 +464,7 @@ Kills the buffer if KEEP-BUF-P is nil, and FILE is not yet visited."
 (defmacro minaduki//with-temp-buffer (file &rest body)
   "Execute BODY within a temp buffer.
 
-Like `with-temp-buffer', but propagates `org-directory'.
+Like `with-temp-buffer', but sets some things up.
 
 If FILE, set `minaduki::file-name' and variable
 `buffer-file-name' to FILE and insert its contents."

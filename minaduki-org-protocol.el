@@ -38,7 +38,7 @@
 ;;
 ;;    emacsclient 'org-protocol://notes?file=blender.org'
 ;;
-;; will open /path/to/org-directory/blender.org.
+;; will open /path/to/main-vault/blender.org.
 ;;
 ;; One way to set up org-protocol:// links on Linux, assuming you
 ;; always want to use `emacsclient -c':
@@ -63,6 +63,7 @@
 (require 'org-protocol)
 (require 'minaduki)
 (require 'minaduki-bibtex) ; orb-edit-notes
+(require 'minaduki-vault)
 
 ;;;; Functions
 
@@ -78,7 +79,7 @@ This corresponds to the org-protocol URL
 \"org-protocol://notes?file=FILE&key=KEY\".
 
 TITLE: open the file with TITLE.
-FILE: a path relative to `org-directory'.
+FILE: a path relative to the main vault.
 KEY: a cite key corresponding to the KEY keyword
 
 Example:
@@ -90,7 +91,7 @@ emacsclient 'org-protocol://notes?key=banjoazusa2020'"
    (title
     (minaduki/open title))
    (file
-    (find-file (f-join org-directory file)))
+    (find-file (f-join (minaduki-vault:main) file)))
    (key
     (orb-edit-notes key))))
 

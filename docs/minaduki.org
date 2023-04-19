@@ -80,7 +80,7 @@ The name of a vault can be used to link to it. In Org this is the same as settin
 
 which will refer to =~/Dropbox/myfile.org=.
 
-Right now the main vault is set with =org-directory=.
+The main vault is set as the first vault with the =:main= property, or the first vault in general.
 
 Subdirectories containing ~minaduki-nested-vault-root-files~ are considered /nested vaults/. Right now this is only used to implement Obsidian's default /shortest link when possible/ links.
 
@@ -115,7 +115,7 @@ A /concept note/ is associated with some concept that isn't a moment in time.
 
 - Command: =minaduki/new-concept-note=
 
-  This command creates a new concept note at the root of the main vault (=org-directory=).
+  This command creates a new concept note at the root of the main vault.
 
 *** Literature notes
 

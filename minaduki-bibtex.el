@@ -79,7 +79,7 @@ is a BibTeX entry as returned by `bibtex-completion-get-entry'."
             (`nil 'nil)
             ((and (pred stringp) tmpl) tmpl)
             (`(file ,file)
-             (let ((flnm (expand-file-name file org-directory)))
+             (let ((flnm (expand-file-name file (minaduki-vault:main))))
                (if (file-exists-p flnm) (f-read-text flnm)
                  (format "Template file %S not found" file))))
             (`(function ,fun)

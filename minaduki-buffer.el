@@ -235,7 +235,7 @@ TYPE can be:
                (minaduki//backlinks 'refs)))))
 
 (defun minaduki//unlinked-references ()
-  "Return unlinked references to the current buffer.
+  "Return unlinked references (from the main vault) to the current buffer.
 
 Only references from files without links to the current buffer
 are returned."
@@ -250,7 +250,7 @@ are returned."
                file-path
                (or titles refs))
       (with-temp-buffer
-        (let ((default-directory org-directory))
+        (let ((default-directory (minaduki-vault:main)))
           (apply
            #'call-process
            rg-cmd

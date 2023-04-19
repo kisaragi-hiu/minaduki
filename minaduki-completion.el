@@ -53,7 +53,7 @@ title."
          ((when .tags
             (format "(%s)" (s-join "," .tags)))
           :width 30 :face 'marginalia-list)
-         ((f-relative .path org-directory)
+         ((f-relative .path (minaduki-vault:main))
           :truncate 40 :face 'marginalia-file-name))))))
 
 ;;;; Completion utils
@@ -179,7 +179,8 @@ Embark to create what are in effect context menus."
             string-join)
        "")
    (--> (or (oref node id)
-            (f-relative (oref node path) org-directory))
+            (f-relative (oref node path)
+                        (minaduki-vault:main)))
         (propertize it 'face 'minaduki-path))))
 
 (cl-defun minaduki-completion//read-note
@@ -206,7 +207,7 @@ PROMPT: the prompt to use during completion. Default: \"Note: \""
           ;; When there is no existing match, the entered text is both
           ;; the title and the path.
           ;;
-          ;; TODO: the path should be resolved relative to `org-directory'
+          ;; TODO: the path should be resolved relative to the main vault
           ;;       (unless it's a url or an absolute path)
           (minaduki-node
            :title selection

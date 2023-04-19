@@ -123,6 +123,7 @@ value like `most-positive-fixnum'."
   :type 'integer
   :group 'minaduki)
 
+;; TODO: relative = relative to main vault
 (defcustom minaduki/templates-directory (f-slash
                                          (f-join
                                           org-directory "templates"))
