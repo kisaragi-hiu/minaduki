@@ -514,8 +514,9 @@ ORIG-PATH is the path where the CONTENT originated."
             unlinked-references)
         (with-current-buffer minaduki-buffer//current
           (setq cite-backlinks (minaduki//backlinks 'refs)
-                backlinks (minaduki//backlinks 'titles)
-                unlinked-references (minaduki//unlinked-references)))
+                backlinks (minaduki//backlinks 'titles))
+          (when (minaduki-vault:in-vault?)
+            (setq unlinked-references (minaduki//unlinked-references))))
         (erase-buffer)
         (run-hooks 'minaduki-buffer/before-insert-hook)
         (minaduki-buffer//insert-title)
@@ -529,7 +530,8 @@ ORIG-PATH is the path where the CONTENT originated."
         (minaduki-buffer//insert-backlinks
          backlinks
          :heading "Backlink")
-        (minaduki-buffer//insert-unlinked-references unlinked-references)
+        (when unlinked-references
+          (minaduki-buffer//insert-unlinked-references unlinked-references))
         (unless (or backlinks cite-backlinks unlinked-references)
           (insert "\n\n/No backlinks/"))
         (minaduki-buffer//restore-point)
