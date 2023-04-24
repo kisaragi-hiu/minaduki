@@ -148,20 +148,18 @@ value like `most-positive-fixnum'."
   :group 'minaduki
   :type 'string)
 
-(defcustom minaduki-file-extensions `("org" "md" "bib" "json")
-  "Only files with these extensions are indexed.
-
-The first item in the list is used as the default file extension.
-
-While the file extensions may be different, the only supported
-file formats are:
-
-- Org-mode
-- Markdown (partially)
-- CSL-JSON (only as `minaduki-lit/bibliography')
-- BibTeX / Biblatex (only as `minaduki-lit/bibliography')"
-  :type '(repeat string)
+(defcustom minaduki-file-extension-type-alist
+  '(("json" . json)
+    ("edn" . edn)
+    ("org" . org)
+    ("md" . markdown)
+    ("markdown" . markdown)
+    ("bib" . bibtex))
+  "Alist mapping extensions to file types."
+  :type '(alist :key-type string :value-type symbol)
   :group 'minaduki)
+(defvar minaduki-file-extensions
+  (map-keys minaduki-file-extension-type-alist))
 
 ;; TODO: this should be a vault setting
 ;; Perhaps in <vault>/.minaduki/ignore as a gitignore-style file

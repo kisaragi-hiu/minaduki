@@ -60,16 +60,35 @@ distinguishing between a caller that does not want to use
       v
     (list v)))
 
+(defun minaduki::file-type::path (path)
+  "Determine the file type from PATH only*.
+
+*: and `minaduki-file-extension-type-alist'."
+  (declare
+   ;; only reads input from arguments
+   (pure nil)
+   ;; only sends output through return value
+   (side-effect-free t))
+  (cl-loop
+   for (str . value)
+   in '(("json" . json)
+        ("edn" . edn)
+        ("org" . org)
+        ("md" . markdown)
+        ("markdown" . markdown)
+        ("bib" . bibtex))
+   when (string-match-p (rx "." (literal str) eos) path)
+   return value))
 (defun minaduki::file-type ()
-  "Return file type of current buffer."
+  "Return the file type of current buffer."
   (let ((case-fold-search t))
     (cond ((derived-mode-p 'org-mode) 'org)
           ((derived-mode-p 'markdown-mode) 'markdown)
           ((derived-mode-p 'bibtex-mode) 'bibtex)
           ((derived-mode-p 'json-mode) 'json)
           ((buffer-file-name)
-           (pcase (buffer-file-name)
-             ((pred (string-match-p "\\.json\\'")) 'json))))))
+           (minaduki::file-type::path
+            (buffer-file-name))))))
 
 (defmacro minaduki--with-comp-setup (defaults &rest body)
   "Run BODY with completion frameworks set up according to DEFAULTS.
