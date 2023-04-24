@@ -27,14 +27,15 @@
 (require 'f)
 
 (require 'minaduki-vars)
+(require 'minaduki-vault)
 (require 'minaduki-utils)
 (require 'minaduki-db)
 (require 'minaduki-lit)
 
-(require 'marginalia nil t)
 ;; Keeping the `require' at top level allows the byte compiler to
 ;; see the definition of `marginalia--fields' so that it doesn't
 ;; report errors for `minaduki-completion--annotate-note'.
+(require 'marginalia nil t)
 (when (featurep 'marginalia)
   (defvar marginalia-annotator-registry)
   (add-to-list 'marginalia-annotator-registry

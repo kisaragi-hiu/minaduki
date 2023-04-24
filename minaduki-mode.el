@@ -8,6 +8,7 @@
 
 (require 'dash)
 
+(require 'minaduki-vars)
 (require 'minaduki-extract)
 (require 'minaduki-db)
 (require 'minaduki-btn)
