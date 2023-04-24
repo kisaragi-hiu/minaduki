@@ -65,7 +65,6 @@ Performs a database upgrade when required."
     (let ((initialize? (not (file-exists-p minaduki/db-location))))
       (make-directory (file-name-directory minaduki/db-location) t)
       (let ((conn (emacsql-sqlite minaduki/db-location)))
-        (set-process-query-on-exit-flag (emacsql-process conn) nil)
         (setq minaduki-db//connection conn)
         (when initialize?
           (minaduki-db//init conn))
