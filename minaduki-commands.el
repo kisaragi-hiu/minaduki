@@ -153,6 +153,10 @@ open in another window instead of in the current one."
 
 ;;;; Local commands
 
+;;;###autoload
+(defalias 'minaduki:toggle-sidebar
+  #'minaduki-buffer/toggle-display)
+
 ;; TODO: Specify what you want with a C-u; reject existing IDs
 (defun minaduki:id ()
   "Assign an ID to the current heading if it doesn't have one yet.

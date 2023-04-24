@@ -257,9 +257,15 @@ when appropriate."
   ;; off the global mode and revert the file.
   :global nil
   :keymap (let ((map (make-sparse-keymap)))
-            (define-key map
-              (kbd (format "%s n" minaduki-mode:command-prefix))
-              #'minaduki:local-commands)
+            (cl-loop
+             for (suffix . cmd)
+             in '(("n" . minaduki:local-commands)
+                  ("l" . minaduki:toggle-sidebar))
+             do (define-key map
+                  (kbd (format "%s %s"
+                               minaduki-mode:command-prefix
+                               suffix))
+                  cmd))
             (define-key map
               [remap markdown-follow-thing-at-point]
               #'minaduki-markdown-follow)

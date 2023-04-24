@@ -69,9 +69,5 @@
 
 (require 'minaduki-mode)
 
-;;; Interactive Commands
-;;;###autoload
-(defalias 'minaduki/sidebar 'minaduki-buffer/toggle-display)
-
 (provide 'minaduki)
 ;;; minaduki.el ends here
