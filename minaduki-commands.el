@@ -684,7 +684,7 @@ The index file is specified in this order:
                  (f-expand (funcall minaduki:index-file)
                            (minaduki-vault:main)))
                 ((stringp minaduki:index-file)
-                 (f-expand minaduki:index-file))
+                 (f-expand minaduki:index-file (minaduki-vault:main)))
                 (t
                  (car (minaduki-db//fetch-file :title "Index"))))))
     (if (and index (f-exists? index))
