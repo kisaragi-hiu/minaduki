@@ -236,6 +236,12 @@ VAULT-NAME is a name in `minaduki/vaults'."
               minaduki-vault-path)))
     (expand-file-name path dir)))
 
+(defun minaduki-vault:obsidian-vault? (&optional vault)
+  "Return if VAULT is an Obsidian vault.
+VAULT is the result of `minaduki-vault:closest' by default."
+  (let ((vault (or vault (minaduki-vault:closest))))
+    (f-dir-p (f-join vault ".obsidian"))))
+
 (defun minaduki-vault:obsidian:get-prop (namespace prop &optional vault)
   "Get VAULT's Obsidian configuration PROP from NAMESPACE.
 This reads PROP from .obsidian/NAMESPACE.json.
@@ -260,10 +266,23 @@ VAULT is computed from `minaduki-vault:closest' if not given."
 (defun minaduki-obsidian-path (written)
   "Convert WRITTEN path to actual path."
   (cl-block nil
-    (let ((closest-vault (minaduki-vault:closest))
-          files)
+    (let* ((closest-vault (minaduki-vault:closest))
+           (obsidian? (minaduki-vault:obsidian-vault? closest-vault))
+           files)
+      ;; Early return if we're not in a vault
+      (unless closest-vault
+        (cl-return))
       ;; Not just a base name -> just a local-absolute path
-      (when (s-contains? (f-path-separator) written)
+      (when
+          (or
+           ;; Not just a base name
+           (s-contains? (f-path-separator) written)
+           ;; Has a protocol / abbrev
+           (s-contains? ":" written))
+        ;; Support org link abbrev in wiki links outside of an
+        ;; obsidian vault
+        (unless obsidian?
+          (setq written (org-link-expand-abbrev written)))
         (cl-return (f-join closest-vault written)))
       (setq files (->> (minaduki-vault::list-files closest-vault)
                        (--filter
@@ -272,14 +291,16 @@ VAULT is computed from `minaduki-vault:closest' if not given."
                               (equal written (file-name-sans-extension f)))))))
       (cond
        ((= 0 (length files))
-        (if-let* ((attachment-folder-path
-                   (minaduki-vault:obsidian:get-prop
-                    "app" "attachmentFolderPath"
-                    closest-vault))
-                  (attachment (f-join attachment-folder-path written))
-                  ((f-file? attachment)))
-            attachment
-          (substring-no-properties written)))
+        (let ((attachment nil))
+          (when obsidian?
+            (setq attachment
+                  (-some--> (minaduki-vault:obsidian:get-prop
+                             "app" "attachmentFolderPath"
+                             closest-vault)
+                    (f-join it written))))
+          (if (and attachment (f-file? attachment))
+              attachment
+            (substring-no-properties written))))
        ((= 1 (length files))
         (car files))
        (t (--max-by
