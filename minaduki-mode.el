@@ -95,6 +95,19 @@ file."
              'org-link)))))
 
 ;;;; Hooks and advices
+(defun minaduki::markdown-follow-advice (orig-func arg)
+  "Use `minaduki-markdown-follow' to replace `markdown-follow-thing-at-point'.
+ORIG-FUNC is the original function.
+ARG is whether the thing should be opened in another window."
+  ;; HACK: this allows `minaduki-markdown-follow' to use the original
+  ;; `markdown-follow-thing-at-point' directly without receiving an
+  ;; ORIG-FUNC argument itself. This way `minaduki-markdown-follow'
+  ;; can still be used as a normal command.
+  (cl-letf (((symbol-function
+              'markdown-follow-thing-at-point)
+             orig-func))
+    (minaduki-markdown-follow arg)))
+
 (defun minaduki::delete-file-advice (file &optional _trash)
   "Advice for maintaining cache consistency when FILE is deleted."
   (when (and (not (auto-save-file-name-p file))
@@ -266,9 +279,6 @@ when appropriate."
                                minaduki-mode:command-prefix
                                suffix))
                   cmd))
-            (define-key map
-              [remap markdown-follow-thing-at-point]
-              #'minaduki-markdown-follow)
             map)
   (minaduki::local-mode-enable))
 
@@ -328,6 +338,8 @@ Ensure it is installed and can be found within `exec-path'."))
           (setq minaduki-db/file-update-timer (run-with-idle-timer minaduki-db/update-idle-seconds t #'minaduki-db/update-cache-on-timer)))
         (advice-add 'rename-file :after #'minaduki::rename-file-advice)
         (advice-add 'delete-file :before #'minaduki::delete-file-advice)
+        (advice-add 'markdown-follow-thing-at-point :around
+                    #'minaduki::markdown-follow-advice)
         (add-to-list 'org-execute-file-search-functions 'minaduki-org//move-to-row-col)
         (add-hook 'org-open-at-point-functions #'minaduki/open-id-at-point)
         (advice-add 'org-id-new :after #'minaduki-org//id-new-advice)
@@ -353,6 +365,8 @@ Ensure it is installed and can be found within `exec-path'."))
     (advice-remove 'rename-file #'minaduki::rename-file-advice)
     (advice-remove 'delete-file #'minaduki::delete-file-advice)
     (advice-remove 'org-id-new #'minaduki-org//id-new-advice)
+    (advice-add 'markdown-follow-thing-at-point
+                #'minaduki::markdown-follow-advice)
     (when (fboundp 'org-link-set-parameters)
       (dolist (face '("file" "id"))
         (org-link-set-parameters face :face 'org-link)))

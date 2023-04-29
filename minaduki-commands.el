@@ -139,16 +139,18 @@ Like `markdown-follow-thing-at-point', but has support for:
 When OTHER is non-nil (with a \\[universal-argument]),
 open in another window instead of in the current one."
   (interactive "P")
-  (let ((markdown-enable-wiki-links t))
-    (when other (other-window 1))
-    (cond ((markdown-wiki-link-p)
-           (minaduki//find-file (minaduki-obsidian-path (match-string 3))))
-          ((markdown-link-p)
-           (let ((url (markdown-link-url)))
-             (if (s-prefix? "#" url)
-                 (minaduki/open-id (substring url 1))
-               (markdown-follow-thing-at-point other))))
-          (t (markdown-follow-thing-at-point other)))))
+  (if (bound-and-true-p minaduki-local-mode)
+      (let ((markdown-enable-wiki-links t))
+        (when other (other-window 1))
+        (cond ((markdown-wiki-link-p)
+               (minaduki//find-file (minaduki-obsidian-path (match-string 3))))
+              ((markdown-link-p)
+               (let ((url (markdown-link-url)))
+                 (if (s-prefix? "#" url)
+                     (minaduki/open-id (substring url 1))
+                   (markdown-follow-thing-at-point other))))
+              (t (markdown-follow-thing-at-point other))))
+    (markdown-follow-thing-at-point other)))
 
 
 ;;;; Local commands
