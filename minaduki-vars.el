@@ -149,12 +149,12 @@ value like `most-positive-fixnum'."
   :type 'string)
 
 (defcustom minaduki-file-extension-type-alist
-  '(("json" . json)
-    ("edn" . edn)
-    ("org" . org)
+  '(("org" . org)
     ("md" . markdown)
     ("markdown" . markdown)
-    ("bib" . bibtex))
+    ("bib" . bibtex)
+    ("json" . json)
+    ("edn" . edn))
   "Alist mapping extensions to file types."
   :type '(alist :key-type string :value-type symbol)
   :group 'minaduki)
