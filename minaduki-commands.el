@@ -934,16 +934,18 @@ CITEKEY is a list whose car is a citation key."
               (elt doc)
               (alist-get 'id)))))))
 
-(defun minaduki:literature-key ()
+(defun minaduki:literature-key-get-create ()
   "Assign a literature key to the current heading if it doesn't have one yet.
 
 Return the key."
+  (interactive)
   (let ((key (minaduki::literature-key-at-point)))
     (unless key
       (pcase (minaduki::file-type)
         ('org
          (setq key
                (minaduki-lit::generate-key-from
+                :title (org-entry-get nil "ITEM")
                 :author (org-entry-get nil "author")
                 :date (or (org-entry-get nil "date")
                           (org-entry-get nil "year"))))
@@ -1005,7 +1007,7 @@ This first adds an entry for it into a file in
              (org-entry-put nil prop value)
              (setq info (plist-put info prop value)))))
        (setq info (plist-put info
-                             :citekey (minaduki:literature-key))))
+                             :citekey (minaduki:literature-key-get-create))))
       ('json
        (goto-char (point-min))
        (let ((v (json-read)))

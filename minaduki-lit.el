@@ -106,28 +106,32 @@ OTHERS: other key -> value pairs."
 
 ;;;; Bibliography
 
-(cl-defun minaduki-lit::generate-key-from (&key author date)
-  "Generate a key from AUTHOR and DATE."
-  (let* ((author
-          (-some->> author
-            (s-replace-all '((" " . "")
-                             ("," . "")
-                             ("/" . "")
-                             ("?" . "")))
-            downcase))
-         (date
-          (-some->> date
-            (s-replace "--" "–")
-            (s-replace "-" "")
-            (s-replace "–" "--")
-            ;; this should handle ISO 8601 timestamps
-            (replace-regexp-in-string "T[[:digit:]].*" "")))
-         (new-id
-          (concat author (or date ""))))
-    (unless (and author date)
-      (setq new-id
-            (read-string "The currently generated ID is too general. Make it more specific: " new-id)))
-    new-id))
+(cl-defun minaduki-lit::generate-key-from (&rest context)
+  "Generate a key from CONTEXT.
+
+CONTEXT keys:
+- `:author'
+- `:date'
+- `:title'"
+  (map-let (:author :date :title) context
+    (let* ((author
+            (-some->> author
+              (s-replace-all '((" " . "")
+                               ("," . "")
+                               ("/" . "")
+                               ("?" . "")))
+              downcase))
+           (title (minaduki//title-to-slug title))
+           (date
+            (-some->> date
+              (s-replace "--" "–")
+              (s-replace "-" "")
+              (s-replace "–" "--")
+              ;; this should handle ISO 8601 timestamps
+              (replace-regexp-in-string "T[[:digit:]].*" "")))
+           (new-id
+            (concat author (or title "") (or date ""))))
+      new-id)))
 
 (defun minaduki-lit/fetch-new-entry-from-url (url)
   "Fetch information from URL for a new entry."
