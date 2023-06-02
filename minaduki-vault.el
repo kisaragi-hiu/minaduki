@@ -177,7 +177,7 @@ A path is in a vault if it:
 - is not excluded (by `minaduki-file-exclude-regexp'),
 - and is located under a vault."
   (-when-let (path (or path
-                       (minaduki//current-file-name)))
+                       (minaduki::current-file-name)))
     (setq path (expand-file-name path))
     (save-match-data
       (and

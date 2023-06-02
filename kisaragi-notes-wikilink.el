@@ -56,7 +56,7 @@ the link."
     (pcase link-type
       ("file"
        (if loc
-           (minaduki//find-file loc)
+           (minaduki::find-file loc)
          (minaduki/open desc)))
       ("id"
        (org-goto-marker-or-bmk mkr)))))
@@ -67,7 +67,7 @@ the link."
 If FILE, return outline headings for passed FILE instead.
 If WITH-MARKER, return a cons cell of (headline . marker).
 If USE-STACK, include the parent paths as well."
-  (minaduki//with-file file (when with-marker 'keep)
+  (minaduki::with-file file (when with-marker 'keep)
     (let* ((outline-level-fn outline-level)
            (path-separator "/")
            (stack-level 0)
@@ -117,7 +117,7 @@ NO-INTERACTIVE is non-nil, return nil in this case."
 If FILE is nil, get ID from current buffer.
 If there is no corresponding headline, return nil."
   (save-excursion
-    (minaduki//with-file file 'keep
+    (minaduki::with-file file 'keep
       (let ((headlines (org-roam-link--get-headlines file 'with-markers)))
         (when-let ((marker (cdr (assoc-string headline headlines))))
           (goto-char marker)
@@ -174,7 +174,7 @@ the target of LINK (title or heading content)."
              ('title+headline
               (let ((file (minaduki-link//get-file-from-title title)))
                 (if (not file)
-                    (minaduki//message "Cannot find matching file")
+                    (minaduki::message "Cannot find matching file")
                   (setq mkr (org-roam-link--get-id-from-headline headline file))
                   (pcase mkr
                     (`(,marker . ,target-id)
@@ -183,7 +183,7 @@ the target of LINK (title or heading content)."
                              loc target-id
                              desc (or desc headline)
                              link-type "id")))
-                    (_ (minaduki//message "Cannot find matching id"))))))
+                    (_ (minaduki::message "Cannot find matching id"))))))
              ('title
               (setq loc (minaduki-link//get-file-from-title title)
                     link-type "file"
@@ -196,7 +196,7 @@ the target of LINK (title or heading content)."
                        loc target-id
                        link-type "id"
                        desc (or desc headline)))
-                (_ (minaduki//message "Cannot find matching headline")))))))))
+                (_ (minaduki::message "Cannot find matching headline")))))))))
     (list link-type loc desc mkr)))
 
 ;;; Conversion Functions
@@ -210,7 +210,9 @@ DESC is the link description."
       (unless (org-in-regexp org-link-bracket-re 1)
         (user-error "No link at point"))
       (replace-match "")
-      (insert (org-roam-format-link loc desc type)))))
+      (insert (minaduki::format-link :target loc
+                                     :desc desc
+                                     :id? (equal type "id"))))))
 
 (defun org-roam-link-replace-all ()
   "Replace all roam links in the current buffer."

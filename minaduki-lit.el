@@ -121,7 +121,7 @@ CONTEXT keys:
                                ("/" . "")
                                ("?" . "")))
               downcase))
-           (title (minaduki//title-to-slug title))
+           (title (minaduki::title-to-slug title))
            (date
             (-some->> date
               (s-replace "--" "–")
@@ -314,22 +314,22 @@ POINT is where the entry is in the file. PROPS is a
                        (let-alist entry
                          (cons start-position
                                (minaduki-lit/entry
-                                :author (minaduki//remove-curly .author)
+                                :author (minaduki::remove-curly .author)
                                 :type .=type=
                                 :key .=key=
-                                :title (minaduki//remove-curly .title)
+                                :title (minaduki::remove-curly .title)
                                 :tags
                                 (-some->> .keywords
-                                  minaduki//remove-curly
+                                  minaduki::remove-curly
                                   (s-split ",")
                                   (-map #'s-trim))
                                 :sources (-non-nil
-                                          (mapcar #'minaduki//remove-curly
+                                          (mapcar #'minaduki::remove-curly
                                                   (list .link .url)))
                                 :others
                                 (cl-loop for (k . v) in entry
                                          unless (member k '(author =type= =key= title keywords url link))
-                                         collect (cons k (minaduki//remove-curly v))))))))))
+                                         collect (cons k (minaduki::remove-curly v))))))))))
 
 (defun minaduki-lit/csl-json/process-author (value)
   "Convert CSL-JSON's author VALUE to our format."

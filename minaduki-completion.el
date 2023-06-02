@@ -138,7 +138,7 @@ Embark to create what are in effect context menus."
 (defun minaduki--format-lit-entry (entry)
   "Format ENTRY for display."
   (concat
-   (minaduki--ensure-display-width
+   (minaduki::ensure-display-width
     (min 400 (* 0.3 (frame-pixel-width)))
     (format "%-4.4s %s%s %s"
             (or (gethash "date" entry)
@@ -163,7 +163,7 @@ Embark to create what are in effect context menus."
 (defun minaduki--format-node (node)
   "Format NODE for use in a completion interface."
   (concat
-   (minaduki--ensure-display-width
+   (minaduki::ensure-display-width
     (min 800 (* 0.5 (frame-pixel-width)))
     (oref node title))
    (or (and (equal (oref node key-type) "cite")
@@ -193,7 +193,7 @@ Return the `minaduki-node' object.
 INITIAL-INPUT: passed to `completing-read'.
 
 PROMPT: the prompt to use during completion. Default: \"Note: \""
-  (minaduki--with-comp-setup
+  (minaduki::with-comp-setup
       ((ivy-sort-matches-functions-alist . #'ivy--flx-sort))
     (let* ((entries (minaduki//get-title-path-completions))
            (alist
@@ -244,7 +244,7 @@ PROMPT: the text shown in the prompt."
       (if (listp minaduki-completion//read-lit-entry//citekey)
           minaduki-completion//read-lit-entry//citekey
         (list minaduki-completion//read-lit-entry//citekey))))
-  (minaduki--with-comp-setup
+  (minaduki::with-comp-setup
       ((ivy-sort-functions-alist . nil)
        (ivy-sort-matches-functions-alist . #'ivy--shorter-matches-first))
     (let* ((entries (->> (minaduki-db/query [:select [props] :from keys])

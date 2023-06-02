@@ -180,25 +180,25 @@ members that should be equal."
                      "tags" ["webdev" "css" "html"]
                      "date" "2003-03-06")))))))
 
-(describe "minaduki/format-link"
+(describe "minaduki::format-link"
   (it "formats Org links"
     (expect
      (let ((minaduki:link-insertion-format 'absolute)
            (major-mode 'org-mode))
-       (minaduki/format-link :target "file:///tmp/abc.org"))
+       (minaduki::format-link :target "file:///tmp/abc.org"))
      :to-equal
      "[[/tmp/abc.org]]")
     (expect
      (let ((minaduki:link-insertion-format 'absolute)
            (major-mode 'org-mode))
-       (minaduki/format-link :target "file:///tmp/abc.org"
+       (minaduki::format-link :target "file:///tmp/abc.org"
                              :desc "ABC"))
      :to-equal
      "[[/tmp/abc.org][ABC]]")
     (expect
      (let ((minaduki:link-insertion-format 'absolute)
            (major-mode 'org-mode))
-       (minaduki/format-link :target "https://kisaragi-hiu.com"
+       (minaduki::format-link :target "https://kisaragi-hiu.com"
                              :desc "ABC"))
      :to-equal
      "[[https://kisaragi-hiu.com][ABC]]"))
@@ -206,7 +206,7 @@ members that should be equal."
     (expect
      (let ((minaduki:link-insertion-format 'absolute)
            (major-mode 'markdown-mode))
-       (minaduki/format-link :target "https://kisaragi-hiu.com"
+       (minaduki::format-link :target "https://kisaragi-hiu.com"
                              :desc "ABC"))
      :to-equal
      "[ABC](https://kisaragi-hiu.com)"))
@@ -218,7 +218,7 @@ members that should be equal."
              (default-directory "/"))
          (org-mode)
          (minaduki-local-mode) ; this applies `minaduki/vaults'
-         (minaduki/format-link :target "file:///tmp/abc.org")))
+         (minaduki::format-link :target "file:///tmp/abc.org")))
      :to-equal
      "[[tmp:abc.org]]"))
   (it "formats relative links"
@@ -226,14 +226,14 @@ members that should be equal."
      (let ((minaduki:link-insertion-format 'relative)
            (major-mode 'org-mode)
            (default-directory "/"))
-       (minaduki/format-link :target "file:///tmp/abc.org"))
+       (minaduki::format-link :target "file:///tmp/abc.org"))
      :to-equal
      "[[file:tmp/abc.org]]")
     (expect
      (let ((minaduki:link-insertion-format 'relative)
            (major-mode 'markdown-mode)
            (default-directory "/"))
-       (minaduki/format-link :target "/tmp/abc.md"))
+       (minaduki::format-link :target "/tmp/abc.md"))
      :to-equal
      "[abc.md](tmp/abc.md)")))
 
@@ -245,28 +245,28 @@ members that should be equal."
     (test-minaduki--teardown))
 
   (it "converts between calendar.el dates and YYYY-MM-DD date strings"
-    (expect (minaduki//date/calendar.el->ymd '(7 17 2019))
+    (expect (minaduki-date::calendar.el->ymd '(7 17 2019))
             :to-equal
             "2019-07-17")
-    (expect (minaduki//date/ymd->calendar.el "2012-01-02")
+    (expect (minaduki-date::ymd->calendar.el "2012-01-02")
             :to-equal
             '(1 2 2012)))
   (it "converts a title to a slug"
-    (expect (minaduki//title-to-slug "English")
+    (expect (minaduki::title-to-slug "English")
             :to-equal "english")
-    (expect (minaduki//title-to-slug "Text with space と漢字")
+    (expect (minaduki::title-to-slug "Text with space と漢字")
             :to-equal "text-with-space-と漢字")
-    (expect (minaduki//title-to-slug "many____underscores")
+    (expect (minaduki::title-to-slug "many____underscores")
             :to-equal "many-underscores")
     ;; Keep diacritics
-    (expect (minaduki//title-to-slug "äöü")
+    (expect (minaduki::title-to-slug "äöü")
             :to-equal "äöü")
     ;; Normalizes to composed from
-    (expect (minaduki//title-to-slug (string ?て #x3099))
+    (expect (minaduki::title-to-slug (string ?て #x3099))
             :to-equal (string ?で))
-    (expect (minaduki//title-to-slug "_starting and ending_")
+    (expect (minaduki::title-to-slug "_starting and ending_")
             :to-equal "starting-and-ending")
-    (expect (minaduki//title-to-slug "isn't alpha numeric")
+    (expect (minaduki::title-to-slug "isn't alpha numeric")
             :to-equal "isn-t-alpha-numeric"))
   (describe "list-files"
     (it "using pure elisp"
@@ -287,22 +287,22 @@ members that should be equal."
           (f-files test-repository nil t))))))
   (it "removes Org links from a string"
     (expect
-     (minaduki//remove-org-links
+     (minaduki::remove-org-links
       "Abc [[https://gnu.org][Link1]] def [[https://gnu.org][Link2]]")
      :to-equal
      "Abc Link1 def Link2")
     (expect
-     (minaduki//remove-org-links
+     (minaduki::remove-org-links
       "Abc [not a link]")
      :to-equal
      "Abc [not a link]")
     (expect
-     (minaduki//remove-org-links
+     (minaduki::remove-org-links
       "Abc [[https://google.com]]")
      :to-equal
      "Abc https://google.com")
     (expect
-     (minaduki//remove-org-links
+     (minaduki::remove-org-links
       "Abc [[https://google.com][Google]]")
      :to-equal
      "Abc Google")))

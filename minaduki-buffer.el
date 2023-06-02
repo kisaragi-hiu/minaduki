@@ -128,9 +128,9 @@ For example: (setq minaduki-buffer/window-parameters '((no-other-window . t)))"
   (let ((last-window minaduki::last-window))
     (if (window-valid-p last-window)
         (progn (with-selected-window last-window
-                 (minaduki//find-file file))
+                 (minaduki::find-file file))
                (select-window last-window))
-      (minaduki//find-file file))))
+      (minaduki::find-file file))))
 
 (defun minaduki-buffer//insert-title ()
   "Insert the minaduki-buffer title."
@@ -385,8 +385,8 @@ Links in titles are removed."
         (setq props (seq-sort-by (lambda (p) (plist-get p :point)) #'< props))
         (insert "\n\n** "
                 ;; title link
-                (minaduki/format-link :target file-from
-                                      :desc (minaduki//remove-org-links
+                (minaduki::format-link :target file-from
+                                      :desc (minaduki::remove-org-links
                                              (minaduki-db//fetch-title file-from)))
                 ;; tags
                 (or (-some->> (minaduki-db/query [:select tags :from files
@@ -461,9 +461,9 @@ Links in titles are removed."
       (insert (format "\n\n* Files tagged with /%s/\n" tag))
       (->> (cl-loop for file in references
                     collect (concat "** "
-                                    (minaduki/format-link
+                                    (minaduki::format-link
                                      :target file
-                                     :desc (minaduki//remove-org-links
+                                     :desc (minaduki::remove-org-links
                                             (minaduki-db//fetch-title file)))))
            (s-join "\n")
            insert))))
@@ -509,7 +509,7 @@ ORIG-PATH is the path where the CONTENT originated."
       ;; Locally overwrite the file opening function to re-use the
       ;; last window org-roam was called from
       (setq-local org-link-frame-setup
-                  (cons '(file . minaduki//find-file) org-link-frame-setup))
+                  (cons '(file . minaduki::find-file) org-link-frame-setup))
       (let ((inhibit-read-only t)
             backlinks cite-backlinks
             unlinked-references)

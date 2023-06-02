@@ -143,7 +143,7 @@ open in another window instead of in the current one."
       (let ((markdown-enable-wiki-links t))
         (when other (other-window 1))
         (cond ((markdown-wiki-link-p)
-               (minaduki//find-file (minaduki-obsidian-path (match-string 3))))
+               (minaduki::find-file (minaduki-obsidian-path (match-string 3))))
               ((markdown-link-p)
                (let ((url (markdown-link-url)))
                  (if (s-prefix? "#" url)
@@ -230,16 +230,16 @@ REPLACE-REGION?: whether to replace selected text."
     ;; This also allows inserting references to existing notes whose
     ;; title happens to be a URL without issue.
     (when (and (oref entry new?)
-               (not (minaduki//url? path))
+               (not (minaduki::url? path))
                (not (f-exists? path)))
       (setq path
             (minaduki/new-concept-note
              :title title
              :visit? nil))
-      (minaduki//message "Created new note \"%s\"" title))
+      (minaduki::message "Created new note \"%s\"" title))
     (when lowercase?
       (setq desc (downcase desc)))
-    (insert (minaduki/format-link
+    (insert (minaduki::format-link
              :target (or id path)
              :desc desc
              :id? id))))
@@ -247,7 +247,7 @@ REPLACE-REGION?: whether to replace selected text."
 (defun minaduki:move-file-to-directory ()
   "Move the current file to a new directory."
   (interactive)
-  (-when-let* ((file (minaduki//current-file-name))
+  (-when-let* ((file (minaduki::current-file-name))
                (vault (minaduki-vault:closest)))
     (let* ((newdir (read-directory-name
                     "Move current file to directory: "
@@ -274,7 +274,7 @@ REPLACE-REGION?: whether to replace selected text."
                                (minaduki-extract//headings)))
     (let (selection
           selected-heading)
-      (minaduki--with-comp-setup
+      (minaduki::with-comp-setup
           ((ivy-sort-functions-alist . nil)
            (ivy-sort-matches-functions-alist . nil))
         (setq selection (completing-read
@@ -299,7 +299,7 @@ REPLACE-REGION?: whether to replace selected text."
          :replace-region? t
          :entry (minaduki-node
                  :id id
-                 :title (minaduki//remove-org-links
+                 :title (minaduki::remove-org-links
                          (minaduki-id-title selected-heading))))))))
 
 ;;;###autoload
@@ -395,9 +395,9 @@ REPLACE-REGION?: whether to replace selected text."
        for f in all-files
        do
        (cl-incf i)
-       (minaduki//message "(%s/%s) Looking for broken links in %s"
+       (minaduki::message "(%s/%s) Looking for broken links in %s"
                           i length f)
-       (minaduki//with-temp-buffer f
+       (minaduki::with-temp-buffer f
          (save-excursion
            (goto-char (point-min))
            (let ((ast (org-element-parse-buffer)))
@@ -441,7 +441,7 @@ REPLACE-REGION?: whether to replace selected text."
               "[ ]" nil
               'face 'button
               'follow-link t
-              'action (minaduki//lambda-self (&rest _)
+              'action (minaduki::lambda-self (&rest _)
                         (let ((inhibit-read-only t)
                               (bounds
                                (unless (member (char-after) '(?\[ ?\s ?\]))
@@ -513,7 +513,7 @@ If VISIT? is non-nil, go to the newly created note."
   (interactive
    (list :title (read-string "Title: ")
          :visit? t))
-  (let* ((file (-> (minaduki//title-to-slug title)
+  (let* ((file (-> (minaduki::title-to-slug title)
                    (f-expand (minaduki-vault:main))
                    (concat ".org")))
          (org-capture-templates
@@ -529,7 +529,7 @@ If VISIT? is non-nil, go to the newly created note."
 (cl-defun minaduki/diary-next (&optional (n 1))
   "Go to the Nth next diary entry."
   (interactive "p")
-  (let* ((current-file (minaduki//current-file-name))
+  (let* ((current-file (minaduki::current-file-name))
          (siblings (directory-files (f-dirname current-file))))
     (--> (cl-position (f-filename current-file)
                       siblings
@@ -537,7 +537,7 @@ If VISIT? is non-nil, go to the newly created note."
          (+ it n)
          (% it (length siblings))
          (nth it siblings)
-         minaduki//find-file)))
+         minaduki::find-file)))
 
 ;;;###autoload
 (cl-defun minaduki/diary-prev (&optional (n 1))
@@ -552,7 +552,7 @@ If VISIT? is non-nil, go to the newly created note."
 This will create diary/20211129.org on the day 2021-11-29, then
 fill it in with the \"daily\" template."
   (interactive)
-  (let* ((day (or day (minaduki//today)))
+  (let* ((day (or day (minaduki::today)))
          (now (pcase-let ((`(,y ,m ,d)
                            (mapcar
                             #'string-to-number
@@ -624,12 +624,12 @@ are named with a YYYYMMDD prefix (optionally with dashes)."
          ;; to fall back to the next case. `cond' doesn't do that.
          (or (and (derived-mode-p 'calendar-mode)
                   (-some-> (calendar-cursor-to-date)
-                    minaduki//date/calendar.el->ymd))
+                    minaduki-date::calendar.el->ymd))
 
              (and (or current-prefix-arg minaduki-btn::pressed (not noprompt))
                   (minaduki//read-date "Visit diary entry from day:"))
 
-             (minaduki//today))))
+             (minaduki::today))))
     (if-let ((file (minaduki//find-entry-for-day day)))
         (find-file file)
       (and (y-or-n-p (format "No entry from %s. Create one? " day))
@@ -639,7 +639,7 @@ are named with a YYYYMMDD prefix (optionally with dashes)."
 (defun minaduki/open-diary-entry-yesterday ()
   "Open a diary entry from yesterday."
   (interactive)
-  (let ((day (minaduki//today -1)))
+  (let ((day (minaduki::today -1)))
     (if-let ((file (minaduki//find-entry-for-day day)))
         (find-file file)
       (and (y-or-n-p (format "No entry from %s. Create one? " day))
@@ -653,7 +653,7 @@ are named with a YYYYMMDD prefix (optionally with dashes)."
   ;; `f-relative' and `f-expand', and (b) make sure each entry points
   ;; to the right file as relative links. Without this, we have to
   ;; settle for not setting the category correctly.
-  (minaduki//find-file
+  (minaduki::find-file
    (minaduki-templates//read-template "Open template: ")))
 
 ;;;###autoload
@@ -688,7 +688,7 @@ The index file is specified in this order:
                 (t
                  (car (minaduki-db//fetch-file :title "Index"))))))
     (if (and index (f-exists? index))
-        (minaduki//find-file index)
+        (minaduki::find-file index)
       (when (y-or-n-p "Index file does not exist.  Would you like to create it? ")
         (minaduki/open "Index")))))
 
@@ -723,7 +723,7 @@ one."
           ((oref entry id)
            (minaduki/open-id (oref entry id)))
           (t
-           (minaduki//find-file path)))))
+           (minaduki::find-file path)))))
 
 (defun minaduki/open-id (id &optional other?)
   "Open an ID.
@@ -733,7 +733,7 @@ This assumes ID is present in the cache database.
 If OTHER? is non-nil, open it in another window, otherwise in the
 current window."
   (-when-let (id (minaduki-db//fetch-id id))
-    (minaduki//find-file (minaduki-id-file id) other?)
+    (minaduki::find-file (minaduki-id-file id) other?)
     (goto-char (minaduki-id-point id))))
 
 (defun minaduki/open-id-at-point ()
@@ -767,10 +767,10 @@ process."
   (let* ((file (minaduki-db//fetch-file :key citekey))
          (_title (minaduki-db//fetch-title file)))
     (cond
-     (file (minaduki//find-file file))
+     (file (minaduki::find-file file))
      (t (let ((props (or (-some-> (minaduki-db//fetch-lit-entry citekey)
                            minaduki-lit-entry-props)
-                         (minaduki//warn :warning
+                         (minaduki::warn :warning
                            "Could not find the literature entry %s" citekey))))
           (puthash "=key=" (gethash "key" props) props)
           (remhash "key" props)
@@ -781,7 +781,7 @@ process."
                     ;; `minaduki-capture//capture' or call `org-roam-find-file'
                     (org-capture-templates
                      (or orb-templates minaduki-capture/templates
-                         (minaduki//warn
+                         (minaduki::warn
                           :warning
                           "Could not find the requested templates")))
                     ;; hijack org-capture-templates
@@ -815,7 +815,7 @@ process."
                     (citekey-formatted (format (or orb-citekey-format "%s") citekey))
                     (title
                      (or (cdr (assoc "title" props))
-                         (minaduki//warn
+                         (minaduki::warn
                           :warning
                           "Title not found for this entry")
                          ;; this is not critical, the user may input their own
@@ -842,7 +842,7 @@ or `title' should be used for slug: %s not supported" orb-slug-source))))
                                     (ref . ,citekey-formatted)
                                     ,@(when-let (url (cdr (assoc "url" props)))
                                         `((url . ,url)))
-                                    (slug . ,(minaduki//title-to-slug slug-source)))))
+                                    (slug . ,(minaduki::title-to-slug slug-source)))))
                             (setq minaduki-capture/additional-template-props
                                   (list :finalize 'find-file))
                             (minaduki-capture//capture))
@@ -873,7 +873,7 @@ CITEKEY is a list whose car is a citation key."
                        :where (= key $s1)]
                       citekey)))
         sources)
-    (setq sources (minaduki//resolve-org-links (gethash "sources" entry)))
+    (setq sources (minaduki::resolve-org-links (gethash "sources" entry)))
     (setq minaduki-lit//cache nil)
     (cl-case (length sources)
       (0 (message "%s has no associated source" citekey))
@@ -888,7 +888,7 @@ CITEKEY is a list whose car is a citation key."
            [:select [file point] :from keys
             :where (= key $s1)]
            citekey)))
-    (minaduki//find-file file)
+    (minaduki::find-file file)
     (goto-char point)))
 
 (defun minaduki:insert-note-to-citekey (citekey)

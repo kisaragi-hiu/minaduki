@@ -319,7 +319,7 @@ the capture)."
       (pcase finalize
         ('find-file
          (when-let ((file-path (minaduki-capture//get :file-path)))
-           (minaduki//find-file file-path)
+           (minaduki::find-file file-path)
            (run-hooks 'minaduki-capture/after-find-file-hook)))
         ('insert-link
          (when-let* ((mkr (minaduki-capture//get :insert-at))
@@ -328,12 +328,16 @@ the capture)."
              (when region
                (delete-region (car region) (cdr region)))
              (let ((path (minaduki-capture//get :file-path))
-                   (type (minaduki-capture//get :link-type))
+                   (id? (equal "id" (minaduki-capture//get :link-type)))
                    (desc (minaduki-capture//get :link-description)))
                (if (eq (point) (marker-position mkr))
-                   (insert (org-roam-format-link path desc type))
+                   (insert (minaduki::format-link :target path
+                                                  :desc desc
+                                                  :id? id?))
                  (org-with-point-at mkr
-                   (insert (org-roam-format-link path desc type))))))))))
+                   (insert (minaduki::format-link :target path
+                                                  :desc desc
+                                                  :id? id?))))))))))
     (when region
       (set-marker beg nil)
       (set-marker end nil))
@@ -420,7 +424,7 @@ the file if the original value of :no-save is not t and
     (if (or (file-exists-p file-path)
             (find-buffer-visiting file-path))
         (unless allow-existing-file-p
-          (minaduki//warn
+          (minaduki::warn
            :warning
            "Attempted to recreate existing file: %s.
 This can happen when your org-roam db is not in sync with your notes.
@@ -613,7 +617,7 @@ Arguments GOTO and KEYS see `org-capture'."
          (title (or (plist-get res :title) title-with-keys))
          (file-path (plist-get res :path)))
     (let ((minaduki-capture//info (list (cons 'title title)
-                                        (cons 'slug (minaduki//title-to-slug title))
+                                        (cons 'slug (minaduki::title-to-slug title))
                                         (cons 'file file-path)))
           (minaduki-capture//context 'capture))
       (condition-case err

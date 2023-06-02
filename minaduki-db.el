@@ -141,7 +141,7 @@ SQL can be either the emacsql vector representation, or a string."
     'ignore
     (if (< version minaduki-db//version)
         (progn
-          (minaduki//message (format "Upgrading the cache database from version %d to version %d"
+          (minaduki::message (format "Upgrading the cache database from version %d to version %d"
                                      version minaduki-db//version))
           (minaduki-db/build-cache t))))
   version)
@@ -203,11 +203,11 @@ This function is called on `minaduki-db/file-update-timer'."
 
 If UPDATE-P is non-nil, first remove the meta for the file in the database.
 If HASH is non-nil, assume that is the file's hash without recomputing it."
-  (let* ((file (minaduki//current-file-name))
+  (let* ((file (minaduki::current-file-name))
          (attr (file-attributes file))
          (atime (file-attribute-access-time attr))
          (mtime (file-attribute-modification-time attr))
-         (hash (or hash (minaduki//compute-content-hash file)))
+         (hash (or hash (minaduki::compute-content-hash file)))
          (tags (minaduki-extract/tags file))
          (titles (minaduki-extract/titles))
          (keys (minaduki-extract/refs)))
@@ -271,7 +271,7 @@ If UPDATE-P is non-nil, first remove the entries from the file in the database."
 (defun minaduki-db//insert-refs (&optional update-p)
   "Update the refs of the current buffer into the cache.
 If UPDATE-P is non-nil, first remove the ref for the file in the database."
-  (let ((file (minaduki//current-file-name))
+  (let ((file (minaduki::current-file-name))
         (count 0))
     (when update-p
       (minaduki-db/query [:delete :from refs
@@ -288,7 +288,7 @@ If UPDATE-P is non-nil, first remove the ref for the file in the database."
                  (list (vector key file type)))
                 (cl-incf count))
             (error
-             (minaduki//warn
+             (minaduki::warn
               :error
               "Duplicate ref %s in:\n\nA: %s\nB: %s\n\nskipping..."
               key
@@ -303,7 +303,7 @@ If UPDATE-P is non-nil, first remove the ref for the file in the database."
   "Update the file links of the current buffer in the cache.
 If UPDATE-P is non-nil, first remove the links for the file in the database.
 Return the number of rows inserted."
-  (let ((file (minaduki//current-file-name)))
+  (let ((file (minaduki::current-file-name)))
     (when update-p
       (minaduki-db/query [:delete :from links
                           :where (= source $s1)]
@@ -321,7 +321,7 @@ Return the number of rows inserted."
   "Update the ids of the current buffer into the cache.
 If UPDATE-P is non-nil, first remove ids for the file in the database.
 Returns the number of rows inserted."
-  (let ((file (minaduki//current-file-name)))
+  (let ((file (minaduki::current-file-name)))
     (when update-p
       (minaduki-db/query
        [:delete :from ids
@@ -337,7 +337,7 @@ Returns the number of rows inserted."
                ids)
               (length ids))
           (error
-           (minaduki//warn
+           (minaduki::warn
             :error
             "Duplicate IDs in %s, one of:\n\n%s\n\nskipping..."
             (aref (car ids) 1)
@@ -495,7 +495,7 @@ If the file exists, update the cache with information."
     (when-let ((buf (find-buffer-visiting file-path)))
       (with-current-buffer buf
         (save-buffer)))
-    (minaduki//with-temp-buffer file-path
+    (minaduki::with-temp-buffer file-path
       (emacsql-with-transaction (minaduki-db)
         (when (member file-path minaduki-lit/bibliography)
           (minaduki-db//insert-lit-entries 'update))
@@ -520,17 +520,17 @@ If FORCE, force a rebuild of the cache from scratch."
           db-files (minaduki-db//fetch-all-files-hash))
     (dolist-with-progress-reporter (file dir-files)
         "(minaduki) Finding modified files"
-      (let ((content-hash (minaduki//compute-content-hash file)))
+      (let ((content-hash (minaduki::compute-content-hash file)))
         (unless (string= content-hash (gethash file db-files))
           (push (cons file content-hash) modified-files)))
       (remhash file db-files))
-    (minaduki//for "Removing deleted files from cache (%s/%s)"
+    (minaduki::for "Removing deleted files from cache (%s/%s)"
         file (hash-table-keys db-files)
       ;; These files are no longer around, remove from cache...
       (minaduki-db//clear-file file)
       (setq deleted-count (1+ deleted-count)))
     (setq count-plist (minaduki-db//update-files modified-files force))
-    (minaduki//message "total: Δ%s, files-modified: Δ%s, ids: Δ%s, links: Δ%s, refs: Δ%s, lit: Δ%s, deleted: Δ%s"
+    (minaduki::message "total: Δ%s, files-modified: Δ%s, ids: Δ%s, links: Δ%s, refs: Δ%s, lit: Δ%s, deleted: Δ%s"
                        (- (length dir-files)
                           (plist-get count-plist :error-count))
                        (plist-get count-plist :modified-count)
@@ -544,11 +544,11 @@ If FORCE, force a rebuild of the cache from scratch."
   "Update Org-roam cache for FILE-PATH.
 If the file does not exist anymore, remove it from the cache.
 If the file exists, update the cache with information."
-  (let ((content-hash (minaduki//compute-content-hash file-path))
+  (let ((content-hash (minaduki::compute-content-hash file-path))
         (db-hash (minaduki-db//fetch-file-hash file-path)))
     (unless (string= content-hash db-hash)
       (minaduki-db//update-files (list (cons file-path content-hash)))
-      (minaduki//message "Updated: %s" file-path))))
+      (minaduki::message "Updated: %s" file-path))))
 
 (defun minaduki-db//update-files (file-hash-pairs &optional rebuild)
   "Update Org-roam cache for FILE-HASH-PAIRS.
@@ -566,50 +566,50 @@ clearning existing file entries."
          (modified-count 0))
     ;; Clear existing cache entries so that we can put in new versions
     (unless rebuild
-      (minaduki//for "Clearing files (%s/%s)..."
+      (minaduki::for "Clearing files (%s/%s)..."
           (file . _) file-hash-pairs
         (minaduki-db//clear-file file)))
     ;; Process bibliographies first so that keys only in files can
     ;; also be tracked.
-    (minaduki//message "Processing bibliographies...")
+    (minaduki::message "Processing bibliographies...")
     (cl-loop
      for (file . _) in file-hash-pairs
      when (member file minaduki-lit/bibliography)
      do (condition-case nil
-            (minaduki//with-temp-buffer file
+            (minaduki::with-temp-buffer file
               (cl-incf lit-count (minaduki-db//insert-lit-entries)))
           (file-error
            (cl-incf error-count)
            (minaduki-db//clear-file file)
-           (minaduki//warn :warning "Skipping bibliography: %s" file))))
-    (minaduki//message "Processing bibliographies...done")
+           (minaduki::warn :warning "Skipping bibliography: %s" file))))
+    (minaduki::message "Processing bibliographies...done")
     ;; Process file metadata (titles, tags) first to allow links to
     ;; depend on titles later; process IDs first so IDs are already
     ;; cached during link extraction
-    (minaduki//for "Processing file metadata (%s/%s)..."
+    (minaduki::for "Processing file metadata (%s/%s)..."
         (file . contents-hash) file-hash-pairs
       (condition-case e
-          (minaduki//with-temp-buffer file
+          (minaduki::with-temp-buffer file
             (minaduki-db//insert-meta nil contents-hash)
             (setq id-count (+ id-count (minaduki-db//insert-ids))))
         (file-error
          (setq error-count (1+ error-count))
          (minaduki-db//clear-file file)
-         (minaduki//warn
+         (minaduki::warn
           :warning
           "Error when caching %s: %s" file e))))
     ;; Process links and ref / cite links
-    (minaduki//for "Processing links (%s/%s)..."
+    (minaduki::for "Processing links (%s/%s)..."
         (file . _) file-hash-pairs
       (condition-case nil
-          (minaduki//with-temp-buffer file
+          (minaduki::with-temp-buffer file
             (setq modified-count (1+ modified-count))
             (setq ref-count (+ ref-count (minaduki-db//insert-refs)))
             (setq link-count (+ link-count (minaduki-db//insert-links))))
         (file-error
          (setq error-count (1+ error-count))
          (minaduki-db//clear-file file)
-         (minaduki//warn
+         (minaduki::warn
           :warning
           "Skipping unreadable file while building cache: %s" file))))
 

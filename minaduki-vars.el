@@ -449,7 +449,7 @@ A special variable `${slug}` in `orb-templates' (and
 `minaduki-capture/templates') is used as a placeholder for an
 automatically generated string which is meant to be used in
 filenames. Org Roam uses the note's title to create a slug. ORB
-also allows for the citekey. `minaduki//title-to-slug' is
+also allows for the citekey. `minaduki::title-to-slug' is
 used to create the slug. This operation typilcally involves
 removing whitespace and converting words to lowercase, among
 possibly other things."
@@ -521,7 +521,7 @@ information."
 
 (defvar-local minaduki::file-name nil
   "The corresponding file for a temp buffer.
-This is set by `minaduki//with-temp-buffer', to allow throwing of
+This is set by `minaduki::with-temp-buffer', to allow throwing of
 descriptive warnings when certain operations fail (e.g. parsing).")
 
 (defvar minaduki::last-window nil

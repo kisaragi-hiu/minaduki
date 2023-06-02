@@ -129,7 +129,7 @@ updated. Else, update with NEW-DESC."
                         (match-string-no-properties 2)
                       (org-link-unescape (match-string-no-properties 1))))
         (setq new-label (if (string-equal label old-desc) new-desc label))
-        (minaduki/format-link :target new-path
+        (minaduki::format-link :target new-path
                               :desc new-label)))))
 
 (defun minaduki-org::replace-link (old-path new-path &optional old-desc new-desc)
@@ -184,7 +184,7 @@ When NEW-FILE-OR-DIR is a directory, we use it to compute the new file path."
       ;; will break. Fix all file-relative links:
       (unless (string= (file-name-directory old-file)
                        (file-name-directory new-file))
-        (minaduki//with-file new-file nil
+        (minaduki::with-file new-file nil
           (minaduki-org::fix-relative-links old-file)))
       (when (minaduki-vault:in-vault? new-file)
         (minaduki-db//update-file new-file))
@@ -193,7 +193,7 @@ When NEW-FILE-OR-DIR is a directory, we use it to compute the new file path."
               (setq file (if (string-equal (car file) old-file)
                              new-file
                            (car file)))
-              (minaduki//with-file file nil
+              (minaduki::with-file file nil
                 (minaduki-org::replace-link old-file new-file)
                 (save-buffer)
                 (minaduki-db//update-file)))
@@ -224,7 +224,7 @@ When NEW-FILE-OR-DIR is a directory, we use it to compute the new file path."
                         (make-button
                          start end
                          'action (lambda (&rest _)
-                                   (minaduki//find-file file))
+                                   (minaduki::find-file file))
                          'follow-link t
                          'face 'button))))))))
 
@@ -313,7 +313,7 @@ See `minaduki-local-mode' for more information on Minaduki-Local mode."
   (unless (or (and (bound-and-true-p emacsql-sqlite3-executable)
                    (file-executable-p emacsql-sqlite3-executable))
               (executable-find "sqlite3"))
-    (minaduki//warn :error "Cannot find executable 'sqlite3'. \
+    (minaduki::warn :error "Cannot find executable 'sqlite3'. \
 Ensure it is installed and can be found within `exec-path'."))
   (if minaduki-mode
       (progn

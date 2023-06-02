@@ -18,7 +18,7 @@
   "Insert ENTRY as a link."
   (when-let (metadata (get-text-property 0 :metadata entry))
     (let-alist metadata
-      (insert (minaduki/format-link :target .path
+      (insert (minaduki::format-link :target .path
                                     :desc entry)))))
 
 (embark-define-keymap minaduki-embark/note-map

@@ -158,7 +158,7 @@ Assume links come from FILE-FROM."
                                  (equal "KEY"
                                         (org-element-property :key elem-at-point)))))
               (goto-char (org-element-property :begin link))
-              (let* ((type (minaduki//collate-types (org-element-property :type link)))
+              (let* ((type (minaduki::collate-types (org-element-property :type link)))
                      (path (org-element-property :path link))
                      (content (minaduki-extract//org-links-context))
                      (properties (list :outline (minaduki::get-outline-path)
@@ -174,7 +174,7 @@ Assume links come from FILE-FROM."
                               ("fuzzy" (list path))
                               ("roam" (list path))
                               (_ (if (or (file-remote-p path)
-                                         (minaduki//url? path))
+                                         (minaduki::url? path))
                                      (list path)
                                    (let ((file-maybe (expand-file-name path (file-name-directory file-from))))
                                      (if (f-exists? file-maybe)
@@ -224,7 +224,7 @@ Links are assumed to originate from FILE-FROM."
                                  (match-string-no-properties 13)))
                     (link-type-raw (url-type
                                     (url-generic-parse-url file-to)))
-                    (link-type (minaduki//collate-types
+                    (link-type (minaduki::collate-types
                                 (or link-type-raw "file")))
                     end-of-block begin-of-block
                     content)
@@ -299,7 +299,7 @@ This is the format that emacsql expects when inserting into the database.
 FILE-FROM is typically the buffer file path, but this may not exist, for example
 in temp buffers.  In cases where this occurs, we do know the file path, and pass
 it as FILE-FROM."
-  (setq file-from (minaduki//current-file-name (list file-from)))
+  (setq file-from (minaduki::current-file-name (list file-from)))
   (pcase (minaduki::file-type)
     ('org
      (append
@@ -325,7 +325,7 @@ in the buffer.
 Note that this is presently not used for DB caching. Only
 headings with an ID are cached (extracted with
 `minaduki-extract/ids')."
-  (setq file-path (minaduki//current-file-name (list file-path)))
+  (setq file-path (minaduki::current-file-name (list file-path)))
   (let (result)
     (pcase (minaduki::file-type)
       ('markdown
@@ -355,7 +355,7 @@ headings with an ID are cached (extracted with
   "Extract all IDs within the current buffer.
 If FILE-PATH is nil, use the current file.
 Return a list of `minaduki-id' objects."
-  (setq file-path (minaduki//current-file-name (list file-path)))
+  (setq file-path (minaduki::current-file-name (list file-path)))
   (let (result)
     (pcase (minaduki::file-type)
       ('markdown
@@ -395,7 +395,7 @@ Return a list of `minaduki-id' objects."
   "Return the title of the current buffer."
   ;; Outside of a vault, the title is always the file name.
   (if (not (minaduki-vault:in-vault?))
-      (list (minaduki//apply-link-abbrev
+      (list (minaduki::apply-link-abbrev
              (buffer-file-name)))
     (pcase (minaduki::file-type)
       ('org
@@ -469,7 +469,10 @@ headline."
        (append
         (or (minaduki-extract/main-title)
             (minaduki-extract/first-headline)
-            (list (minaduki//path-to-title (buffer-file-name))))
+            (list
+             (--> (buffer-file-name)
+                  (f-relative it (f-expand (minaduki-vault:main)))
+                  f-no-ext)))
         (minaduki-extract/aliases))))))
 
 (defun minaduki-extract//tags/nested-vault (path)
@@ -547,7 +550,7 @@ Tags are specified like this at the beginning of the buffer:
   "Extract file tags from the current buffer.
 
 If file-path FILE is non-nil, use it to determine the directory tags."
-  (let* ((file (minaduki//current-file-name (list file)))
+  (let* ((file (minaduki::current-file-name (list file)))
          tags)
     (when (memq 'nested-vault minaduki-tag-sources)
       (setq tags (append (minaduki-extract//tags/nested-vault file) tags)))
@@ -578,14 +581,14 @@ If file-path FILE is non-nil, use it to determine the directory tags."
 (defun minaduki-extract//process-ref (ref)
   "Processes REF into its type and path.
 
-Returns a cons cell '(TYPE . PATH) if ref is a valid ref.
+Returns a cons cell (TYPE . PATH) if ref is a valid ref.
 
 REF is either a plain link or a plain string. If it's a link, the
 protocol is treated as the TYPE (after processing through
-`minaduki//collate-types'). Otherwise, REF is assumed to be a cite ref."
+`minaduki::collate-types'). Otherwise, REF is assumed to be a cite ref."
   (save-match-data
     (if (string-match org-link-plain-re ref)
-        (cons (minaduki//collate-types (match-string 1 ref))
+        (cons (minaduki::collate-types (match-string 1 ref))
               (match-string 2 ref))
       (cons "cite" ref))))
 
@@ -615,10 +618,10 @@ In Org mode, the keys are specified with the #+KEY keyword."
          (pcase key
            ('nil nil)
            ((pred string-empty-p)
-            (minaduki//warn :warning
+            (minaduki::warn :warning
               "Org property #+key should not be empty (%s)"
               (f-filename
-               (minaduki//current-file-name))))
+               (minaduki::current-file-name))))
            (ref
             (when-let ((r (minaduki-extract//process-ref ref)))
               (push r refs)))))
