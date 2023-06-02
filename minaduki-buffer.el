@@ -274,17 +274,18 @@ are returned."
                         append (list "-e" it))))
           (unless (equal "" (s-trim (buffer-string)))
             ;; Step 1: insert the output
-            (setf (buffer-string)
-                  (--> (buffer-string)
-                       ;; Trim all starting and ending newlines for
-                       ;; consistency. All newlines will be replaced with two
-                       ;; close parens to close off the (:path) lines.
-                       s-trim
-                       ;; One is for the `search-forward' (which is me
-                       ;; attempting to go faster than forward-line +
-                       ;; line-{beginning,end}-position), the other is to be
-                       ;; replaced with the close parens.
-                       (concat it "\n\n")))
+            (minaduki::set-buffer-substring
+                (point-min) (point-max)
+              (--> (buffer-string)
+                   ;; Trim all starting and ending newlines for
+                   ;; consistency. All newlines will be replaced with two
+                   ;; close parens to close off the (:path) lines.
+                   s-trim
+                   ;; One is for the `search-forward' (which is me
+                   ;; attempting to go faster than forward-line +
+                   ;; line-{beginning,end}-position), the other is to be
+                   ;; replaced with the close parens.
+                   (concat it "\n\n")))
             (goto-char (point-min))
             ;; Step 2: convert Ripgrep's output into `read'able sexp
             (cl-loop
@@ -300,15 +301,15 @@ are returned."
                       (let relpath (* any))
                       "[0m")
                   (let ((path (f-expand relpath)))
-                    (setf (buffer-substring start end)
-                          (format
-                           ;; We intentionally do not close
-                           ;; it, only doing so when the
-                           ;; block is over.
-                           "(:path %S :title %S :matches ("
-                           path
-                           (or (minaduki-db//fetch-title path)
-                               relpath)))))
+                    (minaduki::set-buffer-substring start end
+                      (format
+                       ;; We intentionally do not close
+                       ;; it, only doing so when the
+                       ;; block is over.
+                       "(:path %S :title %S :matches ("
+                       path
+                       (or (minaduki-db//fetch-title path)
+                           relpath)))))
                  ;; matches lines
                  ((rx bos
                       ;; \x1b is ESC; we could write it literally but
@@ -325,14 +326,14 @@ are returned."
                       (let col (*? any))
                       "\x1b[0m" ":"
                       (let context (* any)))
-                  (setf (buffer-substring start end)
-                        (prin1-to-string
-                         (list :line ln :column col
-                               :context context))))
+                  (minaduki::set-buffer-substring start end
+                    (prin1-to-string
+                     (list :line ln :column col
+                           :context context))))
                  ;; Empty lines between files
                  (_
-                  (setf (buffer-substring start end)
-                        "))"))))
+                  (minaduki::set-buffer-substring start end
+                    "))"))))
              do (setq start (point))))
           ;; Step 3: wrap the whole buffer in a set of parens so we
           ;; can read it in one go

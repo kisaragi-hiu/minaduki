@@ -581,6 +581,14 @@ If the property is already set, it's value is replaced."
          "website")
         (t type)))
 
+(defun minaduki::set-buffer-substring (start end &rest strings)
+  "Set buffer content between START and END to STRINGS."
+  (declare (indent 2))
+  (save-excursion
+    (delete-region start end)
+    (goto-char start)
+    (apply #'insert strings)))
+
 (provide 'minaduki-utils)
 
 ;;; minaduki-utils.el ends here
