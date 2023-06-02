@@ -467,13 +467,13 @@ REPLACE-REGION?: whether to replace selected text."
                                   (?\[ (cons (point) (+ (point) 2)))
                                   (?\s (cons (1- (point)) (1+ (point))))
                                   (?\] (cons (- (point) 2) (point)))))
-                          (setf (buffer-substring (car bounds)
-                                                  (1+ (cdr bounds)))
-                                (make-text-button
-                                 (if enabled "[X]" "[ ]") nil
-                                 'face 'button
-                                 'follow-link t
-                                 'action self))))))
+                          (minaduki::set-buffer-substring
+                              (car bounds) (1+ (cdr bounds))
+                            (make-text-button
+                             (if enabled "[X]" "[ ]") nil
+                             'face 'button
+                             'follow-link t
+                             'action self))))))
            ;; This ensures the lambda below gets its own instance of
            ;; `file', instead of sharing with all the other
            ;; iterations. Without this, all instances of this button

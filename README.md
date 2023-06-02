@@ -38,7 +38,7 @@ We determine a plist to be a list that starts with a keyword."
       (beginning-of-defun)
       (let ((sexp (nth 1 (parse-partial-sexp (point) start))))
         (when sexp
-          (setf (point) sexp)
+          (goto-char sexp)
           (looking-at (rx "(" (* (syntax whitespace)) ":")))))))
 
 (define-advice calculate-lisp-indent (:around (func &rest args)
