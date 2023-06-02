@@ -53,13 +53,6 @@ distinguishing between a caller that does not want to use
         minaduki::file-name)
       (buffer-file-name (buffer-base-buffer))))
 
-;; `ensure-list' was added in 28.1.
-(defun minaduki--ensure-list (v)
-  "If V is a list, return it, otherwise return a list containing just V."
-  (if (listp v)
-      v
-    (list v)))
-
 (defun minaduki::file-type::path (path)
   "Determine the file type from PATH only*.
 

@@ -49,7 +49,7 @@
          (setq end (- end (length "---")))
          ;; TODO: We might have to fold cases here ourselves;
          ;; `case-fold-search' obviously does not affect `equal'
-         (minaduki--ensure-list
+         (ensure-list
           (map-elt (yaml-parse-string
                     (buffer-substring-no-properties start end)
                     :object-key-type 'string
