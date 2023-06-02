@@ -770,9 +770,8 @@ process."
      (file (minaduki//find-file file))
      (t (let ((props (or (-some-> (minaduki-db//fetch-lit-entry citekey)
                            minaduki-lit-entry-props)
-                         (minaduki//warn
-                          :warning
-                          "Could not find the literature entry %s" citekey))))
+                         (minaduki//warn :warning
+                           "Could not find the literature entry %s" citekey))))
           (puthash "=key=" (gethash "key" props) props)
           (remhash "key" props)
           (puthash "=type=" (gethash "type" props) props)

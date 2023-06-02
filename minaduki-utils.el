@@ -130,8 +130,9 @@ MESSAGE and ARGS are formatted by `format-message'.
 
 This is a convenience wrapper around `lwarn'. Difference:
 
-- TYPE is always '(minaduki).
+- TYPE is always \\='(minaduki).
 - This always returns nil."
+  (declare (indent 1))
   (prog1 nil
     (apply #'lwarn '(minaduki) level message args)))
 

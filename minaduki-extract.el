@@ -615,7 +615,10 @@ In Org mode, the keys are specified with the #+KEY keyword."
          (pcase key
            ('nil nil)
            ((pred string-empty-p)
-            (user-error "Org property #+key cannot be empty"))
+            (minaduki//warn :warning
+              "Org property #+key should not be empty (%s)"
+              (f-filename
+               (minaduki//current-file-name))))
            (ref
             (when-let ((r (minaduki-extract//process-ref ref)))
               (push r refs)))))
