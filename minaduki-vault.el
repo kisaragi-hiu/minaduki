@@ -191,20 +191,21 @@ A path is in a vault if it:
   "Return the innermost vault that contains PATH."
   (unless path
     (setq path default-directory))
-  (let ((nested-vaults
-         ;; These folders are nested vaults no matter what.
-         (mapcan (lambda (x)
-                   (let ((d (f-join (minaduki-vault:main) x)))
-                     (when (f-dir? d)
-                       (f-directories d))))
-                 minaduki-nested-vault-search-path)))
+  (let* ((main-vault (minaduki-vault:main))
+         (nested-vaults
+          ;; These folders are nested vaults no matter what.
+          (mapcan (lambda (x)
+                    (let ((d (f-join main-vault x)))
+                      (when (f-dir? d)
+                        (f-directories d))))
+                  minaduki-nested-vault-search-path)))
     (catch 'ret
       (while t
         (when (equal (f-expand path)
-                     (f-expand (minaduki-vault:main)))
+                     (f-expand main-vault))
           (throw 'ret path))
         (unless (s-starts-with?
-                 (f-full (minaduki-vault:main))
+                 (f-full main-vault)
                  (f-full path))
           (throw 'ret nil))
         (if (or
