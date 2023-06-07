@@ -209,6 +209,8 @@ A path is in a vault if it:
           (throw 'ret nil))
         (if (or
              (member path nested-vaults)
+             (equal (f-full path)
+                    (f-full (minaduki-vault:main)))
              (--any? (f-exists? (f-join path it))
                      minaduki-nested-vault-root-files))
             (throw 'ret path)
