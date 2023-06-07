@@ -338,11 +338,11 @@ Returns the number of rows inserted."
               (length ids))
           (error
            (minaduki::warn
-            :error
-            "Duplicate IDs in %s, one of:\n\n%s\n\nskipping..."
-            (aref (car ids) 1)
-            (string-join (mapcar (lambda (hl)
-                                   (aref hl 0)) ids) "\n"))
+               :error
+             "Duplicate IDs in %s, one of:\n\n%s\n\nskipping..."
+             (aref (car ids) 1)
+             (string-join (mapcar (lambda (hl)
+                                    (aref hl 0)) ids) "\n"))
            0))
       0)))
 
@@ -578,7 +578,7 @@ clearning existing file entries."
      do (condition-case nil
             (minaduki::with-temp-buffer file
               (cl-incf lit-count (minaduki-db//insert-lit-entries)))
-          (file-error
+          (error
            (cl-incf error-count)
            (minaduki-db//clear-file file)
            (minaduki::warn :warning "Skipping bibliography: %s" file))))
@@ -592,12 +592,15 @@ clearning existing file entries."
           (minaduki::with-temp-buffer file
             (minaduki-db//insert-meta nil contents-hash)
             (setq id-count (+ id-count (minaduki-db//insert-ids))))
-        (file-error
+        (error
          (setq error-count (1+ error-count))
          (minaduki-db//clear-file file)
          (minaduki::warn
-          :warning
-          "Error when caching %s: %s" file e))))
+             :warning
+           "Error processing metadata:
+%s"
+           (list :file file
+                 :error e)))))
     ;; Process links and ref / cite links
     (minaduki::for "Processing links (%s/%s)..."
         (file . _) file-hash-pairs
@@ -606,12 +609,12 @@ clearning existing file entries."
             (setq modified-count (1+ modified-count))
             (setq ref-count (+ ref-count (minaduki-db//insert-refs)))
             (setq link-count (+ link-count (minaduki-db//insert-links))))
-        (file-error
+        (error
          (setq error-count (1+ error-count))
          (minaduki-db//clear-file file)
          (minaduki::warn
-          :warning
-          "Skipping unreadable file while building cache: %s" file))))
+             :warning
+           "Skipping unreadable file while building cache: %s" file))))
 
     (list :error-count error-count
           :modified-count modified-count

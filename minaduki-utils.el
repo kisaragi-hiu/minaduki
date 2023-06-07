@@ -13,6 +13,7 @@
 (require 'dash)
 (require 'f)
 (require 's)
+(require 'faceup)
 
 (require 'minaduki-vars)
 (require 'ucs-normalize)
@@ -115,18 +116,43 @@ collection, and to sort matches with `ivy--shorter-matches-first'."
   (when minaduki-verbose
     (apply #'message `(,(concat "(minaduki) " format-string) ,@args))))
 
-(defun minaduki::warn (level message &rest args)
+
+(defsubst minaduki::keyword-to-symbol (kw)
+  "Given keyword :KW, return 'KW.
+
+Return KW unchanged if it's not a keyword."
+  (if (not (keywordp kw))
+      kw
+    (intern (substring (symbol-name kw) 1))))
+
+(defun minaduki::warn (level msg &rest args)
   "Display a warning for minaduki at LEVEL.
 
-MESSAGE and ARGS are formatted by `format-message'.
+MSG and ARGS are formatted by `format-message'.
 
-This is a convenience wrapper around `lwarn'. Difference:
+Difference between this and `lwarn':
 
-- TYPE is always \\='(minaduki).
-- This always returns nil."
+- TYPE is always \"(minaduki)\"
+- This always returns nil
+- `faceup' syntax can be used in MSG and ARGS
+- Maps in ARGS are formatted as maps in the message"
   (declare (indent 1))
   (prog1 nil
-    (apply #'lwarn '(minaduki) level message args)))
+    (apply #'lwarn '(minaduki) level
+           (faceup-render-string msg)
+           (--map
+            (faceup-render-string
+             (cond
+              ((mapp it)
+               (->> it
+                    (map-apply
+                     (lambda (k v)
+                       (format "\t«k:%s»: %S"
+                               (minaduki::keyword-to-symbol k)
+                               v)))
+                    (s-join "\n")))
+              (t it)))
+            args))))
 
 (defmacro minaduki::for (message var sequence &rest body)
   "Iterate BODY over SEQUENCE.
