@@ -530,15 +530,15 @@ If FORCE, force a rebuild of the cache from scratch."
       (minaduki-db//clear-file file)
       (setq deleted-count (1+ deleted-count)))
     (setq count-plist (minaduki-db//update-files modified-files force))
-    (minaduki::message "total: Δ%s, files-modified: Δ%s, ids: Δ%s, links: Δ%s, refs: Δ%s, lit: Δ%s, deleted: Δ%s"
-                       (- (length dir-files)
-                          (plist-get count-plist :error-count))
-                       (plist-get count-plist :modified-count)
-                       (plist-get count-plist :id-count)
-                       (plist-get count-plist :link-count)
-                       (plist-get count-plist :ref-count)
-                       (plist-get count-plist :lit-count)
-                       deleted-count)))
+    (let* ((error-count (plist-get count-plist :error-count)))
+      (if (> error-count 0)
+          (minaduki::message
+           "Updated cache for %s file(s). There are %s errors, please check *Warnings*"
+           (hash-table-count db-files)
+           error-count)
+        (minaduki::message
+         "Updated cache for %s file(s)"
+         (hash-table-count db-files))))))
 
 (defun minaduki-db/update-file (file-path)
   "Update Org-roam cache for FILE-PATH.
