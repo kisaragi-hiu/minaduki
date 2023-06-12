@@ -1,47 +1,31 @@
-;;; minaduki-wikilink.el --- Titles and headlines as links -*- coding: utf-8; lexical-binding: t; -*-
-
-;; Copyright © 2020 Jethro Kuan <jethrokuan95@gmail.com>
-;;                  Alan Carroll
-
-;; Author: Jethro Kuan <jethrokuan95@gmail.com>
+;;; minaduki-wikilink.el --- Titles and headlines as links -*- lexical-binding: t; -*-
 ;;
 ;;; Commentary:
-;;
-;; Links that refer to titles of files instead of filepaths.
-;;
-;; Currently this is a copy of org-roam-link.el.
-;;
-;; In Org mode, these links are written as
-;;
-;;     [[roam:Title of my file]]
-;;
-;; which will be replaced with a normal link on save or when visited.
-;;
-;; With a headline:
-;;
-;;     [[roam:Title of my file*A headline]]
-;;
-;; it will be replaced with an ID link.
-;;
-;; Current plans:
-;;
-;; - rename roam: prefix to note:
-;; - support [[Title#Headline]] in Markdown
-;; - maybe support not replacing the links
-;;
+;;;
+;;; Mostly a copy of org-roam-link.el from Org-roam v1, by Jethro Kuan
+;;; <jethrokuan95@gmail.com>.
+;;;
+;;; This is a special syntax for writing links with titles.
+;;;
+;;;   [[minaduki:File title]]
+;;;   [[minaduki:File title*Headline]]
+;;;
+;;; By default, these are replaced with an ID link (if given a
+;;; headline) or a normal link (if not) on save. This can be turned of
+;;; by setting the `minaduki-wikilink-auto-replace' user option to nil.
+;;;
 ;;; Code:
+
 ;;;; Dependencies
 
 (require 'f)
 (require 'ol)
+(require 'org-element)
 
 (require 'minaduki-utils)
 (require 'minaduki-db)
-
 (require 'minaduki-vars)
 (require 'minaduki-completion)
-
-(require 'org-element)
 
 (declare-function minaduki/open "minaduki-commands" (&optional entry))
 
