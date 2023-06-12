@@ -492,25 +492,25 @@ members that should be equal."
                                  :level 1
                                  :title "Headline 2"))))))
 
-(describe "Test roam links"
+(describe "Test minaduki: wikilinks"
   (it ""
-    (expect (org-roam-link--split-path "")
+    (expect (minaduki-wikilink::split-path "")
             :to-equal
             '(title "" "" nil)))
   (it "title"
-    (expect (org-roam-link--split-path "title")
+    (expect (minaduki-wikilink::split-path "title")
             :to-equal
             '(title "title" "" nil)))
   (it "title*"
-    (expect (org-roam-link--split-path "title*")
+    (expect (minaduki-wikilink::split-path "title*")
             :to-equal
             '(title+headline "title" "" 5)))
   (it "title*headline"
-    (expect (org-roam-link--split-path "title*headline")
+    (expect (minaduki-wikilink::split-path "title*headline")
             :to-equal
             '(title+headline "title" "headline" 5)))
   (it "*headline"
-    (expect (org-roam-link--split-path "*headline")
+    (expect (minaduki-wikilink::split-path "*headline")
             :to-equal
             '(headline "" "headline" 0))))
 

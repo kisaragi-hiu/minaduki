@@ -15,7 +15,7 @@
 (require 'minaduki-commands)
 (require 'minaduki-buffer)
 
-(require 'kisaragi-notes-wikilink)
+(require 'minaduki-wikilink)
 
 (defun minaduki:buffer-name-for-display ()
   "Return a name for the current buffer suitable for display."
@@ -45,10 +45,10 @@
 
 (defun minaduki::file-link-face (path)
   "Conditional face for file: links.
-Applies `org-roam-link-current' if PATH corresponds to the
-currently opened Org-roam file in the backlink buffer, or
-`org-roam-link-face' if PATH corresponds to any other Org-roam
-file."
+Applies the `minaduki-link-current' face if PATH corresponds
+to the current file in the backlink buffer, or the
+`minaduki-link' face if PATH corresponds to any other
+file in a vault."
   (save-match-data
     (let* ((in-vault (-> (buffer-file-name (buffer-base-buffer))
                          (minaduki-vault:in-vault?)))
@@ -57,23 +57,23 @@ file."
       (cond ((and custom
                   (not (file-remote-p path)) ;; Prevent lockups opening Tramp links
                   (not (file-exists-p path)))
-             'org-roam-link-invalid)
+             'minaduki-link-invalid)
             ((and custom
                   (bound-and-true-p minaduki-buffer/mode)
                   (minaduki::link-to-current-p))
-             'org-roam-link-current)
+             'minaduki-link-current)
             ((and custom
                   (minaduki-vault:in-vault? path))
-             'org-roam-link)
+             'minaduki-link)
             (t
              'org-link)))))
 
 (defun minaduki::id-link-face (id)
   "Conditional face for id links.
-Applies `org-roam-link-current' if ID corresponds to the
-currently opened Org-roam file in the backlink buffer, or
-`org-roam-link-face' if ID corresponds to any other Org-roam
-file."
+Applies the `minaduki-link-current' face if ID corresponds
+to the current file in the backlink buffer, or the
+`minaduki-link' face if ID corresponds to any other
+file in a vault."
   (save-match-data
     (let* ((in-vault (-> (buffer-file-name (buffer-base-buffer))
                          (minaduki-vault:in-vault?)))
@@ -82,15 +82,15 @@ file."
       (cond ((and custom
                   (bound-and-true-p minaduki-buffer/mode)
                   (minaduki::link-to-current-p))
-             'org-roam-link-current)
+             'minaduki-link-current)
             ((and custom
                   (minaduki-db//fetch-file :id id))
-             'org-roam-link)
+             'minaduki-link)
             ;; FIXME: this breaks the display of ID links to untracked
             ;; files.
             ((and custom
                   (not (minaduki-db//fetch-file :id id)))
-             'org-roam-link-invalid)
+             'minaduki-link-invalid)
             (t
              'org-link)))))
 
@@ -249,7 +249,7 @@ When NEW-FILE-OR-DIR is a directory, we use it to compute the new file path."
                     " - GNU Emacs"))))
   (pcase (minaduki::file-type)
     ('org
-     (add-hook 'before-save-hook #'org-roam-link--replace-link-on-save nil t)
+     (add-hook 'before-save-hook #'minaduki-wikilink::replace-link-on-save nil t)
      (add-hook 'post-command-hook #'minaduki-org::buttonize-tags nil t)))
   (dolist (vault
            ;; Ensure first element in `minaduki/vaults' is the
@@ -331,8 +331,8 @@ Ensure it is installed and can be found within `exec-path'."))
         (setq org-cite-follow-processor 'minaduki
               org-cite-insert-processor 'minaduki)
         (org-link-set-parameters
-         "roam"
-         :follow #'minaduki-link/follow-link)
+         "minaduki"
+         :follow #'minaduki-wikilink:follow)
         (org-link-set-parameters
          "minaduki-btn"
          :follow #'minaduki-btn:follow)

@@ -304,7 +304,7 @@ which case the list is passed to `cl-sort' as arguments."
   :type 'boolean
   :group 'minaduki)
 
-(defcustom org-roam-link-auto-replace t
+(defcustom minaduki-wikilink-auto-replace t
   "When non-nil, replace Org-roam's roam links with file/id equivalents."
   :group 'minaduki
   :type 'boolean)
@@ -591,7 +591,7 @@ Equivalent to `orb-note-actions-default'.")
   "Local commands that act on the current file or heading.")
 
 ;;;; Faces
-(defface org-roam-link
+(defface minaduki-link
   '((t :inherit org-link))
   "Face for Org-roam links."
   :group 'minaduki-faces)
@@ -616,12 +616,12 @@ Equivalent to `orb-note-actions-default'.")
   "Face for tags in Minaduki's completion."
   :group 'minaduki-faces)
 
-(defface org-roam-link-current
+(defface minaduki-link-current
   '((t :inherit org-link))
   "Face for internal links pointing to the current buffer."
   :group 'minaduki-faces)
 
-(defface org-roam-link-invalid
+(defface minaduki-link-invalid
   '((t :inherit (error org-link)))
   "Face for links that are not valid.
 Invalid links are those without a destination."

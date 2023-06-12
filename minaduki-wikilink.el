@@ -1,4 +1,4 @@
-;;; kisaragi-notes-wikilink.el --- Titles and headlines as links -*- coding: utf-8; lexical-binding: t; -*-
+;;; minaduki-wikilink.el --- Titles and headlines as links -*- coding: utf-8; lexical-binding: t; -*-
 
 ;; Copyright © 2020 Jethro Kuan <jethrokuan95@gmail.com>
 ;;                  Alan Carroll
@@ -45,14 +45,13 @@
 
 (declare-function minaduki/open "minaduki-commands" (&optional entry))
 
-(defun minaduki-link/follow-link (_path)
-  "Navigates to location in Org-roam link.
+(defun minaduki-wikilink:follow (_path)
+  "Follow a minaduki: wikilink.
 This function is called by Org when following links of the type
-`roam'. While the path is passed, assume that the cursor is on
-the link."
-  (pcase-let ((`(,link-type ,loc ,desc ,mkr) (org-roam-link--get-location)))
-    (when (and org-roam-link-auto-replace loc desc)
-      (org-roam-link--replace-link link-type loc desc))
+`minaduki'. This is registered by `minaduki-mode'."
+  (pcase-let ((`(,link-type ,loc ,desc ,mkr) (minaduki-wikilink::get-location)))
+    (when (and minaduki-wikilink-auto-replace loc desc)
+      (minaduki-wikilink::replace-link link-type loc desc))
     (pcase link-type
       ("file"
        (if loc
@@ -62,7 +61,7 @@ the link."
        (org-goto-marker-or-bmk mkr)))))
 
 ;;; Retrieval Functions
-(defun org-roam-link--get-headlines (&optional file with-marker use-stack)
+(defun minaduki-wikilink::get-headlines (&optional file with-marker use-stack)
   "Return all outline headings for the current buffer.
 If FILE, return outline headings for passed FILE instead.
 If WITH-MARKER, return a cons cell of (headline . marker).
@@ -98,7 +97,7 @@ If USE-STACK, include the parent paths as well."
                     name) cands))))
       (nreverse cands))))
 
-(defun minaduki-link//get-file-from-title (title &optional no-interactive)
+(defun minaduki-wikilink::get-file-from-title (title &optional no-interactive)
   "Return the file path corresponding to TITLE.
 
 When there are multiple options, ask the user to choose one. When
@@ -112,20 +111,20 @@ NO-INTERACTIVE is non-nil, return nil in this case."
                  title)
          (minaduki-completion//mark-category files 'file))))))
 
-(defun org-roam-link--get-id-from-headline (headline &optional file)
+(defun minaduki-wikilink::get-id-from-headline (headline &optional file)
   "Return (marker . id) correspondng to HEADLINE in FILE.
 If FILE is nil, get ID from current buffer.
 If there is no corresponding headline, return nil."
   (save-excursion
     (minaduki::with-file file 'keep
-      (let ((headlines (org-roam-link--get-headlines file 'with-markers)))
+      (let ((headlines (minaduki-wikilink::get-headlines file 'with-markers)))
         (when-let ((marker (cdr (assoc-string headline headlines))))
           (goto-char marker)
           (cons marker
-                (when org-roam-link-auto-replace
+                (when minaduki-wikilink-auto-replace
                   (org-id-get-create))))))))
 
-(defun org-roam-link--split-path (path)
+(defun minaduki-wikilink::split-path (path)
   "Splits PATH into title and headline.
 Return a list of the form (type title has-headline-p headline star-idx).
 type is one of `title', `headline', `title+headline'.
@@ -145,7 +144,7 @@ star-idx is the index of the asterisk, if any."
                        (t 'title+headline))))
       (list type title headline star-index))))
 
-(defun org-roam-link--get-location ()
+(defun minaduki-wikilink::get-location ()
   "Return the location of the Org-roam fuzzy link at point.
 The location is returned as a list containing (link-type loc desc marker).
 nil is returned if there is no matching location.
@@ -168,14 +167,14 @@ the target of LINK (title or heading content)."
                          (buffer-substring-no-properties
                           (org-element-property :contents-begin link)
                           (org-element-property :contents-end link))))
-         (pcase-let ((`(,type ,title ,headline _) (org-roam-link--split-path
+         (pcase-let ((`(,type ,title ,headline _) (minaduki-wikilink::split-path
                                                    (org-element-property :path link))))
            (pcase type
              ('title+headline
-              (let ((file (minaduki-link//get-file-from-title title)))
+              (let ((file (minaduki-wikilink::get-file-from-title title)))
                 (if (not file)
                     (minaduki::message "Cannot find matching file")
-                  (setq mkr (org-roam-link--get-id-from-headline headline file))
+                  (setq mkr (minaduki-wikilink::get-id-from-headline headline file))
                   (pcase mkr
                     (`(,marker . ,target-id)
                      (progn
@@ -185,11 +184,11 @@ the target of LINK (title or heading content)."
                              link-type "id")))
                     (_ (minaduki::message "Cannot find matching id"))))))
              ('title
-              (setq loc (minaduki-link//get-file-from-title title)
+              (setq loc (minaduki-wikilink::get-file-from-title title)
                     link-type "file"
                     desc (or desc title)))
              ('headline
-              (setq mkr (org-roam-link--get-id-from-headline headline))
+              (setq mkr (minaduki-wikilink::get-id-from-headline headline))
               (pcase mkr
                 (`(,marker . ,target-id)
                  (setq mkr marker
@@ -200,7 +199,7 @@ the target of LINK (title or heading content)."
     (list link-type loc desc mkr)))
 
 ;;; Conversion Functions
-(defun org-roam-link--replace-link (type loc &optional desc)
+(defun minaduki-wikilink::replace-link (type loc &optional desc)
   "Replace link at point with a vanilla Org link.
 TYPE is the Org link type, typically \"file\" or \"id\".
 LOC is path for the Org link.
@@ -214,22 +213,22 @@ DESC is the link description."
                                      :desc desc
                                      :id? (equal type "id"))))))
 
-(defun org-roam-link-replace-all ()
-  "Replace all roam links in the current buffer."
+(defun minaduki-wikilink:replace-all ()
+  "Replace all wikilinks in the current buffer."
   (interactive)
   (save-excursion
     (goto-char (point-min))
     (while (re-search-forward org-link-bracket-re nil t)
       (condition-case nil
-          (pcase-let ((`(,link-type ,loc ,desc _) (org-roam-link--get-location)))
+          (pcase-let ((`(,link-type ,loc ,desc _) (minaduki-wikilink::get-location)))
             (when (and link-type loc)
-              (org-roam-link--replace-link link-type loc desc)))
+              (minaduki-wikilink::replace-link link-type loc desc)))
         (error nil)))))
 
-(defun org-roam-link--replace-link-on-save ()
+(defun minaduki-wikilink::replace-link-on-save ()
   "Hook to replace all roam links on save."
-  (when org-roam-link-auto-replace
-    (org-roam-link-replace-all)))
+  (when minaduki-wikilink-auto-replace
+    (minaduki-wikilink:replace-all)))
 
-(provide 'kisaragi-notes-wikilink)
-;;; kisaragi-notes-wikilink.el ends here
+(provide 'minaduki-wikilink)
+;;; minaduki-wikilink.el ends here

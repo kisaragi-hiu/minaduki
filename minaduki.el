@@ -65,7 +65,7 @@
 (require 'minaduki-extract)
 (require 'minaduki-db)
 
-(require 'kisaragi-notes-wikilink)
+(require 'minaduki-wikilink)
 
 (require 'minaduki-mode)
 
