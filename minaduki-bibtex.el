@@ -19,7 +19,7 @@
 (require 'minaduki-utils)
 (require 'minaduki-vars)
 
-(require 'org-roam-capture)
+(require 'minaduki-capture)
 
 (require 'subr-x)
 (require 'cl-lib)

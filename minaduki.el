@@ -61,7 +61,7 @@
 
 (require 'minaduki-buffer)
 (require 'minaduki-bibtex)
-(require 'org-roam-capture)
+(require 'minaduki-capture)
 (require 'minaduki-extract)
 (require 'minaduki-db)
 

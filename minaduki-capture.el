@@ -1,4 +1,4 @@
-;;; org-roam-capture.el --- Capture functionality -*- coding: utf-8; lexical-binding: t; -*-
+;;; minaduki-capture.el --- Capture functionality -*- coding: utf-8; lexical-binding: t; -*-
 
 ;; Copyright © 2020 Jethro Kuan <jethrokuan95@gmail.com>
 
@@ -625,6 +625,6 @@ Arguments GOTO and KEYS see `org-capture'."
         (error (user-error "%s.  Please adjust `minaduki-capture/templates'"
                            (error-message-string err)))))))
 
-(provide 'org-roam-capture)
+(provide 'minaduki-capture)
 
-;;; org-roam-capture.el ends here
+;;; minaduki-capture.el ends here
