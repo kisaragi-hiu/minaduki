@@ -209,7 +209,13 @@ When NEW-FILE-OR-DIR is a directory, we use it to compute the new file path."
                                      (length other))
                                   (minaduki-extract//tags/org-prop))
                do (save-excursion
-                    (search-forward tag)
+                    (re-search-forward
+                     (regexp-quote
+                      ;; We use `combine-and-quote-strings' because it
+                      ;; is the inverse of `split-string-and-unquote',
+                      ;; used when collecting the value list.
+                      (combine-and-quote-strings
+                       (list tag))))
                     (let* ((end (point))
                            (start (- end (length tag)))
                            ;; Introduce a new scope for each iteration

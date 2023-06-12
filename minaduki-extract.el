@@ -506,8 +506,10 @@ Org tags are fetched with `org-get-buffer-tags'."
   "Return tags from the #+roam_tags and #+tags[] properties."
   (append (minaduki-extract//org-prop-as-list "ROAM_TAGS")
           ;; Extracting hugo style #+tags[].
-          ;; Concept from http://www.sidpatil.com/posts/org-roam-and-hugo-tags/
-          ;; (The fact that you simply need to change the prop it uses.)
+          ;;
+          ;; The concept that you simply need to change the prop it
+          ;; uses is from
+          ;; http://www.sidpatil.com/posts/org-roam-and-hugo-tags/
           (minaduki-extract//org-prop-as-list "TAGS[]")))
 (defun minaduki-extract//tags/hashtag ()
   "Extracts tags written with hashtags.
