@@ -371,8 +371,8 @@ Ensure it is installed and can be found within `exec-path'."))
     (advice-remove 'rename-file #'minaduki::rename-file-advice)
     (advice-remove 'delete-file #'minaduki::delete-file-advice)
     (advice-remove 'org-id-new #'minaduki-org//id-new-advice)
-    (advice-add 'markdown-follow-thing-at-point
-                #'minaduki::markdown-follow-advice)
+    (advice-remove 'markdown-follow-thing-at-point
+                   #'minaduki::markdown-follow-advice)
     (when (fboundp 'org-link-set-parameters)
       (dolist (face '("file" "id"))
         (org-link-set-parameters face :face 'org-link)))
