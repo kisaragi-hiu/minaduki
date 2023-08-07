@@ -7,6 +7,7 @@
 ;;; Code:
 
 (require 'dash)
+(require 'map)
 
 (require 'minaduki-vars)
 (require 'minaduki-extract)

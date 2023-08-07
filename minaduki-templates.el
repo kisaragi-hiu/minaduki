@@ -12,6 +12,7 @@
 
 (require 'f)
 (require 'dash)
+(require 'map)
 
 (require 'org-capture)
 

@@ -14,6 +14,7 @@
 (require 'f)
 (require 's)
 (require 'faceup)
+(require 'map)
 
 (require 'minaduki-vars)
 (require 'ucs-normalize)

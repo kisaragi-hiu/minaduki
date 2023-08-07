@@ -9,6 +9,7 @@
 (require 'f)
 (require 'org)
 (require 'eieio)
+(require 'map)
 
 ;;;; Type definitions
 

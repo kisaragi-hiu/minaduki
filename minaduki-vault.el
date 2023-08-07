@@ -14,6 +14,7 @@
 (require 'f)
 (require 's)
 (require 'dash)
+(require 'map)
 
 ;;;; Vault objects
 (defcustom minaduki/vaults nil

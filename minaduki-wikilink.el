@@ -19,6 +19,7 @@
 ;;;; Dependencies
 
 (require 'f)
+(require 'map)
 (require 'ol)
 (require 'org-element)
 
