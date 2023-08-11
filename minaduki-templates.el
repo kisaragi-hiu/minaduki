@@ -8,6 +8,9 @@
 ;; they will receive. "new" will get the title as the first argument,
 ;; "new-lit" will get the title and the key, and so on.
 
+;; Builtin templates:
+;; - "daily": `minaduki/new-daily-note'
+
 ;;; Code:
 
 (require 'f)
@@ -19,97 +22,102 @@
 (require 'minaduki-vars)
 (require 'minaduki-completion)
 
-(defun minaduki-templates//read-template (prompt)
+(cl-defun minaduki-templates::list-templates (&key with-content all)
+  "List templates, including files and those from the alist.
+
+When WITH-CONTENT is non-nil, also include their contents.
+
+When ALL is `files', return file templates only.
+If it's any other non-nil value, return all available templates.
+Otherwise, allow shadowing to take place (files over the alist).
+
+Those from the alist (`minaduki-templates-alist') have their
+names prepended with a colon."
+  (let ((templates (make-hash-table :test #'equal)))
+    (unless (eq all 'files)
+      (pcase-dolist (`(,name . ,content) minaduki-templates-alist)
+        (puthash (if all
+                     (concat ":" name)
+                   name)
+                 (if with-content
+                     content
+                   t)
+                 templates)))
+    (dolist (file (minaduki-templates::list-files t))
+      (puthash (if all
+                   file
+                 (f-filename file))
+               (if with-content
+                   (minaduki::file-content file)
+                 t)
+               templates))
+    (if with-content
+        (map-into templates 'alist)
+      (map-keys templates))))
+
+(defun minaduki-templates::list-files (&optional full)
+  "List all template files.
+When FULL is non-nil, return full paths."
+  (directory-files minaduki/templates-directory full (rx bos (not "."))))
+
+(defun minaduki-templates:get (name)
+  "Get the string content for the template named NAME."
+  (let ((has-colon (s-prefix? ":" name)))
+    ;; Use a prefix colon to only get templates from the alist
+    (when has-colon
+      (setq name (substring name 1)))
+    (or
+     ;; Files have priority
+     (and (not has-colon)
+          (let ((files (minaduki-templates::list-files t)))
+            (when-let (file (or (--first (equal name it) files)
+                                (--first (equal name (f-filename it)) files)
+                                (--first (equal name (f-base it)) files)))
+              (minaduki::file-content file))))
+     ;; Then `minaduki-templates-alist', using the same matching logic
+     (let ((templates minaduki-templates-alist))
+       (when-let (pair (or (--first (equal name (car it)) templates)
+                           ;; second case above is not applicable
+                           (--first (equal name (f-base (car it))) templates)))
+         (cdr pair))))))
+
+(cl-defun minaduki-templates:read (prompt &key all return-content)
   "Ask the user to select a template, using PROMPT.
+When ALL is `files', select from file templates only.
+If it's any other non-nil value, select from all available templates.
+Otherwise, allow shadowing to take place (files over the alist).
 
-Return the absolute path to the selected template."
-  (let ((dir minaduki/templates-directory))
-    (--> (f-files dir)
-         (-remove #'f-hidden? it)
-         (--map (f-relative it dir) it)
-         (minaduki-completion//mark-category it 'file)
-         (completing-read prompt it)
-         (f-expand it dir))))
+When RETURN-CONTENT is non-nil, return the content of the
+selected template instead of the name."
+  (declare (indent 1))
+  (if return-content
+      (let ((templates (minaduki-templates::list-templates :all all :with-content t)))
+        (map-elt templates (completing-read prompt (map-keys templates))))
+    (completing-read prompt (minaduki-templates::list-templates :all all))))
 
-(defun minaduki-templates//path-to (template)
-  "Return absolute path to TEMPLATE.
+(defun minaduki-templates:fill (template options &rest args)
+  "Fill out TEMPLATE and return the result as a string.
 
-TEMPLATE is a file under `minaduki/templates-directory'. If
-TEMPLATE has no extension, TEMPLATE.org or TEMPLATE.md will be used."
-  (unless (f-ext? template)
-    ;; TODO: choose an appropriate template
-    (setq template (car (f-files minaduki/templates-directory
-                                 (lambda (f) (equal template (f-base f)))))))
-  (setq template (f-expand template minaduki/templates-directory))
-  template)
-
-;; (defun minaduki-templates//capture (template)
-;;   "Create a new note using TEMPLATE.
-
-;; The note is stored in a location specified in the #+path: keyword.
-
-;; Template is a file under `minaduki/templates-directory'.
-
-;; Return the captured file.
-
-;; The template's contents are expanded with `org-capture-fill-template'."
-;;   (let ((file (minaduki-templates//path-to template))
-;;         target content)
-;;     (minaduki::with-file file nil
-;;       (-when-let* ((path (car (minaduki-extract//file-prop "path"))))
-;;         (setq target (f-expand (s-trim (org-capture-fill-template path))
-;;                                (minaduki-vault:main))))
-;;       (setq content (buffer-string)))
-;;     (with-temp-file target
-;;       (insert (org-capture-fill-template content))
-;;       (save-excursion
-;;         (goto-char 1)
-;;         (while (search-forward "^#+path:" nil t)
-;;           (delete-region (line-beginning-position)
-;;                          (1+ (line-end-position))))))
-;;     target))
-
-(defun minaduki-templates//make-note (&optional template)
-  "Fill out TEMPLATE and return the new note text as a string.
-
-TEMPLATE is a file path. When it is relative, it is relative to
-`minaduki/templates-directory'.
-
-The file should contain text in the format described in the
+TEMPLATE is the raw template text, in the syntax described by the
 docstring of `org-capture-templates'. (Search \"%T\" in that
-docstring to jump to the relevant section.)
+docstring to jump to the relevant section.) Variables
 
-When TEMPLATE is nil, prompt the user to select one.
+OPTIONS is the value of `org-capture-plist', used to configure the
+template. Search org-capture.el for usages of `org-capture-get'
+for possible keys.
 
-When TEMPLATE is specified but does not exist as a file, return
-nil.
+ARGS is a plist of arguments that are available to the template.
+For example,
+  (:url \"https://example.com\")
+means that the template can write \"%:url\" and have it replaced
+with \"https://example.com\". This uses the
+`org-store-link-plist' mechanism.
 
-When TEMPLATE is relative and does not have an extension, the
-first file under `minaduki/templates-directory' that
-TEMPLATE is a prefix of will be selected. This allows for code
-like (minaduki-template//make-note \"daily\"). This
-behavior does not apply when TEMPLATE is absolute."
-  ;; Fill in `template' if not provided
-  (unless template
-    (setq template (completing-read "Template: "
-                                    (minaduki-completion//mark-category
-                                     (f-files minaduki/templates-directory)
-                                     'file)
-                                    nil t)))
-  ;; Try to use files under `minaduki/templates-directory'
-  (when (f-relative? template)
-    (setq template (f-expand template minaduki/templates-directory))
-    ;; Specified path without extension -> try to find one with extension
-    ;; Only applies for relative paths
-    (unless (f-ext? template)
-      (setq template (-> minaduki/templates-directory
-                         (f-files
-                          (lambda (f)
-                            (s-prefix? template f)))
-                         car))))
-  (when (f-exists? template)
-    (org-capture-fill-template
-     (f-read-text template))))
+This is a wrapper around `org-capture-fill-template'."
+  (declare (indent 2))
+  (let ((org-capture-plist options)
+        (org-store-link-plist args))
+    (org-capture-fill-template template)))
 
 (provide 'minaduki-templates)
 

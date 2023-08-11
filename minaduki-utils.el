@@ -511,6 +511,11 @@ ARGS and BODY are as in `lambda'."
      (setq self (lambda ,args ,@body))
      self))
 
+(defun minaduki::file-content (file)
+  "Return the decoded content of FILE."
+  (minaduki::with-temp-buffer file
+    (buffer-string)))
+
 ;;;; Org mode local functions
 
 ;; Alternative to `org-get-outline-path' that doesn't break

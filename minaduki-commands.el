@@ -565,15 +565,12 @@ fill it in with the \"daily\" template."
          (ext "org"))
     (find-file (f-join minaduki/diary-directory
                        (concat filename "." ext)))
-    (let (;; This is how you pass arguments to org-capture-fill-templates
-          ;; It's either this or `org-capture-put'; this is
-          ;; less ugly.
-          (org-capture-plist (list :default-time now))
-          ;; Since we're creating a daily note, this
+    (let (;; Since we're creating a daily note, this
           ;; variable should not be used.
           (org-extend-today-until 0))
-      (insert
-       (minaduki-templates//make-note "daily")))))
+      (-some-> (minaduki-templates:get "daily")
+        (minaduki-templates:fill '(:default-time now))
+        insert))))
 
 ;;;###autoload
 (defun minaduki/new-fleeting-note (&optional time dir)
@@ -649,12 +646,8 @@ are named with a YYYYMMDD prefix (optionally with dashes)."
 (defun minaduki/open-template ()
   "Open a template in `minaduki/templates-directory' for edit."
   (interactive)
-  ;; Setting `default-directory' to (a) skip passing the directory to
-  ;; `f-relative' and `f-expand', and (b) make sure each entry points
-  ;; to the right file as relative links. Without this, we have to
-  ;; settle for not setting the category correctly.
   (minaduki::find-file
-   (minaduki-templates//read-template "Open template: ")))
+   (minaduki-templates:read "Open template file: " :all 'files)))
 
 ;;;###autoload
 (defun minaduki/open-directory ()

@@ -132,9 +132,29 @@ value like `most-positive-fixnum'."
   :group 'minaduki
   :type 'string)
 
+(defcustom minaduki-templates-alist
+  '(("daily.org" . "#+title: %<%F>")
+    ("literature.org" . "#+title: %:author - %:title
+#+key: %:ref
+#+key: %:url"))
+  "An alist for templates.
+
+Templates can be files in the template directory (which will
+eventually be vault-specific). This alist provides a way to set
+defaults, however."
+  :group 'minaduki
+  :type '(alist :key-type string :value-type string))
+
 (defcustom minaduki/diary-directory (f-slash
                                      (f-join
                                       org-directory "diary"))
+  "Where to store diary entries."
+  :group 'minaduki
+  :type 'string)
+
+(defcustom minaduki/literature-notes-directory (f-slash
+                                                (f-join
+                                                 org-directory "lit"))
   "Where to store diary entries."
   :group 'minaduki
   :type 'string)
