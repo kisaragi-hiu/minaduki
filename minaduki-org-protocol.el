@@ -72,7 +72,7 @@
   "An org-protocol handler to open a note file.
 
 Arguments are passed in as a plist like
-  \(minaduki-org-protocol/open-file '(:file FILE :key KEY)\)
+  \(minaduki-org-protocol/open-file \\='(:file FILE :key KEY)\)
 .
 
 This corresponds to the org-protocol URL
@@ -84,9 +84,9 @@ KEY: a cite key corresponding to the KEY keyword
 
 Example:
 
-emacsclient 'org-protocol://notes?title=Books'
-emacsclient 'org-protocol://notes?file=characters/闇音レンリ.org'
-emacsclient 'org-protocol://notes?key=banjoazusa2020'"
+emacsclient \\='org-protocol://notes?title=Books\\='
+emacsclient \\='org-protocol://notes?file=characters/闇音レンリ.org\\='
+emacsclient \\='org-protocol://notes?key=banjoazusa2020\\='"
   (cond
    (title
     (minaduki/open title))
@@ -97,12 +97,12 @@ emacsclient 'org-protocol://notes?key=banjoazusa2020'"
 
 ;;;###autoload
 (define-minor-mode minaduki-org-protocol-mode
-  "Enable Minaduki's \"notes\" org-protocol.
+  "Enable Minaduki\\='s \"notes\" org-protocol.
 
 With this mode turned on, these can work:
 
-emacsclient 'org-protocol://notes?file=characters/闇音レンリ.org'
-emacsclient 'org-protocol://notes?key=banjoazusa2020'"
+emacsclient \\='org-protocol://notes?file=characters/闇音レンリ.org\\='
+emacsclient \\='org-protocol://notes?key=banjoazusa2020\\='"
   :global t :lighter ""
   :group 'minaduki
   (if minaduki-org-protocol-mode
