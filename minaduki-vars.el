@@ -354,109 +354,6 @@ This can be set in a directory local variable."
 
 ;;;;; org-roam-bibtex
 
-(defcustom orb-preformat-templates t
-  "Non-nil to enable template preformatting.
-See `orb-edit-notes' for details."
-  :type '(choice
-          (const :tag "Yes" t)
-          (const :tag "No" nil))
-  :group 'minaduki-bibtex)
-
-(defcustom orb-templates
-  '(("r" "ref" plain
-     (function minaduki-capture//get-point)
-     ""
-     :file-name "${slug}"
-     :head "#+TITLE: ${title}\n#+KEY: ${ref}\n"
-     :unnarrowed t))
-  "Template to use when creating a new note.
-
-See `orb-edit-notes' for details.
-
-Note: Do not use `{citekey}' in `:filename', otherwise colons and
-such in citekeys will create invalid file names."
-  :type '(list)
-  :group 'minaduki-bibtex)
-
-(defcustom orb-preformat-keywords
-  '("citekey" "entry-type" "date" "pdf?" "note?" "file"
-    "author" "editor" "author-abbrev" "editor-abbrev"
-    "author-or-editor-abbrev" "url")
-  "(In Minaduki this is currently a giant mess.)
-
-A list of template prompt wildcards for preformatting.
-Any BibTeX field can be set for preformatting including
-`bibtex-completion` \"virtual\" fields such as '=key=' and
-'=type='.  BibTeX fields can be refered to by means of their
-aliases defined in `orb-bibtex-field-aliases'.
-
-Usage example:
-
-\(setq orb-preformat-keywords '(\"citekey\" \"author\" \"date\"))
-\(setq orb-templates
-      '((\"r\" \"reference\" plain (function minaduki-capture//get-point)
-         \"#+KEY: %^{citekey}%?
-%^{author} published %^{entry-type} in %^{date}: fullcite:%\\1.\"
-         :file-name \"references/${citekey}\"
-         :head \"#+TITLE: ${title}\"
-         :unnarrowed t)))
-
-Special cases:
-
-The \"file\" keyword will be treated specially if the value of
-`orb-process-file-keyword' is non-nil.  See its docstring for an
-explanation.
-
-The \"title\" keyword needs not to be set for preformatting if it
-is used only within the `:head` section of the templates.
-
-This variable takes effect when `orb-preformat-templates' is set
-to t (default). See also `orb-edit-notes' for further details.
-
-Consult bibtex-completion package for additional information
-about BibTeX field names."
-  :type '(repeat :tag "BibTeX field names" string)
-  :group 'minaduki-bibtex)
-
-(defcustom orb-process-file-keyword t
-  "Whether to treat the file wildcards specially during template preformatting.
-When this variable is non-nil, the \"%^{file}\" and \"${file}\"
-wildcards will be expanded by `org-process-file-field' rather
-than simply replaced with the field value.  This may be useful in
-situations when the file field contains several file names and
-only one file name is desirable for retrieval.  The \"file\"
-keyword must be set for preformatting in `orb-preformat-keywords'
-as usual.
-
-If this variable is `string', for example \"my-file\", use its
-value as the wildcard keyword instead of the default \"file\"
-keyword.  Thus, it will be possible to get both the raw file
-field value by expanding the %^{file} and ${file} wildcards and a
-single file name by expanding the %^{my-file} and ${my-file}
-wildcards.  The keyword, e.g. \"my-file\", must be set for
-preformatting in `orb-preformat-keywords' as usual."
-  :group 'minaduki-bibtex
-  :type '(choice
-          (const :tag "Yes" t)
-          (const :tag "No" nil)
-          (string :tag "Custom wildcard keyword")))
-
-(defcustom orb-bibtex-field-aliases
-  '(("=type=" . "entry-type")
-    ("=key=" . "citekey")
-    ("=has-pdf=" . "pdf?")
-    ("=has-note=" . "note?")
-    ("citation-number" . "#"))
-  "Alist of ORB-specific field aliases of the form (FIELD . ALIAS).
-The ALIAS can be used instead of the FIELD anywhere in ORB's
-configuration.  This variable is useful to replace
-`bibtex-completion''s internal '='-embraced virtual fields with
-more casual alternatives."
-  :group 'minaduki-bibtex
-  :type '(repeat
-          (cons (string :tag "Field name")
-                (string :tag "Alias name"))))
-
 (defcustom orb-citekey-format "%s"
   "Format string for the citekey when capturing new ref notes."
   :type 'string
@@ -466,77 +363,15 @@ more casual alternatives."
   "What should be used as a source for creating the note's slug.
 Supported values are symbols `citekey' and `title'.
 
-A special variable `${slug}` in `orb-templates' (and
-`minaduki-capture/templates') is used as a placeholder for an
-automatically generated string which is meant to be used in
-filenames. Org Roam uses the note's title to create a slug. ORB
-also allows for the citekey. `minaduki::title-to-slug' is
-used to create the slug. This operation typilcally involves
-removing whitespace and converting words to lowercase, among
-possibly other things."
+A special variable `%:slug` in the \"literature\" template is
+used as a placeholder for an automatically generated string which
+is meant to be used in filenames. This can be based on the
+citekey or the title. `minaduki::title-to-slug' is used to create
+the slug."
   :type '(choice
           (const citekey)
           (const title))
   :group 'minaduki-bibtex)
-
-(defcustom orb-ignore-bibtex-store-link-functions
-  '(org-bibtex-store-link)
-  "Functions to override with `ignore' during note creation process.
-
-Org Ref defines function `org-ref-bibtex-store-link' to store
-links to a BibTeX buffer, e.g. with `org-store-link'.  At the
-same time, Org ref requires `ol-bibtex' library, which defines
-`org-bibtex-store-link' to do the same.  When creating a note
-with `orb-edit-notes' from a BibTeX buffer, for example by
-calling `org-ref-open-bibtex-notes', the initiated `org-capture'
-process implicitly calls `org-store-link'.  The latter loops
-through all the functions for storing links, and if more than one
-function can store links to the location, the BibTeX buffer in
-this particular case, the user will be prompted to choose one.
-This is definitely annoying, hence ORB will advise all functions
-in this list to return nil to trick `org-capture' and get rid of
-the prompt.
-
-The default value is `(org-bibtex-store-link)', which means this
-function will be ignored and `org-ref-bibtex-store-link' will be
-used to store a link to the BibTeX buffer.  See
-`org-capture-templates' on how to use the link in your templates."
-  :type '(repeat (function))
-  :risky t
-  :group 'minaduki-bibtex)
-
-(defcustom orb-insert-link-description 'title
-  "What should be used as link description for links created with `orb-insert'.
-Possible values are the symbols `title', `citekey' and
-`citation'.  When the value of this variable is `title' or
-`citekey', then the title of the note the link points to or
-respectively the citekey associated with it will be used as the
-link's description:
-
-[[file:path/to/note.org][title]] or [[file:path/to/note.org][citekey]]
-
-When the value of this variable is `citation', instead of an
-Org-mode link create an Org-ref link by appending the citation
-key to `org-ref-default-citation-link' \(with a colon inbetween)
-or \"cite:\", if the latter variable is not defined, for example
-when Org-ref is not loaded.
-
-The default value set by this variable can be overriden by
-calling `orb-insert' with an appropriated numerical prefix
-argument.  See the docstring of the function for more
-information."
-  :group 'minaduki-bibtex
-  :type '(choice
-          (const :tag "Title" title)
-          (const :tag "Citation key" citekey)
-          (const :tag "Citation link" citation)))
-
-(defcustom orb-insert-follow-link nil
-  "Whether to follow a newly inserted link."
-  :group 'orb-roam-bibtex
-  :type '(choice
-          (const :tag "Yes" t)
-          (const :tag "No" nil)))
 
 ;;;; Internal Variables
 
@@ -596,7 +431,7 @@ List of (DISPLAY-NAME . COMMAND) pairs.")
 (defvar minaduki::literature-note-actions
   '(("Open URL, DOI, or PDF" . minaduki/visit-source)
     ("Show entry in the bibliography file" . minaduki/show-entry)
-    ("Edit notes" . orb-edit-notes)
+    ("Edit notes" . minaduki:lit-entry-edit-notes)
     ("Copy citekey" . minaduki/copy-citekey)
     ("Insert citation" . minaduki:insert-citation)
     ("Insert link to associated notes" . minaduki:insert-note-to-citekey))

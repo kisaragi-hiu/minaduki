@@ -62,7 +62,6 @@
 ;;; Code:
 (require 'org-protocol)
 (require 'minaduki)
-(require 'minaduki-bibtex) ; orb-edit-notes
 (require 'minaduki-vault)
 
 ;;;; Functions
@@ -93,7 +92,7 @@ emacsclient \\='org-protocol://notes?key=banjoazusa2020\\='"
    (file
     (find-file (f-join (minaduki-vault:main) file)))
    (key
-    (orb-edit-notes key))))
+    (minaduki:lit-entry-edit-notes key))))
 
 ;;;###autoload
 (define-minor-mode minaduki-org-protocol-mode

@@ -752,7 +752,7 @@ This function hooks into `org-open-at-point' via
 
 ;; TODO: Please tear the org-capture-based method of specifying where
 ;; files should go apart.
-(defun orb-edit-notes (citekey)
+(defun minaduki:lit-entry-edit-notes (citekey)
   "Open a note associated with the CITEKEY or create a new one.
 
 CITEKEY's information is extracted from files listed in
@@ -789,7 +789,6 @@ process."
                    (minaduki-node
                     :path (f-join minaduki/literature-notes-directory (format "%s.org" slug))))
                   (insert
-                   ;; TODO: Implement orb-preformat-keywords
                    (apply #'minaduki-templates:fill
                           (minaduki-templates:get "literature")
                           nil
@@ -995,7 +994,7 @@ This first adds an entry for it into a file in
     ;; Save the buffer
     (basic-save-buffer)
     (-when-let (citekey (plist-get info :citekey))
-      (orb-edit-notes citekey))))
+      (minaduki:lit-entry-edit-notes citekey))))
 
 ;;;; Actions
 
