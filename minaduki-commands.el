@@ -771,78 +771,41 @@ process."
           (puthash "=type=" (gethash "type" props) props)
           (remhash "type" props)
           (setq props (map-into props 'alist))
-          (if-let* (;; Depending on the templates used: run
-                    ;; `minaduki-capture//capture' or call `org-roam-find-file'
-                    (org-capture-templates
-                     (or orb-templates minaduki-capture/templates
-                         (minaduki::warn
-                          :warning
-                          "Could not find the requested templates")))
-                    ;; hijack org-capture-templates
-                    ;; entry is our bibtex entry, it just happens that
-                    ;; `org-capture' calls a single template entry "entry";
-                    (template (--> (if (null (cdr org-capture-templates))
-                                       ;; if only one template is defined, use it
-                                       (car org-capture-templates)
-                                     (org-capture-select-template))
-                                   (copy-tree it)
-                                   ;; optionally preformat templates
-                                   ;; TODO: the template system needs
-                                   ;; a rebuild.
-                                   (if orb-preformat-templates
-                                       (orb--preformat-template it props)
-                                     it)))
-                    ;; pretend we had only one template
-                    ;; `minaduki-capture//capture' behaves specially in this case
-                    ;; NOTE: this circumvents using functions other than
-                    ;; `org-capture', see `minaduki-capture/function'.
-                    ;; If the users start complaining, we may revert previous
-                    ;; implementation
-                    (minaduki-capture/templates (list template))
-                    ;; Org-roam coverts the templates to its own syntax;
-                    ;; since we are telling `org-capture' to use the template entry
-                    ;; (by setting `org-capture-entry'), and Org-roam converts the
-                    ;; whole template list, we must do the conversion of the entry
-                    ;; ourselves
-                    (org-capture-entry
-                     (minaduki-capture//convert-template template))
-                    (citekey-formatted (format (or orb-citekey-format "%s") citekey))
+          (if-let* ((citekey-formatted
+                     (format (or orb-citekey-format "%s") citekey))
                     (title
                      (or (cdr (assoc "title" props))
-                         (minaduki::warn
-                          :warning
-                          "Title not found for this entry")
+                         (minaduki::warn :warning "Title not found for this entry")
                          ;; this is not critical, the user may input their own
                          ;; title
                          "Title not found")))
               (progn
-                ;; fix some Org-ref related stuff
-                (orb--store-link-functions-advice 'add)
-                (unwind-protect
-                    ;; data collection hooks functions: remove themselves once run
-                    (progn
-                      ;; Depending on the templates used: run
-                      ;; `minaduki-capture//capture' with ORB-predefined
-                      ;; settings or call vanilla `org-roam-find-file'
-                      (if orb-templates
-                          (let* ((minaduki-capture//context 'ref)
-                                 (slug-source (cl-case orb-slug-source
-                                                (citekey citekey)
-                                                (title title)
-                                                (t (user-error "Only `citekey' \
-or `title' should be used for slug: %s not supported" orb-slug-source))))
-                                 (minaduki-capture//info
-                                  `((title . ,title)
-                                    (ref . ,citekey-formatted)
-                                    ,@(when-let (url (cdr (assoc "url" props)))
-                                        `((url . ,url)))
-                                    (slug . ,(minaduki::title-to-slug slug-source)))))
-                            (setq minaduki-capture/additional-template-props
-                                  (list :finalize 'find-file))
-                            (minaduki-capture//capture))
-                        (minaduki/open title)))
-                  (orb--store-link-functions-advice 'remove)))
-            (message "ORB: Something went wrong. Check the *Warnings* buffer")))))))
+                (let* ((slug-source (cl-case orb-slug-source
+                                      (citekey citekey)
+                                      (title title)
+                                      (t (user-error "`orb-slug-source' can only be `citekey' or `title'"))))
+                       (slug (minaduki::title-to-slug slug-source)))
+                  (minaduki/open
+                   (minaduki-node
+                    :path (f-join minaduki/literature-notes-directory (format "%s.org" slug))))
+                  (insert
+                   ;; TODO: Implement orb-preformat-keywords
+                   (apply #'minaduki-templates:fill
+                          (minaduki-templates:get "literature")
+                          nil
+                          :title title
+                          :ref citekey-formatted
+                          :slug slug
+                          (let ((extra-props nil))
+                            (pcase-dolist (`(,key . ,value) props)
+                              (when (and (eq 'string (type-of value))
+                                         (not (equal key "title")))
+                                (when (member key '("=type=" "=key="))
+                                  (setq key (substring key 1 -1)))
+                                (push (intern (format ":%s" key)) extra-props)
+                                (push value extra-props)))
+                            (nreverse extra-props))))))
+            (minaduki::warn :warning "Something went wrong while creating a new literature note")))))))
 
 (defun minaduki:insert-citation (citekey)
   "Insert a citation to CITEKEY."
