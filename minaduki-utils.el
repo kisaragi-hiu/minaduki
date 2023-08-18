@@ -159,14 +159,25 @@ the X in (cl-loop for X in sequence).
 
 MESSAGE is a format string which must have two slots: the first
 is the 1-based index, the second is the total length of
-SEQUENCE."
+SEQUENCE.
+
+It can also be an unquoted list (MSG arg1 arg2 ...), where the
+extra arguments are passed to the message."
   (declare (indent 3))
   `(cl-loop for ,var being the elements of ,sequence
             using (index i)
             with length = (length ,sequence)
             do
             (progn
-              (minaduki::message ,message (1+ i) length)
+              (minaduki::message
+               ,(if (stringp message)
+                    message
+                  (car message))
+               (1+ i)
+               length
+               ,@(if (stringp message)
+                     nil
+                   (cdr message)))
               (let ((inhibit-message t))
                 ,@body))))
 
