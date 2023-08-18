@@ -340,6 +340,10 @@ in the buffer.
 Note that this is presently not used for DB caching. Only
 headings with an ID are cached (extracted with
 `minaduki-extract/ids')."
+  ;; TODO: cache all headings, even those without IDs.
+  ;;
+  ;; This requires minaduki/open to not assume that when the ID is nil, it's a
+  ;; file. We should grab the ID information from the ids table.
   (setq file-path (minaduki::current-file-name (list file-path)))
   (let (result)
     (pcase (minaduki::file-type)
@@ -354,7 +358,6 @@ headings with an ID are cached (extracted with
                               :point (point))
                  result))))
       ('org
-       ;; Extract every other ID
        (org-map-region
         (lambda ()
           (push (minaduki-id :id (org-entry-get nil "ID")
@@ -373,6 +376,33 @@ Return a list of `minaduki-id' objects."
   (setq file-path (minaduki::current-file-name (list file-path)))
   (let (result)
     (pcase (minaduki::file-type)
+      ('info
+       (goto-char (point-min))
+       (while (re-search-forward "^[*=-]\\{2,\\}" nil t)
+         (let ((title nil)
+               (level (alist-get (char-before)
+                                 '((?* . nil)
+                                   (?= . 2)
+                                   (?- . 3)))))
+           (save-excursion
+             ;; "move to the start of line I + N"
+             (forward-line -1)
+             (unless level
+               (setq level (if (looking-at (rx digit))
+                               1
+                             0)))
+             (setq title
+                   (buffer-substring-no-properties
+                    (point)
+                    (line-end-position)))
+             (push (minaduki-id :id (format "(%s)%s"
+                                            (f-no-ext (f-base file-path))
+                                            title)
+                                :file file-path
+                                :level level
+                                :title title
+                                :point (point))
+                   result)))))
       ('markdown
        (goto-char (point-min))
        (while (re-search-forward markdown-regex-header nil t)
@@ -413,6 +443,7 @@ Return a list of `minaduki-id' objects."
       (list (minaduki::apply-link-abbrev
              (buffer-file-name)))
     (pcase (minaduki::file-type)
+      ('info (minaduki-extract/first-headline))
       ('org
        (-some-> (car (minaduki-extract//file-prop "title"))
          list))
@@ -435,6 +466,14 @@ Return a list of `minaduki-id' objects."
 (defun minaduki-extract/first-headline ()
   "Extract the first headline."
   (pcase (minaduki::file-type)
+    ('info
+     (save-excursion
+       (goto-char (point-min))
+       (when (re-search-forward "^\\*\\{2\\}+" nil t)
+         (forward-line -1)
+         (buffer-substring-no-properties
+          (line-beginning-position)
+          (line-end-position)))))
     ('org
      (save-excursion
        (goto-char (point-min))

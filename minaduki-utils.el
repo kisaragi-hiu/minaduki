@@ -425,7 +425,7 @@ means tomorrow, and N = -1 means yesterday."
 Like `file-name-extension', but:
 
 - this does not strip version number, and
-- this strips the .gpg extension."
+- this strips the .gpg and .gz extensions."
   (let (file ext)
     (save-match-data
       (setq file (file-name-nondirectory path))
@@ -433,7 +433,7 @@ Like `file-name-extension', but:
                  (not (eq 0 (match-beginning 0))))
         (setq ext (substring file (1+ (match-beginning 0))))))
     ;; This will do it more than once. Is this a problem?
-    (if (equal ext "gpg")
+    (if (member ext '("gpg" "gz"))
         (minaduki::file-name-extension (f-no-ext path))
       ext)))
 
