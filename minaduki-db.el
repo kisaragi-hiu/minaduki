@@ -514,6 +514,7 @@ If FORCE, force a rebuild of the cache from scratch."
   (minaduki-db) ;; To initialize the database, no-op if already initialized
   (let* ((gc-cons-threshold minaduki-db/gc-threshold)
          (org-agenda-files nil)
+         (minaduki-extract::file-prop::use-cache t)
          (deleted-count 0)
          dir-files db-files count-plist modified-files)
     (setq dir-files (minaduki-vault:all-files)

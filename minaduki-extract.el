@@ -32,6 +32,15 @@
 (declare-function org-element-citation-reference-parser "org-element")
 (defvar org-element-citation-prefix-re)
 
+(defvar-local minaduki-extract::file-prop::cache nil
+  "A cache for the current buffer's front matter.")
+(defvar minaduki-extract::file-prop::use-cache nil
+  "Whether the front matter cache should be used right now.
+
+It should be used when the buffer will be thrown away (like when
+creating the db for the first time), and not used when the buffer
+is meant to be edited, so this should not be set to non-nil globally.")
+
 (defun minaduki-extract//file-prop (prop)
   "Return values of the file level property PROP as a list."
   (pcase (minaduki::file-type)
@@ -49,12 +58,18 @@
          (setq end (- end (length "---")))
          ;; TODO: We might have to fold cases here ourselves;
          ;; `case-fold-search' obviously does not affect `equal'
+         (unless minaduki-extract::file-prop::use-cache
+           (setq minaduki-extract::file-prop::cache nil))
          (ensure-list
-          (map-elt (yaml-parse-string
-                    (buffer-substring-no-properties start end)
-                    :object-key-type 'string
-                    :sequence-type 'list)
-                   prop)))))
+          (map-elt
+           (or minaduki-extract::file-prop::cache
+               (setq
+                minaduki-extract::file-prop::cache
+                (yaml-parse-string
+                 (buffer-substring-no-properties start end)
+                 :object-key-type 'string
+                 :sequence-type 'list)))
+           prop)))))
     ('org
      ;; ((key . (val val val val)))
      (let ((values (cdar (org-collect-keywords (list prop)))))
