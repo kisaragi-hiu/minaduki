@@ -175,7 +175,8 @@ defaults, however."
     ("markdown" . markdown)
     ("bib" . bibtex)
     ("json" . json)
-    ("edn" . edn))
+    ("edn" . edn)
+    ("info" . info))
   "Alist mapping extensions to file types."
   :type '(alist :key-type string :value-type symbol)
   :group 'minaduki)

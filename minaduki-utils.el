@@ -65,13 +65,9 @@ distinguishing between a caller that does not want to use
    (side-effect-free t))
   (cl-loop
    for (str . value)
-   in '(("json" . json)
-        ("edn" . edn)
-        ("org" . org)
-        ("md" . markdown)
-        ("markdown" . markdown)
-        ("bib" . bibtex))
-   when (string-match-p (rx "." (literal str) eos) path)
+   in minaduki-file-extension-type-alist
+   when (string-match-p (rx "." (literal str) (opt ".gz") eos)
+                        path)
    return value))
 (defun minaduki::file-type ()
   "Return the file type of current buffer."
