@@ -158,13 +158,9 @@ The result is guaranteed to only contain paths."
 Tracked files are those within one of `minaduki/vaults' that
 isn't skipped."
   (let ((paths (minaduki-vault::paths :skip t)))
-    ;;   (--reduce-from (append <BODY> acc) nil list)
-    ;; is the same as
-    ;;   (apply #'append (--map <BODY> list))
-    ;; .
-    (--reduce-from (append (minaduki-vault::list-files (expand-file-name it))
-                           acc)
-                   nil paths)))
+    (apply #'append
+           (--map (minaduki-vault::list-files (expand-file-name it))
+                  paths))))
 
 (defun minaduki-vault:in-vault? (&optional path)
   "Return t if PATH is in a vault.
