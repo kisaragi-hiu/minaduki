@@ -96,7 +96,8 @@ EXECUTABLE is the Ripgrep executable."
   (let* ((exts minaduki-file-extensions)
          (globs (append
                  (mapcar (lambda (ext) (concat "*." ext)) exts)
-                 (mapcar (lambda (ext) (concat "*." ext ".gpg")) exts)))
+                 (mapcar (lambda (ext) (concat "*." ext ".gpg")) exts)
+                 (mapcar (lambda (ext) (concat "*." ext ".gz")) exts)))
          (arguments `("-L" ,dir "--files"
                       ,@(cons "-g" (-interpose "-g" globs)))))
     (with-temp-buffer
@@ -111,9 +112,11 @@ EXECUTABLE is the Ripgrep executable."
 
 (defun minaduki-vault::list-files/elisp (dir)
   "List all tracked files in DIR with `directory-files-recursively'."
-  (let ((regexp (concat "\\.\\(?:"
-                        (mapconcat #'regexp-quote minaduki-file-extensions "\\|")
-                        "\\)\\(?:\\.gpg\\)?\\'"))
+  (let ((regexp (rx "."
+                    (regexp
+                     (mapconcat #'regexp-quote minaduki-file-extensions "\\|"))
+                    (opt "." (or "gpg" "gz"))
+                    eos))
         result)
     (dolist (file (directory-files-recursively dir regexp nil nil t))
       (when (and (file-readable-p file)
