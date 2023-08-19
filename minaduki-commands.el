@@ -727,8 +727,10 @@ This assumes ID is present in the cache database.
 If OTHER? is non-nil, open it in another window, otherwise in the
 current window."
   (-when-let (id (minaduki-db//fetch-id id))
-    (minaduki::find-file (minaduki-id-file id) other?)
-    (goto-char (minaduki-id-point id))))
+    (if (eq 'info (minaduki::file-type::path (minaduki-id-file id)))
+        (info (minaduki-id-id id))
+      (minaduki::find-file (minaduki-id-file id) other?)
+      (goto-char (minaduki-id-point id)))))
 
 (defun minaduki/open-id-at-point ()
   "Open the ID link at point.
