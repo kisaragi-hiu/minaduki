@@ -227,7 +227,18 @@ If PATH is nil, use `default-directory'."
   "Return PATH's relative path in VAULT.
 
 If VAULT is not given, use the main vault."
-  (f-relative path (minaduki-vault-path (or vault (minaduki-vault:main)))))
+  (let ((vault-path
+         (f-expand (minaduki-vault-path (or vault (minaduki-vault:main))))))
+    ;; A short common parent means forcing PATH to be relative to vault-path
+    ;; might just end up pointing all the way back to root. Leave it as-is in
+    ;; this case.
+    ;;
+    ;; We don't test "equals '/'" or "has zero element when split with path
+    ;; separator" because I don't think that would work on Windows.
+    (if (< (length (f-common-parent (list path vault-path)))
+           3)
+        path
+      (f-relative path vault-path))))
 
 (defun minaduki-vault:path-absolute (path vault-name)
   "Given PATH relative to VAULT-NAME, return its absolute path.
