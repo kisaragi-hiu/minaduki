@@ -63,12 +63,9 @@ distinguishing between a caller that does not want to use
    (pure nil)
    ;; only sends output through return value
    (side-effect-free t))
-  (cl-loop
-   for (str . value)
-   in minaduki-file-extension-type-alist
-   when (string-match-p (rx "." (literal str) (opt ".gz") eos)
-                        path)
-   return value))
+  (when-let (pair (assoc (minaduki::file-name-extension path)
+                         minaduki-file-extension-type-alist))
+    (cdr pair)))
 (defun minaduki::file-type ()
   "Return the file type of current buffer."
   (let ((case-fold-search t))
@@ -426,18 +423,24 @@ means tomorrow, and N = -1 means yesterday."
 
 Like `file-name-extension', but:
 
-- this does not strip version number, and
-- this strips the .gpg and .gz extensions."
+- this does not strip version number
+- this strips the .gpg and .gz extensions
+- this treats .info-<digits> files as .info files"
   (let (file ext)
     (save-match-data
       (setq file (file-name-nondirectory path))
       (when (and (string-match "\\.[^.]*\\'" file)
                  (not (eq 0 (match-beginning 0))))
         (setq ext (substring file (1+ (match-beginning 0))))))
-    ;; This will do it more than once. Is this a problem?
-    (if (member ext '("gpg" "gz"))
-        (minaduki::file-name-extension (f-no-ext path))
-      ext)))
+    ;; This can repeat more than once. Is this a problem?
+    (cond ((member ext '("gpg" "gz"))
+           (minaduki::file-name-extension (f-no-ext path)))
+          ;; Info has "subfiles" that have extensions like "info-9". Discard
+          ;; that information here to simplify matching elsewhere.
+          ((and (stringp ext)
+                (string-match-p "info-[[:digit:]]+" ext))
+           "info")
+          (t ext))))
 
 ;;;; File functions
 (defun minaduki::find-file (file &optional other?)
