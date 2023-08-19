@@ -180,8 +180,7 @@ Embark to create what are in effect context menus."
             string-join)
        "")
    (--> (or (oref node id)
-            (f-relative (oref node path)
-                        (minaduki-vault:main)))
+            (minaduki-vault:path-relative (oref node path)))
         (propertize it 'face 'minaduki-path))))
 
 (cl-defun minaduki-completion//read-note
