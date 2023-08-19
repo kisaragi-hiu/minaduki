@@ -407,7 +407,9 @@ Return a list of `minaduki-id' objects."
                (unless (gethash node seen-nodes)
                  (puthash node t seen-nodes)
                  (push (minaduki-id :id (format "(%s)%s"
-                                                (f-no-ext (f-base file-path))
+                                                (or (-some-> (minaduki-extract::info-dir-entry)
+                                                      (plist-get :file))
+                                                    (f-no-ext (f-base file-path)))
                                                 node)
                                     :file file-path
                                     :level level
