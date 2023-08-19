@@ -503,9 +503,7 @@ If FILE, set `minaduki::file-name' and variable
            (setq-local markdown-mode-hook nil)
            ,@(when file
                `((insert-file-contents ,file)))
-           (funcall (or (-some-> ,file
-                          (assoc-default auto-mode-alist #'string-match))
-                        #'org-mode))
+           (set-auto-mode)
            ,@body)))))
 
 (defmacro minaduki::lambda-self (args &rest body)
