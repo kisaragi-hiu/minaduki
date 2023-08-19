@@ -187,6 +187,8 @@ A path is in a vault if it:
        (--any? (s-prefix? (expand-file-name it) path)
                (minaduki-vault::paths))))))
 
+;; TODO: return closest registered vault.
+;; Currently this just returns the closest nested vault.
 (defun minaduki-vault:closest (&optional path)
   "Return the innermost vault that contains PATH."
   (unless path

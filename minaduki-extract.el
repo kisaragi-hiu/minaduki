@@ -572,10 +572,15 @@ headline."
     f-split))
 (defun minaduki-extract//tags/first-directory (path)
   "Return PATH's first directory in the vault."
-  (-some-> (minaduki-vault:path-relative path)
-    f-split
-    car
-    list))
+  (remove
+   ;; HACK: Currently path-relative will still return an absolute path for
+   ;; anything that's not in the main vault, so f-split will put the path
+   ;; separator into the results. Just remove it for now.
+   (f-path-separator)
+   (-some-> (minaduki-vault:path-relative path)
+     f-split
+     car
+     list)))
 (defun minaduki-extract//tags/last-directory (path)
   "Return PATH's last directory in the vault."
   (-some-> (minaduki-vault:path-relative path)
