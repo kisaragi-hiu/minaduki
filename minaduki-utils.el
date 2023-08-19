@@ -444,7 +444,10 @@ Like `file-name-extension', but:
 
 ;;;; File functions
 (defun minaduki::find-file (file &optional other?)
-  "Open FILE using `org-roam-find-file-function' or `find-file'.
+  "Open FILE in an appropriate way.
+
+If FILE is an Info file, use `info' to open it. Otherwise, use
+`find-file'.
 
 If OTHER? is non-nil, open FILE in another window, otherwise open
 it in the current window."
@@ -452,7 +455,7 @@ it in the current window."
   (when other? (other-window 1))
   (if (eq 'info (minaduki::file-type::path file))
       (info file)
-    (funcall (or org-roam-find-file-function #'find-file) file)))
+    (find-file file)))
 
 (defun minaduki::compute-content-hash (file)
   "Compute the hash of the raw bytes of FILE."

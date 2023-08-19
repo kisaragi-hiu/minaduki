@@ -192,12 +192,6 @@ defaults, however."
           (const :tag "Include everything" nil))
   :group 'minaduki)
 
-(defcustom org-roam-find-file-function nil
-  "Function called when visiting files in Org-roam commands.
-If nil, `find-file' is used."
-  :type 'function
-  :group 'minaduki)
-
 (defcustom minaduki:index-file "index.org"
   "Path to the index file.
 The path can be a string or a function.
