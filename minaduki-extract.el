@@ -447,13 +447,13 @@ Return a list of `minaduki-id' objects."
     result))
 
 (defun minaduki-extract/main-title ()
-  "Return the title of the current buffer."
+  "Return a list containing the main title of the current buffer."
   ;; Outside of a vault, the title is always the file name.
   (if (not (minaduki-vault:in-vault?))
       (list (minaduki::apply-link-abbrev
              (buffer-file-name)))
     (pcase (minaduki::file-type)
-      ('info (minaduki-extract/first-headline))
+      ('info (list (minaduki-extract/first-headline)))
       ('org
        (-some-> (car (minaduki-extract//file-prop "title"))
          list))
