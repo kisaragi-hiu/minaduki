@@ -140,6 +140,8 @@ Difference between this and `lwarn':
            (--map
             (faceup-render-string
              (cond
+              ;; A string is also `mapp', because it's an array
+              ((stringp it) it)
               ((mapp it)
                (->> it
                     (map-apply
