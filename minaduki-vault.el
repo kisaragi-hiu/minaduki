@@ -237,10 +237,12 @@ If VAULT is not given, use the main vault."
     ;;
     ;; We don't test "equals '/'" or "has zero element when split with path
     ;; separator" because I don't think that would work on Windows.
-    (if (< (length (f-common-parent (list path vault-path)))
-           3)
-        path
-      (f-relative path vault-path))))
+    ;; `f-common-parent' would be more accurate, but it's too slow. We just test
+    ;; that the first 3 characters are the same.
+    (if (equal (substring path 0 (min (length path) 3))
+               (substring vault-path 0 (min (length vault-path) 3)))
+        (f-relative path vault-path)
+      path)))
 
 (defun minaduki-vault:path-absolute (path vault-name)
   "Given PATH relative to VAULT-NAME, return its absolute path.
