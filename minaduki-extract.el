@@ -447,6 +447,20 @@ Return a list of `minaduki-id' objects."
         (point-min) (point-max))))
     result))
 
+(defun minaduki-extract::info-dir-entry ()
+  "Extract the file name and main title from the dir entry."
+  (save-excursion
+    (goto-char (point-min))
+    (when (re-search-forward "^START-INFO-DIR-ENTRY$" nil t)
+      (forward-line)
+      ;; "|* Guile Reference: (guile) ..."
+      (looking-at (rx bol "* "
+                      (group (+ (not ":")))
+                      ":" (+ space)
+                      "(" (group (+ (not (any "()")))) ")"))
+      (list :main-title (match-string-no-properties 1)
+            :file (match-string-no-properties 2)))))
+
 (defun minaduki-extract/main-title ()
   "Return a list containing the main title of the current buffer."
   ;; Outside of a vault, the title is always the file name.
@@ -454,7 +468,11 @@ Return a list of `minaduki-id' objects."
       (list (minaduki::apply-link-abbrev
              (buffer-file-name)))
     (pcase (minaduki::file-type)
-      ('info (list (minaduki-extract/first-headline)))
+      ('info (list
+              (or (-some-> (minaduki-extract::info-dir-entry)
+                    (plist-get :main-title))
+                  (minaduki::apply-link-abbrev
+                   (buffer-file-name)))))
       ('org
        (-some-> (car (minaduki-extract//file-prop "title"))
          list))
