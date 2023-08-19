@@ -379,13 +379,14 @@ Return a list of `minaduki-id' objects."
       ('info
        (goto-char (point-min))
        (let ((seen-nodes (make-hash-table :test #'equal)))
-         (while (re-search-forward "^[*=-]\\{2,\\}" nil t)
+         (while (re-search-forward (rx bol (>= 2 (any "*.=-"))) nil t)
            (let ((title nil)
                  (node nil)
                  (level (alist-get (char-before)
                                    '((?* . nil)
                                      (?= . 2)
-                                     (?- . 3)))))
+                                     (?- . 3)
+                                     (?. . 4)))))
              (save-excursion
                ;; "move to the start of line I + N"
                (forward-line -1)
