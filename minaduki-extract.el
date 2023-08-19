@@ -378,31 +378,41 @@ Return a list of `minaduki-id' objects."
     (pcase (minaduki::file-type)
       ('info
        (goto-char (point-min))
-       (while (re-search-forward "^[*=-]\\{2,\\}" nil t)
-         (let ((title nil)
-               (level (alist-get (char-before)
-                                 '((?* . nil)
-                                   (?= . 2)
-                                   (?- . 3)))))
-           (save-excursion
-             ;; "move to the start of line I + N"
-             (forward-line -1)
-             (unless level
-               (setq level (if (looking-at (rx digit))
-                               1
-                             0)))
-             (setq title
-                   (buffer-substring-no-properties
-                    (point)
-                    (line-end-position)))
-             (push (minaduki-id :id (format "(%s)%s"
-                                            (f-no-ext (f-base file-path))
-                                            title)
-                                :file file-path
-                                :level level
-                                :title title
-                                :point (point))
-                   result)))))
+       (let ((seen-nodes (make-hash-table :test #'equal)))
+         (while (re-search-forward "^[*=-]\\{2,\\}" nil t)
+           (let ((title nil)
+                 (node nil)
+                 (level (alist-get (char-before)
+                                   '((?* . nil)
+                                     (?= . 2)
+                                     (?- . 3)))))
+             (save-excursion
+               ;; "move to the start of line I + N"
+               (forward-line -1)
+               (unless level
+                 (setq level (if (looking-at (rx digit))
+                                 1
+                               0)))
+               (setq title
+                     (buffer-substring-no-properties
+                      (point)
+                      (line-end-position)))
+               (save-excursion
+                 (re-search-backward
+                  (rx bol
+                      "File:" (+ (not ",")) "," (+ space)
+                      "Node: " (group (+ (not ","))) ","))
+                 (setq node (match-string-no-properties 1)))
+               (unless (gethash node seen-nodes)
+                 (puthash node t seen-nodes)
+                 (push (minaduki-id :id (format "(%s)%s"
+                                                (f-no-ext (f-base file-path))
+                                                node)
+                                    :file file-path
+                                    :level level
+                                    :title title
+                                    :point (point))
+                       result)))))))
       ('markdown
        (goto-char (point-min))
        (while (re-search-forward markdown-regex-header nil t)
