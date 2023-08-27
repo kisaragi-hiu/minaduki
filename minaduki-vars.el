@@ -169,6 +169,16 @@ defaults, however."
   :group 'minaduki
   :type 'string)
 
+(defun minaduki-lit:bibliography ()
+  "Get the bibliograpies from `minaduki-lit/bibliography'."
+  (cond
+   ((stringp minaduki-lit/bibliography)
+    (list minaduki-lit/bibliography))
+   ((listp minaduki-lit/bibliography)
+    minaduki-lit/bibliography)
+   (t
+    (error "`minaduki-lit/bibliography' must be a string or list of strings"))))
+
 (defcustom minaduki-file-extension-type-alist
   '(("org" . org)
     ("md" . markdown)

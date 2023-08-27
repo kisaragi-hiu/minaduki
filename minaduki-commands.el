@@ -918,27 +918,26 @@ Return the key."
 This first adds an entry for it into a file in
 `minaduki-lit/bibliography'."
   (interactive)
-  (let ((target-biblio
-         (cond
-          ((stringp minaduki-lit/bibliography)
-           minaduki-lit/bibliography)
-          ((= 1 (length minaduki-lit/bibliography))
-           (car minaduki-lit/bibliography))
-          (t
-           (let ((default-directory (minaduki-vault:main))
-                 (maybe-relative
-                  (cl-loop
-                   for f in minaduki-lit/bibliography
-                   collect (if (f-descendant-of? f (minaduki-vault:main))
-                               (f-relative f (minaduki-vault:main))
-                             f))))
-             (-->
-              maybe-relative
-              (minaduki-completion//mark-category it 'file)
-              (completing-read "Which bibliography? " it nil t)
-              f-expand)))))
-        (info (minaduki-lit/fetch-new-entry-from-url
-               (read-string "Create new literature entry for URL: "))))
+  (let* ((bibliographies (minaduki-lit:bibliography))
+         (target-biblio
+          (cond
+           ((= 1 (length bibliographies))
+            (car bibliographies))
+           (t
+            (let ((default-directory (minaduki-vault:main))
+                  (maybe-relative
+                   (cl-loop
+                    for f in bibliographies
+                    collect (if (f-descendant-of? f (minaduki-vault:main))
+                                (f-relative f (minaduki-vault:main))
+                              f))))
+              (-->
+               maybe-relative
+               (minaduki-completion//mark-category it 'file)
+               (completing-read "Which bibliography? " it nil t)
+               f-expand)))))
+         (info (minaduki-lit/fetch-new-entry-from-url
+                (read-string "Create new literature entry for URL: "))))
     ;; Use find-file to ensure we save into it
     (find-file target-biblio)
     (pcase (minaduki::file-type)
@@ -1037,7 +1036,7 @@ given or can be retrieved, actions from
                         ,@(when citekey
                             minaduki::literature-note-actions)
                         ,@(when (member (buffer-file-name)
-                                        minaduki-lit/bibliography)
+                                        (minaduki-lit:bibliography))
                             minaduki::bibliography-commands))))
          (selection (completing-read prompt candidates))
          (func (cdr (assoc selection candidates))))

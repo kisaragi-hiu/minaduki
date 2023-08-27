@@ -497,7 +497,7 @@ If the file exists, update the cache with information."
         (save-buffer)))
     (minaduki::with-temp-buffer file-path
       (emacsql-with-transaction (minaduki-db)
-        (when (member file-path minaduki-lit/bibliography)
+        (when (member file-path (minaduki-lit:bibliography))
           (minaduki-db//insert-lit-entries 'update))
         (unless (eq major-mode 'bibtex-mode)
           (minaduki-db//insert-meta 'update)
@@ -575,7 +575,7 @@ clearning existing file entries."
     (minaduki::message "Processing bibliographies...")
     (cl-loop
      for (file . _) in file-hash-pairs
-     when (member file minaduki-lit/bibliography)
+     when (member file (minaduki-lit:bibliography))
      do (condition-case nil
             (minaduki::with-temp-buffer file
               (cl-incf lit-count (minaduki-db//insert-lit-entries)))

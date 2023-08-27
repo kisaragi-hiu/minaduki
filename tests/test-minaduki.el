@@ -49,6 +49,8 @@
     (setq org-directory temp-dir)
     (setq minaduki/db-location (f-join temp-dir "minaduki.db"))
     (setq minaduki/vaults (list temp-dir))
+    (setq minaduki-lit/bibliography
+          (f-join temp-dir "lit" "entries.org"))
     (minaduki-mode)
     (minaduki-db/build-cache)))
 
