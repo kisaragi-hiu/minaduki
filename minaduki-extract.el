@@ -382,6 +382,7 @@ Return a list of `minaduki-id' objects."
          (while (re-search-forward (rx bol (>= 2 (any "*.=-"))) nil t)
            (let ((title nil)
                  (node nil)
+                 (infofile nil)
                  (level (alist-get (char-before)
                                    '((?* . nil)
                                      (?= . 2)
@@ -401,14 +402,14 @@ Return a list of `minaduki-id' objects."
                (save-excursion
                  (re-search-backward
                   (rx bol
-                      "File:" (+ (not ",")) "," (+ space)
+                      "File:" (group (+ (not ","))) "," (+ space)
                       "Node: " (group (+ (not ","))) ","))
-                 (setq node (match-string-no-properties 1)))
+                 (setq infofile (match-string-no-properties 1)
+                       node (match-string-no-properties 2)))
                (unless (gethash node seen-nodes)
                  (puthash node t seen-nodes)
                  (push (minaduki-id :id (format "(%s)%s"
-                                                (or (-some-> (minaduki-extract::info-dir-entry)
-                                                      (plist-get :file))
+                                                (or infofile
                                                     (f-no-ext (f-base file-path)))
                                                 node)
                                     :file file-path
@@ -459,9 +460,14 @@ Return a list of `minaduki-id' objects."
       (looking-at (rx bol "* "
                       (group (+ (not ":")))
                       ":" (+ space)
-                      "(" (group (+ (not (any "()")))) ")"))
-      (list :main-title (match-string-no-properties 1)
-            :file (match-string-no-properties 2)))))
+                      ;; This should be the file name, but it can be malformed.
+                      ;; For instance, libmicrohttpd-tutorial writes
+                      ;; "(libmicrohttpd)" here. It's IMO a bug on their end
+                      ;; (I've submitted as
+                      ;; https://bugs.gnunet.org/view.php?id=7928 ), but that
+                      ;; also means the dir entry is unreliable.
+                      "(" (+ (not (any "()"))) ")"))
+      (list :main-title (match-string-no-properties 1)))))
 
 (defun minaduki-extract/main-title ()
   "Return a list containing the main title of the current buffer."
