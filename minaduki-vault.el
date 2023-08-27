@@ -145,6 +145,8 @@ The result is guaranteed to only contain paths."
         (when path
           (unless (and skip (minaduki-vault-skipped vault))
             (cl-pushnew path ret :test #'equal)))))
+    (when org-directory
+      (cl-pushnew org-directory ret :test #'equal))
     (nreverse ret)))
 
 ;;;; Other public functions
