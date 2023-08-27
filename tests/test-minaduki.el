@@ -516,17 +516,6 @@ members that should be equal."
     (test-minaduki--init))
 
   (it "Returns a file from its title"
-    ;; There is something messed up going on that makes this run
-    ;; *during* the cache build in before-all. Just try without this
-    ;; statement and observe how the DB building messages (if you turn
-    ;; it back on in `test-minaduki--init') are interleaved with
-    ;; Buttercup's output. This would then fail if `list-files'
-    ;; doesn't return the file below close enough to the top of the
-    ;; list.
-    ;;
-    ;; We can at least be sure that this call here will 100% finish
-    ;; before we actually evaluate the test results.
-    (minaduki-db/build-cache)
     (expect (minaduki-db//fetch-file :title "Foo")
             :to-equal
             (list (test-minaduki--abs-path "foo.org"))))
