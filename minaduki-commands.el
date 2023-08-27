@@ -891,6 +891,30 @@ CITEKEY is a list whose car is a citation key."
               (elt doc)
               (alist-get 'id)))))))
 
+(defun minaduki-lit:fill-entry-info ()
+  "Fill in information for the current heading, turning it into a literature entry."
+  (interactive)
+  (let ((key (minaduki-lit::literature-key-at-point)))
+    (unless key
+      (pcase (minaduki::file-type)
+        ('org
+         (dolist (prop '("url" "author" "date"))
+           (let ((value (pcase prop
+                          ("author" (minaduki-read:author))
+                          (_ (org-read-property-value prop)))))
+             (unless (or (null value)
+                         (string= value ""))
+               (org-entry-put nil prop value))))
+         (setq key
+               (minaduki-lit::generate-key-from
+                :title (org-entry-get nil "ITEM")
+                :author (org-entry-get nil "author")
+                :date (or (org-entry-get nil "date")
+                          (org-entry-get nil "year"))))
+         (org-entry-put nil minaduki-lit/key-prop key))
+        ('json
+         (error "Support for setting the key of the CSL-JSON entry at point has not yet been implemented"))))
+    key))
 (defun minaduki-lit:literature-key-get-create ()
   "Assign a literature key to the current heading if it doesn't have one yet.
 
@@ -903,8 +927,7 @@ Return the key."
          (setq key
                (minaduki-lit::generate-key-from
                 :title (org-entry-get nil "ITEM")
-                :author (or (org-entry-get nil "author")
-                            (minaduki-read:author))
+                :author (org-entry-get nil "author")
                 :date (or (org-entry-get nil "date")
                           (org-entry-get nil "year"))))
          (org-entry-put nil minaduki-lit/key-prop key))

@@ -448,8 +448,11 @@ one argument, the citekey.
 Equivalent to `orb-note-actions-default'.")
 
 (defvar minaduki::bibliography-commands
-  '(("Create bibliography ID for current heading" . minaduki-lit:literature-key-get-create))
-  "Local commands that act on the current file or heading.")
+  '(("Create bibliography ID for current heading" . minaduki-lit:literature-key-get-create)
+    ("Fill in information and turn current heading into a literature entry"
+     .
+     minaduki-lit:fill-entry-info))
+  "Local commands in bibliography files.")
 
 ;;;; Faces
 (defface minaduki-link
