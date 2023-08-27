@@ -871,7 +871,7 @@ CITEKEY is a list whose car is a citation key."
 ;; Literature entries are like entries in a .bib file.
 ;; TODO: a generic function for creating a new entry (title, author, date)
 
-(defun minaduki::literature-key-at-point ()
+(defun minaduki-lit::literature-key-at-point ()
   "Return the key of the literature entry at point."
   (pcase (minaduki::file-type)
     ('org
@@ -891,12 +891,12 @@ CITEKEY is a list whose car is a citation key."
               (elt doc)
               (alist-get 'id)))))))
 
-(defun minaduki:literature-key-get-create ()
+(defun minaduki-lit:literature-key-get-create ()
   "Assign a literature key to the current heading if it doesn't have one yet.
 
 Return the key."
   (interactive)
-  (let ((key (minaduki::literature-key-at-point)))
+  (let ((key (minaduki-lit::literature-key-at-point)))
     (unless key
       (pcase (minaduki::file-type)
         ('org
@@ -964,7 +964,7 @@ This first adds an entry for it into a file in
              (org-entry-put nil prop value)
              (setq info (plist-put info prop value)))))
        (setq info (plist-put info
-                             :citekey (minaduki:literature-key-get-create))))
+                             :citekey (minaduki-lit:literature-key-get-create))))
       ('json
        (goto-char (point-min))
        (let ((v (json-read)))
@@ -1022,7 +1022,7 @@ given or can be retrieved, actions from
 `minaduki::literature-note-actions' are also used."
   (interactive)
   (let* ((citekey (or citekey
-                      (minaduki::literature-key-at-point)
+                      (minaduki-lit::literature-key-at-point)
                       (let ((keys (minaduki-extract/refs)))
                         (if (= 1 (length keys))
                             (cdar keys)
