@@ -48,6 +48,7 @@
     (copy-directory test-repository temp-dir)
     (setq org-directory temp-dir)
     (setq minaduki/db-location (f-join temp-dir "minaduki.db"))
+    (setq minaduki/vaults (list temp-dir))
     (minaduki-mode)
     (minaduki-db/build-cache)))
 
