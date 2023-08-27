@@ -903,7 +903,8 @@ Return the key."
          (setq key
                (minaduki-lit::generate-key-from
                 :title (org-entry-get nil "ITEM")
-                :author (org-entry-get nil "author")
+                :author (or (org-entry-get nil "author")
+                            (minaduki-read:author))
                 :date (or (org-entry-get nil "date")
                           (org-entry-get nil "year"))))
          (org-entry-put nil minaduki-lit/key-prop key))
@@ -957,7 +958,9 @@ This first adds an entry for it into a file in
        (org-entry-put nil "author" (plist-get info :author))
        (org-entry-put nil "date"   (plist-get info :date))
        (dolist (prop '("url" "author" "date"))
-         (let ((value (org-read-property-value prop)))
+         (let ((value (pcase prop
+                        ("author" (minaduki-read:author))
+                        (_ (org-read-property-value prop)))))
            (unless (or (null value)
                        (string= value ""))
              (org-entry-put nil prop value)

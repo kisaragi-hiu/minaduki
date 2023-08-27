@@ -538,7 +538,11 @@ members that should be equal."
   (it "Returns a nested file from its title"
     (expect (minaduki-db//fetch-file :title "Deeply Nested File")
             :to-equal
-            (list (test-minaduki--abs-path "nested/deeply/deeply_nested_file.org")))))
+            (list (test-minaduki--abs-path "nested/deeply/deeply_nested_file.org"))))
+  (it "Returns all authors"
+    (expect (minaduki-db//fetch-lit-authors)
+            :to-have-same-items-as
+            '("大崎ひとみ" "Bert Bos" "シャノン"))))
 
 ;;; Tests
 (xdescribe "minaduki-db/build-cache"

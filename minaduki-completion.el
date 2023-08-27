@@ -57,6 +57,10 @@ title."
          ((f-relative .path (minaduki-vault:main))
           :truncate 40 :face 'marginalia-file-name))))))
 
+(cl-defun minaduki-read:author (&key (prompt "Author: "))
+  "Ask the user using PROMPT to select an author."
+  (completing-read prompt (minaduki-db//fetch-lit-authors)))
+
 ;;;; Completion utils
 (defun minaduki//get-title-path-completions ()
   ;; TODO: include headlines with IDs. Might have to think about how a

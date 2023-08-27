@@ -410,6 +410,24 @@ When NOCASE? is non-nil, match case-insentively.
     car
     (apply #'record 'minaduki-lit-entry)))
 
+(defun minaduki-db//fetch-lit-authors ()
+  "Fetch all authors in literature entries."
+  ;; This approach is the second fastest out of five approaches I've tested,
+  ;; The 5 variants are: (total time for 100 runs w/o GC in parens)
+  ;; - this one (1.703s)
+  ;; - remove the filter and use LIKE '#s(hash-table%author%' (1.714s)
+  ;; - remove the filter and use LIKE '#s(hash-table%author%)' (1.75s)
+  ;; - remove the filter and the WHERE entirely (2.18s)
+  ;; - just remove the filter (1.675s) (faster but less safe)
+  (-some->> (minaduki-db/query
+             [:select [props] :from keys
+              :where (like props (quote "%author%"))])
+    (-map #'car)
+    (-filter #'hash-table-p)
+    (--map (map-elt it "author"))
+    -uniq
+    (remq nil)))
+
 (defun minaduki-db//fetch-all-files-hash ()
   "Return ((path . content-hash) ...) for all cached files as a hash-table."
   (let* ((current-files (minaduki-db/query [:select [file hash] :from files]))
