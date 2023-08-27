@@ -39,13 +39,15 @@
 (defvar test-lit-directory (expand-file-name "lit" test-repository)
   "Directory containing minaduki-lit test files.")
 
+(defvar temp-dir
+  (expand-file-name (make-temp-name "minaduki") temporary-file-directory))
+
 (defun test-minaduki--init ()
   "."
-  (let ((original-dir test-repository)
-        (new-dir (expand-file-name (make-temp-name "minaduki") temporary-file-directory))
-        (minaduki-verbose nil))
-    (copy-directory original-dir new-dir)
-    (setq org-directory new-dir)
+  (let ((minaduki-verbose nil))
+    (copy-directory test-repository temp-dir)
+    (setq org-directory temp-dir)
+    (setq minaduki/db-location (f-join temp-dir "minaduki.db"))
     (minaduki-mode)
     (minaduki-db/build-cache)))
 
@@ -241,9 +243,6 @@ members that should be equal."
   (before-all
     (test-minaduki--init))
 
-  (after-all
-    (test-minaduki--teardown))
-
   (it "converts between calendar.el dates and YYYY-MM-DD date strings"
     (expect (minaduki-date::calendar.el->ymd '(7 17 2019))
             :to-equal
@@ -310,9 +309,6 @@ members that should be equal."
 (describe "Extraction"
   (before-all
     (test-minaduki--init))
-
-  (after-all
-    (test-minaduki--teardown))
 
   ;; Refs
   (cl-flet
@@ -518,9 +514,6 @@ members that should be equal."
   (before-all
     (test-minaduki--init))
 
-  (after-all
-    (test-minaduki--teardown))
-
   (it "Returns a file from its title"
     ;; There is something messed up going on that makes this run
     ;; *during* the cache build in before-all. Just try without this
@@ -559,9 +552,6 @@ members that should be equal."
 (xdescribe "minaduki-db/build-cache"
   (before-each
     (test-minaduki--init))
-
-  (after-each
-    (test-minaduki--teardown))
 
   (it "initializes correctly"
     ;; Cache
