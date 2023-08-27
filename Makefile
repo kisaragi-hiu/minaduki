@@ -10,6 +10,6 @@ compile: minaduki.elc
 
 test: .cask
 	@if [ "$$CI" != true ]; then make compile; fi # Locally, always rebuild
-	cask exec buttercup -L tests
+	cask exec buttercup -L .
 
 .PHONY: test compile
