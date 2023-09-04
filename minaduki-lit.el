@@ -128,10 +128,10 @@ CONTEXT keys:
               (s-replace "-" "")
               (s-replace "–" "--")
               ;; this should handle ISO 8601 timestamps
-              (replace-regexp-in-string "T[[:digit:]].*" "")))
-           (new-id
-            (concat author (or title "") (or date ""))))
-      new-id)))
+              (replace-regexp-in-string "T[[:digit:]].*" ""))))
+      (concat author
+              ;; (or title "")
+              (or date "")))))
 
 (defun minaduki-lit/fetch-new-entry-from-url (url)
   "Fetch information from URL for a new entry."
