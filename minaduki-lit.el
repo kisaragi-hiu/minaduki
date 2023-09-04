@@ -179,6 +179,10 @@ CONTEXT keys:
                         (dom-by-tag it 'a)
                         (--first (equal "author" (dom-attr it 'rel)) it)
                         (dom-text it))
+                      (-some--> (dom-by-class dom "author-info")
+                        (dom-by-class it "author-meta")
+                        (dom-by-class it "author-name")
+                        (dom-text it))
                       ;; YouTube stores this in a <div> in <body>...
                       ;; And yes, it's in a <span> for some reason
                       ;;
