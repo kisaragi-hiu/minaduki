@@ -144,7 +144,8 @@ CONTEXT keys:
         (goto-char (point-min))
         ;; Move cursor after the headers
         (eww-parse-headers)
-        (setq dom (libxml-parse-html-region (point) (point-max))))
+        (setq dom (libxml-parse-html-region (point) (point-max)))
+        (kill-buffer))
       (let (title author publishdate)
         ;; Parse information out of it
         (setq title (or
