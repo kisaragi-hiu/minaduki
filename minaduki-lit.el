@@ -146,30 +146,31 @@ CONTEXT keys:
         (eww-parse-headers)
         (setq dom (libxml-parse-html-region (point) (point-max)))
         (kill-buffer))
-      (let (title author publishdate)
+      (let ((meta-elements (dom-by-tag dom 'meta))
+            title author publishdate)
         ;; Parse information out of it
         (setq title (or
                      ;; <meta name="title" content="...">
                      ;; Youtube puts "- YouTube" in <title>, so I want
                      ;; this first.
-                     (-some--> (dom-by-tag dom 'meta)
+                     (-some--> meta-elements
                        (--first (equal (dom-attr it 'name) "title") it)
                        (dom-attr it 'content))
                      ;; Open Graph
                      ;; Also often without the site suffix
-                     (-some--> (dom-by-tag dom 'meta)
+                     (-some--> meta-elements
                        (--first (equal (dom-attr it 'property) "og:title") it)
                        (dom-attr it 'content))
                      ;; <title>
                      (dom-texts (car (dom-by-tag dom 'title))))
               author (or
                       ;; <meta name="author" content="...">
-                      (-some--> (dom-by-tag dom 'meta)
+                      (-some--> meta-elements
                         (--first (equal "author" (dom-attr it 'name)) it)
                         (dom-attr it 'content))
                       ;; <meta name="cXenseParse:author" content="...">
                       ;; nippon.com uses this
-                      (-some--> (dom-by-tag dom 'meta)
+                      (-some--> meta-elements
                         (--first (equal "cXenseParse:author" (dom-attr it 'name)) it)
                         (dom-attr it 'content))
                       ;; WordPress entry header
@@ -193,7 +194,7 @@ CONTEXT keys:
                            ;; Open Graph
                            ;; <meta property="article:published_time"
                            ;;       content="2019-08-29T09:54:00-04:00" />
-                           (-some--> (dom-by-tag dom 'meta)
+                           (-some--> meta-elements
                              (--first (equal "article:published_time"
                                              (dom-attr it 'property))
                                       it)
@@ -205,7 +206,7 @@ CONTEXT keys:
                              (--first (equal "entry-date" (dom-attr it 'class)) it)
                              (dom-text it))
                            ;; YouTube
-                           (-some--> (dom-by-tag dom 'meta)
+                           (-some--> meta-elements
                              (--first (equal "datePublished" (dom-attr it 'itemprop)) it)
                              (dom-attr it 'content))
                            ;; Sites using Next.js
