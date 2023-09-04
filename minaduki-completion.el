@@ -57,9 +57,26 @@ title."
          ((f-relative .path (minaduki-vault:main))
           :truncate 40 :face 'marginalia-file-name))))))
 
-(cl-defun minaduki-read:author (&key (prompt "Author: "))
-  "Ask the user using PROMPT to select an author."
-  (completing-read prompt (minaduki-db//fetch-lit-authors)))
+(cl-defun minaduki-read:author (&key def (prompt "Author: "))
+  "Ask the user using PROMPT to select an author.
+DEF is passed to `completing-read'. Pass the current author value
+in with this to mimick `org-read-property-value'\\='s behavior
+when a value is already present."
+  ;; Mimick `org-read-property-value' on its prompt display for the default
+  ;; value.
+  (when (and def (string-match (rx (group (* any))
+                                   ":" (opt " ") eol)
+                               prompt))
+    ;; We don't want to mutate the input, but this just changes the local
+    ;; reference.
+    (setq prompt
+          ;; `replace-match' returns a new string
+          (replace-match
+           (format "\\& [%s]" def)
+           nil nil prompt 1)))
+  (completing-read prompt (minaduki-db//fetch-lit-authors)
+                   nil nil nil nil
+                   def))
 
 ;;;; Completion utils
 (defun minaduki//get-title-path-completions ()

@@ -982,7 +982,8 @@ This first adds an entry for it into a file in
        (org-entry-put nil "date"   (plist-get info :date))
        (dolist (prop '("url" "author" "date"))
          (let ((value (pcase prop
-                        ("author" (minaduki-read:author))
+                        ("author" (minaduki-read:author
+                                   :def (plist-get info :author)))
                         (_ (org-read-property-value prop)))))
            (unless (or (null value)
                        (string= value ""))
