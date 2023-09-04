@@ -199,8 +199,15 @@ CONTEXT keys:
                            ;; <meta property="article:published_time"
                            ;;       content="2019-08-29T09:54:00-04:00" />
                            (-some--> meta-elements
-                             (--first (equal "article:published_time"
-                                             (dom-attr it 'property))
+                             (--first (-some->> (dom-attr it 'property)
+                                        (string-match-p
+                                         (rx bos
+                                             (opt "og:")
+                                             (* any)
+                                             (or
+                                              "published_time"
+                                              "release_date")
+                                             eos)))
                                       it)
                              (dom-attr it 'content))
                            ;; WordPress entry header
