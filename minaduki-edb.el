@@ -132,7 +132,7 @@ other values are stored as JSON."
                                  (replace-regexp-in-string (rx "'") "''")
                                  (format "'%s'")))
           (t (minaduki-edb::escape-scalar
-              (json-serialize scalar))))))
+              (json-encode scalar))))))
 
 (defun minaduki-edb-insert (table values &optional mode)
   "Insert VALUES into TABLE.
