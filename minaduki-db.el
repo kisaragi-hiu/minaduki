@@ -46,7 +46,7 @@
 
 ;;;; Options
 
-(defconst minaduki-db//version 15)
+(defconst minaduki-db//version 16)
 
 (defvar minaduki-db//connection nil
   "Database connection to the cache.")
@@ -128,6 +128,12 @@ SQL can be either the emacsql vector representation, or a string."
       (file :not-null)
       (type :not-null)])))
 
+(defun minaduki-db::set-version (version)
+  "Set the user_version PRAGMA of the database to VERSION."
+  (unless (and (integerp version) (> version 0))
+    (error "Invalid version, must be a positive integer"))
+  (minaduki-db/query "PRAGMA user_version = %s" version))
+
 (defun minaduki-db//init (conn)
   "Initialize database connection CONN with the correct schema and user version."
   (emacsql-with-transaction conn
@@ -138,12 +144,14 @@ SQL can be either the emacsql vector representation, or a string."
 (defun minaduki-db//upgrade-maybe (db version)
   "Upgrades the database schema for DB, if VERSION is old."
   (emacsql-with-transaction db
-    'ignore
-    (if (< version minaduki-db//version)
-        (progn
-          (minaduki::message (format "Upgrading the cache database from version %d to version %d"
-                                     version minaduki-db//version))
-          (minaduki-db/build-cache t))))
+    (cond
+     ((= version 15)
+      (minaduki-db::clear-files "%.info%" t)
+      (minaduki-db::set-version 16))
+     ((< version minaduki-db//version)
+      (minaduki::message (format "Upgrading the cache database from version %d to version %d"
+                                 version minaduki-db//version))
+      (minaduki-db/build-cache t))))
   version)
 
 (defun minaduki-db//close ()
@@ -196,6 +204,36 @@ This function is called on `minaduki-db/file-update-timer'."
      `[:delete :from ,table
        :where (= ,(if (eq table 'links) 'source 'file) $s1)]
      file)))
+
+(defun minaduki-db::clear-files (pattern do-it)
+  "Remove information coming from files matching PATTERN.
+PATTERN is a LIKE pattern.
+Only do the deletion if DO-IT is non-nil. Otherwise, just return
+the files to be affected."
+  (if do-it
+      (emacsql-with-transaction minaduki-db//connection
+        (dolist (tbl '(files keys ids refs))
+          (minaduki-db/query
+           `[:delete :from ,tbl
+             :where (like file $r1)]
+           pattern))
+        (minaduki-db/query
+         `[:delete :from links
+           :where (like source $r1)]
+         pattern))
+    (let ((names (make-hash-table :test #'equal)))
+      (dolist (tbl '(files keys ids refs))
+        (dolist (item (minaduki-db/query
+                       `[:select :distinct file :from ,tbl
+                         :where (like file $r1)]
+                       pattern))
+          (puthash (car item) t names)))
+      (dolist (item (minaduki-db/query
+                     `[:select :distinct source :from links
+                       :where (like source $r1)]
+                     pattern))
+        (puthash (car item) t names))
+      (hash-table-keys names))))
 
 ;;;;; Inserting
 (defun minaduki-db//insert-meta (&optional update-p hash)
