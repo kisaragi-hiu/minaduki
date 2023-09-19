@@ -80,11 +80,7 @@ when a value is already present."
 
 ;;;; Completion utils
 (defun minaduki//get-title-path-completions ()
-  ;; TODO: include headlines with IDs. Might have to think about how a
-  ;; headline entry or file entry would be represented.
-  "Return an alist for completion.
-The car is the displayed title for completion, and the cdr is a
-plist containing the path and title for the file."
+  "Return `minaduki-node' objects for completion."
   (let* ((file-nodes (minaduki-db/query
                       [:select [files:file
                                 files:titles
