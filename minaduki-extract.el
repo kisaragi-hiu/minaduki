@@ -402,7 +402,7 @@ Return a list of `minaduki-id' objects."
                (save-excursion
                  (re-search-backward
                   (rx bol
-                      "File:" (group (+ (not ","))) "," (+ space)
+                      "File: " (group (+ (not ","))) "," (+ space)
                       "Node: " (group (+ (not ","))) ","))
                  (setq infofile (match-string-no-properties 1)
                        node (match-string-no-properties 2)))
