@@ -214,7 +214,7 @@ REPLACE-REGION?: whether to replace selected text."
                       (region-end))
                      s-trim)))
     (unless entry
-      (setq entry (minaduki-completion//read-note
+      (setq entry (minaduki-read:note
                    :initial-input desc
                    :prompt "Insert link to note: ")))
     (setq title (oref entry title)
@@ -500,7 +500,7 @@ REPLACE-REGION?: whether to replace selected text."
   "List all sources for browsing interactively."
   (interactive)
   (let ((key (car
-              (minaduki-completion//read-lit-entry nil :prompt "Entry: "))))
+              (minaduki-read:lit-entry nil :prompt "Entry: "))))
     (minaduki:local-commands key)))
 
 ;;;###autoload
@@ -691,7 +691,7 @@ The index file is specified in this order:
   ;; Some usages:
   ;; (minaduki/open title)
   ;; (minaduki/open
-  ;;   (minaduki-completion//read-note :initial-input initial-input))
+  ;;   (minaduki-read:note :initial-input initial-input))
   "Find and open the note ENTRY.
 
 ENTRY is a plist (:path PATH :title TITLE). It can also be a
@@ -702,7 +702,7 @@ Interactively, provide a list of notes to search and select from.
 If a note with the entered title does not exist, create a new
 one."
   (interactive
-   (list (minaduki-completion//read-note)))
+   (list (minaduki-read:note)))
   (when (stringp entry)
     (setq entry
           (minaduki-node
@@ -812,7 +812,7 @@ process."
   "Insert a citation to CITEKEY."
   (pcase (minaduki::file-type)
     ('org
-     (let ((minaduki-completion//read-lit-entry//citekey citekey))
+     (let ((minaduki-read:lit-entry::citekey citekey))
        (org-cite-insert nil)))
     (_ (insert "@" citekey))))
 

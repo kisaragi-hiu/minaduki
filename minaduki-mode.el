@@ -327,7 +327,7 @@ Ensure it is installed and can be found within `exec-path'."))
         (org-cite-register-processor 'minaduki
           :follow #'minaduki-cite//follow
           :insert (org-cite-make-insert-processor
-                   #'minaduki-completion//read-lit-entry
+                   #'minaduki-read:lit-entry
                    #'org-cite-basic--complete-style))
         (setq org-cite-follow-processor 'minaduki
               org-cite-insert-processor 'minaduki)
