@@ -120,9 +120,6 @@ Performs initialization and migration when required."
     (minaduki-edb::init-and-migrate))
   minaduki-edb::connection)
 
-'((a b c)
-  (d e f))
-
 ;; Like `emacsql-escape-scalar'
 (defun minaduki-edb::escape-scalar (scalar)
   "Escape SCALAR for insertion into the database.
@@ -244,7 +241,7 @@ If HASH is non-nil, assume that is the file's hash without recomputing it."
        do
        (unless (minaduki-edb::fetch-lit-entry key)
          (minaduki-edb-insert
-          keys
+          'keys
           (list (vector key
                         file
                         1
@@ -296,7 +293,7 @@ If UPDATE-P is non-nil, first remove the ref for the file in the database."
               (type (car ref)))
           (condition-case nil
               (progn
-                (minaduki-edb-insert refs (list (vector key file type)))
+                (minaduki-edb-insert 'refs (list (vector key file type)))
                 (cl-incf count))
             (error
              (minaduki::warn
@@ -513,7 +510,6 @@ If FORCE, force a rebuild of the cache from scratch."
   (interactive "P")
   (when force (delete-file minaduki/db-location))
   ;; Force a reconnect
-  (sqlite-close minaduki-edb::connection)
   (setq minaduki-edb::connection nil)
   ;; Initialize the database if necessary
   (minaduki-edb)
