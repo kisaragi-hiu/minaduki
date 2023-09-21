@@ -24,8 +24,8 @@
     (ids
      "\"id\" UNIQUE PRIMARY KEY"
      "\"file\" NOT NULL REFERENCES files(\"file\") ON DELETE CASCADE"
-     "\"point\" NOT NULL"
-     "\"level\" NOT NULL"
+     "\"point\" INTEGER NOT NULL"
+     "\"level\" INTEGER NOT NULL"
      "\"title\"")
 
     (links
@@ -39,7 +39,7 @@
     (keys
      "\"key\" UNIQUE NOT NULL"
      "\"file\" NOT NULL REFERENCES files(\"file\") ON DELETE CASCADE"
-     "\"point\" NOT NULL"
+     "\"point\" INTEGER NOT NULL"
      "\"props\" NOT NULL")
 
     (refs
