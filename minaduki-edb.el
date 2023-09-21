@@ -122,19 +122,19 @@ Performs initialization and migration when required."
   minaduki-edb::connection)
 
 ;; Like `emacsql-escape-scalar'
-(defun minaduki-edb::escape-scalar (scalar)
-  "Escape SCALAR for insertion into the database.
+(defun minaduki-edb::escape-value (value)
+  "Escape VALUE for insertion into the database.
 Strings are stored as raw strings, nil is stored as NULL, and
-other values are stored as JSON."
+other values (including collections) are stored as JSON."
   (let ((print-escape-newlines t)
         (print-escape-control-characters t))
-    (cond ((null scalar) "NULL")
-          ((stringp scalar) (->> scalar
-                                 (replace-regexp-in-string (rx "'") "''")
-                                 (format "'%s'")))
-          (t (minaduki-edb::escape-scalar
+    (cond ((null value) "NULL")
+          ((stringp value) (->> value
+                                (replace-regexp-in-string (rx "'") "''")
+                                (format "'%s'")))
+          (t (minaduki-edb::escape-value
               (json-serialize
-               scalar
+               value
                :false-object nil))))))
 
 (defun minaduki-edb-insert (table values &optional mode)
@@ -153,7 +153,7 @@ checks are performed as to whether MODE is valid."
              (--> values
                   (seq-map (lambda (row)
                              (--> row
-                                  (seq-map #'minaduki-edb::escape-scalar it)
+                                  (seq-map #'minaduki-edb::escape-value it)
                                   (string-join it ",")
                                   (format "(%s)" it)))
                            it)
