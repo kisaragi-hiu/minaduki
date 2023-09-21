@@ -13,7 +13,7 @@
 (require 'minaduki-extract)
 (require 'minaduki-utils)
 
-(defconst minaduki-edb::version 18)
+(defconst minaduki-edb::version 19)
 (defconst minaduki-edb::table-schemata
   '((files
      "\"file\" UNIQUE PRIMARY KEY"
@@ -92,15 +92,15 @@ per vault."
     ;; etc. during migration without fear for recursive initialization.
     (setq minaduki-edb::connection db)
     (when should-init
+      (sqlite-pragma db "foreign_keys = 1")
+      (sqlite-pragma db (format "user_version = %s" minaduki-edb::version))
       (with-sqlite-transaction db
         (pcase-dolist (`(,tbl . ,schemata) minaduki-edb::table-schemata)
           (sqlite-execute
            db
            (format "CREATE TABLE \"%s\" (%s);"
                    tbl
-                   (string-join schemata ","))))
-        (sqlite-pragma db "foreign_keys = 1")
-        (sqlite-pragma db (format "user_version = %s" minaduki-edb::version))))
+                   (string-join schemata ","))))))
     (let ((version (caar (sqlite-select db "PRAGMA user_version"))))
       (cond
        ((> version minaduki-edb::version)
