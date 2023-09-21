@@ -288,21 +288,14 @@ If UPDATE-P is non-nil, first remove the ref for the file in the database."
        "delete from \"refs\" where file = ?"
        file))
     (when-let ((refs (minaduki-extract/refs)))
-      (dolist (ref refs)
-        (let ((key (cdr ref))
-              (type (car ref)))
-          (condition-case nil
-              (progn
-                (minaduki-edb-insert 'refs (list (vector key file type)))
-                (cl-incf count))
-            (error
-             (minaduki::warn :error
-               "Duplicate ref %s in:\n\nA: %s\nB: %s\n\nskipping..."
-               key
-               file
-               (caar (minaduki-edb-select
-                      "select file from refs where ref = ?"
-                      key))))))))
+      (let ((rows (cl-loop for (type . key) in refs
+                           collect (vector key file type))))
+        (condition-case nil
+            (minaduki-edb-insert 'refs rows)
+          (error
+           (minaduki::warn :error
+             "Cannot insert citekeys declared in %s; skipping"
+             file)))))
     count))
 (defun minaduki-edb::insert-links (&optional update-p)
   "Update the file links of the current buffer in the cache.
@@ -503,6 +496,26 @@ If the file exists, update the cache with information."
           (minaduki-edb::insert-refs 'update)
           (minaduki-edb::insert-ids 'update)
           (minaduki-edb::insert-links 'update))))))
+(defun minaduki-edb::build-cache::find-modified-files (files db-files)
+  "Find modified files among FILES by comparing their hashes with DB-FILES.
+
+FILES is a list of file names.
+DB-FILES is a hash table, with keys being file names and values
+being the corresponding hash value for the file.
+
+DB-FILES is modified in place.
+
+Return a list of two items:
+- the first item is the modified files, as a hash table shaped like DB-FILES;
+- the second item is DB-FILES."
+  (let ((modified-files (make-hash-table :test #'equal)))
+    (dolist-with-progress-reporter (file files)
+        "(minaduki) Finding modified files"
+      (let ((content-hash (minaduki::compute-content-hash file)))
+        (unless (string= content-hash (gethash file db-files))
+          (puthash file content-hash modified-files)))
+      (remhash file db-files))
+    (list modified-files db-files)))
 (defun minaduki-edb::build-cache (&optional force)
   "Build the cache for all applicable.
 If FORCE, force a rebuild of the cache from scratch."
@@ -519,17 +532,14 @@ If FORCE, force a rebuild of the cache from scratch."
          dir-files db-files count-plist modified-files)
     (setq dir-files (minaduki-vault:all-files)
           db-files (minaduki-edb::fetch-all-files-hash))
-    (dolist-with-progress-reporter (file dir-files)
-        "(minaduki) Finding modified files"
-      (let ((content-hash (minaduki::compute-content-hash file)))
-        (unless (string= content-hash (gethash file db-files))
-          (push (cons file content-hash) modified-files)))
-      (remhash file db-files))
+    (setq modified-files
+          (car (minaduki-edb::build-cache::find-modified-files
+                dir-files db-files)))
     (minaduki::for "Removing deleted files from cache (%s/%s)"
         file (hash-table-keys db-files)
       ;; These files are no longer around, remove from cache...
       (minaduki-edb::clear-file file)
-      (setq deleted-count (1+ deleted-count)))
+      (cl-incf deleted-count))
     (setq count-plist (minaduki-edb::update-files modified-files force))
     (let* ((error-count (plist-get count-plist :error-count)))
       (if (> error-count 0)
@@ -550,65 +560,71 @@ If the file exists, update the cache with information."
     (unless (string= content-hash db-hash)
       (minaduki-edb::update-files (list (cons file-path content-hash)))
       (minaduki::message "Updated: %s" file-path))))
-(defun minaduki-edb::update-files (file-hash-pairs &optional rebuild)
-  "Update Org-roam cache for FILE-HASH-PAIRS.
+(defun minaduki-edb::update-files (files-table &optional rebuild)
+  "Update cache for files in FILES-TABLE.
 
-FILE-HASH-PAIRS is a list of (file . hash) pairs.
+FILES-TABLE is a hash table mapping file names to hash values.
 REBUILD signals that the DB is empty right now and we should skip
 clearning existing file entries."
-  (let* ((gc-cons-threshold minaduki-db/gc-threshold)
-         (org-agenda-files nil)
-         (error-count 0)
-         (id-count 0)
-         (link-count 0)
-         (ref-count 0)
-         (lit-count 0)
-         (modified-count 0))
+  (let ((files (hash-table-keys files-table))
+        (error-count 0)
+        (id-count 0)
+        (link-count 0)
+        (ref-count 0)
+        (lit-count 0)
+        (modified-count 0))
     ;; Clear existing cache entries so that we can put in new versions
     (unless rebuild
-      (minaduki::for "Clearing files (%s/%s)..."
-          (file . _) file-hash-pairs
+      (dolist-with-progress-reporter (file files)
+          "(minaduki) Clearing files"
         (minaduki-edb::clear-file file)))
-    ;; Process bibliographies first so that keys only in files can
+    ;; Process bibliographies first so that keys only present in files can
     ;; also be tracked.
     (minaduki::message "Processing bibliographies...")
-    (cl-loop
-     for (file . _) in file-hash-pairs
-     when (member file (minaduki-lit:bibliography))
-     do (condition-case nil
-            (minaduki::with-temp-buffer file
+    (--each (minaduki-lit:bibliography)
+      (when (gethash it files-table)
+        (condition-case nil
+            (minaduki::with-temp-buffer it
               (cl-incf lit-count (minaduki-edb::insert-lit-entries)))
           (error
            (cl-incf error-count)
-           (minaduki-edb::clear-file file)
-           (minaduki::warn :warning "Skipping bibliography: %s" file))))
+           (minaduki-edb::clear-file it)
+           (minaduki::warn :warning "Skipping bibliography: %s" it)))))
     (minaduki::message "Processing bibliographies...done")
     ;; Process file metadata (titles, tags) first to allow links to
     ;; depend on titles later; process IDs first so IDs are already
     ;; cached during link extraction
-    (minaduki::for "Processing file metadata (%s/%s)..."
-        (file . contents-hash) file-hash-pairs
-      (condition-case e
-          (minaduki::with-temp-buffer file
-            (minaduki-edb::insert-meta nil contents-hash)
-            (setq id-count (+ id-count (minaduki-edb::insert-ids))))
-        (error
-         (setq error-count (1+ error-count))
-         (minaduki-edb::clear-file file)
-         (minaduki::warn
-             :warning
-           "Error processing metadata:
-%s"
-           (list :file file
-                 :error e)))))
+    (let* ((i 1)
+           (length (length files))
+           (rep (make-progress-reporter "(minaduki) Processing file metadata" 1 length)))
+      (->> files-table
+           (maphash
+            (lambda (file contents-hash)
+              (progress-reporter-update rep i (format "(%s/%s)" i length))
+              (cl-incf i)
+              (let ((inhibit-message t))
+                (condition-case e
+                    (minaduki::with-temp-buffer file
+                      (minaduki-edb::insert-meta nil contents-hash)
+                      (setq id-count
+                            (+ id-count
+                               (minaduki-edb::insert-ids))))
+                  (error
+                   (setq error-count
+                         (1+ error-count))
+                   (minaduki-edb::clear-file file)
+                   (minaduki::warn :warning "Error processing metadata:\n%s"
+                                   (list :file file :error e))))))))
+      (progress-reporter-done rep))
     ;; Process links and ref / cite links
-    (minaduki::for "Processing links (%s/%s)..."
-        (file . _) file-hash-pairs
+    (dolist-with-progress-reporter (file files)
+        "(minaduki) Processing links"
       (condition-case nil
-          (minaduki::with-temp-buffer file
-            (setq modified-count (1+ modified-count))
-            (setq ref-count (+ ref-count (minaduki-edb::insert-refs)))
-            (setq link-count (+ link-count (minaduki-edb::insert-links))))
+          (let ((inhibit-message t))
+            (minaduki::with-temp-buffer file
+              (setq modified-count (1+ modified-count))
+              (setq ref-count (+ ref-count (minaduki-edb::insert-refs)))
+              (setq link-count (+ link-count (minaduki-edb::insert-links)))))
         (error
          (setq error-count (1+ error-count))
          (minaduki-edb::clear-file file)
