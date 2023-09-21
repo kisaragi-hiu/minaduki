@@ -569,7 +569,7 @@ fill it in with the \"daily\" template."
           ;; variable should not be used.
           (org-extend-today-until 0))
       (-some-> (minaduki-templates:get "daily")
-        (minaduki-templates:fill '(:default-time now))
+        (minaduki-templates:fill `(:default-time ,now))
         insert))))
 
 ;;;###autoload
