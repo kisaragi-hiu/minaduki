@@ -136,6 +136,11 @@ other values (including collections) are stored as JSON."
               (json-serialize
                value
                :false-object nil))))))
+(defun minaduki-edb::parse-value (str)
+  "Parse stored STR into a value."
+  (json-parse-string
+   str
+   :false-object nil :array-type 'list))
 
 (defun minaduki-edb-insert (table values &optional mode)
   "Insert VALUES into TABLE.
@@ -365,34 +370,40 @@ When NOCASE? is non-nil, match case-insentively.
                                   "%s")
                                 "\n")
                                (concat "%" title "%")
-                               maybe-nocase))))
-        (cl-loop for (file titles) in possible
-                 when (if nocase?
-                          (member (downcase title)
-                                  (mapcar #'downcase titles))
-                        (member title titles))
-                 collect file)))
+                               maybe-nocase)))
+            files)
+        (pcase-dolist (`(,file ,titles) possible)
+          (let ((titles (minaduki-edb::parse-value titles)))
+            (when (if nocase?
+                      (member (downcase title)
+                              (mapcar #'downcase titles))
+                    (member title titles))
+              (push file files))))
+        files))
      (key
       (caar (minaduki-edb-select
              (format "select file from refs where ref = ? %s"
                      maybe-nocase)
              key))))))
 (defun minaduki-edb::fetch-id (id)
-  "Fetch ID from the DB."
-  (-some->> (minaduki-edb-select
-             '("SELECT id, file, point, level, title FROM ids"
-               "WHERE id = ?")
-             id)
-    car
-    (apply #'record 'minaduki-id)))
+  "Return a `minaduki-id' object for ID."
+  (let ((row (car (minaduki-edb-select
+                   '("SELECT id, file, point, level, title FROM ids"
+                     "WHERE id = ?")
+                   id))))
+    (when row
+      (apply #'record 'minaduki-id row))))
+
 (defun minaduki-edb::fetch-lit-entry (key)
-  "Fetch the literature entry with KEY in the DB."
-  (-some->> (minaduki-edb-select
-             '("select key, file, point, props from keys"
-               "where key = ?")
-             key)
-    car
-    (apply #'record 'minaduki-lit-entry)))
+  "Return a `minaduki-lit-entry' object for KEY."
+  (let ((row (car (minaduki-edb-select
+                   '("select key, file, point, props from keys"
+                     "where key = ?")
+                   key))))
+    (when row
+      (-let (((key file point props) row))
+        (record 'minaduki-lit-entry
+                key file point (minaduki-edb::parse-value props))))))
 (defun minaduki-edb::fetch-lit-authors ()
   "Fetch all authors in literature entries."
   ;; This approach is the second fastest out of five approaches I've tested,
@@ -405,9 +416,9 @@ When NOCASE? is non-nil, match case-insentively.
   (-some->> (minaduki-edb-select
              '("select props from keys"
                "where props like '%author%'"))
-    (-map #'car)
-    (-filter #'hash-table-p)
-    (--map (map-elt it "author"))
+    (--map (-> (car it)
+               minaduki-edb::parse-value
+               (map-elt "author")))
     -uniq
     (remq nil)))
 (defun minaduki-edb::fetch-all-files-hash ()
@@ -419,20 +430,21 @@ When NOCASE? is non-nil, match case-insentively.
     ht))
 (defun minaduki-edb::fetch-title (file)
   "Return the main title of FILE from the cache."
-  (car
-   (caar
-    (minaduki-edb-select '("select titles from files"
-                           "where file = ?")
-                         file))))
+  (-> (minaduki-edb-select '("select titles from files"
+                             "where file = ?")
+                           file)
+      caar
+      minaduki-edb::parse-value
+      car))
 (defun minaduki-edb::fetch-all-tags ()
   "Return all distinct tags from the cache."
   (let ((rows (minaduki-edb-select "select distinct tags from files"))
-        acc)
+        (acc (make-hash-table :test #'equal)))
     (dolist (row rows)
-      (dolist (tag (car row))
-        (unless (member tag acc)
-          (push tag acc))))
-    acc))
+      (dolist (tag (minaduki-edb::parse-value (car row)))
+        (unless (gethash tag acc)
+          (puthash tag t acc))))
+    (hash-table-keys acc)))
 (defun minaduki-edb::fetch-tag-references (tag)
   "Return files that are tagged with TAG."
   ;; We narrow the list as much as possible in SQLite with the
@@ -446,7 +458,7 @@ When NOCASE? is non-nil, match case-insentively.
             ,(format "WHERE tags LIKE '%s'"
                      (concat "%" tag "%"))))))
     (cl-loop for cand in candidates
-             when (member tag (cadr cand))
+             when (member tag (minaduki-edb::parse-value (cadr cand)))
              collect (car cand))))
 (defun minaduki-edb::fetch-backlinks (targets)
   "Fetch backlinks to TARGETS from the cache.
@@ -460,10 +472,13 @@ correspond to the TO field in the cache DB."
          (--> targets
               (--map (format "dest = '%s'" it) it)
               (-interpose "OR" it))))
-    (minaduki-edb-select
-     `("SELECT source, dest, props FROM links"
-       "WHERE" ,@conditions
-       "ORDER BY source ASC"))))
+    (--map
+     (-let (((source dest props) it))
+       (list source dest (-some-> props minaduki-edb::parse-value)))
+     (minaduki-edb-select
+      `("SELECT source, dest, props FROM links"
+        "WHERE" ,@conditions
+        "ORDER BY source ASC")))))
 (defun minaduki-edb::fetch-file-hash (&optional file)
   "Fetch the hash of FILE as stored in the cache."
   (setq file (or file (buffer-file-name (buffer-base-buffer))))

@@ -69,7 +69,7 @@ In BODY, `fname' refers to the resolved path of FILE."
     (copy-directory test-repository temp-dir)
     (setq org-directory temp-dir)
     (setq minaduki/db-location (f-join temp-dir "minaduki.db"))
-    (setq minaduki/vaults (list temp-dir))
+    (setq minaduki/vaults (list temp-dir "/usr/share/info"))
     (setq minaduki-lit/bibliography
           (f-join temp-dir "lit" "entries.org"))
     (minaduki-mode)
@@ -512,32 +512,100 @@ members that should be equal."
   (before-all
     (test-minaduki--init))
 
-  (it "Returns a file from its title"
-    (expect (minaduki-db//fetch-file :title "Foo")
+  (it "can check presence"
+    (expect (minaduki-edb::file-present? (test-minaduki--abs-path "baz.md"))
+            :to-be-truthy)
+    (expect (minaduki-edb::file-present? (test-minaduki--abs-path "no"))
+            :to-be nil))
+
+  (describe "fetch-file"
+    (it "can fetch id"
+      (expect (minaduki-edb::fetch-file :id "(elisp.info)Defining Macros")
+              :to-equal
+              "/usr/share/info/elisp.info.gz")
+      (expect (minaduki-edb::fetch-file :id "801b58eb-97e2-435f-a33e-ff59a2f0c213")
+              :to-equal
+              (test-minaduki--abs-path "headlines/headline.org")))
+    (it "can fetch citekey"
+      (expect (minaduki-edb::fetch-file :key "hitomine2013")
+              :to-equal
+              (test-minaduki--abs-path "hitomine2013.org")))
+    (it "can fetch title"
+      (expect (minaduki-edb::fetch-file :title "Same title")
+              :to-have-same-items-as
+              (list (test-minaduki--abs-path "same-title2.org")
+                    (test-minaduki--abs-path "same-title.org")))
+      (expect (minaduki-edb::fetch-file :title "CSL-JSON sample data")
+              :to-equal
+              (list (test-minaduki--abs-path "lit/README.org")))
+      (expect (minaduki-edb::fetch-file :title "Foo")
+              :to-equal
+              (list (test-minaduki--abs-path "foo.org")))
+      (expect (minaduki-edb::fetch-file :title "Headline")
+              :to-equal
+              (-map #'test-minaduki--abs-path
+                    '("headlines/headline.org"
+                      "titles/headline.md"
+                      "titles/headline.org"))))
+    (it "can return a nested file from its title"
+      (expect (minaduki-edb::fetch-file :title "Deeply Nested File")
+              :to-equal
+              (list (test-minaduki--abs-path "nested/deeply/deeply_nested_file.org")))))
+  (it "can fetch an id object"
+    (expect (minaduki-edb::fetch-id "801b58eb-97e2-435f-a33e-ff59a2f0c213")
             :to-equal
-            (list (test-minaduki--abs-path "foo.org"))))
-  (it "Returns a list of files with the same title"
-    ;; The cache is already built, and the world should be sane again
-    ;; from here on out.
-    (expect (minaduki-db//fetch-file :title "Headline")
+            (minaduki-id :id "801b58eb-97e2-435f-a33e-ff59a2f0c213"
+                         :file (test-minaduki--abs-path "headlines/headline.org")
+                         :point 127
+                         :level 1
+                         :title "Headline 2")))
+  (it "can fetch a lit-entry object"
+    (let ((entry (minaduki-edb::fetch-lit-entry "hitomine2013")))
+      (expect (oref entry file)
+              :to-equal
+              (test-minaduki--abs-path "lit/hitomine2013.org"))
+      (expect (oref entry key)
+              :to-equal
+              "hitomine2013")
+      (expect (oref entry point)
+              :to-equal
+              1)
+      (expect (oref entry props)
+              :to-equal/ht
+              (ht<-plist
+               '("type" "file" "title" "あたらしい女声の教科書" "key" "hitomine2013")))))
+  (it "can return all authors"
+    (expect (minaduki-edb::fetch-lit-authors)
             :to-have-same-items-as
-            (-map #'test-minaduki--abs-path
-                  '("headlines/headline.org"
-                    "titles/headline.md"
-                    "titles/headline.org"))))
-  (it "Returns a file from an ID"
-    (expect (minaduki-db//fetch-file
-             :id "e84d0630-efad-4017-9059-5ef917908823")
-            :to-equal
-            (test-minaduki--abs-path "headlines/headline.org")))
-  (it "Returns a nested file from its title"
-    (expect (minaduki-db//fetch-file :title "Deeply Nested File")
-            :to-equal
-            (list (test-minaduki--abs-path "nested/deeply/deeply_nested_file.org"))))
-  (it "Returns all authors"
-    (expect (minaduki-db//fetch-lit-authors)
+            '("Bert Bos" "シャノン" "大崎ひとみ")))
+  (it "can return all tags"
+    (expect (minaduki-edb::fetch-all-tags)
             :to-have-same-items-as
-            '("大崎ひとみ" "Bert Bos" "シャノン"))))
+            '("t3" "t2 with space" "t1" "t4 second-line" "tags" "tag3" "tag2" "hello" "titles" "headlines" "lit" "nested" "minaduki-files" "front-matter")))
+  (it "can return the title of a file"
+    (expect (minaduki-edb::fetch-title
+             (test-minaduki--abs-path "lit/hitomine2013.org"))
+            :to-equal
+            "あたらしい女声の教科書"))
+  (it "can return files that are tagged with a given tag"
+    (expect (minaduki-edb::fetch-tag-references "titles")
+            :to-have-same-items-as
+            (mapcar #'test-minaduki--abs-path
+                    '("titles/title.md"
+                      "titles/headline.org"
+                      "titles/aliases.md"
+                      "titles/headline.md"
+                      "titles/combination.org"
+                      "titles/aliases.org"
+                      "titles/title.org"))))
+  (it "can fetch backlinks"
+    (expect (length (minaduki-edb::fetch-backlinks "乙野四方字20180920"))
+            :to-be-greater-than 0))
+  (it "can get the stored hash of a file"
+    (expect (minaduki-edb::fetch-file-hash
+             (test-minaduki--abs-path "front-matter/json.md"))
+            :to-equal
+            "8735b00eebf501c1c39dc4d3ba21424df591aec7")))
 
 ;;; Tests
 (xdescribe "minaduki-db/build-cache"

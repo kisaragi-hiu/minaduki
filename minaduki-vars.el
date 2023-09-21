@@ -28,7 +28,7 @@
 ;; absolutely crucial that the order does not change.
 (cl-defstruct (minaduki-lit-entry
                (:copier nil)
-               (:constructor nil))
+               (:constructor minaduki-lit-entry))
   key file point props)
 (cl-defstruct (minaduki-id
                (:copier nil)
