@@ -13,7 +13,7 @@
 (require 'minaduki-extract)
 (require 'minaduki-utils)
 
-(defconst minaduki-edb::version 17)
+(defconst minaduki-edb::version 18)
 (defconst minaduki-edb::table-schemata
   '((files
      "\"file\" UNIQUE PRIMARY KEY"
@@ -23,28 +23,28 @@
      "\"titles\"")
     (ids
      "\"id\" UNIQUE PRIMARY KEY"
-     "\"file\" NOT NULL"
+     "\"file\" NOT NULL REFERENCES files(\"file\") ON DELETE CASCADE"
      "\"point\" NOT NULL"
      "\"level\" NOT NULL"
      "\"title\"")
 
     (links
-     "\"source\" NOT NULL"
+     "\"source\" NOT NULL REFERENCES files(\"file\") ON DELETE CASCADE"
      "\"dest\""
      "\"type\" NOT NULL"
-     "\"properties\" NOT NULL")
+     "\"props\" NOT NULL")
 
     ;; TODO: "keys" maps keys to literature entry listings; "refs"
     ;; maps keys to note files. These should be in the same table.
     (keys
      "\"key\" UNIQUE NOT NULL"
-     "\"file\" NOT NULL"
+     "\"file\" NOT NULL REFERENCES files(\"file\") ON DELETE CASCADE"
      "\"point\" NOT NULL"
      "\"props\" NOT NULL")
 
     (refs
      "\"ref\" UNIQUE NOT NULL"
-     "\"file\" NOT NULL"
+     "\"file\" NOT NULL REFERENCES files(\"file\") ON DELETE CASCADE"
      "\"type\" NOT NULL")))
 (defvar minaduki-edb::connection nil
   "The \"connection\" to the cache database.
@@ -99,6 +99,7 @@ per vault."
            (format "CREATE TABLE \"%s\" (%s);"
                    tbl
                    (string-join schemata ","))))
+        (sqlite-pragma db "foreign_keys = 1")
         (sqlite-pragma db (format "user_version = %s" minaduki-edb::version))))
     (let ((version (caar (sqlite-select db "PRAGMA user_version"))))
       (cond
@@ -193,24 +194,15 @@ File defaults to the current buffer\\='s file name."
   (unless file
     (setq file (buffer-file-name (buffer-base-buffer))))
   (with-sqlite-transaction (minaduki-edb)
-    (dolist (table (map-keys minaduki-edb::table-schemata))
-      (let ((col (if (eq table 'links)
-                     "source"
-                   "file")))
-        (minaduki-edb-execute
-         (format "delete from \"%s\" where \"%s\" = ?" table col)
-         file)))))
+    ;; Rows in other tables referencing the file will also be deleted thanks to
+    ;; ON DELETE CASCADE.
+    (minaduki-edb-execute "delete from files where file = ?" file)))
+
 (defun minaduki-edb::clear-files (pattern)
   "Clear information coming from files matching PATTERN.
 PATTERN is a LIKE pattern."
   (with-sqlite-transaction (minaduki-edb)
-    (dolist (table (map-keys minaduki-edb::table-schemata))
-      (let ((col (if (eq table 'links)
-                     "source"
-                   "file")))
-        (minaduki-edb-execute
-         (format "delete from \"%s\" where \"%s\" LIKE ?" table col)
-         pattern)))))
+    (minaduki-edb-execute "delete from files where file like ?" pattern)))
 
 ;; Inserting
 (defun minaduki-edb::insert-meta (&optional update-p hash)
@@ -469,7 +461,7 @@ correspond to the TO field in the cache DB."
               (--map (format "dest = '%s'" it) it)
               (-interpose "OR" it))))
     (minaduki-edb-select
-     `("SELECT source, dest, properties FROM links"
+     `("SELECT source, dest, props FROM links"
        "WHERE" ,@conditions
        "ORDER BY source ASC"))))
 (defun minaduki-edb::fetch-file-hash (&optional file)
