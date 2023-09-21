@@ -145,9 +145,10 @@ other values (including collections) are stored as JSON."
                :false-object nil))))))
 (defun minaduki-edb::parse-value (str)
   "Parse stored STR into a value."
-  (json-parse-string
-   str
-   :false-object nil :array-type 'list))
+  (when str
+    (json-parse-string
+     str
+     :false-object nil :array-type 'list)))
 
 (defun minaduki-edb-insert (table values &optional mode)
   "Insert VALUES into TABLE.
@@ -481,7 +482,7 @@ correspond to the TO field in the cache DB."
               (-interpose "OR" it))))
     (--map
      (-let (((source dest props) it))
-       (list source dest (-some-> props minaduki-edb::parse-value)))
+       (list source dest (minaduki-edb::parse-value props)))
      (minaduki-edb-select
       `("SELECT source, dest, props FROM links"
         "WHERE" ,@conditions
