@@ -607,65 +607,6 @@ members that should be equal."
             :to-equal
             "8735b00eebf501c1c39dc4d3ba21424df591aec7")))
 
-;;; Tests
-(xdescribe "minaduki-db/build-cache"
-  (before-each
-    (test-minaduki--init))
-
-  (it "initializes correctly"
-    ;; Cache
-    (expect (caar (minaduki-db/query [:select (funcall count) :from files])) :to-be 8)
-    (expect (caar (minaduki-db/query [:select (funcall count) :from links])) :to-be 5)
-    (expect (caar (minaduki-db/query [:select (funcall count) :from files
-                                      :where titles :is-null])) :to-be 1)
-    (expect (caar (minaduki-db/query [:select (funcall count) :from refs])) :to-be 1)
-
-    ;; Links
-    (expect (caar (minaduki-db/query [:select (funcall count) :from links
-                                      :where (= source $s1)]
-                                     (test-minaduki--abs-path "foo.org"))) :to-be 1)
-    (expect (caar (minaduki-db/query [:select (funcall count) :from links
-                                      :where (= source $s1)]
-                                     (test-minaduki--abs-path "nested/bar.org"))) :to-be 2)
-
-    ;; Links -- File-to
-    (expect (caar (minaduki-db/query [:select (funcall count) :from links
-                                      :where (= dest $s1)]
-                                     (test-minaduki--abs-path "nested/foo.org"))) :to-be 1)
-    (expect (caar (minaduki-db/query [:select (funcall count) :from links
-                                      :where (= dest $s1)]
-                                     (test-minaduki--abs-path "nested/bar.org"))) :to-be 1)
-    (expect (caar (minaduki-db/query [:select (funcall count) :from links
-                                      :where (= dest $s1)]
-                                     (test-minaduki--abs-path "unlinked.org"))) :to-be 0)
-    ;; FIXME: titles has been merged into files
-    (expect (minaduki-db/query [:select * :from titles])
-            :to-have-same-items-as
-            (list (list (test-minaduki--abs-path "alias.org")
-                        (list "t1" "a1" "a 2"))
-                  (list (test-minaduki--abs-path "bar.org")
-                        (list "Bar"))
-                  (list (test-minaduki--abs-path "foo.org")
-                        (list "Foo"))
-                  (list (test-minaduki--abs-path "nested/bar.org")
-                        (list "Nested Bar"))
-                  (list (test-minaduki--abs-path "nested/foo.org")
-                        (list "Nested Foo"))
-                  (list (test-minaduki--abs-path "no-title.org")
-                        (list "Headline title"))
-                  (list (test-minaduki--abs-path "web_ref.org") nil)
-                  (list (test-minaduki--abs-path "unlinked.org")
-                        (list "Unlinked"))))
-
-    (expect (minaduki-db/query [:select * :from refs])
-            :to-have-same-items-as
-            (list (list "https://google.com/" (test-minaduki--abs-path "web_ref.org") "website")))
-
-    ;; Expect rebuilds to be really quick (nothing changed)
-    (expect (minaduki-db/build-cache)
-            :to-equal
-            (list :files 0 :links 0 :tags 0 :titles 0 :refs 0 :deleted 0))))
-
 (provide 'test-minaduki)
 
 ;;; test-minaduki.el ends here

@@ -546,6 +546,14 @@ correspond to the TO field in the cache DB."
                         (plist-get (oref a meta) :mtime)
                         (plist-get (oref b meta) :mtime)))))
     rows))
+(defun minaduki-edb::fetch-all-titles ()
+  "Return all titles from the cache."
+  (let ((rows (minaduki-edb-select "select distinct titles from files"))
+        (acc nil))
+    (dolist (row rows)
+      (dolist (title (minaduki-edb::parse-value (car row)))
+        (push title acc)))
+    (-uniq acc)))
 
 ;; Updating
 (defun minaduki-edb::update-file (&optional file-path)

@@ -215,8 +215,9 @@ PROMPT: the text shown in the prompt."
   (minaduki::with-comp-setup
       ((ivy-sort-functions-alist . nil)
        (ivy-sort-matches-functions-alist . #'ivy--shorter-matches-first))
-    (let* ((entries (->> (minaduki-db/query [:select [props] :from keys])
-                         (mapcar #'car)))
+    (let* ((entries (->> (minaduki-edb-select "select props from keys")
+                         (mapcar #'car)
+                         (mapcar #'minaduki-edb::parse-value)))
            (alist (--map (cons (minaduki--format-lit-entry it)
                                (map-elt it "key"))
                          entries))
@@ -243,9 +244,7 @@ This is active when `minaduki:completion-everywhere' is non-nil."
             (--> (completion-table-dynamic
                   ;; Get our own completion request string
                   (lambda (_)
-                    (->> (minaduki-db/query
-                          [:select [titles] :from files])
-                         -flatten
+                    (->> (minaduki-edb::fetch-all-titles)
                          (--remove (string= prefix it)))))
                  (completion-table-case-fold it (not minaduki:ignore-case-during-completion)))
             :exit-function (lambda (str _status)

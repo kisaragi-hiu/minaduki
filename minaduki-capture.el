@@ -494,12 +494,11 @@ you can catch it with `condition-case'."
 
 (defun minaduki-capture//get-ref-path (type path)
   "Get the file path to the ref with TYPE and PATH."
-  (caar (minaduki-db/query
-         [:select [file]
-          :from refs
-          :where (= type $s1)
-          :and (= ref $s2)
-          :limit 1]
+  (caar (minaduki-edb-select
+         '("select file from refs"
+           "where type = ?"
+           "and ref = ?"
+           "limit 1")
          type path)))
 
 (defun minaduki-capture//get-point ()

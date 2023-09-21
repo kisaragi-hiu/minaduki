@@ -313,7 +313,7 @@ Currently available sources:
 
 When t, sort the tags alphabetically, regardless of case.
 
-This can also be a list like '(string-less-p :key downcase), in
+This can also be a list like \\='(string-less-p :key downcase), in
 which case the list is passed to `cl-sort' as arguments."
   :type '(choice
           (boolean)
@@ -415,7 +415,7 @@ descriptive warnings when certain operations fail (e.g. parsing).")
     ("Open the index file"                . minaduki/open-index)
     ("Create a new literature note from URL" . minaduki:new-literature-note-from-url)
     ("Open a random note"                 . minaduki/open-random-note)
-    ("Refresh cache"                      . minaduki-db/build-cache))
+    ("Refresh cache"                      . minaduki-edb::build-cache))
   "Global commands shown in `minaduki:global-commands'.
 
 List of (DISPLAY-NAME . COMMAND) pairs.")
