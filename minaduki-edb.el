@@ -361,7 +361,7 @@ When NOCASE? is non-nil, match case-insentively.
       (let ((possible (minaduki-edb-select
                        (format (string-join
                                 '("SELECT file, titles FROM files"
-                                  "WHERE titles LIKE %s"
+                                  "WHERE titles LIKE '%s'"
                                   "%s")
                                 "\n")
                                (concat "%" title "%")
