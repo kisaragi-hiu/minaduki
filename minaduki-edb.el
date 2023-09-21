@@ -1,9 +1,9 @@
-;;; minaduki-edb.el --- DB rewrite -*- lexical-binding: t -*-
+;;; minaduki-edb.el --- Cache database -*- lexical-binding: t -*-
 
 ;;; Commentary:
 
-;; Will be a new implementation of the cache database for Minaduki.
-;; The goal is to use Emacs 29's SQLite support directly.
+;; This is loosely based on `org-roam-db', rewritten to use Emacs 29's SQLite
+;; support directly.
 
 ;;; Code:
 
