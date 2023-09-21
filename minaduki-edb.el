@@ -279,7 +279,7 @@ If UPDATE-P is non-nil, first remove the entries from the file in the database."
          "insert or replace"))
       count)))
 (defun minaduki-edb::insert-refs (&optional update-p)
-  "Update the refs of the current buffer into the cache.
+  "Insert the citekeys of the current buffer into the cache.
 If UPDATE-P is non-nil, first remove the ref for the file in the database."
   (let ((file (minaduki::current-file-name))
         (count 0))
@@ -296,8 +296,7 @@ If UPDATE-P is non-nil, first remove the ref for the file in the database."
                 (minaduki-edb-insert 'refs (list (vector key file type)))
                 (cl-incf count))
             (error
-             (minaduki::warn
-                 :error
+             (minaduki::warn :error
                "Duplicate ref %s in:\n\nA: %s\nB: %s\n\nskipping..."
                key
                file
