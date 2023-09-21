@@ -63,7 +63,7 @@
 (require 'minaduki-bibtex)
 (require 'minaduki-capture)
 (require 'minaduki-extract)
-(require 'minaduki-db)
+(require 'minaduki-edb)
 
 (require 'minaduki-wikilink)
 

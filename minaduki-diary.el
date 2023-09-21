@@ -23,7 +23,7 @@
 (require 'parse-time)
 (require 's)
 
-(require 'minaduki-db)
+(require 'minaduki-edb)
 (require 'minaduki-utils)
 (require 'minaduki-vars)
 
@@ -107,7 +107,7 @@ whether an entry is from DAY or not."
       (_
        (let* ((title-file-alist
                (--map
-                `(,(or (minaduki-db//fetch-title it)
+                `(,(or (minaduki-edb::fetch-title it)
                        (f-base it))
                   .
                   ,it)

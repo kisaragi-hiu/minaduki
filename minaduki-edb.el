@@ -104,7 +104,7 @@ per vault."
     (let ((version (caar (sqlite-select db "PRAGMA user_version"))))
       (cond
        ((> version minaduki-edb::version)
-        (sqlite-close db)
+        (minaduki-edb::close)
         (user-error
          "The cache database was created with a newer Minaduki version. "
          "Please update Minaduki"))
@@ -114,6 +114,13 @@ per vault."
         ;; Fallback case: rebuild everything
         (minaduki-edb::build-cache t))))
     minaduki-edb::connection))
+(defun minaduki-edb::close ()
+  "Close the connection."
+  ;; There doesn't appear to be a way to distinguish between a closed db and an
+  ;; open db other than "try selecting and see what happens", so it seems better
+  ;; to just remove the reference (so we don't have to worry about accessing a
+  ;; closed db) and let Emacs automatically close it.
+  (setq minaduki-edb::connection nil))
 (defun minaduki-edb ()
   "Return the \"connection\" to the cache database.
 Performs initialization and migration when required."
@@ -583,7 +590,7 @@ Return a list of two items:
       (remhash file db-files))
     (list modified-files db-files)))
 (defun minaduki-edb::build-cache (&optional force)
-  "Build the cache for all applicable.
+  "Build the cache for all applicable notes.
 If FORCE, force a rebuild of the cache from scratch."
   (interactive "P")
   (when force (delete-file minaduki:edb-location))
