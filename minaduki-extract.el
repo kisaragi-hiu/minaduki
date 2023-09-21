@@ -683,12 +683,17 @@ Returns a cons cell (TYPE . PATH) if ref is a valid ref.
 
 REF is either a plain link or a plain string. If it's a link, the
 protocol is treated as the TYPE (after processing through
-`minaduki::collate-types'). Otherwise, REF is assumed to be a cite ref."
-  (save-match-data
-    (if (string-match org-link-plain-re ref)
-        (cons (minaduki::collate-types (match-string 1 ref))
-              (match-string 2 ref))
-      (cons "cite" ref))))
+`minaduki::collate-types'). Otherwise, REF is assumed to be a cite ref.
+
+The \"cite:\" prefix is removed."
+  (let ((type "cite")
+        (ref ref))
+    (save-match-data
+      (when (string-match org-link-plain-re ref)
+        (setq type (minaduki::collate-types (match-string 1 ref))
+              ref (match-string 2 ref))))
+    (cons type
+          (s-replace-regexp (rx bos "cite:") "" ref))))
 
 (defun minaduki-extract/lit-entries ()
   "Extract literature entries from this bibliography file.
