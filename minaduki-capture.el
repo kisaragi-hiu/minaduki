@@ -37,6 +37,7 @@
 
 (require 'minaduki-utils)
 (require 'minaduki-vault)
+(require 'minaduki-edb)
 (require 'minaduki-extract)
 (require 'minaduki-completion)
 (require 'minaduki-vars)
@@ -610,7 +611,7 @@ GOTO and KEYS argument have the same functionality as
 This uses the templates defined at `minaduki-capture/templates'.
 Arguments GOTO and KEYS see `org-capture'."
   (interactive "P")
-  (let* ((completions (minaduki//get-title-path-completions))
+  (let* ((completions (minaduki-edb::fetch-all-nodes))
          (title-with-keys (completing-read "File: " completions))
          (res (cdr (assoc title-with-keys completions)))
          (title (or (plist-get res :title) title-with-keys))

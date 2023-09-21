@@ -492,6 +492,54 @@ correspond to the TO field in the cache DB."
     caar
     minaduki-edb::parse-value))
 
+(defun minaduki-edb::fetch-all-nodes ()
+  "Fetch `minaduki-node' objects for completion."
+  (let (file-nodes id-nodes rows)
+    (setq file-nodes (minaduki-edb-select
+                      `("SELECT" ,(-> '("files.file"
+                                        "files.titles"
+                                        "files.tags"
+                                        "files.meta"
+                                        "refs.ref"
+                                        "refs.type")
+                                      (string-join ","))
+                        "FROM files"
+                        "LEFT JOIN refs ON refs.file = files.file")))
+    (pcase-dolist (`(,file ,titles ,tags ,meta ,ref ,key-type) file-nodes)
+      (dolist (title (minaduki-edb::parse-value titles))
+        (push (minaduki-node :path file
+                             :title title
+                             :tags (minaduki-edb::parse-value tags)
+                             :meta (minaduki-edb::parse-value meta)
+                             :key ref
+                             :key-type key-type)
+              rows)))
+    (setq id-nodes (minaduki-edb-select
+                    `("SELECT" ,(-> '("ids.id"
+                                      "ids.title"
+                                      "files.titles"
+                                      "files.meta"
+                                      "ids.file")
+                                    (string-join ","))
+                      "FROM ids"
+                      "LEFT JOIN files ON files.file = ids.file")))
+    (pcase-dolist (`(,id ,title ,file-titles ,meta ,file) id-nodes)
+      (push (minaduki-node
+             :id id
+             :path file
+             :title (format "* %s - %s"
+                            (car (minaduki-edb::parse-value file-titles))
+                            title)
+             :tags nil
+             :meta (minaduki-edb::parse-value meta))
+            rows))
+    (setq rows (sort rows
+                     (lambda (a b)
+                       (time-less-p
+                        (plist-get (oref a meta) :mtime)
+                        (plist-get (oref b meta) :mtime)))))
+    rows))
+
 ;; Updating
 (defun minaduki-edb::update-file (&optional file-path)
   "Update cache for FILE-PATH.
