@@ -558,7 +558,9 @@ If the file exists, update the cache with information."
   (let ((content-hash (minaduki::compute-content-hash file-path))
         (db-hash (minaduki-edb::fetch-file-hash file-path)))
     (unless (string= content-hash db-hash)
-      (minaduki-edb::update-files (list (cons file-path content-hash)))
+      (let ((files-table (make-hash-table :test #'equal)))
+        (puthash file-path content-hash files-table)
+        (minaduki-edb::update-files files-table))
       (minaduki::message "Updated: %s" file-path))))
 (defun minaduki-edb::update-files (files-table &optional rebuild)
   "Update cache for files in FILES-TABLE.
