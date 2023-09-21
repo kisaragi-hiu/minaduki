@@ -42,8 +42,10 @@ This does zero type checks, and it is up to the user to make sure
 #s(TYPE (elt VEC 0) (elt VEC 1) ...) is valid for TYPE."
   (apply #'record type (append vec nil)))
 
-(defun minaduki::current-file-name (&optional fallback)
-  "Return current file name in a consistent way.
+(defun minaduki::current-file-name (&optional fallback buffer)
+  "Return current file name of BUFFER in a consistent way.
+
+BUFFER defaults to the current buffer.
 
 FALLBACK should be a one element list containing the file name
 to use instead of `minaduki::file-name'. This allows easily
@@ -52,7 +54,7 @@ distinguishing between a caller that does not want to use
   (or (if fallback
           (car fallback)
         minaduki::file-name)
-      (buffer-file-name (buffer-base-buffer))))
+      (buffer-file-name (buffer-base-buffer buffer))))
 
 (defun minaduki::file-type::path (path)
   "Determine the file type from PATH only*.
