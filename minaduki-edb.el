@@ -619,7 +619,7 @@ clearning existing file entries."
     ;; Process links and ref / cite links
     (dolist-with-progress-reporter (file files)
         "(minaduki) Processing links"
-      (condition-case nil
+      (condition-case e
           (let ((inhibit-message t))
             (minaduki::with-temp-buffer file
               (setq modified-count (1+ modified-count))
@@ -628,9 +628,9 @@ clearning existing file entries."
         (error
          (setq error-count (1+ error-count))
          (minaduki-edb::clear-file file)
-         (minaduki::warn
-             :warning
-           "Skipping unreadable file while building cache: %s" file))))
+         (minaduki::warn :warning
+           "Error while processing links:\n%s"
+           (list :file file :error e)))))
 
     (list :error-count error-count
           :modified-count modified-count
