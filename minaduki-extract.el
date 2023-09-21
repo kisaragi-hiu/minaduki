@@ -305,12 +305,12 @@ Assume links come from FILE-FROM."
                        (list :content content :point begin-of-block))))))
 
 (defun minaduki-extract/links (&optional file-from)
-  "Extracts all link items within the current buffer.
+  "Extract all links within the current buffer.
+
 Link items are of the form:
 
     [source dest type properties]
 
-This is the format that emacsql expects when inserting into the database.
 FILE-FROM is typically the buffer file path, but this may not exist, for example
 in temp buffers.  In cases where this occurs, we do know the file path, and pass
 it as FILE-FROM."

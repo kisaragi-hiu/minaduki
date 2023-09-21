@@ -537,7 +537,7 @@ ARGS and BODY are as in `lambda'."
 (defun minaduki::get-outline-path ()
   "Return the outline path to the current entry.
 
-An outline path is a list of ancestors for current headline, as a
+An outline path is a vector of ancestors for current headline, as a
 list of strings. Statistics cookies are removed and links are
 kept.
 
@@ -563,7 +563,7 @@ Assume buffer is widened and point is on a headline."
                                (match-string-no-properties 4)))))
                          headings)
                 while (org-up-heading-safe)
-                finally return headings)))))
+                finally return (vconcat headings))))))
 
 (defun minaduki::set-global-prop (name value)
   "Set a file property called NAME to VALUE.

@@ -132,7 +132,9 @@ other values are stored as JSON."
                                  (replace-regexp-in-string (rx "'") "''")
                                  (format "'%s'")))
           (t (minaduki-edb::escape-scalar
-              (json-encode scalar))))))
+              (json-serialize
+               scalar
+               :false-object nil))))))
 
 (defun minaduki-edb-insert (table values &optional mode)
   "Insert VALUES into TABLE.
@@ -229,8 +231,12 @@ If HASH is non-nil, assume that is the file's hash without recomputing it."
        file))
     (minaduki-edb-insert
      'files
-     (list (vector file hash (list :atime atime :mtime mtime)
-                   tags titles)))
+     (list (vector file
+                   hash
+                   (list :atime (vconcat atime)
+                         :mtime (vconcat mtime))
+                   (vconcat tags)
+                   (vconcat titles))))
     (let ((sources (cl-loop
                     for (type . key) in keys
                     when (equal type "website")
