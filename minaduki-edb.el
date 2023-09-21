@@ -574,6 +574,7 @@ FILES-TABLE is a hash table mapping file names to hash values.
 REBUILD signals that the DB is empty right now and we should skip
 clearning existing file entries."
   (let ((files (hash-table-keys files-table))
+        (len (hash-table-count files-table))
         (error-count 0)
         (id-count 0)
         (link-count 0)
@@ -602,12 +603,11 @@ clearning existing file entries."
     ;; depend on titles later; process IDs first so IDs are already
     ;; cached during link extraction
     (let* ((i 1)
-           (length (length files))
-           (rep (make-progress-reporter "(minaduki) Processing file metadata" 1 length)))
+           (rep (make-progress-reporter "(minaduki) Processing file metadata" 1 len)))
       (->> files-table
            (maphash
             (lambda (file contents-hash)
-              (progress-reporter-update rep i (format "(%s/%s)" i length))
+              (progress-reporter-update rep i (format "(%s/%s)" i len))
               (cl-incf i)
               (let ((inhibit-message t))
                 (condition-case e
@@ -624,20 +624,24 @@ clearning existing file entries."
                                    (list :file file :error e))))))))
       (progress-reporter-done rep))
     ;; Process links and ref / cite links
-    (dolist-with-progress-reporter (file files)
-        "(minaduki) Processing links"
-      (condition-case e
-          (let ((inhibit-message t))
-            (minaduki::with-temp-buffer file
-              (setq modified-count (1+ modified-count))
-              (setq ref-count (+ ref-count (minaduki-edb::insert-refs)))
-              (setq link-count (+ link-count (minaduki-edb::insert-links)))))
-        (error
-         (setq error-count (1+ error-count))
-         (minaduki-edb::clear-file file)
-         (minaduki::warn :warning
-           "Error while processing links:\n%s"
-           (list :file file :error e)))))
+    (let ((i 1)
+          (rep (make-progress-reporter "(minaduki) Processing links" 1 len)))
+      (dolist (file files)
+        (progress-reporter-update rep i (format "(%s/%s)" i len))
+        (cl-incf i)
+        (condition-case e
+            (let ((inhibit-message t))
+              (minaduki::with-temp-buffer file
+                (setq modified-count (1+ modified-count))
+                (setq ref-count (+ ref-count (minaduki-edb::insert-refs)))
+                (setq link-count (+ link-count (minaduki-edb::insert-links)))))
+          (error
+           (setq error-count (1+ error-count))
+           (minaduki-edb::clear-file file)
+           (minaduki::warn :warning
+             "Error while processing links:\n%s"
+             (list :file file :error e)))))
+      (progress-reporter-done rep))
 
     (list :error-count error-count
           :modified-count modified-count
