@@ -507,7 +507,7 @@ If the file exists, update the cache with information."
   "Build the cache for all applicable.
 If FORCE, force a rebuild of the cache from scratch."
   (interactive "P")
-  (when force (delete-file minaduki/db-location))
+  (when force (delete-file minaduki:edb-location))
   ;; Force a reconnect
   (setq minaduki-edb::connection nil)
   ;; Initialize the database if necessary
