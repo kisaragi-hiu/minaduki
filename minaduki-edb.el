@@ -144,18 +144,19 @@ for each column.
 MODE can be used to override the insertion keyword. By default it
 is \"INSERT\", but it can also be \"INSERT OR REPLACE\". No
 checks are performed as to whether MODE is valid."
-  (minaduki-edb-execute
-   (format "%s into \"%s\" values %s"
-           (or mode "insert")
-           table
-           (--> values
-                (seq-map (lambda (row)
-                           (--> row
-                                (seq-map #'minaduki-edb::escape-scalar it)
-                                (string-join it ",")
-                                (format "(%s)" it)))
-                         it)
-                (string-join it ",")))))
+  (when (> (length values) 0)
+    (minaduki-edb-execute
+     (format "%s into \"%s\" values %s"
+             (or mode "insert")
+             table
+             (--> values
+                  (seq-map (lambda (row)
+                             (--> row
+                                  (seq-map #'minaduki-edb::escape-scalar it)
+                                  (string-join it ",")
+                                  (format "(%s)" it)))
+                           it)
+                  (string-join it ","))))))
 
 (defun minaduki-edb-execute (sql &rest args)
   "Run `sqlite-execute' with SQL and ARGS on the cache database.
@@ -312,11 +313,9 @@ Return the number of rows inserted."
       (minaduki-edb-execute
        "delete from \"links\" where source = ?"
        file))
-    (if-let ((links (minaduki-extract/links)))
-        (progn
-          (minaduki-edb-insert 'links links)
-          (length links))
-      0)))
+    (let ((links (minaduki-extract/links)))
+      (minaduki-edb-insert 'links links)
+      (length links))))
 (defun minaduki-edb::insert-ids (&optional update-p)
   "Update the ids of the current buffer into the cache.
 If UPDATE-P is non-nil, first remove ids for the file in the database.
