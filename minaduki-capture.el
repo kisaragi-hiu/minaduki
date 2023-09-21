@@ -37,7 +37,6 @@
 
 (require 'minaduki-utils)
 (require 'minaduki-vault)
-(require 'minaduki-db)
 (require 'minaduki-extract)
 (require 'minaduki-completion)
 (require 'minaduki-vars)
@@ -509,14 +508,14 @@ The file to use is dependent on the context:
 If the search is via title, it is assumed that the file does not
 yet exist, and Org-roam will attempt to create new file.
 
-If the search is via daily notes, 'time will be passed via
+If the search is via daily notes, \\='time will be passed via
 `minaduki-capture//info'. This is used to alter the default time
 in `org-capture-templates'.
 
 If the search is via ref, it is matched against the Org-roam database.
 If there is no file with that ref, a file with that ref is created.
 
-This function is used solely in Org-roam's capture templates: see
+This function is used solely in Org-roam\\='s capture templates: see
 `minaduki-capture/templates'."
   (let* ((file-path (pcase minaduki-capture//context
                       ('capture

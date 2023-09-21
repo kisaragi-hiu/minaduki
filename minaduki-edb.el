@@ -486,6 +486,12 @@ correspond to the TO field in the cache DB."
          "SELECT hash FROM files WHERE file = ?"
          file)))
 
+(defun minaduki-edb::fetch-tags (file)
+  "Return the tags of FILE."
+  (-some->> (minaduki-edb-select "select tags from files where file = ?" file)
+    caar
+    minaduki-edb::parse-value))
+
 ;; Updating
 (defun minaduki-edb::update-file (&optional file-path)
   "Update cache for FILE-PATH.
