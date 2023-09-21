@@ -670,6 +670,9 @@ clearning existing file entries."
       (when (gethash it files-table)
         (condition-case nil
             (minaduki::with-temp-buffer it
+              ;; We need the files to be in the files table first
+              ;; before we can reference them
+              (minaduki-edb::insert-meta)
               (cl-incf lit-count (minaduki-edb::insert-lit-entries)))
           (error
            (cl-incf error-count)
@@ -679,7 +682,8 @@ clearning existing file entries."
     ;; Process file metadata (titles, tags) first to allow links to
     ;; depend on titles later; process IDs first so IDs are already
     ;; cached during link extraction
-    (let* ((i 1)
+    (let* ((bibliographies (minaduki-lit:bibliography))
+           (i 1)
            (rep (make-progress-reporter "(minaduki) Processing file metadata" 1 len)))
       (->> files-table
            (maphash
@@ -689,7 +693,8 @@ clearning existing file entries."
               (let ((inhibit-message t))
                 (condition-case e
                     (minaduki::with-temp-buffer file
-                      (minaduki-edb::insert-meta nil contents-hash)
+                      (unless (member file bibliographies)
+                        (minaduki-edb::insert-meta nil contents-hash))
                       (setq id-count
                             (+ id-count
                                (minaduki-edb::insert-ids))))
