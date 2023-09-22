@@ -31,7 +31,9 @@
 
 (describe "extraction for info"
   (it "extracts ids"
-    (with-current-buffer (find-file-noselect "/usr/share/info/emacs-mime.info.gz")
+    (with-current-buffer
+        (let ((inhibit-message t))
+          (find-file-noselect "/usr/share/info/emacs-mime.info.gz"))
       (equal (car (minaduki-extract/ids))
              (minaduki-id :id "(emacs-mime.info)Index"
                           :file "/usr/share/info/emacs-mime.info.gz"
@@ -65,20 +67,21 @@ In BODY, `fname' refers to the resolved path of FILE."
 
 (defun test-minaduki--init ()
   "."
-  (let ((minaduki-verbose nil))
+  (let ((minaduki-verbose nil)
+        (inhibit-message t))
     (copy-directory test-repository temp-dir)
     (setq org-directory temp-dir)
     (setq minaduki/db-location (f-join temp-dir "minaduki.db"))
+    (setq minaduki:edb-location (f-join temp-dir "2minaduki.db"))
     (setq minaduki/vaults (list temp-dir "/usr/share/info"))
     (setq minaduki-lit/bibliography
           (f-join temp-dir "lit" "entries.org"))
     (minaduki-mode)
-    (minaduki-db/build-cache)))
+    (minaduki-edb::build-cache)))
 
 (defun test-minaduki--teardown ()
   (minaduki-mode -1)
-  (delete-file minaduki/db-location)
-  (minaduki-db//close))
+  (delete-file minaduki/db-location))
 
 (defun test-equal-ht (a b)
   "Are A and B the same?
@@ -138,7 +141,7 @@ members that should be equal."
      :to-equal/ht
      '((33 . #s(hash-table
                 size 65 test equal rehash-size 1.5 rehash-threshold 0.8125
-                data ("tags" ("voice")
+                data ("tags" ["voice"]
                       "type" "entries"
                       "key" "hitomine2013"
                       "author" "大崎ひとみ"
@@ -147,8 +150,8 @@ members that should be equal."
                       "title" "あたらしい女声の教科書")))
        (202 . #s(hash-table
                  size 65 test equal rehash-size 1.5 rehash-threshold 0.8125
-                 data ("sources" ("https://www.w3.org/People/Bos/DesignGuide/designguide.html")
-                       "tags" ("webdev" "css" "html")
+                 data ("sources" ["https://www.w3.org/People/Bos/DesignGuide/designguide.html"]
+                       "tags" ["webdev" "css" "html"]
                        "type" "entries"
                        "key" "bertbos20030306"
                        "url" "https://www.w3.org/People/Bos/DesignGuide/designguide.html"
@@ -529,7 +532,7 @@ members that should be equal."
     (it "can fetch citekey"
       (expect (minaduki-edb::fetch-file :key "hitomine2013")
               :to-equal
-              (test-minaduki--abs-path "hitomine2013.org")))
+              (test-minaduki--abs-path "lit/hitomine2013.org")))
     (it "can fetch title"
       (expect (minaduki-edb::fetch-file :title "Same title")
               :to-have-same-items-as
@@ -559,21 +562,39 @@ members that should be equal."
                          :point 127
                          :level 1
                          :title "Headline 2")))
-  (it "can fetch a lit-entry object"
-    (let ((entry (minaduki-edb::fetch-lit-entry "hitomine2013")))
-      (expect (oref entry file)
-              :to-equal
-              (test-minaduki--abs-path "lit/hitomine2013.org"))
-      (expect (oref entry key)
-              :to-equal
-              "hitomine2013")
-      (expect (oref entry point)
-              :to-equal
-              1)
-      (expect (oref entry props)
-              :to-equal/ht
-              (ht<-plist
-               '("type" "file" "title" "あたらしい女声の教科書" "key" "hitomine2013")))))
+  (describe "fetch-lit-entry"
+    (it "can fetch a lit-entry object"
+      (let ((entry (minaduki-edb::fetch-lit-entry "orgroam2020")))
+        (expect (oref entry file)
+                :to-equal
+                (test-minaduki--abs-path "multiple-refs.org"))
+        (expect (oref entry key)
+                :to-equal
+                "orgroam2020")
+        (expect (oref entry point)
+                :to-equal
+                1)))
+    (it "information from bibliography is used over the note file"
+      (let ((entry (minaduki-edb::fetch-lit-entry "hitomine2013")))
+        (expect (oref entry file)
+                :to-equal
+                (test-minaduki--abs-path "lit/entries.org"))
+        (expect (oref entry key)
+                :to-equal
+                "hitomine2013")
+        (expect (oref entry point)
+                :to-equal
+                33)
+        (expect (oref entry props)
+                :to-equal/ht
+                (ht<-plist
+                 '("tags" ("voice")
+                   "type" "entries"
+                   "key" "hitomine2013"
+                   "author" "大崎ひとみ"
+                   "publisher" "t2library課外活動部"
+                   "year" "2013"
+                   "title" "あたらしい女声の教科書"))))))
   (it "can return all authors"
     (expect (minaduki-edb::fetch-lit-authors)
             :to-have-same-items-as
@@ -581,23 +602,16 @@ members that should be equal."
   (it "can return all tags"
     (expect (minaduki-edb::fetch-all-tags)
             :to-have-same-items-as
-            '("t3" "t2 with space" "t1" "t4 second-line" "tags" "tag3" "tag2" "hello" "titles" "headlines" "lit" "nested" "minaduki-files" "front-matter")))
+            `("t3" "t2 with space" "t1" "t4 second-line" "tag3" "tag2" "hello" ,(file-name-base (directory-file-name org-directory)))))
   (it "can return the title of a file"
     (expect (minaduki-edb::fetch-title
              (test-minaduki--abs-path "lit/hitomine2013.org"))
             :to-equal
             "あたらしい女声の教科書"))
   (it "can return files that are tagged with a given tag"
-    (expect (minaduki-edb::fetch-tag-references "titles")
+    (expect (minaduki-edb::fetch-tag-references "hello")
             :to-have-same-items-as
-            (mapcar #'test-minaduki--abs-path
-                    '("titles/title.md"
-                      "titles/headline.org"
-                      "titles/aliases.md"
-                      "titles/headline.md"
-                      "titles/combination.org"
-                      "titles/aliases.org"
-                      "titles/title.org"))))
+            (list (test-minaduki--abs-path "tags/hugo-style.org"))))
   (it "can fetch backlinks"
     (expect (length (minaduki-edb::fetch-backlinks "乙野四方字20180920"))
             :to-be-greater-than 0))
