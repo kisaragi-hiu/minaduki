@@ -29,7 +29,7 @@
 (defvar markdown-mode-hook)
 
 (defun minaduki::object-to-vector (obj)
-  "Turn OBJ into a vector that emacsql accepts."
+  "Turn OBJ into a vector to make it easier to insert into the database."
   (let* ((len (1- (length obj)))
          (v (make-vector len nil)))
     (dotimes (i len)

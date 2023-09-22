@@ -315,11 +315,9 @@ See `minaduki-local-mode' for more information on Minaduki-Local mode."
                         #'minaduki:global-commands)
             map)
   :require 'minaduki
-  (unless (or (and (bound-and-true-p emacsql-sqlite3-executable)
-                   (file-executable-p emacsql-sqlite3-executable))
-              (executable-find "sqlite3"))
-    (minaduki::warn :error "Cannot find executable 'sqlite3'. \
-Ensure it is installed and can be found within `exec-path'."))
+  (unless (and (fboundp 'sqlite-available-p)
+               (sqlite-available-p))
+    (minaduki::warn :error "SQLite support not found in this Emacs. Minaduki requires the builtin SQLite support found in Emacs 29 and higher."))
   (if minaduki-mode
       (progn
         (org-cite-register-processor 'minaduki
