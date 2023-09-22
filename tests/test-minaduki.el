@@ -71,13 +71,12 @@ In BODY, `fname' refers to the resolved path of FILE."
         (inhibit-message t))
     (copy-directory test-repository temp-dir)
     (setq org-directory temp-dir)
-    (setq minaduki/db-location (f-join temp-dir "minaduki.db"))
-    (setq minaduki:edb-location (f-join temp-dir "2minaduki.db"))
+    (setq minaduki:db-location (f-join temp-dir "minaduki.db"))
     (setq minaduki/vaults (list temp-dir "/usr/share/info"))
     (setq minaduki-lit/bibliography
           (f-join temp-dir "lit" "entries.org"))
     (minaduki-mode)
-    (minaduki-edb::build-cache)))
+    (minaduki-db::build-cache)))
 
 (defun test-minaduki--teardown ()
   (minaduki-mode -1)
@@ -516,46 +515,46 @@ members that should be equal."
     (test-minaduki--init))
 
   (it "can check presence"
-    (expect (minaduki-edb::file-present? (test-minaduki--abs-path "baz.md"))
+    (expect (minaduki-db::file-present? (test-minaduki--abs-path "baz.md"))
             :to-be-truthy)
-    (expect (minaduki-edb::file-present? (test-minaduki--abs-path "no"))
+    (expect (minaduki-db::file-present? (test-minaduki--abs-path "no"))
             :to-be nil))
 
   (describe "fetch-file"
     (it "can fetch id"
-      (expect (minaduki-edb::fetch-file :id "(elisp.info)Defining Macros")
+      (expect (minaduki-db::fetch-file :id "(elisp.info)Defining Macros")
               :to-equal
               "/usr/share/info/elisp.info.gz")
-      (expect (minaduki-edb::fetch-file :id "801b58eb-97e2-435f-a33e-ff59a2f0c213")
+      (expect (minaduki-db::fetch-file :id "801b58eb-97e2-435f-a33e-ff59a2f0c213")
               :to-equal
               (test-minaduki--abs-path "headlines/headline.org")))
     (it "can fetch citekey"
-      (expect (minaduki-edb::fetch-file :key "hitomine2013")
+      (expect (minaduki-db::fetch-file :key "hitomine2013")
               :to-equal
               (test-minaduki--abs-path "lit/hitomine2013.org")))
     (it "can fetch title"
-      (expect (minaduki-edb::fetch-file :title "Same title")
+      (expect (minaduki-db::fetch-file :title "Same title")
               :to-have-same-items-as
               (list (test-minaduki--abs-path "same-title2.org")
                     (test-minaduki--abs-path "same-title.org")))
-      (expect (minaduki-edb::fetch-file :title "CSL-JSON sample data")
+      (expect (minaduki-db::fetch-file :title "CSL-JSON sample data")
               :to-equal
               (list (test-minaduki--abs-path "lit/README.org")))
-      (expect (minaduki-edb::fetch-file :title "Foo")
+      (expect (minaduki-db::fetch-file :title "Foo")
               :to-equal
               (list (test-minaduki--abs-path "foo.org")))
-      (expect (minaduki-edb::fetch-file :title "Headline")
+      (expect (minaduki-db::fetch-file :title "Headline")
               :to-equal
               (-map #'test-minaduki--abs-path
                     '("headlines/headline.org"
                       "titles/headline.md"
                       "titles/headline.org"))))
     (it "can return a nested file from its title"
-      (expect (minaduki-edb::fetch-file :title "Deeply Nested File")
+      (expect (minaduki-db::fetch-file :title "Deeply Nested File")
               :to-equal
               (list (test-minaduki--abs-path "nested/deeply/deeply_nested_file.org")))))
   (it "can fetch an id object"
-    (expect (minaduki-edb::fetch-id "801b58eb-97e2-435f-a33e-ff59a2f0c213")
+    (expect (minaduki-db::fetch-id "801b58eb-97e2-435f-a33e-ff59a2f0c213")
             :to-equal
             (minaduki-id :id "801b58eb-97e2-435f-a33e-ff59a2f0c213"
                          :file (test-minaduki--abs-path "headlines/headline.org")
@@ -564,7 +563,7 @@ members that should be equal."
                          :title "Headline 2")))
   (describe "fetch-lit-entry"
     (it "can fetch a lit-entry object"
-      (let ((entry (minaduki-edb::fetch-lit-entry "orgroam2020")))
+      (let ((entry (minaduki-db::fetch-lit-entry "orgroam2020")))
         (expect (oref entry file)
                 :to-equal
                 (test-minaduki--abs-path "multiple-refs.org"))
@@ -575,7 +574,7 @@ members that should be equal."
                 :to-equal
                 1)))
     (it "information from bibliography is used over the note file"
-      (let ((entry (minaduki-edb::fetch-lit-entry "hitomine2013")))
+      (let ((entry (minaduki-db::fetch-lit-entry "hitomine2013")))
         (expect (oref entry file)
                 :to-equal
                 (test-minaduki--abs-path "lit/entries.org"))
@@ -596,27 +595,27 @@ members that should be equal."
                    "year" "2013"
                    "title" "あたらしい女声の教科書"))))))
   (it "can return all authors"
-    (expect (minaduki-edb::fetch-lit-authors)
+    (expect (minaduki-db::fetch-lit-authors)
             :to-have-same-items-as
             '("Bert Bos" "シャノン" "大崎ひとみ")))
   (it "can return all tags"
-    (expect (minaduki-edb::fetch-all-tags)
+    (expect (minaduki-db::fetch-all-tags)
             :to-have-same-items-as
             `("t3" "t2 with space" "t1" "t4 second-line" "tag3" "tag2" "hello" ,(file-name-base (directory-file-name org-directory)))))
   (it "can return the title of a file"
-    (expect (minaduki-edb::fetch-title
+    (expect (minaduki-db::fetch-title
              (test-minaduki--abs-path "lit/hitomine2013.org"))
             :to-equal
             "あたらしい女声の教科書"))
   (it "can return files that are tagged with a given tag"
-    (expect (minaduki-edb::fetch-tag-references "hello")
+    (expect (minaduki-db::fetch-tag-references "hello")
             :to-have-same-items-as
             (list (test-minaduki--abs-path "tags/hugo-style.org"))))
   (it "can fetch backlinks"
-    (expect (length (minaduki-edb::fetch-backlinks "乙野四方字20180920"))
+    (expect (length (minaduki-db::fetch-backlinks "乙野四方字20180920"))
             :to-be-greater-than 0))
   (it "can get the stored hash of a file"
-    (expect (minaduki-edb::fetch-file-hash
+    (expect (minaduki-db::fetch-file-hash
              (test-minaduki--abs-path "front-matter/json.md"))
             :to-equal
             "8735b00eebf501c1c39dc4d3ba21424df591aec7")))

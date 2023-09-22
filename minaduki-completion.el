@@ -29,7 +29,7 @@
 (require 'minaduki-vars)
 (require 'minaduki-vault)
 (require 'minaduki-utils)
-(require 'minaduki-edb)
+(require 'minaduki-db)
 (require 'minaduki-lit)
 
 (declare-function ivy--flx-sort "ivy")
@@ -77,7 +77,7 @@ when a value is already present."
           (replace-match
            (format "\\& [%s]" def)
            nil nil prompt 1)))
-  (completing-read prompt (minaduki-edb::fetch-lit-authors)
+  (completing-read prompt (minaduki-db::fetch-lit-authors)
                    nil nil nil nil
                    def))
 
@@ -163,7 +163,7 @@ INITIAL-INPUT: passed to `completing-read'.
 PROMPT: the prompt to use during completion. Default: \"Note: \""
   (minaduki::with-comp-setup
       ((ivy-sort-matches-functions-alist . #'ivy--flx-sort))
-    (let* ((entries (minaduki-edb::fetch-all-nodes))
+    (let* ((entries (minaduki-db::fetch-all-nodes))
            (alist
             (let (ret)
               (dolist (entry entries)
@@ -215,9 +215,9 @@ PROMPT: the text shown in the prompt."
   (minaduki::with-comp-setup
       ((ivy-sort-functions-alist . nil)
        (ivy-sort-matches-functions-alist . #'ivy--shorter-matches-first))
-    (let* ((entries (->> (minaduki-edb-select "select props from keys")
+    (let* ((entries (->> (minaduki-db-select "select props from keys")
                          (mapcar #'car)
-                         (mapcar #'minaduki-edb::parse-value)))
+                         (mapcar #'minaduki-db::parse-value)))
            (alist (--map (cons (minaduki--format-lit-entry it)
                                (map-elt it "key"))
                          entries))
@@ -244,7 +244,7 @@ This is active when `minaduki:completion-everywhere' is non-nil."
             (--> (completion-table-dynamic
                   ;; Get our own completion request string
                   (lambda (_)
-                    (->> (minaduki-edb::fetch-all-titles)
+                    (->> (minaduki-db::fetch-all-titles)
                          (--remove (string= prefix it)))))
                  (completion-table-case-fold it (not minaduki:ignore-case-during-completion)))
             :exit-function (lambda (str _status)
@@ -266,7 +266,7 @@ This is active when `minaduki:completion-everywhere' is non-nil."
               (--> (completion-table-dynamic
                     ;; Get our own completion request string
                     (lambda (_)
-                      (->> (minaduki-edb::fetch-all-tags)
+                      (->> (minaduki-db::fetch-all-tags)
                            (--remove (string= prefix it)))))
                    (completion-table-case-fold it (not minaduki:ignore-case-during-completion)))
               :exit-function (lambda (str _status)

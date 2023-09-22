@@ -11,7 +11,7 @@
 
 (require 'minaduki-vars)
 (require 'minaduki-extract)
-(require 'minaduki-edb)
+(require 'minaduki-db)
 (require 'minaduki-btn)
 (require 'minaduki-commands)
 (require 'minaduki-buffer)
@@ -34,13 +34,13 @@
                           (type (org-element-property :type context))
                           (dest (org-element-property :path context)))
                      (pcase type
-                       ("id" (minaduki-edb::fetch-file :id dest))
+                       ("id" (minaduki-db::fetch-file :id dest))
                        (_ dest))))
              ('markdown
               (when (markdown-link-p)
                 (let ((dest (markdown-link-url)))
                   (if (s-prefix? "#" dest)
-                      (minaduki-edb::fetch-file :id dest)
+                      (minaduki-db::fetch-file :id dest)
                     (expand-file-name dest))))))))
       (string= current-file link-dest))))
 
@@ -85,12 +85,12 @@ file in a vault."
                   (minaduki::link-to-current-p))
              'minaduki-link-current)
             ((and custom
-                  (minaduki-edb::fetch-file :id id))
+                  (minaduki-db::fetch-file :id id))
              'minaduki-link)
             ;; FIXME: this breaks the display of ID links to untracked
             ;; files.
             ((and custom
-                  (not (minaduki-edb::fetch-file :id id)))
+                  (not (minaduki-db::fetch-file :id id)))
              'minaduki-link-invalid)
             (t
              'org-link)))))
@@ -113,7 +113,7 @@ ARG is whether the thing should be opened in another window."
   "Advice for maintaining cache consistency when FILE is deleted."
   (when (and (not (auto-save-file-name-p file))
              (minaduki-vault:in-vault? file))
-    (minaduki-edb::clear-file (expand-file-name file))))
+    (minaduki-db::clear-file (expand-file-name file))))
 
 (defun minaduki-org::get-link-replacement (old-path new-path &optional old-desc new-desc)
   "Create replacement text for link at point if OLD-PATH is a match.
@@ -174,11 +174,11 @@ When NEW-FILE-OR-DIR is a directory, we use it to compute the new file path."
                (not (backup-file-name-p old-file))
                (not (backup-file-name-p new-file))
                (minaduki-vault:in-vault? old-file))
-      (minaduki-edb::ensure-built)
+      (minaduki-db::ensure-built)
       (setq files-affected
-            (minaduki-edb-select "select distinct source from links where dest = ?" old-file))
+            (minaduki-db-select "select distinct source from links where dest = ?" old-file))
       ;; Remove database entries for old-file.org
-      (minaduki-edb::clear-file old-file)
+      (minaduki-db::clear-file old-file)
       ;; If the new path is in a different directory, relative links
       ;; will break. Fix all file-relative links:
       (unless (string= (file-name-directory old-file)
@@ -186,7 +186,7 @@ When NEW-FILE-OR-DIR is a directory, we use it to compute the new file path."
         (minaduki::with-file new-file nil
           (minaduki-org::fix-relative-links old-file)))
       (when (minaduki-vault:in-vault? new-file)
-        (minaduki-edb::update-file new-file))
+        (minaduki-db::update-file new-file))
       ;; Replace links from old-file.org -> new-file.org in all Org-roam files with these links
       (mapc (lambda (file)
               (setq file (if (string-equal (car file) old-file)
@@ -195,7 +195,7 @@ When NEW-FILE-OR-DIR is a directory, we use it to compute the new file path."
               (minaduki::with-file file nil
                 (minaduki-org::replace-link old-file new-file)
                 (save-buffer)
-                (minaduki-edb::update-file)))
+                (minaduki-db::update-file)))
             files-affected))))
 
 (defun minaduki-org::buttonize-tags ()
@@ -221,7 +221,7 @@ When NEW-FILE-OR-DIR is a directory, we use it to compute the new file path."
                            ;; Otherwise all iterations share the same
                            ;; `tag' variable.
                            (tag tag)
-                           (file (car (minaduki-edb::fetch-file
+                           (file (car (minaduki-db::fetch-file
                                        :title tag
                                        :nocase? t))))
                       (remove-overlays start end 'face 'button)
@@ -260,7 +260,7 @@ When NEW-FILE-OR-DIR is a directory, we use it to compute the new file path."
             (f-slash
              (minaduki-vault-path vault)))))
   (add-hook 'post-command-hook #'minaduki-buffer//update-maybe nil t)
-  (add-hook 'after-save-hook #'minaduki-edb:update nil t)
+  (add-hook 'after-save-hook #'minaduki-db:update nil t)
   (dolist (fn '(minaduki-completion/tags-at-point
                 minaduki-completion/everywhere))
     (add-hook 'completion-at-point-functions fn nil t))
@@ -335,9 +335,9 @@ See `minaduki-local-mode' for more information on Minaduki-Local mode."
          :follow #'minaduki-btn:follow)
         (add-hook 'after-change-major-mode-hook 'minaduki-initialize)
         (add-hook 'find-file-hook 'minaduki-initialize)
-        (when (and (not minaduki-edb::file-update-timer)
+        (when (and (not minaduki-db::file-update-timer)
                    (eq minaduki-db/update-method 'idle-timer))
-          (setq minaduki-edb::file-update-timer (run-with-idle-timer minaduki-db/update-idle-seconds t #'minaduki-edb::file-update-timer::update-cache)))
+          (setq minaduki-db::file-update-timer (run-with-idle-timer minaduki-db/update-idle-seconds t #'minaduki-db::file-update-timer::update-cache)))
         (advice-add 'rename-file :after #'minaduki::rename-file-advice)
         (advice-add 'delete-file :before #'minaduki::delete-file-advice)
         (advice-add 'markdown-follow-thing-at-point :around
@@ -361,8 +361,8 @@ See `minaduki-local-mode' for more information on Minaduki-Local mode."
     (remove-hook 'after-change-major-mode-hook 'minaduki-initialize)
     (remove-hook 'find-file-hook 'minaduki-initialize)
     (remove-hook 'org-open-at-point-functions #'minaduki/open-id-at-point)
-    (when minaduki-edb::file-update-timer
-      (cancel-timer minaduki-edb::file-update-timer))
+    (when minaduki-db::file-update-timer
+      (cancel-timer minaduki-db::file-update-timer))
     (advice-remove 'rename-file #'minaduki::rename-file-advice)
     (advice-remove 'delete-file #'minaduki::delete-file-advice)
     (advice-remove 'org-id-new #'minaduki-org//id-new-advice)
@@ -371,7 +371,7 @@ See `minaduki-local-mode' for more information on Minaduki-Local mode."
     (when (fboundp 'org-link-set-parameters)
       (dolist (face '("file" "id"))
         (org-link-set-parameters face :face 'org-link)))
-    (minaduki-edb::close)
+    (minaduki-db::close)
     (setq calendar-mark-diary-entries-flag nil)
     (advice-remove 'diary-mark-entries
                    #'minaduki//mark-calendar)
@@ -387,7 +387,7 @@ See `minaduki-local-mode' for more information on Minaduki-Local mode."
         (when minaduki-local-mode
           (minaduki-local-mode -1))))))
 
-(add-hook 'minaduki-mode-hook #'minaduki-edb::build-cache)
+(add-hook 'minaduki-mode-hook #'minaduki-db::build-cache)
 
 (provide 'minaduki-mode)
 

@@ -36,7 +36,7 @@
 
 (require 'minaduki-utils)
 (require 'minaduki-vault)
-(require 'minaduki-edb)
+(require 'minaduki-db)
 (require 'minaduki-extract)
 (require 'minaduki-completion)
 (require 'minaduki-vars)
@@ -493,7 +493,7 @@ you can catch it with `condition-case'."
 
 (defun minaduki-capture//get-ref-path (type path)
   "Get the file path to the ref with TYPE and PATH."
-  (caar (minaduki-edb-select
+  (caar (minaduki-db-select
          '("select file from refs"
            "where type = ?"
            "and ref = ?"
@@ -609,7 +609,7 @@ GOTO and KEYS argument have the same functionality as
 This uses the templates defined at `minaduki-capture/templates'.
 Arguments GOTO and KEYS see `org-capture'."
   (interactive "P")
-  (let* ((completions (minaduki-edb::fetch-all-nodes))
+  (let* ((completions (minaduki-db::fetch-all-nodes))
          (title-with-keys (completing-read "File: " completions))
          (res (cdr (assoc title-with-keys completions)))
          (title (or (plist-get res :title) title-with-keys))
