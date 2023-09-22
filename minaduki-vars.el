@@ -415,7 +415,7 @@ descriptive warnings when certain operations fail (e.g. parsing).")
     ("Open the index file"                . minaduki/open-index)
     ("Create a new literature note from URL" . minaduki:new-literature-note-from-url)
     ("Open a random note"                 . minaduki/open-random-note)
-    ("Refresh cache"                      . minaduki-db::build-cache))
+    ("Refresh cache"                      . minaduki-db:build-cache))
   "Global commands shown in `minaduki:global-commands'.
 
 List of (DISPLAY-NAME . COMMAND) pairs.")

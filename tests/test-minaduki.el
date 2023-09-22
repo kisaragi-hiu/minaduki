@@ -76,7 +76,7 @@ In BODY, `fname' refers to the resolved path of FILE."
     (setq minaduki-lit/bibliography
           (f-join temp-dir "lit" "entries.org"))
     (minaduki-mode)
-    (minaduki-db::build-cache)))
+    (minaduki-db:build-cache)))
 
 (defun test-minaduki--teardown ()
   (minaduki-mode -1)

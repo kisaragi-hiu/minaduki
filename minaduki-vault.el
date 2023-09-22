@@ -55,7 +55,7 @@ Each NAME is added to `org-link-abbrev-alist'."
     (plist-get vault :name)))
 
 (defun minaduki-vault-skipped (vault)
-  "Return whether VAULT is skipped by `minaduki-db::build-cache'."
+  "Return whether VAULT is skipped by `minaduki-db:build-cache'."
   (when (listp vault)
     (plist-get vault :skipped)))
 

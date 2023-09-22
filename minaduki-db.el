@@ -62,7 +62,7 @@ Use the function `minaduki-db' to access this value.")
 (defun minaduki-db::file-update-timer::update-cache ()
   "Update the cache if the database is dirty."
   (when minaduki-db::file-update-dirty
-    (minaduki-db::build-cache))
+    (minaduki-db:build-cache))
   (setq minaduki-db::file-update-dirty nil))
 (defun minaduki-db::file-update-timer::mark-dirty ()
   "Mark the database as dirty for timer-based updating."
@@ -104,7 +104,7 @@ Use the function `minaduki-db' to access this value.")
         (message "Migrating the cache database from version %d to version %d"
                  version minaduki-db::version)
         ;; Fallback case: rebuild everything
-        (minaduki-db::build-cache t))))
+        (minaduki-db:build-cache t))))
     minaduki-db::connection))
 (defun minaduki-db::close ()
   "Close the connection."
@@ -185,7 +185,7 @@ If SQL is a list, join them with newlines."
 (defun minaduki-db::ensure-built ()
   "Assert that the database has been initialized, and barf otherwise."
   (unless (minaduki-db::initialized?)
-    (error "(minaduki) The cache database has not been built yet. Please run `minaduki-db::build-cache to build it")))
+    (error "(minaduki) The cache database has not been built yet. Please run `minaduki-db:build-cache to build it")))
 
 ;; Clearing
 (defun minaduki-db::clear-all ()
@@ -570,7 +570,7 @@ If the file exists, update the cache with information."
           (minaduki-db::insert-refs 'update)
           (minaduki-db::insert-ids 'update)
           (minaduki-db::insert-links 'update))))))
-(defun minaduki-db::build-cache::find-modified-files (files db-files)
+(defun minaduki-db:build-cache::find-modified-files (files db-files)
   "Find modified files among FILES by comparing their hashes with DB-FILES.
 
 FILES is a list of file names.
@@ -590,7 +590,7 @@ Return a list of two items:
           (puthash file content-hash modified-files)))
       (remhash file db-files))
     (list modified-files db-files)))
-(defun minaduki-db::build-cache (&optional force)
+(defun minaduki-db:build-cache (&optional force)
   "Build the cache for all applicable notes.
 If FORCE, force a rebuild of the cache from scratch."
   (interactive "P")
@@ -607,7 +607,7 @@ If FORCE, force a rebuild of the cache from scratch."
     (setq dir-files (minaduki-vault:all-files)
           db-files (minaduki-db::fetch-all-files-hash))
     (setq modified-files
-          (car (minaduki-db::build-cache::find-modified-files
+          (car (minaduki-db:build-cache::find-modified-files
                 dir-files db-files)))
     (minaduki::for "Removing deleted files from cache (%s/%s)"
         file (hash-table-keys db-files)

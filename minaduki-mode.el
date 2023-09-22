@@ -387,7 +387,7 @@ See `minaduki-local-mode' for more information on Minaduki-Local mode."
         (when minaduki-local-mode
           (minaduki-local-mode -1))))))
 
-(add-hook 'minaduki-mode-hook #'minaduki-db::build-cache)
+(add-hook 'minaduki-mode-hook #'minaduki-db:build-cache)
 
 (provide 'minaduki-mode)
 
