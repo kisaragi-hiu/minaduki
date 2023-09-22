@@ -35,6 +35,8 @@
 (declare-function ivy--flx-sort "ivy")
 (declare-function ivy--shorter-matches-first "ivy")
 
+(declare-function marginalia--fields "marginalia")
+
 ;; Keeping the `require' at top level allows the byte compiler to
 ;; see the definition of `marginalia--fields' so that it doesn't
 ;; report errors for `minaduki-completion--annotate-note'.

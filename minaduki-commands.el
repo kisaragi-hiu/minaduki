@@ -18,6 +18,7 @@
 (require 'minaduki-completion)
 (require 'minaduki-lit)
 (require 'minaduki-btn)
+(require 'minaduki-buffer)
 
 (require 'minaduki-utils)
 (require 'minaduki-vault)

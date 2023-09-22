@@ -18,6 +18,8 @@
 
 (require 'minaduki-wikilink)
 
+(declare-function org-cite-basic--complete-style "oc-basic")
+
 (defun minaduki:buffer-name-for-display ()
   "Return a name for the current buffer suitable for display."
   (or (car (minaduki-extract/main-title))
