@@ -31,7 +31,9 @@
 
 (describe "extraction for info"
   (it "extracts ids"
-    (with-current-buffer (find-file-noselect "/usr/share/info/emacs-mime.info.gz")
+    (with-current-buffer
+        (let ((inhibit-message t))
+          (find-file-noselect "/usr/share/info/emacs-mime.info.gz"))
       (equal (car (minaduki-extract/ids))
              (minaduki-id :id "(emacs-mime.info)Index"
                           :file "/usr/share/info/emacs-mime.info.gz"
@@ -42,6 +44,17 @@
 (defun test-minaduki--abs-path (file-path)
   "Get absolute FILE-PATH from `org-directory'."
   (expand-file-name file-path org-directory))
+
+(defmacro test-in-file (file &rest body)
+  "Run BODY with FILE opened.
+In BODY, `fname' refers to the resolved path of FILE."
+  (declare (indent 1))
+  (cl-with-gensyms (buf)
+    `(let* ((fname (test-minaduki--abs-path ,file))
+            (,buf (find-file-noselect fname)))
+       (ignore fname) ; tell byte-comp not using it is fine
+       (with-current-buffer ,buf
+         ,@body))))
 
 (defvar test-repository (expand-file-name "tests/minaduki-files")
   "Directory containing minaduki test org files.")
@@ -54,20 +67,20 @@
 
 (defun test-minaduki--init ()
   "."
-  (let ((minaduki-verbose nil))
+  (let ((minaduki-verbose nil)
+        (inhibit-message t))
     (copy-directory test-repository temp-dir)
     (setq org-directory temp-dir)
-    (setq minaduki/db-location (f-join temp-dir "minaduki.db"))
-    (setq minaduki/vaults (list temp-dir))
+    (setq minaduki:db-location (f-join temp-dir "minaduki.db"))
+    (setq minaduki/vaults (list temp-dir "/usr/share/info"))
     (setq minaduki-lit/bibliography
           (f-join temp-dir "lit" "entries.org"))
     (minaduki-mode)
-    (minaduki-db/build-cache)))
+    (minaduki-db:build-cache)))
 
 (defun test-minaduki--teardown ()
   (minaduki-mode -1)
-  (delete-file minaduki/db-location)
-  (minaduki-db//close))
+  (delete-file minaduki/db-location))
 
 (defun test-equal-ht (a b)
   "Are A and B the same?
@@ -127,7 +140,7 @@ members that should be equal."
      :to-equal/ht
      '((33 . #s(hash-table
                 size 65 test equal rehash-size 1.5 rehash-threshold 0.8125
-                data ("tags" ("voice")
+                data ("tags" ["voice"]
                       "type" "entries"
                       "key" "hitomine2013"
                       "author" "大崎ひとみ"
@@ -136,8 +149,8 @@ members that should be equal."
                       "title" "あたらしい女声の教科書")))
        (202 . #s(hash-table
                  size 65 test equal rehash-size 1.5 rehash-threshold 0.8125
-                 data ("sources" ("https://www.w3.org/People/Bos/DesignGuide/designguide.html")
-                       "tags" ("webdev" "css" "html")
+                 data ("sources" ["https://www.w3.org/People/Bos/DesignGuide/designguide.html"]
+                       "tags" ["webdev" "css" "html"]
                        "type" "entries"
                        "key" "bertbos20030306"
                        "url" "https://www.w3.org/People/Bos/DesignGuide/designguide.html"
@@ -292,7 +305,7 @@ members that should be equal."
       (it "using rg"
         (expect
          (minaduki-vault::list-files/rg (executable-find "rg")
-                                  (expand-file-name org-directory))
+                                        (expand-file-name org-directory))
          :to-have-same-items-as
          (--map
           (test-minaduki--abs-path (f-relative it test-repository))
@@ -324,182 +337,156 @@ members that should be equal."
     (test-minaduki--init))
 
   ;; Refs
-  (cl-flet
-      ((test (fn file)
-             (let* ((fname (test-minaduki--abs-path file))
-                    (buf (find-file-noselect fname)))
-               (with-current-buffer buf
-                 ;; Unlike tag extraction, it doesn't make sense to
-                 ;; pass a filename.
-                 (funcall fn)))))
-    ;; Enable "cite:" link parsing
-    (org-link-set-parameters "cite")
-    (it "extracts web keys"
-      (expect (test #'minaduki-extract/refs
-                    "web_ref.org")
-              :to-equal
-              '(("website" . "//google.com/"))))
-    (it "extracts cite keys"
-      (expect (test #'minaduki-extract/refs
-                    "cite_ref.org")
-              :to-equal
-              '(("cite" . "mitsuha2007")))
-      (expect (test #'minaduki-extract/refs
-                    "cite-ref.md")
-              :to-equal
-              '(("cite" . "sumire2019"))))
-    (it "extracts all keys"
-      (expect (test #'minaduki-extract/refs
-                    "multiple-refs.org")
-              :to-have-same-items-as
-              '(("cite" . "orgroam2020")
-                ("cite" . "plain-key")
-                ("website" . "//www.orgroam.com/")))))
+  ;; Enable "cite:" link parsing
+  (org-link-set-parameters "cite")
+  (it "extracts web keys"
+    (expect (test-in-file "web_ref.org"
+              (minaduki-extract/refs))
+            :to-equal
+            '(("website" . "//google.com/"))))
+  (it "extracts cite keys"
+    (expect (test-in-file "cite_ref.org"
+              (minaduki-extract/refs))
+            :to-equal
+            '(("cite" . "mitsuha2007")))
+    (expect (test-in-file "cite-ref.md"
+              (minaduki-extract/refs))
+            :to-equal
+            '(("cite" . "sumire2019"))))
+  (it "extracts all keys"
+    (expect (test-in-file "multiple-refs.org"
+              (minaduki-extract/refs))
+            :to-have-same-items-as
+            '(("cite" . "orgroam2020")
+              ("cite" . "plain-key")
+              ("website" . "//www.orgroam.com/"))))
   ;; Title
-  (cl-flet
-      ((test (fn file)
-             (let ((buf (find-file-noselect
-                         (test-minaduki--abs-path file))))
-               (with-current-buffer buf
-                 (funcall fn)))))
-    (it "extracts title from title property"
-      (expect (test #'minaduki-extract/main-title
-                    "titles/title.org")
-              :to-equal
-              '("Title"))
-      (expect (test #'minaduki-extract/main-title
-                    "titles/title.md")
-              :to-equal
-              '("Title in Markdown"))
-      (expect (test #'minaduki-extract/main-title
-                    "titles/aliases.org")
-              :to-equal
-              nil)
-      (expect (test #'minaduki-extract/main-title
-                    "titles/headline.org")
-              :to-equal
-              nil)
-      (expect (test #'minaduki-extract/main-title
-                    "titles/combination.org")
-              :to-equal
-              '("TITLE PROP")))
+  (it "extracts title from title property"
+    (expect (test-in-file "titles/title.org"
+              (minaduki-extract/main-title))
+            :to-equal
+            '("Title"))
+    (expect (test-in-file "titles/title.md"
+              (minaduki-extract/main-title))
+            :to-equal
+            '("Title in Markdown"))
+    (expect (test-in-file "titles/aliases.org"
+              (minaduki-extract/main-title))
+            :to-equal
+            nil)
+    (expect (test-in-file "titles/headline.org"
+              (minaduki-extract/main-title))
+            :to-equal
+            nil)
+    (expect (test-in-file "titles/combination.org"
+              (minaduki-extract/main-title))
+            :to-equal
+            '("TITLE PROP")))
 
-    (it "extracts alias"
-      (expect (test #'minaduki-extract/aliases
-                    "titles/title.org")
-              :to-equal
-              nil)
-      (expect (test #'minaduki-extract/aliases
-                    "titles/aliases.org")
-              :to-equal
-              '("roam" "alias" "second" "line"))
-      (expect (test #'minaduki-extract/aliases
-                    "titles/headline.org")
-              :to-equal
-              nil)
-      (expect (test #'minaduki-extract/aliases
-                    "titles/combination.org")
-              :to-equal
-              '("roam" "alias")))
+  (it "extracts alias"
+    (expect (test-in-file "titles/title.org"
+              (minaduki-extract/aliases))
+            :to-equal
+            nil)
+    (expect (test-in-file "titles/aliases.org"
+              (minaduki-extract/aliases))
+            :to-equal
+            '("roam" "alias" "second" "line"))
+    (expect (test-in-file "titles/headline.org"
+              (minaduki-extract/aliases))
+            :to-equal
+            nil)
+    (expect (test-in-file "titles/combination.org"
+              (minaduki-extract/aliases))
+            :to-equal
+            '("roam" "alias")))
 
-    (it "extracts headlines"
-      (expect (test #'minaduki-extract/aliases
-                    "titles/title.org")
-              :to-equal
-              nil)
-      (expect (test #'minaduki-extract/first-headline
-                    "titles/aliases.org")
-              :to-equal
-              nil)
-      (expect (test #'minaduki-extract/first-headline
-                    "titles/headline.org")
-              :to-equal
-              '("Headline"))
-      (expect (test #'minaduki-extract/first-headline
-                    "titles/headline.md")
-              :to-equal
-              '("Headline"))
-      (expect (test #'minaduki-extract/first-headline
-                    "titles/combination.org")
-              :to-equal
-              '("Headline")))
+  (it "extracts headlines"
+    (expect (test-in-file "titles/title.org"
+              (minaduki-extract/aliases))
+            :to-equal
+            nil)
+    (expect (test-in-file "titles/aliases.org"
+              (minaduki-extract/first-headline))
+            :to-equal
+            nil)
+    (expect (test-in-file "titles/headline.org"
+              (minaduki-extract/first-headline))
+            :to-equal
+            '("Headline"))
+    (expect (test-in-file "titles/headline.md"
+              (minaduki-extract/first-headline))
+            :to-equal
+            '("Headline"))
+    (expect (test-in-file "titles/combination.org"
+              (minaduki-extract/first-headline))
+            :to-equal
+            '("Headline")))
 
-    (it "extracts all titles and aliases"
-      (expect (test #'minaduki-extract/titles
-                    "titles/combination.org")
-              :to-equal
-              '("TITLE PROP" "roam" "alias"))))
+  (it "extracts all titles and aliases"
+    (expect (test-in-file "titles/combination.org"
+              (minaduki-extract/titles))
+            :to-equal
+            '("TITLE PROP" "roam" "alias")))
   ;; Links
-  (cl-flet
-      ((test (fn file)
-             (let ((buf (find-file-noselect
-                         (test-minaduki--abs-path file))))
-               (with-current-buffer buf
-                 (funcall fn)))))
-    (it "extracts links from Markdown files"
-      (expect (->> (test #'minaduki-extract/links
-                         "baz.md")
-                   (--map (seq-take it 3)))
-              :to-have-same-items-as
-              `([,(test-minaduki--abs-path "baz.md")
-                 ,(test-minaduki--abs-path "nested/bar.org")
-                 "file"]
-                [,(test-minaduki--abs-path "baz.md")
-                 "乙野四方字20180920"
-                 "cite"]
-                [,(test-minaduki--abs-path "baz.md")
-                 "quro2017"
-                 "cite"])))
-    (it "extracts links from Org files"
-      (expect (->> (test #'minaduki-extract/links
-                         "foo.org")
+  (it "extracts links from Markdown files"
+    (expect (test-in-file "baz.md"
+              (->> (minaduki-extract/links)
+                   (--map (seq-take it 3))))
+            :to-have-same-items-as
+            `([,(test-minaduki--abs-path "baz.md")
+               ,(test-minaduki--abs-path "nested/bar.org")
+               "file"]
+              [,(test-minaduki--abs-path "baz.md")
+               "乙野四方字20180920"
+               "cite"]
+              [,(test-minaduki--abs-path "baz.md")
+               "quro2017"
+               "cite"])))
+  (it "extracts links from Org files"
+    (expect (test-in-file "foo.org"
+              (->> (minaduki-extract/links)
                    ;; Drop the link type and properties
-                   (--map (seq-take it 2)))
-              :to-have-same-items-as
-              `([,(test-minaduki--abs-path "foo.org")
-                 ,(test-minaduki--abs-path "baz.md")]
-                [,(test-minaduki--abs-path "foo.org")
-                 "foo@john.com"]
-                [,(test-minaduki--abs-path "foo.org")
-                 "google.com"]
-                [,(test-minaduki--abs-path "foo.org")
-                 ,(test-minaduki--abs-path "bar.org")])))
-    (xit "extracts Org citations"
-      (expect (->> (test #'minaduki-extract//org-citation
-                         "org-cite.org")
+                   (--map (seq-take it 2))))
+            :to-have-same-items-as
+            `([,(test-minaduki--abs-path "foo.org")
+               ,(test-minaduki--abs-path "baz.md")]
+              [,(test-minaduki--abs-path "foo.org")
+               "foo@john.com"]
+              [,(test-minaduki--abs-path "foo.org")
+               "google.com"]
+              [,(test-minaduki--abs-path "foo.org")
+               ,(test-minaduki--abs-path "bar.org")])))
+  (xit "extracts Org citations"
+    (expect (test-in-file "org-cite.org"
+              (->> (minaduki-extract//org-citation)
                    ;; Drop the link properties
-                   (--map (seq-take it 3)))
-              :to-have-same-items-as
-              `([,(test-minaduki--abs-path "org-cite.org")
-                 "赤坂アカand横槍メンゴ-oshinoko"
-                 "cite"]
-                [,(test-minaduki--abs-path "org-cite.org")
-                 "フライand森永みるくand伊藤ハチand玄鉄絢and天野しゅにんたand雪子andもちオーレandコダマナオコand吉田丸悠andよしむらかなand黄井ぴかちand郷本andしおやてるこand松崎夏未and川浪いずみ20190511"
-                 "cite"]
-                [,(test-minaduki--abs-path "org-cite.org")
-                 "takeshisu20191228"
-                 "cite"]))))
+                   (--map (seq-take it 3))))
+            :to-have-same-items-as
+            `([,(test-minaduki--abs-path "org-cite.org")
+               "赤坂アカand横槍メンゴ-oshinoko"
+               "cite"]
+              [,(test-minaduki--abs-path "org-cite.org")
+               "フライand森永みるくand伊藤ハチand玄鉄絢and天野しゅにんたand雪子andもちオーレandコダマナオコand吉田丸悠andよしむらかなand黄井ぴかちand郷本andしおやてるこand松崎夏未and川浪いずみ20190511"
+               "cite"]
+              [,(test-minaduki--abs-path "org-cite.org")
+               "takeshisu20191228"
+               "cite"])))
   ;; IDs
-  (cl-flet
-      ((test (fn file)
-             (let* ((fname (test-minaduki--abs-path file))
-                    (buf (find-file-noselect fname)))
-               (with-current-buffer buf
-                 (funcall fn fname)))))
-    (it "extracts ids"
-      (expect (test #'minaduki-extract/ids
-                    "headlines/headline.org")
-              :to-have-same-items-as
-              (list (minaduki-id :id "e84d0630-efad-4017-9059-5ef917908823"
-                                 :file (test-minaduki--abs-path "headlines/headline.org")
-                                 :point 22
-                                 :level 1
-                                 :title "Headline 1")
-                    (minaduki-id :id "801b58eb-97e2-435f-a33e-ff59a2f0c213"
-                                 :file (test-minaduki--abs-path "headlines/headline.org")
-                                 :point 127
-                                 :level 1
-                                 :title "Headline 2"))))))
+  (it "extracts ids"
+    (expect (test-in-file "headlines/headline.org"
+              (minaduki-extract/ids fname))
+            :to-have-same-items-as
+            (list (minaduki-id :id "e84d0630-efad-4017-9059-5ef917908823"
+                               :file (test-minaduki--abs-path "headlines/headline.org")
+                               :point 22
+                               :level 1
+                               :title "Headline 1")
+                  (minaduki-id :id "801b58eb-97e2-435f-a33e-ff59a2f0c213"
+                               :file (test-minaduki--abs-path "headlines/headline.org")
+                               :point 127
+                               :level 1
+                               :title "Headline 2")))))
 
 (describe "Test minaduki: wikilinks"
   (it ""
@@ -527,91 +514,111 @@ members that should be equal."
   (before-all
     (test-minaduki--init))
 
-  (it "Returns a file from its title"
-    (expect (minaduki-db//fetch-file :title "Foo")
+  (it "can check presence"
+    (expect (minaduki-db::file-present? (test-minaduki--abs-path "baz.md"))
+            :to-be-truthy)
+    (expect (minaduki-db::file-present? (test-minaduki--abs-path "no"))
+            :to-be nil))
+
+  (describe "fetch-file"
+    (it "can fetch id"
+      (expect (minaduki-db::fetch-file :id "(elisp.info)Defining Macros")
+              :to-equal
+              "/usr/share/info/elisp.info.gz")
+      (expect (minaduki-db::fetch-file :id "801b58eb-97e2-435f-a33e-ff59a2f0c213")
+              :to-equal
+              (test-minaduki--abs-path "headlines/headline.org")))
+    (it "can fetch citekey"
+      (expect (minaduki-db::fetch-file :key "hitomine2013")
+              :to-equal
+              (test-minaduki--abs-path "lit/hitomine2013.org")))
+    (it "can fetch title"
+      (expect (minaduki-db::fetch-file :title "Same title")
+              :to-have-same-items-as
+              (list (test-minaduki--abs-path "same-title2.org")
+                    (test-minaduki--abs-path "same-title.org")))
+      (expect (minaduki-db::fetch-file :title "CSL-JSON sample data")
+              :to-equal
+              (list (test-minaduki--abs-path "lit/README.org")))
+      (expect (minaduki-db::fetch-file :title "Foo")
+              :to-equal
+              (list (test-minaduki--abs-path "foo.org")))
+      (expect (minaduki-db::fetch-file :title "Headline")
+              :to-equal
+              (-map #'test-minaduki--abs-path
+                    '("headlines/headline.org"
+                      "titles/headline.md"
+                      "titles/headline.org"))))
+    (it "can return a nested file from its title"
+      (expect (minaduki-db::fetch-file :title "Deeply Nested File")
+              :to-equal
+              (list (test-minaduki--abs-path "nested/deeply/deeply_nested_file.org")))))
+  (it "can fetch an id object"
+    (expect (minaduki-db::fetch-id "801b58eb-97e2-435f-a33e-ff59a2f0c213")
             :to-equal
-            (list (test-minaduki--abs-path "foo.org"))))
-  (it "Returns a list of files with the same title"
-    ;; The cache is already built, and the world should be sane again
-    ;; from here on out.
-    (expect (minaduki-db//fetch-file :title "Headline")
+            (minaduki-id :id "801b58eb-97e2-435f-a33e-ff59a2f0c213"
+                         :file (test-minaduki--abs-path "headlines/headline.org")
+                         :point 127
+                         :level 1
+                         :title "Headline 2")))
+  (describe "fetch-lit-entry"
+    (it "can fetch a lit-entry object"
+      (let ((entry (minaduki-db::fetch-lit-entry "orgroam2020")))
+        (expect (oref entry file)
+                :to-equal
+                (test-minaduki--abs-path "multiple-refs.org"))
+        (expect (oref entry key)
+                :to-equal
+                "orgroam2020")
+        (expect (oref entry point)
+                :to-equal
+                1)))
+    (it "information from bibliography is used over the note file"
+      (let ((entry (minaduki-db::fetch-lit-entry "hitomine2013")))
+        (expect (oref entry file)
+                :to-equal
+                (test-minaduki--abs-path "lit/entries.org"))
+        (expect (oref entry key)
+                :to-equal
+                "hitomine2013")
+        (expect (oref entry point)
+                :to-equal
+                33)
+        (expect (oref entry props)
+                :to-equal/ht
+                (ht<-plist
+                 '("tags" ("voice")
+                   "type" "entries"
+                   "key" "hitomine2013"
+                   "author" "大崎ひとみ"
+                   "publisher" "t2library課外活動部"
+                   "year" "2013"
+                   "title" "あたらしい女声の教科書"))))))
+  (it "can return all authors"
+    (expect (minaduki-db::fetch-lit-authors)
             :to-have-same-items-as
-            (-map #'test-minaduki--abs-path
-                  '("headlines/headline.org"
-                    "titles/headline.md"
-                    "titles/headline.org"))))
-  (it "Returns a file from an ID"
-    (expect (minaduki-db//fetch-file
-             :id "e84d0630-efad-4017-9059-5ef917908823")
+            '("Bert Bos" "シャノン" "大崎ひとみ")))
+  (it "can return all tags"
+    (expect (minaduki-db::fetch-all-tags)
+            :to-have-same-items-as
+            `("t3" "t2 with space" "t1" "t4 second-line" "tag3" "tag2" "hello" ,(file-name-base (directory-file-name org-directory)))))
+  (it "can return the title of a file"
+    (expect (minaduki-db::fetch-title
+             (test-minaduki--abs-path "lit/hitomine2013.org"))
             :to-equal
-            (test-minaduki--abs-path "headlines/headline.org")))
-  (it "Returns a nested file from its title"
-    (expect (minaduki-db//fetch-file :title "Deeply Nested File")
+            "あたらしい女声の教科書"))
+  (it "can return files that are tagged with a given tag"
+    (expect (minaduki-db::fetch-tag-references "hello")
+            :to-have-same-items-as
+            (list (test-minaduki--abs-path "tags/hugo-style.org"))))
+  (it "can fetch backlinks"
+    (expect (length (minaduki-db::fetch-backlinks "乙野四方字20180920"))
+            :to-be-greater-than 0))
+  (it "can get the stored hash of a file"
+    (expect (minaduki-db::fetch-file-hash
+             (test-minaduki--abs-path "front-matter/json.md"))
             :to-equal
-            (list (test-minaduki--abs-path "nested/deeply/deeply_nested_file.org"))))
-  (it "Returns all authors"
-    (expect (minaduki-db//fetch-lit-authors)
-            :to-have-same-items-as
-            '("大崎ひとみ" "Bert Bos" "シャノン"))))
-
-;;; Tests
-(xdescribe "minaduki-db/build-cache"
-  (before-each
-    (test-minaduki--init))
-
-  (it "initializes correctly"
-    ;; Cache
-    (expect (caar (minaduki-db/query [:select (funcall count) :from files])) :to-be 8)
-    (expect (caar (minaduki-db/query [:select (funcall count) :from links])) :to-be 5)
-    (expect (caar (minaduki-db/query [:select (funcall count) :from files
-                                      :where titles :is-null])) :to-be 1)
-    (expect (caar (minaduki-db/query [:select (funcall count) :from refs])) :to-be 1)
-
-    ;; Links
-    (expect (caar (minaduki-db/query [:select (funcall count) :from links
-                                      :where (= source $s1)]
-                                     (test-minaduki--abs-path "foo.org"))) :to-be 1)
-    (expect (caar (minaduki-db/query [:select (funcall count) :from links
-                                      :where (= source $s1)]
-                                     (test-minaduki--abs-path "nested/bar.org"))) :to-be 2)
-
-    ;; Links -- File-to
-    (expect (caar (minaduki-db/query [:select (funcall count) :from links
-                                      :where (= dest $s1)]
-                                     (test-minaduki--abs-path "nested/foo.org"))) :to-be 1)
-    (expect (caar (minaduki-db/query [:select (funcall count) :from links
-                                      :where (= dest $s1)]
-                                     (test-minaduki--abs-path "nested/bar.org"))) :to-be 1)
-    (expect (caar (minaduki-db/query [:select (funcall count) :from links
-                                      :where (= dest $s1)]
-                                     (test-minaduki--abs-path "unlinked.org"))) :to-be 0)
-    ;; FIXME: titles has been merged into files
-    (expect (minaduki-db/query [:select * :from titles])
-            :to-have-same-items-as
-            (list (list (test-minaduki--abs-path "alias.org")
-                        (list "t1" "a1" "a 2"))
-                  (list (test-minaduki--abs-path "bar.org")
-                        (list "Bar"))
-                  (list (test-minaduki--abs-path "foo.org")
-                        (list "Foo"))
-                  (list (test-minaduki--abs-path "nested/bar.org")
-                        (list "Nested Bar"))
-                  (list (test-minaduki--abs-path "nested/foo.org")
-                        (list "Nested Foo"))
-                  (list (test-minaduki--abs-path "no-title.org")
-                        (list "Headline title"))
-                  (list (test-minaduki--abs-path "web_ref.org") nil)
-                  (list (test-minaduki--abs-path "unlinked.org")
-                        (list "Unlinked"))))
-
-    (expect (minaduki-db/query [:select * :from refs])
-            :to-have-same-items-as
-            (list (list "https://google.com/" (test-minaduki--abs-path "web_ref.org") "website")))
-
-    ;; Expect rebuilds to be really quick (nothing changed)
-    (expect (minaduki-db/build-cache)
-            :to-equal
-            (list :files 0 :links 0 :tags 0 :titles 0 :refs 0 :deleted 0))))
+            "8735b00eebf501c1c39dc4d3ba21424df591aec7")))
 
 (provide 'test-minaduki)
 

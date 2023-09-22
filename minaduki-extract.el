@@ -305,12 +305,12 @@ Assume links come from FILE-FROM."
                        (list :content content :point begin-of-block))))))
 
 (defun minaduki-extract/links (&optional file-from)
-  "Extracts all link items within the current buffer.
+  "Extract all links within the current buffer.
+
 Link items are of the form:
 
     [source dest type properties]
 
-This is the format that emacsql expects when inserting into the database.
 FILE-FROM is typically the buffer file path, but this may not exist, for example
 in temp buffers.  In cases where this occurs, we do know the file path, and pass
 it as FILE-FROM."
@@ -578,15 +578,18 @@ headline."
     f-split))
 (defun minaduki-extract//tags/first-directory (path)
   "Return PATH's first directory in the vault."
-  (remove
-   ;; HACK: Currently path-relative will still return an absolute path for
-   ;; anything that's not in the main vault, so f-split will put the path
-   ;; separator into the results. Just remove it for now.
-   (f-path-separator)
-   (-some-> (minaduki-vault:path-relative path)
-     f-split
-     car
-     list)))
+  (-some->> path
+    f-parent
+    minaduki-vault:path-relative
+    f-split
+    car
+    list
+    ;; Files at root
+    (remove ".")
+    ;; HACK: Currently path-relative will still return an absolute path for
+    ;; anything that's not in the main vault, so f-split will put the path
+    ;; separator into the results. Just remove it for now.
+    (remove (f-path-separator))))
 (defun minaduki-extract//tags/last-directory (path)
   "Return PATH's last directory in the vault."
   (-some-> (minaduki-vault:path-relative path)
@@ -683,12 +686,17 @@ Returns a cons cell (TYPE . PATH) if ref is a valid ref.
 
 REF is either a plain link or a plain string. If it's a link, the
 protocol is treated as the TYPE (after processing through
-`minaduki::collate-types'). Otherwise, REF is assumed to be a cite ref."
-  (save-match-data
-    (if (string-match org-link-plain-re ref)
-        (cons (minaduki::collate-types (match-string 1 ref))
-              (match-string 2 ref))
-      (cons "cite" ref))))
+`minaduki::collate-types'). Otherwise, REF is assumed to be a cite ref.
+
+The \"cite:\" prefix is removed."
+  (let ((type "cite")
+        (ref ref))
+    (save-match-data
+      (when (string-match org-link-plain-re ref)
+        (setq type (minaduki::collate-types (match-string 1 ref))
+              ref (match-string 2 ref))))
+    (cons type
+          (s-replace-regexp (rx bos "cite:") "" ref))))
 
 (defun minaduki-extract/lit-entries ()
   "Extract literature entries from this bibliography file.

@@ -87,7 +87,7 @@ If USE-STACK, include the parent paths as well."
 
 When there are multiple options, ask the user to choose one. When
 NO-INTERACTIVE is non-nil, return nil in this case."
-  (let ((files (minaduki-db//fetch-file :title title)))
+  (let ((files (minaduki-db::fetch-file :title title)))
     (if (< (length files) 2)
         (car files)
       (unless no-interactive

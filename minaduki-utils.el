@@ -29,7 +29,7 @@
 (defvar markdown-mode-hook)
 
 (defun minaduki::object-to-vector (obj)
-  "Turn OBJ into a vector that emacsql accepts."
+  "Turn OBJ into a vector to make it easier to insert into the database."
   (let* ((len (1- (length obj)))
          (v (make-vector len nil)))
     (dotimes (i len)
@@ -42,8 +42,10 @@ This does zero type checks, and it is up to the user to make sure
 #s(TYPE (elt VEC 0) (elt VEC 1) ...) is valid for TYPE."
   (apply #'record type (append vec nil)))
 
-(defun minaduki::current-file-name (&optional fallback)
-  "Return current file name in a consistent way.
+(defun minaduki::current-file-name (&optional fallback buffer)
+  "Return current file name of BUFFER in a consistent way.
+
+BUFFER defaults to the current buffer.
 
 FALLBACK should be a one element list containing the file name
 to use instead of `minaduki::file-name'. This allows easily
@@ -52,7 +54,7 @@ distinguishing between a caller that does not want to use
   (or (if fallback
           (car fallback)
         minaduki::file-name)
-      (buffer-file-name (buffer-base-buffer))))
+      (buffer-file-name (buffer-base-buffer buffer))))
 
 (defun minaduki::file-type::path (path)
   "Determine the file type from PATH only*.
@@ -537,7 +539,7 @@ ARGS and BODY are as in `lambda'."
 (defun minaduki::get-outline-path ()
   "Return the outline path to the current entry.
 
-An outline path is a list of ancestors for current headline, as a
+An outline path is a vector of ancestors for current headline, as a
 list of strings. Statistics cookies are removed and links are
 kept.
 
@@ -563,7 +565,7 @@ Assume buffer is widened and point is on a headline."
                                (match-string-no-properties 4)))))
                          headings)
                 while (org-up-heading-safe)
-                finally return headings)))))
+                finally return (vconcat headings))))))
 
 (defun minaduki::set-global-prop (name value)
   "Set a file property called NAME to VALUE.

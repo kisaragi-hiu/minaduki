@@ -107,7 +107,7 @@ whether an entry is from DAY or not."
       (_
        (let* ((title-file-alist
                (--map
-                `(,(or (minaduki-db//fetch-title it)
+                `(,(or (minaduki-db::fetch-title it)
                        (f-base it))
                   .
                   ,it)

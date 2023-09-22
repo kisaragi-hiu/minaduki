@@ -6,7 +6,6 @@
 ;; URL: https://github.com/org-roam/org-roam
 ;; Keywords: org-mode, roam, convenience
 ;; Version: 1.2.3
-;; Package-Requires: ((emacs "26.1") (dash "2.13") (f "0.17.2") (s "1.12.0") (org "9.3") (emacsql "3.0.0") (emacsql-sqlite3 "1.0.2"))
 
 ;; This file is NOT part of GNU Emacs.
 
@@ -494,12 +493,11 @@ you can catch it with `condition-case'."
 
 (defun minaduki-capture//get-ref-path (type path)
   "Get the file path to the ref with TYPE and PATH."
-  (caar (minaduki-db/query
-         [:select [file]
-          :from refs
-          :where (= type $s1)
-          :and (= ref $s2)
-          :limit 1]
+  (caar (minaduki-db-select
+         '("select file from refs"
+           "where type = ?"
+           "and ref = ?"
+           "limit 1")
          type path)))
 
 (defun minaduki-capture//get-point ()
@@ -509,14 +507,14 @@ The file to use is dependent on the context:
 If the search is via title, it is assumed that the file does not
 yet exist, and Org-roam will attempt to create new file.
 
-If the search is via daily notes, 'time will be passed via
+If the search is via daily notes, \\='time will be passed via
 `minaduki-capture//info'. This is used to alter the default time
 in `org-capture-templates'.
 
 If the search is via ref, it is matched against the Org-roam database.
 If there is no file with that ref, a file with that ref is created.
 
-This function is used solely in Org-roam's capture templates: see
+This function is used solely in Org-roam\\='s capture templates: see
 `minaduki-capture/templates'."
   (let* ((file-path (pcase minaduki-capture//context
                       ('capture
@@ -611,7 +609,7 @@ GOTO and KEYS argument have the same functionality as
 This uses the templates defined at `minaduki-capture/templates'.
 Arguments GOTO and KEYS see `org-capture'."
   (interactive "P")
-  (let* ((completions (minaduki//get-title-path-completions))
+  (let* ((completions (minaduki-db::fetch-all-nodes))
          (title-with-keys (completing-read "File: " completions))
          (res (cdr (assoc title-with-keys completions)))
          (title (or (plist-get res :title) title-with-keys))

@@ -28,7 +28,7 @@
 ;; absolutely crucial that the order does not change.
 (cl-defstruct (minaduki-lit-entry
                (:copier nil)
-               (:constructor nil))
+               (:constructor minaduki-lit-entry))
   key file point props)
 (cl-defstruct (minaduki-id
                (:copier nil)
@@ -82,7 +82,7 @@ take effect."
   :type 'key-sequence
   :group 'minaduki)
 
-(defcustom minaduki/db-location (expand-file-name "minaduki.db" user-emacs-directory)
+(defcustom minaduki:db-location (expand-file-name "minaduki.db" user-emacs-directory)
   "Full path to the cache database.
 
 All cache will be saved here regardless of which project a note
@@ -107,7 +107,7 @@ value like `most-positive-fixnum'."
   :group 'minaduki)
 
 (defcustom minaduki-db/update-method 'idle-timer
-  "Method to update the Org-roam database.
+  "How the cache database should be updated.
 
 `immediate'
   Update the database immediately upon file changes.
@@ -313,7 +313,7 @@ Currently available sources:
 
 When t, sort the tags alphabetically, regardless of case.
 
-This can also be a list like '(string-less-p :key downcase), in
+This can also be a list like \\='(string-less-p :key downcase), in
 which case the list is passed to `cl-sort' as arguments."
   :type '(choice
           (boolean)
@@ -415,7 +415,7 @@ descriptive warnings when certain operations fail (e.g. parsing).")
     ("Open the index file"                . minaduki/open-index)
     ("Create a new literature note from URL" . minaduki:new-literature-note-from-url)
     ("Open a random note"                 . minaduki/open-random-note)
-    ("Refresh cache"                      . minaduki-db/build-cache))
+    ("Refresh cache"                      . minaduki-db:build-cache))
   "Global commands shown in `minaduki:global-commands'.
 
 List of (DISPLAY-NAME . COMMAND) pairs.")

@@ -271,7 +271,7 @@ like `minaduki-lit/entry' objects."
                      (and (member "url" (map-keys props))
                           (setq url-as-key t)))
              (when-let (tags (org-get-tags))
-               (push (cons "tags" tags) props))
+               (push (cons "tags" (vconcat tags)) props))
              (dolist (pair props)
                ;; Clear all text properties
                (when (stringp (cdr pair))
@@ -302,7 +302,7 @@ like `minaduki-lit/entry' objects."
                  (push (concat "https://doi.org/" (cdr pair))
                        sources))
                (when sources
-                 (push (cons "sources" sources) props)))
+                 (push (cons "sources" (vconcat sources)) props)))
              (push (cons (point)
                          (map-into props '(hash-table :test equal)))
                    ret))))

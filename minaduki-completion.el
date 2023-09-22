@@ -32,6 +32,9 @@
 (require 'minaduki-db)
 (require 'minaduki-lit)
 
+(declare-function ivy--flx-sort "ivy")
+(declare-function ivy--shorter-matches-first "ivy")
+
 ;; Keeping the `require' at top level allows the byte compiler to
 ;; see the definition of `marginalia--fields' so that it doesn't
 ;; report errors for `minaduki-completion--annotate-note'.
@@ -74,60 +77,9 @@ when a value is already present."
           (replace-match
            (format "\\& [%s]" def)
            nil nil prompt 1)))
-  (completing-read prompt (minaduki-db//fetch-lit-authors)
+  (completing-read prompt (minaduki-db::fetch-lit-authors)
                    nil nil nil nil
                    def))
-
-;;;; Completion utils
-(defun minaduki//get-title-path-completions ()
-  "Return `minaduki-node' objects for completion."
-  (let* ((file-nodes (minaduki-db/query
-                      [:select [files:file
-                                files:titles
-                                files:tags
-                                files:meta
-                                ;; FIXME: this gives us one entry per
-                                ;; key for a file with multiple keys
-                                refs:ref
-                                refs:type]
-                       :from files
-                       :left :join refs
-                       :on (= refs:file files:file)]))
-         (id-nodes (minaduki-db/query
-                    [:select
-                     [ids:id ids:title files:titles files:meta ids:file]
-                     :from ids
-                     :left :join files
-                     :on (= files:file ids:file)]))
-         rows)
-    (cl-loop for x in file-nodes
-             do (dolist (title (elt x 1))
-                  (push
-                   (minaduki-node
-                    :path (elt x 0)
-                    :title title
-                    :tags (elt x 2)
-                    :meta (elt x 3)
-                    :key (elt x 4)
-                    :key-type (elt x 5))
-                   rows)))
-    (cl-loop for x in id-nodes
-             do (push
-                 (minaduki-node
-                  :id (elt x 0)
-                  :path (elt x 4)
-                  :title (format "* %s - %s"
-                                 (car (elt x 2))
-                                 (elt x 1))
-                  :tags nil
-                  :meta (elt x 3))
-                 rows))
-    (setq rows (sort rows
-                     (lambda (a b)
-                       (time-less-p
-                        (plist-get (oref a meta) :mtime)
-                        (plist-get (oref b meta) :mtime)))))
-    rows))
 
 ;;;; `completing-read' completions
 (defun minaduki-completion//mark-category (seq category)
@@ -211,7 +163,7 @@ INITIAL-INPUT: passed to `completing-read'.
 PROMPT: the prompt to use during completion. Default: \"Note: \""
   (minaduki::with-comp-setup
       ((ivy-sort-matches-functions-alist . #'ivy--flx-sort))
-    (let* ((entries (minaduki//get-title-path-completions))
+    (let* ((entries (minaduki-db::fetch-all-nodes))
            (alist
             (let (ret)
               (dolist (entry entries)
@@ -263,8 +215,9 @@ PROMPT: the text shown in the prompt."
   (minaduki::with-comp-setup
       ((ivy-sort-functions-alist . nil)
        (ivy-sort-matches-functions-alist . #'ivy--shorter-matches-first))
-    (let* ((entries (->> (minaduki-db/query [:select [props] :from keys])
-                         (mapcar #'car)))
+    (let* ((entries (->> (minaduki-db-select "select props from keys")
+                         (mapcar #'car)
+                         (mapcar #'minaduki-db::parse-value)))
            (alist (--map (cons (minaduki--format-lit-entry it)
                                (map-elt it "key"))
                          entries))
@@ -291,9 +244,7 @@ This is active when `minaduki:completion-everywhere' is non-nil."
             (--> (completion-table-dynamic
                   ;; Get our own completion request string
                   (lambda (_)
-                    (->> (minaduki-db/query
-                          [:select [titles] :from files])
-                         -flatten
+                    (->> (minaduki-db::fetch-all-titles)
                          (--remove (string= prefix it)))))
                  (completion-table-case-fold it (not minaduki:ignore-case-during-completion)))
             :exit-function (lambda (str _status)
@@ -315,7 +266,7 @@ This is active when `minaduki:completion-everywhere' is non-nil."
               (--> (completion-table-dynamic
                     ;; Get our own completion request string
                     (lambda (_)
-                      (->> (minaduki-db//fetch-all-tags)
+                      (->> (minaduki-db::fetch-all-tags)
                            (--remove (string= prefix it)))))
                    (completion-table-case-fold it (not minaduki:ignore-case-during-completion)))
               :exit-function (lambda (str _status)

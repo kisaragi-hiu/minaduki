@@ -95,7 +95,7 @@ Interactively, please use the transient command instead."
   (when (and (minaduki-vault:in-vault?)
              (not (eq minaduki-db/update-method 'immediate))
              (not (minaduki-capture/p)))
-    (minaduki-db/update)))
+    (minaduki-db:update)))
 
 (defun minaduki-org//move-to-row-col (s)
   "Move to row:col if S match the row:col syntax.
@@ -324,7 +324,7 @@ REPLACE-REGION?: whether to replace selected text."
               (beginning-of-line))))
         (insert "#+alias: " alias)))
     (when (minaduki-vault:in-vault?)
-      (minaduki-db//insert-meta 'update))
+      (minaduki-db::insert-meta 'update))
     alias))
 
 ;;;###autoload
@@ -339,14 +339,14 @@ REPLACE-REGION?: whether to replace selected text."
               (delete-region (line-beginning-position)
                              (1+ (line-end-position))))))
         (when (minaduki-vault:in-vault?)
-          (minaduki-db//insert-meta 'update)))
+          (minaduki-db::insert-meta 'update)))
     (user-error "No aliases to delete")))
 
 ;;;###autoload
 (defun minaduki-add-tag ()
   "Add a tag."
   (interactive)
-  (let* ((all-tags (minaduki-db//fetch-all-tags))
+  (let* ((all-tags (minaduki-db::fetch-all-tags))
          (tag (completing-read "Tag: " all-tags))
          (existing-tags (minaduki-extract//tags/org-prop)))
     (when (string-empty-p tag)
@@ -355,7 +355,7 @@ REPLACE-REGION?: whether to replace selected text."
      "tags[]"
      (combine-and-quote-strings (seq-uniq (cons tag existing-tags))))
     (when (minaduki-vault:in-vault?)
-      (minaduki-db//insert-meta 'update))
+      (minaduki-db::insert-meta 'update))
     tag))
 
 ;;;###autoload
@@ -368,7 +368,7 @@ REPLACE-REGION?: whether to replace selected text."
          "tags[]"
          (combine-and-quote-strings (delete tag tags)))
         (when (minaduki-vault:in-vault?)
-          (minaduki-db//insert-meta 'update)))
+          (minaduki-db::insert-meta 'update)))
     (user-error "No tag to delete")))
 
 ;;;; Global commands
@@ -569,7 +569,7 @@ fill it in with the \"daily\" template."
           ;; variable should not be used.
           (org-extend-today-until 0))
       (-some-> (minaduki-templates:get "daily")
-        (minaduki-templates:fill '(:default-time now))
+        (minaduki-templates:fill `(:default-time ,now))
         insert))))
 
 ;;;###autoload
@@ -680,7 +680,7 @@ The index file is specified in this order:
                  (f-expand minaduki:index-file
                            (minaduki-vault:main)))
                 (t
-                 (car (minaduki-db//fetch-file :title "Index"))))))
+                 (car (minaduki-db::fetch-file :title "Index"))))))
     (if (and index (f-exists? index))
         (minaduki::find-file index)
       (when (y-or-n-p "Index file does not exist.  Would you like to create it? ")
@@ -706,7 +706,7 @@ one."
   (when (stringp entry)
     (setq entry
           (minaduki-node
-           :path (car (minaduki-db//fetch-file :title entry))
+           :path (car (minaduki-db::fetch-file :title entry))
            :title entry)))
   (let ((path (oref entry path))
         (title (oref entry title)))
@@ -726,7 +726,7 @@ This assumes ID is present in the cache database.
 
 If OTHER? is non-nil, open it in another window, otherwise in the
 current window."
-  (-when-let (id (minaduki-db//fetch-id id))
+  (-when-let (id (minaduki-db::fetch-id id))
     (if (eq 'info (minaduki::file-type::path (minaduki-id-file id)))
         (info (minaduki-id-id id))
       (minaduki::find-file (minaduki-id-file id) other?)
@@ -760,11 +760,11 @@ This function hooks into `org-open-at-point' via
 CITEKEY's information is extracted from files listed in
 `minaduki-lit/bibliography' during Minaduki's cache build
 process."
-  (let* ((file (minaduki-db//fetch-file :key citekey))
-         (_title (minaduki-db//fetch-title file)))
+  (let* ((file (minaduki-db::fetch-file :key citekey))
+         (_title (minaduki-db::fetch-title file)))
     (cond
      (file (minaduki::find-file file))
-     (t (let ((props (or (-some-> (minaduki-db//fetch-lit-entry citekey)
+     (t (let ((props (or (-some-> (minaduki-db::fetch-lit-entry citekey)
                            minaduki-lit-entry-props)
                          (minaduki::warn :warning
                            "Could not find the literature entry %s" citekey))))
@@ -826,12 +826,10 @@ CITEKEY is a list whose car is a citation key."
 
 (defun minaduki/visit-source (citekey)
   "Visit the source (URL, file path, DOI...) of CITEKEY."
-  (let ((entry (caar (minaduki-db/query
-                      [:select [props] :from keys
-                       :where (= key $s1)]
-                      citekey)))
+  (let ((entry (minaduki-db::fetch-lit-entry citekey))
         sources)
-    (setq sources (minaduki::resolve-org-links (gethash "sources" entry)))
+    (setq sources (minaduki::resolve-org-links
+                   (gethash "sources" (minaduki-lit-entry-props entry))))
     (setq minaduki-lit//cache nil)
     (cl-case (length sources)
       (0 (message "%s has no associated source" citekey))
@@ -841,22 +839,14 @@ CITEKEY is a list whose car is a citation key."
 
 (defun minaduki/show-entry (citekey)
   "Go to where CITEKEY is defined."
-  (-let ((((file point)) ; oh god this destructuring is so ugly
-          (minaduki-db/query
-           [:select [file point] :from keys
-            :where (= key $s1)]
-           citekey)))
-    (minaduki::find-file file)
-    (goto-char point)))
+  (let ((entry (minaduki-db::fetch-lit-entry citekey)))
+    (minaduki::find-file (minaduki-lit-entry-file entry))
+    (goto-char (minaduki-lit-entry-point entry))))
 
 (defun minaduki:insert-note-to-citekey (citekey)
   "Insert a link to the note associated with CITEKEY."
-  (-if-let* ((path
-              (caar (minaduki-db/query
-                     [:select [file] :from refs
-                      :where (= ref $s1)]
-                     citekey)))
-             (title (minaduki-db//fetch-title path)))
+  (-if-let* ((path (minaduki-db::fetch-file :key citekey))
+             (title (minaduki-db::fetch-title path)))
       ;; A corresponding note already exists. Insert a link to it.
       (minaduki:insert :entry (minaduki-node :path path :title title))
     ;; There is no corresponding note. Barf about it for now. Ideally

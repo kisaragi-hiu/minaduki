@@ -114,7 +114,7 @@ Has an effect if and only if `minaduki-buffer/position' is `top' or `bottom'."
 
 (defcustom minaduki-buffer/window-parameters nil
   "Additional window parameters for the `minaduki-buffer' side window.
-For example: (setq minaduki-buffer/window-parameters '((no-other-window . t)))"
+For example: (setq minaduki-buffer/window-parameters \\='((no-other-window . t)))"
   :type '(alist)
   :group 'minaduki)
 
@@ -133,7 +133,7 @@ For example: (setq minaduki-buffer/window-parameters '((no-other-window . t)))"
 
 (defun minaduki-buffer//insert-title ()
   "Insert the minaduki-buffer title."
-  (-> (minaduki-db//fetch-title
+  (-> (minaduki-db::fetch-title
        (buffer-file-name minaduki-buffer//current))
       (propertize 'font-lock-face 'org-document-title)
       insert))
@@ -224,11 +224,11 @@ TYPE can be:
 - `refs': references to keys from `minaduki-extract/refs', or
 - anything else: return both."
   (pcase type
-    (`titles (minaduki-db//fetch-backlinks
+    (`titles (minaduki-db::fetch-backlinks
               (cons (buffer-file-name)
                     (minaduki-extract/titles))))
     (`refs (mapcan
-            #'minaduki-db//fetch-backlinks
+            #'minaduki-db::fetch-backlinks
             (mapcar #'cdr (minaduki-extract/refs))))
     (_ (append (minaduki//backlinks 'titles)
                (minaduki//backlinks 'refs)))))
@@ -307,7 +307,7 @@ are returned."
                        ;; block is over.
                        "(:path %S :title %S :matches ("
                        path
-                       (or (minaduki-db//fetch-title path)
+                       (or (minaduki-db::fetch-title path)
                            relpath)))))
                  ;; matches lines
                  ((rx bos
@@ -352,8 +352,8 @@ are returned."
 Get the backlinks with this:
 
   (with-current-buffer minaduki-buffer//current
-    (minaduki//backlinks 'refs) ; only cite backlinks
-    (minaduki//backlinks 'titles) ; only non-cite backlinks
+    (minaduki//backlinks \\='refs) ; only cite backlinks
+    (minaduki//backlinks \\='titles) ; only non-cite backlinks
     (minaduki//backlinks)) ; both
 
 HEADING is the \"* 3 Backlinks\" string in the backlinks buffer.
@@ -386,12 +386,9 @@ Links in titles are removed."
                 ;; title link
                 (minaduki::format-link :target file-from
                                       :desc (minaduki::remove-org-links
-                                             (minaduki-db//fetch-title file-from)))
+                                             (minaduki-db::fetch-title file-from)))
                 ;; tags
-                (or (-some->> (minaduki-db/query [:select tags :from files
-                                                  :where (= file $s1)]
-                                                 file-from)
-                      caar
+                (or (-some->> (minaduki-db::fetch-tags file-from)
                       (--remove (member it minaduki-buffer/hidden-tags))
                       (--map (s-replace " " "_" (downcase it)))
                       (s-join ":")
@@ -456,14 +453,14 @@ Links in titles are removed."
 (defun minaduki-buffer//insert-tag-references (tag)
   "Insert links to files tagged with TAG."
   (when tag
-    (-when-let (references (minaduki-db//fetch-tag-references tag))
+    (-when-let (references (minaduki-db::fetch-tag-references tag))
       (insert (format "\n\n* Files tagged with /%s/\n" tag))
       (->> (cl-loop for file in references
                     collect (concat "** "
                                     (minaduki::format-link
                                      :target file
                                      :desc (minaduki::remove-org-links
-                                            (minaduki-db//fetch-title file)))))
+                                            (minaduki-db::fetch-title file)))))
            (s-join "\n")
            insert))))
 
@@ -496,7 +493,7 @@ ORIG-PATH is the path where the CONTENT originated."
 (defun minaduki-buffer/update ()
   "Render the backlinks buffer."
   (interactive)
-  (minaduki-db//ensure-built)
+  (minaduki-db::ensure-built)
   (let* ((source-org-directory org-directory))
     (with-current-buffer minaduki-buffer/name
       ;; When dir-locals.el is used to override org-directory,
@@ -522,7 +519,7 @@ ORIG-PATH is the path where the CONTENT originated."
         (minaduki-buffer//insert-title)
         (minaduki-buffer//insert-tag-references
          (--> (buffer-file-name minaduki-buffer//current)
-              minaduki-db//fetch-title
+              minaduki-db::fetch-title
               downcase))
         (minaduki-buffer//insert-backlinks
          cite-backlinks
@@ -548,8 +545,8 @@ what."
     (when (and (or redisplay
                    (not (eq minaduki-buffer//current buffer)))
                (minaduki-buffer/visible?)
-               (buffer-file-name buffer)
-               (minaduki-db//file-present? (buffer-file-name buffer)))
+               (minaduki::current-file-name buffer)
+               (minaduki-db::file-present? (minaduki::current-file-name buffer)))
       (setq minaduki-buffer//current buffer)
       (minaduki-buffer/update))))
 

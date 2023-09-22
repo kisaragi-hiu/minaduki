@@ -40,12 +40,12 @@
 (xdescribe "Cache Build"
   (it "cache build from scratch time to be acceptable"
     (test-minaduki-perf--init)
-    (pcase (benchmark-run 1 (minaduki-db/build-cache t))
+    (pcase (benchmark-run 1 (minaduki-db:build-cache t))
       (`(,time ,gcs ,time-in-gc)
        (message "Elapsed time: %fs (%fs in %d GCs)" time time-in-gc gcs)
        (expect time :to-be-less-than 110))))
   (it "builds quickly without change"
-    (pcase (benchmark-run 1 (minaduki-db/build-cache))
+    (pcase (benchmark-run 1 (minaduki-db:build-cache))
       (`(,time ,gcs ,time-in-gc)
        (message "Elapsed time: %fs (%fs in %d GCs)" time time-in-gc gcs)
        (expect time :to-be-less-than 5)))))
