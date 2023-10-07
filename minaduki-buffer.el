@@ -545,8 +545,8 @@ what."
     (when (and (or redisplay
                    (not (eq minaduki-buffer//current buffer)))
                (minaduki-buffer/visible?)
-               (minaduki::current-file-name buffer)
-               (minaduki-db::file-present? (minaduki::current-file-name buffer)))
+               (minaduki::current-file-name nil buffer)
+               (minaduki-db::file-present? (minaduki::current-file-name nil buffer)))
       (setq minaduki-buffer//current buffer)
       (minaduki-buffer/update))))
 
