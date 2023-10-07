@@ -86,7 +86,7 @@ Interactively, please use the transient command instead."
   "Export heading at point to a file."
   ["Options"
    ("-d" "Directory to export to" "--dir=" transient-read-directory)
-   ("-f" "Use the entire heading instead of just the first WORD" "--full")
+   ("-f" "Use the entire heading for file name instead of just the first WORD" "--full")
    ("-v" "Open the exported file" "--open")]
   ["Command"
    ("e" "Export" minaduki/org-heading-to-file//suffix)])
