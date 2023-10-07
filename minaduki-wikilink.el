@@ -13,6 +13,11 @@
 ;;; By default, these are replaced with an ID link (if given a
 ;;; headline) or a normal link (if not) on save. This can be turned of
 ;;; by setting the `minaduki-wikilink-auto-replace' user option to nil.
+;;
+;; FIXME: [[minaduki:nonexistent][some description]] would try to open "some
+;; description" and error out
+;; FIXME: [[minaduki:nonexistent]] would try to open "nonexistent" and still
+;; error out instead of creating a note (a problem with minaduki/open?)
 ;;;
 ;;; Code:
 
@@ -29,6 +34,11 @@
 (require 'minaduki-completion)
 
 (declare-function minaduki/open "minaduki-commands" (&optional entry))
+
+(defconst minaduki-wikilink::type "minaduki"
+  "The link type for Minaduki Org wikilinks.
+
+The \"minaduki\" in an Org wikilink like \"[[minaduki:title here]]\".")
 
 (defun minaduki-wikilink:follow (_path)
   "Follow a minaduki: wikilink.
@@ -145,8 +155,9 @@ the target of LINK (title or heading content)."
     (pcase (org-element-lineage context '(link) t)
       (`nil (error "Not at an Org link"))
       (link
-       (if (not (string-equal "roam" (org-element-property :type link)))
-           (error "Not at Org-roam link")
+       (if (not (string-equal minaduki-wikilink::type
+                              (org-element-property :type link)))
+           (error "Not at an Minaduki Org wikilink")
          (setq desc (and (org-element-property :contents-begin link)
                          (org-element-property :contents-end link)
                          (buffer-substring-no-properties

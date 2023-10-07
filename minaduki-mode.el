@@ -330,7 +330,7 @@ See `minaduki-local-mode' for more information on Minaduki-Local mode."
         (setq org-cite-follow-processor 'minaduki
               org-cite-insert-processor 'minaduki)
         (org-link-set-parameters
-         "minaduki"
+         minaduki-wikilink::type
          :follow #'minaduki-wikilink:follow)
         (org-link-set-parameters
          "minaduki-btn"
