@@ -433,10 +433,10 @@ List of (DISPLAY-NAME . COMMAND) pairs.")
   "Local commands that are specific to Org Mode.")
 
 (defvar minaduki::local-commands::lit
-  '(("Open URL, DOI, or PDF" . minaduki/visit-source)
-    ("Show entry in the bibliography file" . minaduki/show-entry)
-    ("Edit notes" . minaduki:lit-entry-edit-notes)
-    ("Copy citekey" . minaduki/copy-citekey)
+  '(("Open URL, DOI, or PDF" . minaduki:visit-citekey-source)
+    ("Show entry in the bibliography file" . minaduki:citekey-show-entry)
+    ("Edit notes" . minaduki:edit-citekey-notes)
+    ("Copy citekey" . minaduki:copy-citekey)
     ("Insert citation" . minaduki:insert-citation)
     ("Insert link to associated notes" . minaduki:insert-note-to-citekey))
   "Commands useful inside a literature note.

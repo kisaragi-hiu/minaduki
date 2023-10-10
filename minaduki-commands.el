@@ -755,7 +755,7 @@ This function hooks into `org-open-at-point' via
 
 ;; TODO: Please tear the org-capture-based method of specifying where
 ;; files should go apart.
-(defun minaduki:lit-entry-edit-notes (citekey)
+(defun minaduki:edit-citekey-notes (citekey)
   "Open a note associated with the CITEKEY or create a new one.
 
 CITEKEY's information is extracted from files listed in
@@ -815,7 +815,7 @@ process."
        (org-cite-insert nil)))
     (_ (insert "@" citekey))))
 
-(defun minaduki/copy-citekey (citekey)
+(defun minaduki:copy-citekey (citekey)
   "Save note's citation key to `kill-ring' and copy it to clipboard.
 CITEKEY is a list whose car is a citation key."
   (with-temp-buffer
@@ -823,7 +823,7 @@ CITEKEY is a list whose car is a citation key."
     (copy-region-as-kill (point-min) (point-max)))
   (message "Copied \"%s\"" citekey))
 
-(defun minaduki/visit-source (citekey)
+(defun minaduki:visit-citekey-source (citekey)
   "Visit the source (URL, file path, DOI...) of CITEKEY."
   (let ((entry (minaduki-db::fetch-lit-entry citekey))
         sources)
@@ -836,7 +836,7 @@ CITEKEY is a list whose car is a citation key."
       (t (browse-url
           (completing-read "Which one: " sources nil t))))))
 
-(defun minaduki/show-entry (citekey)
+(defun minaduki:citekey-show-entry (citekey)
   "Go to where CITEKEY is defined."
   (let ((entry (minaduki-db::fetch-lit-entry citekey)))
     (minaduki::find-file (minaduki-lit-entry-file entry))
@@ -1011,7 +1011,7 @@ This first adds an entry for it into a file in
     ;; Save the buffer
     (basic-save-buffer)
     (-when-let (citekey (plist-get info :citekey))
-      (minaduki:lit-entry-edit-notes citekey))))
+      (minaduki:edit-citekey-notes citekey))))
 
 ;;;; Actions
 
