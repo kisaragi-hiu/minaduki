@@ -774,20 +774,18 @@ process."
           (puthash "=type=" (gethash "type" props) props)
           (remhash "type" props)
           (setq props (map-into props 'alist))
-          (if-let* ((citekey-formatted
-                     (format (or orb-citekey-format "%s") citekey))
-                    (title
+          (if-let* ((title
                      (or (cdr (assoc "title" props))
                          (minaduki::warn :warning "Title not found for this entry")
                          ;; this is not critical, the user may input their own
                          ;; title
                          "Title not found")))
               (progn
-                (let* ((slug-source (cl-case orb-slug-source
-                                      (citekey citekey)
-                                      (title title)
-                                      (t (user-error "`orb-slug-source' can only be `citekey' or `title'"))))
-                       (slug (minaduki::title-to-slug slug-source)))
+                (let ((slug (minaduki::title-to-slug
+                             (pcase minaduki-lit:slug-source
+                               (`citekey citekey)
+                               (`title title)
+                               (_ (user-error "`minaduki-lit:slug-source' can only be `citekey' or `title'"))))))
                   (minaduki/open
                    (minaduki-node
                     :path (f-join minaduki/literature-notes-directory (format "%s.org" slug))))
@@ -796,7 +794,7 @@ process."
                           (minaduki-templates:get "literature")
                           nil
                           :title title
-                          :ref citekey-formatted
+                          :ref citekey
                           :slug slug
                           (let ((extra-props nil))
                             (pcase-dolist (`(,key . ,value) props)

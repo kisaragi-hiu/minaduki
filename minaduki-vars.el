@@ -357,15 +357,10 @@ This can be set in a directory local variable."
   :safe (lambda (x)
           (memq x '(relative absolute absolute-in-vault))))
 
-;;;;; org-roam-bibtex
+;;;;; bibtex
 
-(defcustom orb-citekey-format "%s"
-  "Format string for the citekey when capturing new ref notes."
-  :type 'string
-  :group 'minaduki-bibtex)
-
-(defcustom orb-slug-source 'citekey
-  "What should be used as a source for creating the note's slug.
+(defcustom minaduki-lit:slug-source 'citekey
+  "How a note's slug should be created.
 Supported values are symbols `citekey' and `title'.
 
 A special variable `%:slug` in the \"literature\" template is
