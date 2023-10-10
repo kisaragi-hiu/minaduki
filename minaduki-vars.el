@@ -366,7 +366,7 @@ Supported values are symbols `citekey' and `title'.
 A special variable `%:slug` in the \"literature\" template is
 used as a placeholder for an automatically generated string which
 is meant to be used in filenames. This can be based on the
-citekey or the title. `minaduki::title-to-slug' is used to create
+citekey or the title. `minaduki::to-slug' is used to create
 the slug."
   :type '(choice
           (const citekey)

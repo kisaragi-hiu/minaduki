@@ -349,7 +349,7 @@ If ID? is non-nil and we're in Org mode, return an ID link instead."
       ;; No common way to insert descriptions
       (_ target))))
 
-(defun minaduki::title-to-slug (title)
+(defun minaduki::to-slug (title)
   "Convert TITLE to a filename-suitable slug."
   (let ((slug
          (--> title

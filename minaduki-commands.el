@@ -514,7 +514,7 @@ If VISIT? is non-nil, go to the newly created note."
   (interactive
    (list :title (read-string "Title: ")
          :visit? t))
-  (let* ((file (-> (minaduki::title-to-slug title)
+  (let* ((file (-> (minaduki::to-slug title)
                    (f-expand (minaduki-vault:main))
                    (concat ".org")))
          (org-capture-templates
@@ -781,7 +781,7 @@ process."
                          ;; title
                          "Title not found")))
               (progn
-                (let ((slug (minaduki::title-to-slug
+                (let ((slug (minaduki::to-slug
                              (pcase minaduki-lit:slug-source
                                (`citekey citekey)
                                (`title title)

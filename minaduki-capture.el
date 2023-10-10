@@ -615,7 +615,7 @@ Arguments GOTO and KEYS see `org-capture'."
          (title (or (plist-get res :title) title-with-keys))
          (file-path (plist-get res :path)))
     (let ((minaduki-capture//info (list (cons 'title title)
-                                        (cons 'slug (minaduki::title-to-slug title))
+                                        (cons 'slug (minaduki::to-slug title))
                                         (cons 'file file-path)))
           (minaduki-capture//context 'capture))
       (condition-case err

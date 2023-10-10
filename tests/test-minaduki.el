@@ -277,21 +277,21 @@ members that should be equal."
             :to-equal
             '(1 2 2012)))
   (it "converts a title to a slug"
-    (expect (minaduki::title-to-slug "English")
+    (expect (minaduki::to-slug "English")
             :to-equal "english")
-    (expect (minaduki::title-to-slug "Text with space と漢字")
+    (expect (minaduki::to-slug "Text with space と漢字")
             :to-equal "text-with-space-と漢字")
-    (expect (minaduki::title-to-slug "many____underscores")
+    (expect (minaduki::to-slug "many____underscores")
             :to-equal "many-underscores")
     ;; Keep diacritics
-    (expect (minaduki::title-to-slug "äöü")
+    (expect (minaduki::to-slug "äöü")
             :to-equal "äöü")
     ;; Normalizes to composed from
-    (expect (minaduki::title-to-slug (string ?て #x3099))
+    (expect (minaduki::to-slug (string ?て #x3099))
             :to-equal (string ?で))
-    (expect (minaduki::title-to-slug "_starting and ending_")
+    (expect (minaduki::to-slug "_starting and ending_")
             :to-equal "starting-and-ending")
-    (expect (minaduki::title-to-slug "isn't alpha numeric")
+    (expect (minaduki::to-slug "isn't alpha numeric")
             :to-equal "isn-t-alpha-numeric"))
   (describe "list-files"
     (it "using pure elisp"
