@@ -433,6 +433,10 @@ List of (DISPLAY-NAME . COMMAND) pairs.")
     ("Delete a tag"                  . minaduki-delete-tag))
   "Local commands that act on the current file or heading.")
 
+(defvar minaduki::local-commands::org
+  '(("Export current heading to a file" . minaduki/org-heading-to-file))
+  "Local commands that are specific to Org Mode.")
+
 (defvar minaduki::literature-note-actions
   '(("Open URL, DOI, or PDF" . minaduki/visit-source)
     ("Show entry in the bibliography file" . minaduki/show-entry)

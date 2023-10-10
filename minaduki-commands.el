@@ -1050,12 +1050,15 @@ given or can be retrieved, actions from
                           (t (car (minaduki-extract/main-title))))))
          (candidates (-sort
                       (-on #'string< #'car)
-                      `(,@minaduki::local-commands
-                        ,@(when citekey
-                            minaduki::literature-note-actions)
-                        ,@(when (member (buffer-file-name)
-                                        (minaduki-lit:bibliography))
-                            minaduki::bibliography-commands))))
+                      (append
+                       minaduki::local-commands
+                       (when citekey
+                         minaduki::literature-note-actions)
+                       (when (member (buffer-file-name)
+                                     (minaduki-lit:bibliography))
+                         minaduki::bibliography-commands)
+                       (when (derived-mode-p 'org-mode)
+                         minaduki::local-commands::org))))
          (selection (completing-read prompt candidates))
          (func (cdr (assoc selection candidates))))
     (if (/= 1 (car (func-arity func)))
