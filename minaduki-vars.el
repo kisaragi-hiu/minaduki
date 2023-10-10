@@ -437,7 +437,7 @@ List of (DISPLAY-NAME . COMMAND) pairs.")
   '(("Export current heading to a file" . minaduki/org-heading-to-file))
   "Local commands that are specific to Org Mode.")
 
-(defvar minaduki::literature-note-actions
+(defvar minaduki::local-commands::lit
   '(("Open URL, DOI, or PDF" . minaduki/visit-source)
     ("Show entry in the bibliography file" . minaduki/show-entry)
     ("Edit notes" . minaduki:lit-entry-edit-notes)
@@ -451,7 +451,7 @@ one argument, the citekey.
 
 Equivalent to `orb-note-actions-default'.")
 
-(defvar minaduki::bibliography-commands
+(defvar minaduki::local-commands::biblio
   '(("Create bibliography ID for current heading" . minaduki-lit:literature-key-get-create)
     ("Fill in information and turn current heading into a literature entry"
      .

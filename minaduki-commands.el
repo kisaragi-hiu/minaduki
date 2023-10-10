@@ -1036,7 +1036,7 @@ multiple keys, the user is asked to select one.
 
 Actions are defined in `minaduki::local-commands'. If CITEKEY is
 given or can be retrieved, actions from
-`minaduki::literature-note-actions' are also used."
+`minaduki::local-commands::lit' are also used."
   (interactive)
   (let* ((citekey (or citekey
                       (minaduki-lit::literature-key-at-point)
@@ -1053,10 +1053,10 @@ given or can be retrieved, actions from
                       (append
                        minaduki::local-commands
                        (when citekey
-                         minaduki::literature-note-actions)
+                         minaduki::local-commands::lit)
                        (when (member (buffer-file-name)
                                      (minaduki-lit:bibliography))
-                         minaduki::bibliography-commands)
+                         minaduki::local-commands::biblio)
                        (when (derived-mode-p 'org-mode)
                          minaduki::local-commands::org))))
          (selection (completing-read prompt candidates))
