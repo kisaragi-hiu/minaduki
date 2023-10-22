@@ -378,10 +378,10 @@ Links in titles are removed."
       (dolist (group backlink-groups)
         ;; Each group looks like:
         ;; (GROUP (FILE-FROM FILE-TO PROPS))
-        ;; Where PROPS is a plist of props.
+        ;; Where PROPS is a hash table.
         (setq file-from (car group))
         (setq props (mapcar (lambda (row) (nth 2 row)) (cdr group)))
-        (setq props (seq-sort-by (lambda (p) (plist-get p :point)) #'< props))
+        (setq props (seq-sort-by (lambda (p) (map-elt p "point")) #'< props))
         (insert "\n\n** "
                 ;; title link
                 (minaduki::format-link :target file-from
