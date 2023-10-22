@@ -96,7 +96,7 @@ Interactively, please use the transient command instead."
   (when (and (minaduki-vault:in-vault?)
              (not (eq minaduki-db/update-method 'immediate))
              (not (minaduki-capture/p)))
-    (minaduki-db:update)))
+    (minaduki-db::incremental-update)))
 
 (defun minaduki-org//move-to-row-col (s)
   "Move to row:col if S match the row:col syntax.

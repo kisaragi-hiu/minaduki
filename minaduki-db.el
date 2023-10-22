@@ -723,15 +723,16 @@ clearning existing file entries."
           :link-count link-count
           :ref-count ref-count
           :lit-count lit-count)))
-(defun minaduki-db:update ()
+(defun minaduki-db::incremental-update ()
   "Update the database."
-  (pcase minaduki-db/update-method
-    ('immediate
-     (minaduki-db:update-file (buffer-file-name (buffer-base-buffer))))
-    ('idle-timer
-     (minaduki-db::file-update-timer::mark-dirty))
-    (_
-     (user-error "Invalid `minaduki-db/update-method'"))))
+  (let ((inhibit-message save-silently))
+    (pcase minaduki-db/update-method
+      ('immediate
+       (minaduki-db:update-file (buffer-file-name (buffer-base-buffer))))
+      ('idle-timer
+       (minaduki-db::file-update-timer::mark-dirty))
+      (_
+       (user-error "Invalid `minaduki-db/update-method'")))))
 
 (provide 'minaduki-db)
 

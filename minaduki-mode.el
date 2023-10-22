@@ -262,7 +262,7 @@ When NEW-FILE-OR-DIR is a directory, we use it to compute the new file path."
             (f-slash
              (minaduki-vault-path vault)))))
   (add-hook 'post-command-hook #'minaduki-buffer//update-maybe nil t)
-  (add-hook 'after-save-hook #'minaduki-db:update nil t)
+  (add-hook 'after-save-hook #'minaduki-db::incremental-update nil t)
   (dolist (fn '(minaduki-completion/tags-at-point
                 minaduki-completion/everywhere))
     (add-hook 'completion-at-point-functions fn nil t))
