@@ -45,31 +45,21 @@ is meant to be edited, so this should not be set to non-nil globally.")
   "Return values of the file level property PROP as a list."
   (pcase (minaduki::file-type)
     ('markdown
-     (save-excursion
-       (goto-char (point-min))
-       ;; FIXME: extract this into a `with-front-matter' macro
-       (-when-let* ((start
-                     ;; The beginning of the frontmatter, which has to be at the
-                     ;; beginning of the buffer (before char position 4).
-                     (re-search-forward "^---$" 4 t))
-                    (end
-                     ;; The end of the frontmatter
-                     (re-search-forward "^---$" nil t)))
-         (setq end (- end (length "---")))
-         ;; TODO: We might have to fold cases here ourselves;
-         ;; `case-fold-search' obviously does not affect `equal'
-         (unless minaduki-extract::file-prop::use-cache
-           (setq minaduki-extract::file-prop::cache nil))
-         (ensure-list
-          (map-elt
-           (or minaduki-extract::file-prop::cache
-               (setq
-                minaduki-extract::file-prop::cache
-                (yaml-parse-string
-                 (buffer-substring-no-properties start end)
-                 :object-key-type 'string
-                 :sequence-type 'list)))
-           prop)))))
+     (minaduki::with-front-matter
+       ;; TODO: We might have to fold cases here ourselves;
+       ;; `case-fold-search' obviously does not affect `equal'
+       (unless minaduki-extract::file-prop::use-cache
+         (setq minaduki-extract::file-prop::cache nil))
+       (ensure-list
+        (map-elt
+         (or minaduki-extract::file-prop::cache
+             (setq
+              minaduki-extract::file-prop::cache
+              (yaml-parse-string
+               (buffer-string)
+               :object-key-type 'string
+               :sequence-type 'list)))
+         prop))))
     ('org
      ;; ((key . (val val val val)))
      (let ((values (cdar (org-collect-keywords (list prop)))))
@@ -619,19 +609,8 @@ Tags are specified like this at the beginning of the buffer:
     ---
     tags: #tag1 #tag-with-hyphen #tag_with_underscore
     ---"
-  (save-excursion
-    (goto-char (point-min))
-    ;; FIXME: extract this into a `with-front-matter' macro
-    (-when-let* ((start
-                  ;; The beginning of the frontmatter, which has to be at the
-                  ;; beginning of the buffer (before char position 4).
-                  (re-search-forward "^---$" 4 t))
-                 (end
-                  ;; The end of the frontmatter
-                  (re-search-forward "^---$" nil t)))
-      (save-restriction
-        (narrow-to-region start end)
-        (minaduki-extract//tags/hashtag)))))
+  (minaduki::with-front-matter
+    (minaduki-extract//tags/hashtag)))
 
 (defun minaduki-extract/tags (&optional file)
   "Extract file tags from the current buffer.

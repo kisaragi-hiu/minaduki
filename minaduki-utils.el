@@ -528,6 +528,28 @@ ARGS and BODY are as in `lambda'."
      (setq self (lambda ,args ,@body))
      self))
 
+(cl-defmacro minaduki::with-front-matter (&rest body)
+  "Run BODY with the buffer narrowed to the front matter, if any."
+  (declare (indent 0))
+  (cl-with-gensyms (start end)
+    `(save-excursion
+       (goto-char (point-min))
+       (let (,start ,end)
+         ;; The beginning of the frontmatter, which has to be at the beginning
+         ;; of the buffer (before char position 4).
+         (setq ,start (re-search-forward "^---$" 4 t))
+         ;; The end of the frontmatter
+         (setq ,end (re-search-forward "^---$" nil t))
+         (when (and ,start ,end)
+           (save-restriction
+             (narrow-to-region
+              ,start
+              ;; `end' is after the "---", so the region between `start' and
+              ;; `end' right now includes the ending marker. Subtracting like
+              ;; this excludes it.
+              (- ,end (length "---")))
+             ,@body))))))
+
 (defun minaduki::file-content (file)
   "Return the decoded content of FILE."
   (minaduki::with-temp-buffer file
