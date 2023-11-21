@@ -603,7 +603,7 @@ If FORCE, force a rebuild of the cache from scratch."
          (org-agenda-files nil)
          (minaduki-extract::file-prop::use-cache t)
          (deleted-count 0)
-         dir-files db-files count-plist modified-files)
+         dir-files db-files counts modified-files)
     (setq dir-files (minaduki-vault:all-files)
           db-files (minaduki-db::fetch-all-files-hash))
     (setq modified-files
@@ -614,16 +614,20 @@ If FORCE, force a rebuild of the cache from scratch."
       ;; These files are no longer around, remove from cache...
       (minaduki-db::clear-file file)
       (cl-incf deleted-count))
-    (setq count-plist (minaduki-db::update-files modified-files force))
-    (let* ((error-count (plist-get count-plist :error-count)))
-      (if (> error-count 0)
-          (minaduki::message
-           "Updated cache for %s file(s). There are %s errors, please check *Warnings*"
-           (hash-table-count db-files)
-           error-count)
-        (minaduki::message
-         "Updated cache for %s file(s)"
-         (hash-table-count db-files))))))
+    (setq counts (minaduki-db::update-files modified-files force))
+    (pcase-let (((cl-struct minaduki-db::count
+                            (modified modified-count)
+                            (err error-count))
+                 counts))
+      (cond ((> error-count 0)
+             (minaduki::message
+              "Updated cache for %s file(s). There are %s errors, please check *Warnings*"
+              modified-count
+              error-count))
+            ((= modified-count 0)
+             (minaduki::message "Cache is up to date"))
+            (t
+             (minaduki::message "Updated cache for %s file(s)" modified-count))))))
 ;; TODO: what's the difference between this and the private version?
 (defun minaduki-db:update-file (file-path)
   "Update cache for FILE-PATH.
@@ -636,12 +640,18 @@ If the file exists, update the cache with information."
         (puthash file-path content-hash files-table)
         (minaduki-db::update-files files-table))
       (minaduki::message "Updated: %s" file-path))))
+(cl-defstruct (minaduki-db::count
+               (:copier nil)
+               (:constructor minaduki-db::count))
+  err modified id link ref lit)
 (defun minaduki-db::update-files (files-table &optional rebuild)
   "Update cache for files in FILES-TABLE.
 
 FILES-TABLE is a hash table mapping file names to hash values.
 REBUILD signals that the DB is empty right now and we should skip
-clearning existing file entries."
+clearning existing file entries.
+
+Returns a `minaduki-db::count' object."
   (let ((files (hash-table-keys files-table))
         (len (hash-table-count files-table))
         (error-count 0)
@@ -716,13 +726,12 @@ clearning existing file entries."
              "Error while processing links:\n%s"
              (list :file file :error e)))))
       (progress-reporter-done rep))
-
-    (list :error-count error-count
-          :modified-count modified-count
-          :id-count id-count
-          :link-count link-count
-          :ref-count ref-count
-          :lit-count lit-count)))
+    (minaduki-db::count :err error-count
+                        :modified modified-count
+                        :id id-count
+                        :link link-count
+                        :ref ref-count
+                        :lit lit-count)))
 (defun minaduki-db::incremental-update ()
   "Update the database."
   (let ((inhibit-message save-silently))
