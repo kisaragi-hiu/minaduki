@@ -416,7 +416,7 @@ descriptive warnings when certain operations fail (e.g. parsing).")
 List of (DISPLAY-NAME . COMMAND) pairs.")
 
 (defvar minaduki::local-commands
-  '(("Create ID for current heading" . minaduki:id)
+  '(("Create ID for current heading" . minaduki:id-get-create)
     ("Move file to..."               . minaduki:move-file-to-directory)
     ("Insert a button"               . minaduki-btn:insert)
     ("Insert a link"                 . minaduki:insert)

@@ -161,7 +161,7 @@ open in another window instead of in the current one."
   #'minaduki-buffer/toggle-display)
 
 ;; TODO: Specify what you want with a C-u; reject existing IDs
-(defun minaduki:id ()
+(defun minaduki:id-get-create ()
   "Assign an ID to the current heading if it doesn't have one yet.
 
 Return the new ID."
@@ -291,7 +291,7 @@ REPLACE-REGION?: whether to replace selected text."
                  (buffer-substring-no-properties (point) (point-max))))))
       (let ((id (save-excursion
                   (goto-char (minaduki-id-point selected-heading))
-                  (prog1 (minaduki:id)
+                  (prog1 (minaduki:id-get-create)
                     ;; Save it into the file & the DB so that the
                     ;; newly inserted link will not be highlighted as
                     ;; an invalid link.
