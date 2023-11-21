@@ -142,20 +142,6 @@ FILE-FROM to the key."
            (hash-table-p org-id-locations)
            (gethash id org-id-locations))))
 
-(defun minaduki-extract::markdown-matched-heading (&optional skip-match)
-  "Return (ID TEXT LEVEL) for the current heading.
-
-If SKIP-MATCH is non-nil, assume the caller has already matched
-on `markdown-regex-header.'"
-  (when (or skip-match
-            (save-excursion
-              (and (outline-back-to-heading)
-                   (looking-at markdown-regex-header))))
-    (-let* ((whole (or (match-string-no-properties 1)
-                       (match-string-no-properties 5)))
-            ((_ text id) (s-match "\\(.*\\) {#\\(.*?\\)}" whole)))
-      (list id text (markdown-outline-level)))))
-
 (defun minaduki-extract//org-links (file-from)
   "Extract links in current buffer in Org mode format ([[target][desc]]).
 
@@ -350,7 +336,7 @@ headings with an ID are cached (extracted with
       ('markdown
        (goto-char (point-min))
        (while (re-search-forward markdown-regex-header nil t)
-         (-let* (((id text level) (minaduki-extract::markdown-matched-heading t)))
+         (-let* (((id text level) (minaduki::markdown-matched-heading t)))
            (push (minaduki-id :id id
                               :file file-path
                               :level level
@@ -420,7 +406,7 @@ Return a list of `minaduki-id' objects."
       ('markdown
        (goto-char (point-min))
        (while (re-search-forward markdown-regex-header nil t)
-         (-when-let* (((id text level) (minaduki-extract::markdown-matched-heading t)))
+         (-when-let* (((id text level) (minaduki::markdown-matched-heading t)))
            (push (minaduki-id :id id
                               :file file-path
                               :level level

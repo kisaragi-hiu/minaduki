@@ -533,7 +533,26 @@ ARGS and BODY are as in `lambda'."
   (minaduki::with-temp-buffer file
     (buffer-string)))
 
-;;;; Org mode local functions
+;;;; Markdown local functions
+
+(defun minaduki::markdown-matched-heading
+    (&optional skip-match skip-outline-level)
+  "Return (ID TEXT LEVEL) for the current heading.
+
+If SKIP-MATCH is non-nil, assume the caller has already matched
+on `markdown-regex-header'.
+If SKIP-OUTLINE-LEVEL is non-nil, don't calculate outline level."
+  (when (or skip-match
+            (save-excursion
+              (and (outline-back-to-heading)
+                   (looking-at markdown-regex-header))))
+    (-let* ((whole (or (match-string-no-properties 1)
+                       (match-string-no-properties 5)))
+            ((_ text id) (s-match "\\(.*\\) {#\\(.*?\\)}" whole)))
+      (list id text (and (not skip-outline-level)
+                         (markdown-outline-level))))))
+
+;;;; Shared local functions
 
 ;; Alternative to `org-get-outline-path' that doesn't break
 (defun minaduki::get-outline-path ()
@@ -586,6 +605,31 @@ If the property is already set, it's value is replaced."
             (forward-line)
             (beginning-of-line)))
         (insert "#+" name ": " value "\n")))))
+
+(defun minaduki::get-heading-id ()
+  "Return the ID of the current heading."
+  (pcase (minaduki::file-type)
+    ('markdown
+     (car (minaduki::markdown-matched-heading nil t)))
+    ('org (org-id-get))))
+
+(defun minaduki::set-heading-id (new-id &optional force)
+  "Set the ID of the current heading to NEW-ID if it\\='s not set yet.
+If FORCE is non-nil, overwrite the current value, if any.
+Returns NEW-ID."
+  (cl-block nil
+    (unless force
+      (when (minaduki::get-heading-id)
+        (cl-return nil)))
+    (pcase (minaduki::file-type)
+      ('markdown
+       (save-excursion
+         (outline-back-to-heading)
+         (end-of-line)
+         (insert (format " {#%s}" new-id))))
+      ('org
+       (org-entry-put nil "ID" new-id)))
+    new-id))
 
 (defun minaduki::collate-types (type)
   "Collate TYPE into a parent type."

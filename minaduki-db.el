@@ -393,6 +393,9 @@ When NOCASE? is non-nil, match case-insentively.
                    id))))
     (when row
       (apply #'record 'minaduki-id row))))
+(defun minaduki-db::has-id? (id)
+  "Return whether ID is in the cache."
+  (not (not (minaduki-db-select '("SELECT id FROM ids WHERE id = ?") id))))
 
 (defun minaduki-db::fetch-lit-entry (key)
   "Return a `minaduki-lit-entry' object for KEY."

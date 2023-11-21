@@ -160,25 +160,22 @@ open in another window instead of in the current one."
 (defalias 'minaduki:toggle-sidebar
   #'minaduki-buffer/toggle-display)
 
-;; TODO: Specify what you want with a C-u; reject existing IDs
-(defun minaduki:id-get-create ()
-  "Assign an ID to the current heading if it doesn't have one yet.
+(defun minaduki:id-get-create (&optional new-id)
+  "Return the ID to the current heading.
 
-Return the new ID."
-  (interactive)
-  (pcase (minaduki::file-type)
-    ('markdown
-     (-let (((id) (minaduki-extract::markdown-matched-heading)))
-       (if id
-           id
-         (save-excursion
-           (outline-back-to-heading)
-           (end-of-line)
-           (let ((id (org-id-new)))
-             (insert (format " {#%s}" id))
-             id)))))
-    ('org
-     (org-id-get-create))))
+If it doesn't have one yet, assign a generated one.
+
+If NEW-ID is non-nil, assign NEW-ID to be the ID of the heading,
+overwriting the existing one if necessary."
+  (interactive
+   (when current-prefix-arg
+     (list (read-string "New ID: "))))
+  (when (and new-id (minaduki-db::has-id? new-id))
+    (error "ID `%s' already exists in the database" new-id))
+  (if new-id
+      (minaduki::set-heading-id new-id)
+    (or (minaduki::get-heading-id)
+        (minaduki::set-heading-id (org-id-new)))))
 
 (cl-defun minaduki:insert (&key entry lowercase? replace-region?)
   "Insert a link to a note.
