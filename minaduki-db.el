@@ -552,6 +552,11 @@ correspond to the TO field in the cache DB."
     (-uniq acc)))
 
 ;; Updating
+(cl-defstruct (minaduki-db::count
+               (:copier nil)
+               (:constructor minaduki-db::count))
+  err modified id link ref lit)
+
 (defun minaduki-db::update-file (&optional file-path)
   "Update cache for FILE-PATH.
 If the file does not exist anymore, remove it from the cache.
@@ -643,10 +648,6 @@ If the file exists, update the cache with information."
         (puthash file-path content-hash files-table)
         (minaduki-db::update-files files-table))
       (minaduki::message "Updated: %s" file-path))))
-(cl-defstruct (minaduki-db::count
-               (:copier nil)
-               (:constructor minaduki-db::count))
-  err modified id link ref lit)
 (defun minaduki-db::update-files (files-table &optional rebuild)
   "Update cache for files in FILES-TABLE.
 
