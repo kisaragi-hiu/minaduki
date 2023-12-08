@@ -251,7 +251,8 @@ This is active when `minaduki:completion-everywhere' is non-nil."
                  (completion-table-case-fold it (not minaduki:ignore-case-during-completion)))
             :exit-function (lambda (str _status)
                              (delete-char (- (length str)))
-                             (insert "[[roam:" str "]]"))))))
+                             (insert (org-link-make-string
+                                      (format "%s:%s" minaduki-wikilink::type str))))))))
 
 (defun minaduki-completion/tags-at-point ()
   "`completion-at-point' function for Org-roam tags."

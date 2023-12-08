@@ -35,11 +35,6 @@
 
 (declare-function minaduki/open "minaduki-commands" (&optional entry))
 
-(defconst minaduki-wikilink::type "minaduki"
-  "The link type for Minaduki Org wikilinks.
-
-The \"minaduki\" in an Org wikilink like \"[[minaduki:title here]]\".")
-
 (defun minaduki-wikilink:follow (_path)
   "Follow a minaduki: wikilink.
 This function is called by Org when following links of the type

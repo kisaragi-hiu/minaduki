@@ -453,6 +453,11 @@ Equivalent to `orb-note-actions-default'.")
      minaduki-lit:fill-entry-info))
   "Local commands in bibliography files.")
 
+(defconst minaduki-wikilink::type "minaduki"
+  "The link type for Minaduki Org wikilinks.
+
+The \"minaduki\" in an Org wikilink like \"[[minaduki:title here]]\".")
+
 ;;;; Faces
 (defface minaduki-link
   '((t :inherit org-link))
