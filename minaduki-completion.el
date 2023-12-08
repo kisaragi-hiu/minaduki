@@ -255,10 +255,13 @@ This is active when `minaduki:completion-everywhere' is non-nil."
                                       (format "%s:%s" minaduki-wikilink::type str))))))))
 
 (defun minaduki-completion/tags-at-point ()
-  "`completion-at-point' function for Org-roam tags."
+  "`completion-at-point' function for in-buffer tags."
   (let ((end (point))
         (start (point)))
-    (when (looking-back "^#\\+roam_tags:.*" (line-beginning-position))
+    (when (looking-back (rx bol
+                            "#+" (or "roam_tags" "tags[]") ":"
+                            (zero-or-more nonl))
+                        (line-beginning-position))
       (when (looking-at "\\>")
         (setq start (save-excursion
                       (skip-syntax-backward "w")
