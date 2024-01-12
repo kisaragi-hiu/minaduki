@@ -461,12 +461,8 @@ Return a list of `minaduki-id' objects."
        (-some-> (car (minaduki-extract//file-prop "title"))
          list))
       ('markdown
-       (let ((prop (car (minaduki-extract//file-prop "title"))))
-         ;; In Obsidian, the main title is the file name.
-         (cond ((minaduki-vault:in-obsidian-vault?)
-                (list (f-base (buffer-file-name))))
-               (prop
-                (list prop))))))))
+       (ensure-list
+        (car (minaduki-extract//file-prop "title")))))))
 
 (defun minaduki-extract/aliases ()
   "Return a list of aliases from the current buffer."
