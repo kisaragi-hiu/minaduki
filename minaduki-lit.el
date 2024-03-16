@@ -135,9 +135,12 @@ CONTEXT keys:
 
 (defun minaduki-lit/fetch-new-entry-from-url (url)
   "Fetch information from URL for a new entry."
-  (let (dom)
+  (let (dom url-parsed)
     (message "Retrieving entry from %s..." url)
-    (when-let ((buf (url-retrieve-synchronously url :silent)))
+    ;; This is needed to accept non-ASCII domain names
+    (setq url-parsed (url-generic-parse-url url))
+    (setf (url-host url-parsed) (puny-encode-domain (url-host url-parsed)))
+    (when-let ((buf (url-retrieve-synchronously url-parsed :silent)))
       ;; Extract the DOM first
       (with-current-buffer buf
         (decode-coding-region (point-min) (point-max) 'utf-8)
