@@ -117,7 +117,7 @@ ARG is whether the thing should be opened in another window."
              (minaduki-vault:in-vault? file))
     (minaduki-db::clear-file (expand-file-name file))))
 
-(defun minaduki-org::get-link-replacement (old-path new-path &optional old-desc new-desc)
+(defun minaduki::get-link-replacement (old-path new-path &optional old-desc new-desc)
   "Create replacement text for link at point if OLD-PATH is a match.
 Will update link to NEW-PATH. If OLD-DESC is set, and is not the
 same as the link description, it is assumed that the user has
@@ -135,7 +135,7 @@ updated. Else, update with NEW-DESC."
         (minaduki::format-link :target new-path
                               :desc new-label)))))
 
-(defun minaduki-org::replace-link (old-path new-path &optional old-desc new-desc)
+(defun minaduki::replace-link (old-path new-path &optional old-desc new-desc)
   "Replace Org-roam file links with path OLD-PATH to path NEW-PATH.
 If OLD-DESC is passed, and is not the same as the link
 description, it is assumed that the user has modified the
@@ -143,24 +143,26 @@ description, and the description will not be updated. Else,
 update with NEW-DESC."
   (org-with-point-at 1
     (while (re-search-forward org-link-bracket-re nil t)
-      (when-let ((link (save-match-data (minaduki-org::get-link-replacement old-path new-path old-desc new-desc))))
+      (when-let ((link (save-match-data (minaduki::get-link-replacement old-path new-path old-desc new-desc))))
         (replace-match link)))))
 
-(defun minaduki-org::fix-relative-links (old-path)
+(defun minaduki::fix-relative-links (old-path)
   "Fix file-relative links in current buffer.
 File relative links are assumed to originate from OLD-PATH. The
 replaced links are made relative to the current buffer."
-  (org-with-point-at 1
-    (let (link new-link type path)
-      (while (re-search-forward org-link-bracket-re nil t)
-        (when (setq link (save-match-data (org-element-lineage (org-element-context) '(link) t)))
-          (setq type (org-element-property :type link))
-          (setq path (org-element-property :path link))
-          (when (and (string= type "file")
-                     (f-relative-p path))
-            (setq new-link
-                  (concat type ":" (minaduki::convert-path-format (expand-file-name path (file-name-directory old-path)))))
-            (replace-match new-link nil t nil 1)))))))
+  (minaduki::file-type-case
+    (:org
+     (org-with-point-at 1
+       (let (link new-link type path)
+         (while (re-search-forward org-link-bracket-re nil t)
+           (when (setq link (save-match-data (org-element-lineage (org-element-context) '(link) t)))
+             (setq type (org-element-property :type link))
+             (setq path (org-element-property :path link))
+             (when (and (string= type "file")
+                        (f-relative-p path))
+               (setq new-link
+                     (concat type ":" (minaduki::convert-path-format (expand-file-name path (file-name-directory old-path)))))
+               (replace-match new-link nil t nil 1)))))))))
 
 (defun minaduki::rename-file-advice (old-file new-file-or-dir &rest _args)
   "Rename backlinks of OLD-FILE to refer to NEW-FILE-OR-DIR.
@@ -186,7 +188,7 @@ When NEW-FILE-OR-DIR is a directory, we use it to compute the new file path."
       (unless (string= (file-name-directory old-file)
                        (file-name-directory new-file))
         (minaduki::with-file new-file nil
-          (minaduki-org::fix-relative-links old-file)))
+          (minaduki::fix-relative-links old-file)))
       (when (minaduki-vault:in-vault? new-file)
         (minaduki-db::update-file new-file))
       ;; Replace links from old-file.org -> new-file.org in all Org-roam files with these links
@@ -195,7 +197,7 @@ When NEW-FILE-OR-DIR is a directory, we use it to compute the new file path."
                              new-file
                            (car file)))
               (minaduki::with-file file nil
-                (minaduki-org::replace-link old-file new-file)
+                (minaduki::replace-link old-file new-file)
                 (save-buffer)
                 (minaduki-db::update-file)))
             files-affected))))
