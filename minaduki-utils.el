@@ -65,9 +65,11 @@ distinguishing between a caller that does not want to use
    (pure nil)
    ;; only sends output through return value
    (side-effect-free t))
-  (when-let (pair (assoc (minaduki::file-name-extension path)
-                         minaduki-file-extension-type-alist))
-    (cdr pair)))
+  (let* ((ext (minaduki::file-name-extension path))
+         (pair (assoc ext minaduki-file-extension-type-alist)))
+    (if pair
+        (cdr pair)
+      (intern ext))))
 (defun minaduki::file-type ()
   "Return the file type of current buffer."
   (let ((case-fold-search t))
