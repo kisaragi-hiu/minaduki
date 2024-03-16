@@ -806,7 +806,7 @@ process."
 
 (defun minaduki:insert-citation (citekey)
   "Insert a citation to CITEKEY."
-  (pcase (minaduki::file-type)
+  (minaduki::file-type-case
     ('org
      (let ((minaduki-read:lit-entry::citekey citekey))
        (org-cite-insert nil)))
@@ -859,7 +859,7 @@ CITEKEY is a list whose car is a citation key."
 
 (defun minaduki-lit::literature-key-at-point ()
   "Return the key of the literature entry at point."
-  (pcase (minaduki::file-type)
+  (minaduki::file-type-case
     ('org
      (let ((value (org-entry-get nil minaduki-lit/key-prop t)))
        (when (and value
@@ -882,7 +882,7 @@ CITEKEY is a list whose car is a citation key."
   (interactive)
   (let ((key (minaduki-lit::literature-key-at-point)))
     (unless key
-      (pcase (minaduki::file-type)
+      (minaduki::file-type-case
         ('org
          (dolist (prop '("url" "author" "date"))
            (let ((value (pcase prop
@@ -908,7 +908,7 @@ Return the key."
   (interactive)
   (let ((key (minaduki-lit::literature-key-at-point)))
     (unless key
-      (pcase (minaduki::file-type)
+      (minaduki::file-type-case
         ('org
          (setq key
                (minaduki-lit::generate-key-from
@@ -950,7 +950,7 @@ This first adds an entry for it into a file in
                 (read-string "Create new literature entry for URL: "))))
     ;; Use find-file to ensure we save into it
     (find-file target-biblio)
-    (pcase (minaduki::file-type)
+    (minaduki::file-type-case
       ('org
        ;; Go to just before the first heading
        (goto-char (point-min))

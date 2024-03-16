@@ -99,11 +99,19 @@ members that should be equal."
 (buttercup-define-matcher-for-binary-function :to-equal/ht test-equal-ht)
 
 (describe "minaduki::file-type"
-  (it "checks file type"
+  (it "checks unregisted files"
     (expect (with-temp-buffer
-              (setq major-mode 'org-mode)
-              (minaduki::file-type))
-            :to-be 'org)
+              (setq buffer-file-name "hello.whatever")
+              (prog1 (minaduki::file-type)
+                (setq buffer-file-name nil)))
+            :to-be 'whatever)
+    (expect (with-temp-buffer
+              (setq buffer-file-name "hello.java"
+                    major-mode 'java-mode)
+              (prog1 (minaduki::file-type)
+                (setq buffer-file-name nil)))
+            :to-be 'java))
+  (it "checks registered types"
     (expect (with-temp-buffer
               (gfm-mode)
               (minaduki::file-type))

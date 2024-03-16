@@ -81,6 +81,27 @@ distinguishing between a caller that does not want to use
            (minaduki::file-type::path
             (buffer-file-name))))))
 
+(defmacro minaduki::file-type-case (&rest clauses)
+  "Run bodies in CLAUSES conditionally depending on `minaduki::file-type'.
+Each clause looks like (FILE-TYPE BODY...).
+
+This is roughly modeled after `cl-typecase', though each clause
+is more like a `cl-case' clause, except with the ability to match
+strings."
+  (declare (indent 0))
+  (cl-with-gensyms (type-sym)
+    (let ((conditions))
+      (--each clauses
+        (push `(,(car it)
+                ,@(cdr it))
+              conditions))
+      (setq conditions (nreverse conditions))
+      `(let ((,type-sym (minaduki::file-type)))
+         ;; HACK to get `cl-case' to match strings
+         (cl-letf (((symbol-function #'eql)
+                    (symbol-function #'equal)))
+           (cl-case ,type-sym ,@conditions))))))
+
 (defmacro minaduki::with-comp-setup (defaults &rest body)
   "Run BODY with completion frameworks set up according to DEFAULTS.
 
@@ -300,7 +321,7 @@ Inverse of `org-link-expand-abbrev'."
   "Format TARGET and DESC as a link according to the major mode.
 
 Like `minaduki::format-link' but without the path magic."
-  (pcase (minaduki::file-type)
+  (minaduki::file-type-case
     ('org
      (org-link-make-string target desc))
     ('markdown
@@ -325,7 +346,7 @@ If ID? is non-nil and we're in Org mode, return an ID link instead."
         ;; path.
         (target (org-link-decode
                  (replace-regexp-in-string "^file://" "" target))))
-    (pcase (minaduki::file-type)
+    (minaduki::file-type-case
       ('org
        (unless (or url? id?)
          (setq target (minaduki::convert-path-format target)))
