@@ -32,13 +32,13 @@
     (let ((current-file (buffer-file-name minaduki-buffer//current))
           (link-dest
            (minaduki::file-type-case
-             ('org (let* ((context (org-element-context))
+             (:org (let* ((context (org-element-context))
                           (type (org-element-property :type context))
                           (dest (org-element-property :path context)))
                      (pcase type
                        ("id" (minaduki-db::fetch-file :id dest))
                        (_ dest))))
-             ('markdown
+             (:markdown
               (when (markdown-link-p)
                 (let ((dest (markdown-link-url)))
                   (if (s-prefix? "#" dest)
@@ -292,7 +292,7 @@ When NEW-FILE-OR-DIR is a directory, we use it to compute the new file path."
                   '((:eval (minaduki:buffer-name-for-display))
                     " - GNU Emacs"))))
   (minaduki::file-type-case
-    ('org
+    (:org
      (add-hook 'before-save-hook #'minaduki-wikilink::replace-link-on-save nil t)
      (add-hook 'post-command-hook #'minaduki-org::buttonize-tags nil t)))
   (dolist (vault
@@ -324,11 +324,8 @@ when appropriate."
              for (suffix . cmd)
              in '(("n" . minaduki:local-commands)
                   ("l" . minaduki:toggle-sidebar))
-             do (define-key map
-                  (kbd (format "%s %s"
-                               minaduki-mode:command-prefix
-                               suffix))
-                  cmd))
+             do (let ((key (format "%s %s" minaduki-mode:command-prefix suffix)))
+                  (define-key map (kbd key) cmd)))
             map)
   (minaduki::local-mode-enable))
 
