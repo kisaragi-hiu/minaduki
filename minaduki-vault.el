@@ -124,6 +124,27 @@ EXECUTABLE is the Ripgrep executable."
         (push file result)))
     result))
 
+(defun minaduki-vault::search-files (dir regexp)
+  "Return files whose names match REGEXP within DIR.
+This relies on Find."
+  (with-temp-buffer
+    (let (prune-exprs exprs)
+      (dolist (folder '(".git" ".svn" "node_modules"))
+        (push (list "-name" folder) prune-exprs))
+      ;; -name .git -o -name node_modules ...
+      (setq prune-exprs (-flatten (-interpose "-o" prune-exprs)))
+      (setq exprs `("-not" "(" "(" ,@prune-exprs ")" "-prune" ")"
+                    ;; I can't use `rx' because it emits non-capturing groups
+                    ;; which find doesn't appear to support
+                    "-regex" ,(format ".*\\.\\(%s\\)\\(\\.\\(gpg\\|gz\\)\\)?"
+                                      (mapconcat #'regexp-quote minaduki-file-extensions "\\|"))
+                    "-regex" ,regexp))
+      (apply #'call-process "find" nil '(t nil) nil "-L" dir exprs))
+    (-some--> (buffer-string)
+      (s-split "\n" it :omit-nulls)
+      (-remove #'minaduki-vault:excluded? it)
+      (-map #'f-expand it))))
+
 (defun minaduki-vault::list-files (dir)
   "List tracked files in DIR.
 
@@ -286,12 +307,13 @@ VAULT is computed from `minaduki-vault:closest' if not given."
 (defun minaduki-obsidian-path (written)
   "Convert WRITTEN path to actual path."
   (cl-block nil
-    (let* ((closest-vault (minaduki-vault:closest))
-           (obsidian? (minaduki-vault:obsidian-vault? closest-vault))
-           files)
+    (let ((closest-vault (minaduki-vault:closest))
+          obsidian?
+          files)
       ;; Early return if we're not in a vault
       (unless closest-vault
         (cl-return))
+      (setq obsidian? (minaduki-vault:obsidian-vault? closest-vault))
       ;; Not just a base name -> just a local-absolute path
       (when
           (or
@@ -304,11 +326,10 @@ VAULT is computed from `minaduki-vault:closest' if not given."
         (unless obsidian?
           (setq written (org-link-expand-abbrev written)))
         (cl-return (f-join closest-vault written)))
-      (setq files (->> (minaduki-vault::list-files closest-vault)
-                       (--filter
-                        (let ((f (f-filename it)))
-                          (or (equal written f)
-                              (equal written (file-name-sans-extension f)))))))
+      (setq files
+            (minaduki-vault::search-files
+             closest-vault
+             (format ".*%s\\(\\..*\\)?" (regexp-quote written))))
       (cond
        ((= 0 (length files))
         (let ((attachment nil))
