@@ -164,7 +164,7 @@ Assume links come from FILE-FROM."
                                  (list file-from)))
                               ("cite" (list path))
                               ("website" (list path))
-                              ("fuzzy" (list path))
+                              ("fuzzy" (list (minaduki-obsidian-path path)))
                               ("roam" (list path))
                               (_ (if (or (file-remote-p path)
                                          (minaduki::url? path))
