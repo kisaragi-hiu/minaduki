@@ -67,9 +67,9 @@ distinguishing between a caller that does not want to use
    (side-effect-free t))
   (let* ((ext (minaduki::file-name-extension path))
          (pair (assoc ext minaduki-file-extension-type-alist)))
-    (if pair
-        (cdr pair)
-      (intern ext))))
+    (cond (pair (cdr pair))
+          (ext  (intern ext))
+          (t    nil))))
 (defun minaduki::file-type ()
   "Return the file type of current buffer."
   (let ((case-fold-search t))
