@@ -458,6 +458,19 @@ Equivalent to `orb-note-actions-default'.")
 
 The \"minaduki\" in an Org wikilink like \"[[minaduki:title here]]\".")
 
+(defconst minaduki--wikilink-regexp
+  "\\(?1:\\(?2:\\[\\[\\(?3:[^]|]+\\)\\(?:\\(?4:|\\)\\(?5:[^]]+\\)\\)?\\(?6:]]\\)\\)\\)"
+  "Regular expression for matching wiki links ([[target|desc]]).
+This is a copy of `markdown-regex-wiki-link' with the starting
+\"don't start after a backslash\" qualifier removed.
+
+Note that the order whether the description comes first or not is
+controlled by `markdown-wiki-link-alias-first'. Minaduki honors
+that variable.
+
+Old references to \"wikilinks\" being [[minaduki:title*heading]]
+links will be updated eventually.")
+
 ;;;; Faces
 (defface minaduki-link
   '((t :inherit org-link))

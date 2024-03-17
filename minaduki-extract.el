@@ -703,5 +703,68 @@ In Org mode, the keys are specified with the #+KEY keyword."
        car
        (list (cons "cite" it))))))
 
+;;; Links -> common link repr -> Links
+
+(cl-defstruct (minaduki-link (:copier nil)
+                             (:constructor minaduki-link))
+  desc to)
+
+(defun minaduki::link::write (link type)
+  "Write a `minaduki-link' LINK according to TYPE."
+  (pcase type
+    (:obsidian
+     (if (oref link desc)
+         (if markdown-wiki-link-alias-first
+             (format "[[%s|%s]]" (oref link desc) (oref link to))
+           (format "[[%s|%s]]" (oref link to) (oref link desc)))
+       (format "[[%s]]" (oref link to))))
+    (:org
+     (if (oref link desc)
+         (format "[[%s][%s]]" (oref link to) (oref link desc))
+       (format "[[%s]]" (oref link to))))
+    (:markdown
+     (if (oref link desc)
+         (format "[%s](%s)" (oref link desc) (oref link to))
+       (format "<%s>" (oref link to))))))
+(defun minaduki::link-markdown::parse ()
+  "Return a representation of the native Markdown link at point."
+  ;; Adadpted from `markdown-get-used-uris'
+  (when (looking-at (concat "\\(?:" markdown-regex-link-inline
+                            "\\|" markdown-regex-angle-uri
+                            "\\|" markdown-regex-uri
+                            "\\|" markdown-regex-email
+                            "\\)"))
+    (let ((to (or (match-string-no-properties 6)
+                  (match-string-no-properties 10)
+                  (match-string-no-properties 12)
+                  (match-string-no-properties 13)))
+          (desc (match-string-no-properties 3)))
+      (minaduki-link :to to :desc desc))))
+(defun minaduki::link-obsidian::parse ()
+  "Return a representation of the obsidian style link at point."
+  (when (looking-at minaduki--wikilink-regexp)
+    (let* ((first (match-string-no-properties 3))
+           (second (match-string-no-properties 5))
+           (desc
+            (if markdown-wiki-link-alias-first
+                first
+              second))
+           (to
+            ;; markdown-wiki-link-alias-first -> to = second || first
+            ;; !markdown-wiki-link-alias-first -> to = first
+            ;; "alias" = "desc", "PageName" = "target"
+            (if markdown-wiki-link-alias-first
+                (or second first)
+              first)))
+      (minaduki-link :to (minaduki-obsidian-path to) :desc desc))))
+(defun minaduki::link-org::parse ()
+  "Return a simple representation of an Org link at point."
+  (when (looking-at org-link-bracket-re)
+    (let* ((first (match-string-no-properties 1))
+           (second (match-string-no-properties 2))
+           (to first)
+           (desc second))
+      (minaduki-link :to (org-link-expand-abbrev to) :desc desc))))
+
 (provide 'minaduki-extract)
 ;;; minaduki-extract.el ends here

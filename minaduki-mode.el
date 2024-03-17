@@ -124,16 +124,35 @@ same as the link description, it is assumed that the user has
 modified the description, and the description will not be
 updated. Else, update with NEW-DESC."
   (minaduki::file-type-case
+    (:markdown
+     (let ((type :obsidian) link
+           label new-label)
+       (setq link (minaduki::link-obsidian::parse))
+       (unless link
+         (setq type :markdown)
+         (setq link (minaduki::link-markdown::parse)))
+       (when link
+         (when (equal (expand-file-name (oref link to))
+                      old-path)
+           (setq label (or (oref link desc)
+                           (oref link to)))
+           (setq new-label (if (equal label old-desc)
+                               new-desc
+                             label))
+           (minaduki::link::write
+            (minaduki-link :to new-path :desc new-label)
+            type)))))
     (:org
-     (let (path label new-label)
-       (when-let ((link (org-element-lineage (org-element-context) '(link) t)))
-         (setq path (org-element-property :path link))
-         (when (and (string-equal (expand-file-name path) old-path)
+     (let (label new-label)
+       (when-let (link (minaduki::link-org::parse))
+         (when (and (equal (expand-file-name (oref link to))
+                           old-path)
                     (org-in-regexp org-link-bracket-re 1))
-           (setq label (if (match-end 2)
-                           (match-string-no-properties 2)
-                         (org-link-unescape (match-string-no-properties 1))))
-           (setq new-label (if (string-equal label old-desc) new-desc label))
+           (setq label (or (oref link desc)
+                           (org-link-unescape (oref link to))))
+           (setq new-label (if (equal label old-desc)
+                               new-desc
+                             label))
            (minaduki::format-link :target new-path
                                   :desc new-label)))))))
 
@@ -143,14 +162,25 @@ If OLD-DESC is passed, and is not the same as the link
 description, it is assumed that the user has modified the
 description, and the description will not be updated. Else,
 update with NEW-DESC."
-  (minaduki::file-type-case
-    (:org
-     (org-with-wide-buffer
-      (goto-char 1)
-      (while (re-search-forward org-link-bracket-re nil t)
-        (when-let ((link (save-match-data (minaduki::get-link-replacement old-path new-path old-desc new-desc))))
-          (replace-match link)))))))
+  (org-with-wide-buffer
+   (goto-char 1)
+   (while (re-search-forward
+           (minaduki::file-type-case
+             (:org org-link-bracket-re)
+             (:markdown (concat "\\(?:" markdown-regex-link-inline
+                                "\\|" markdown-regex-angle-uri
+                                "\\|" markdown-regex-uri
+                                "\\|" markdown-regex-email
+                                "\\|" minaduki--wikilink-regexp
+                                "\\)"))
+             (t "^^"))
+           nil t)
+     (save-excursion
+       (goto-char (match-beginning 0))
+       (when-let ((link (save-match-data (minaduki::get-link-replacement old-path new-path old-desc new-desc))))
+         (replace-match link))))))
 
+;; TODO: markdown
 (defun minaduki::fix-relative-links (old-path)
   "Fix file-relative links in current buffer.
 File relative links are assumed to originate from OLD-PATH. The
