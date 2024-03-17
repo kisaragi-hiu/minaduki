@@ -97,7 +97,7 @@ file in a vault."
             (t
              'org-link)))))
 
-;;;; Hooks and advices
+;;;; Custom link following behavior
 (defun minaduki::a-markdown-follow (orig-func arg)
   "Use `minaduki-markdown-follow' to replace `markdown-follow-thing-at-point'.
 ORIG-FUNC is the original function.
@@ -113,6 +113,38 @@ ARG is whether the thing should be opened in another window."
         (minaduki-markdown-follow arg)
       (funcall orig-func arg))))
 
+(defun minaduki-org::h-open-wiki-link (target)
+  "`org-open-link-functions' handler for Obsidian-style wiki links in Org.
+TARGET is the link's target, as passed to `org-open-link-functions'."
+  (let ((resolved-path (minaduki-obsidian-path target)))
+    (minaduki::find-file resolved-path)))
+
+(defun minaduki-org::fuzzy-follow (target)
+  "A follow function that acts like Org [[plain]] links.
+
+This reads the link from the point position. TARGET is passed in
+by `org-link-open', which we\\='ll forward onto a request to open
+a fuzzy link.
+
+Minaduki overrides [[plain]] links as Markdown-style wiki links,
+so we need another way to access fuzzy link features.
+
+Minaduki binds this to [[f:<target>]]."
+  (let ((link (org-element-context))
+        (org-open-link-functions
+         (remove 'minaduki-org::h-open-wiki-link org-open-link-functions)))
+    (org-link-open
+     `(link (:type "fuzzy" :path ,target
+             :format bracket :raw-link ,target
+             :application nil :search-option nil
+             ;; This is needed by org-link-open, so forward it.
+             ;; (We don't need the buffer as it's the current buffer)
+             ;; HACK: the 2 is the length of "f:". By reporting the start as if
+             ;; the "f:" isn't there, org-link-open can continue to successfully
+             ;; prevent fuzzy links from matching themselves.
+             :begin ,(+ 2 (org-element-begin link)))))))
+
+;;;; Link replacement after deletion and rename
 (defun minaduki::a-delete-file (file &optional _trash)
   "Advice: as FILE is deleted, delete its cache entries as well."
   (when (and (not (auto-save-file-name-p file))
@@ -293,6 +325,10 @@ When NEW-FILE-OR-DIR is a directory, we use it to compute the new file path."
                     " - GNU Emacs"))))
   (minaduki::file-type-case
     (:org
+     ;; FIXME: org-open-link-functions happens before Org does the current
+     ;; buffer file search, and will override the target seeking behavior. This
+     ;; makes it somewhat unusable in this case.
+     (add-hook 'org-open-link-functions #'minaduki-org::h-open-wiki-link nil t)
      (add-hook 'before-save-hook #'minaduki-wikilink::replace-link-on-save nil t)
      (add-hook 'post-command-hook #'minaduki-org::buttonize-tags nil t)))
   (dolist (vault
@@ -369,12 +405,6 @@ See `minaduki-local-mode' for more information on Minaduki-Local mode."
                    #'org-cite-basic--complete-style))
         (setq org-cite-follow-processor 'minaduki
               org-cite-insert-processor 'minaduki)
-        (org-link-set-parameters
-         minaduki-wikilink::type
-         :follow #'minaduki-wikilink:follow)
-        (org-link-set-parameters
-         "minaduki-btn"
-         :follow #'minaduki-btn:follow)
         (add-hook 'after-change-major-mode-hook 'minaduki-initialize)
         (add-hook 'find-file-hook 'minaduki-initialize)
         (when (and (not minaduki-db::file-update-timer)
@@ -391,6 +421,9 @@ See `minaduki-local-mode' for more information on Minaduki-Local mode."
         (advice-add 'org-read-date :before #'minaduki//set-calendar-mark-diary-entries-flag-nil)
         (advice-add 'org-read-date :after #'minaduki//set-calendar-mark-diary-entries-flag-t)
         (when (fboundp 'org-link-set-parameters)
+          (org-link-set-parameters minaduki-wikilink::type :follow #'minaduki-wikilink:follow)
+          (org-link-set-parameters "minaduki-btn" :follow #'minaduki-btn:follow)
+          (org-link-set-parameters "f" :follow #'minaduki-org::fuzzy-follow)
           (org-link-set-parameters "file" :face 'minaduki::file-link-face)
           (org-link-set-parameters "id" :face 'minaduki::id-link-face))
         (dolist (buf (buffer-list))
@@ -409,6 +442,9 @@ See `minaduki-local-mode' for more information on Minaduki-Local mode."
     (advice-remove 'org-id-new #'minaduki-org//id-new-advice)
     (advice-remove 'markdown-follow-thing-at-point #'minaduki::a-markdown-follow)
     (when (fboundp 'org-link-set-parameters)
+      (org-link-set-parameters minaduki-wikilink::type :follow nil)
+      (org-link-set-parameters "minaduki-btn" :follow nil)
+      (org-link-set-parameters "f" :follow nil)
       (dolist (face '("file" "id"))
         (org-link-set-parameters face :face 'org-link)))
     (minaduki-db::close)

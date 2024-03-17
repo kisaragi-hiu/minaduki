@@ -35,6 +35,15 @@ You can also use an Org file as a bibliography; see [[id:574665c1-24cd-4553-ae26
 
 In general, do not enable =minaduki-local-mode= manually. It's only really a minor mode as an elegant way to define key bindings local to files tracked by Minaduki.
 
+** Links
+
+In Org, links with a non-file non-url target like =[[javascript]]= are normally for same-file targets and fuzzy links. In Minaduki, this type of links have been repurposed to act as wiki links. This only applies to files inside Minaduki vaults.
+
+To access the native Org same-file target linking / fuzzy text search linking, use the =f:= link type added by Minaduki. These should act just the same. In other words:
+
+- =[[f:hello]]= in Minaduki will do what =[[hello]]= does outside Minaduki
+- =[[hello]]= in Minaduki (in Org) is a wiki link that opens the file / note named “hello”
+
 ** Templates
 
 The templating system is a mess right now.

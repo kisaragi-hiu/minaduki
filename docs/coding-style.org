@@ -7,3 +7,4 @@ Right now I'm moving towards:
 - =:= as namespace separator (=::= for private functions)
 - Everything should be private by default
 - Try to add a =-org= or =-markdown= if a function is specific to that format
+- Advices and hooks: prefix =a-= for advices, =h-= for hook functions
