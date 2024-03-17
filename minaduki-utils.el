@@ -68,7 +68,7 @@ distinguishing between a caller that does not want to use
   (let* ((ext (minaduki::file-name-extension path))
          (pair (assoc ext minaduki-file-extension-type-alist)))
     (cond (pair (cdr pair))
-          (ext  (intern ext))
+          ;; (ext  (intern ext))
           (t    nil))))
 (defun minaduki::file-type ()
   "Return the file type of current buffer."
