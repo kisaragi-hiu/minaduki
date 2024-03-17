@@ -142,7 +142,9 @@ updated. Else, update with NEW-DESC."
                                new-desc
                              label))
            (minaduki::link::write
-            (minaduki-link :to new-path :desc new-label)
+            (minaduki-link
+             :to (minaduki-vault:path-relative new-path)
+             :desc new-label)
             type)))))
     (:org
      (let (label new-label)
@@ -155,8 +157,9 @@ updated. Else, update with NEW-DESC."
            (setq new-label (if (equal label old-desc)
                                new-desc
                              label))
-           (minaduki::format-link :target new-path
-                                  :desc new-label)))))))
+           (minaduki::format-link
+            :target (minaduki-vault:path-relative new-path)
+            :desc new-label)))))))
 
 (defun minaduki::replace-link (old-path new-path &optional old-desc new-desc)
   "Replace Org-roam file links with path OLD-PATH to path NEW-PATH.
