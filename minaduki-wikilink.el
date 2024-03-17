@@ -1,4 +1,4 @@
-;;; minaduki-wikilink.el --- Titles and headlines as links -*- lexical-binding: t; -*-
+;;; minaduki-wikilink.el --- old minaduki: links -*- lexical-binding: t; -*-
 ;;
 ;;; Commentary:
 ;;;
