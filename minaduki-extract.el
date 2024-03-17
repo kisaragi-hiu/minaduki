@@ -44,7 +44,7 @@ is meant to be edited, so this should not be set to non-nil globally.")
 (defun minaduki-extract//file-prop (prop)
   "Return values of the file level property PROP as a list."
   (minaduki::file-type-case
-    ('markdown
+    (:markdown
      (minaduki::with-front-matter
        ;; TODO: We might have to fold cases here ourselves;
        ;; `case-fold-search' obviously does not affect `equal'
@@ -60,7 +60,7 @@ is meant to be edited, so this should not be set to non-nil globally.")
                :object-key-type 'string
                :sequence-type 'list)))
          prop))))
-    ('org
+    (:org
      ;; ((key . (val val val val)))
      (let ((values (cdar (org-collect-keywords (list prop)))))
        (-when-let (v (org-entry-get 1 prop))
@@ -297,13 +297,13 @@ in temp buffers.  In cases where this occurs, we do know the file path, and pass
 it as FILE-FROM."
   (setq file-from (minaduki::current-file-name (list file-from)))
   (minaduki::file-type-case
-    ('org
+    (:org
      (append
       (minaduki-extract//org-links file-from)
       ;; FIXME: citation references should not be tracked as links
       (when (featurep 'oc)
         (minaduki-extract//org-citation file-from))))
-    ('markdown
+    (:markdown
      (append
       ;; I won't bother to support Org links in Markdown.
       (minaduki-extract//markdown-links file-from)
@@ -328,7 +328,7 @@ headings with an ID are cached (extracted with
   (setq file-path (minaduki::current-file-name (list file-path)))
   (let (result)
     (minaduki::file-type-case
-      ('markdown
+      (:markdown
        (goto-char (point-min))
        (while (re-search-forward markdown-regex-header nil t)
          (-let* (((id text level) (minaduki::markdown-matched-heading t)))
@@ -338,7 +338,7 @@ headings with an ID are cached (extracted with
                               :title text
                               :point (point))
                  result))))
-      ('org
+      (:org
        (org-map-region
         (lambda ()
           (push (minaduki-id :id (org-entry-get nil "ID")
@@ -357,7 +357,7 @@ Return a list of `minaduki-id' objects."
   (setq file-path (minaduki::current-file-name (list file-path)))
   (let (result)
     (minaduki::file-type-case
-      ('info
+      (:info
        (goto-char (point-min))
        (let ((seen-nodes (make-hash-table :test #'equal)))
          (while (re-search-forward (rx bol (>= 2 (any "*.=-"))) nil t)
@@ -398,7 +398,7 @@ Return a list of `minaduki-id' objects."
                                     :title title
                                     :point (point))
                        result)))))))
-      ('markdown
+      (:markdown
        (goto-char (point-min))
        (while (re-search-forward markdown-regex-header nil t)
          (-when-let* (((id text level) (minaduki::markdown-matched-heading t)))
@@ -408,7 +408,7 @@ Return a list of `minaduki-id' objects."
                               :title text
                               :point (point))
                  result))))
-      ('org
+      (:org
        ;; Handle the file property drawer (outline level 0)
        (goto-char (point-min))
        (when-let ((before-first-heading (= 0 (org-outline-level)))
@@ -457,30 +457,30 @@ Return a list of `minaduki-id' objects."
       (list (minaduki::apply-link-abbrev
              (buffer-file-name)))
     (minaduki::file-type-case
-      ('info (list
+      (:info (list
               (or (-some-> (minaduki-extract::info-dir-entry)
                     (plist-get :main-title))
                   (minaduki::apply-link-abbrev
                    (buffer-file-name)))))
-      ('org
+      (:org
        (-some-> (car (minaduki-extract//file-prop "title"))
          list))
-      ('markdown
+      (:markdown
        (ensure-list
         (car (minaduki-extract//file-prop "title")))))))
 
 (defun minaduki-extract/aliases ()
   "Return a list of aliases from the current buffer."
   (minaduki::file-type-case
-    ('org
+    (:org
      (minaduki-extract//file-prop "ALIAS"))
-    ('markdown
+    (:markdown
      (minaduki-extract//file-prop "alias"))))
 
 (defun minaduki-extract/first-headline ()
   "Extract the first headline."
   (minaduki::file-type-case
-    ('info
+    (:info
      (save-excursion
        (goto-char (point-min))
        (when (re-search-forward "^\\*\\{2\\}+" nil t)
@@ -488,7 +488,7 @@ Return a list of `minaduki-id' objects."
          (buffer-substring-no-properties
           (line-beginning-position)
           (line-end-position)))))
-    ('org
+    (:org
      (save-excursion
        (goto-char (point-min))
        ;; "What happens if a heading star was quoted
@@ -499,7 +499,7 @@ Return a list of `minaduki-id' objects."
        (re-search-forward org-outline-regexp-bol nil t)
        (-some-> (org-entry-get nil "ITEM")
          list)))
-    ('markdown
+    (:markdown
      ;; from md-roam's `org-roam--extract-titles-mdheadline'
      (save-excursion
        (goto-char (point-min))
@@ -684,7 +684,7 @@ Return value: ((TYPE . KEY) (TYPE . KEY) ...)
 
 In Org mode, the keys are specified with the #+KEY keyword."
   (minaduki::file-type-case
-    ('org
+    (:org
      (let (refs)
        (dolist (key (minaduki-extract//file-prop "key"))
          (pcase key
@@ -698,7 +698,7 @@ In Org mode, the keys are specified with the #+KEY keyword."
             (when-let ((r (minaduki-extract//process-ref ref)))
               (push r refs)))))
        refs))
-    ('markdown
+    (:markdown
      (-some--> (minaduki-extract//file-prop "key")
        car
        (list (cons "cite" it))))))
