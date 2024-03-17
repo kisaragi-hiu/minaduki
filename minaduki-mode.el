@@ -19,6 +19,9 @@
 (require 'minaduki-wikilink)
 
 (declare-function org-cite-basic--complete-style "oc-basic")
+;; The minor mode is defined at the end, after functions used it. So declare it
+;; here.
+(defvar minaduki-local-mode)
 
 (defun minaduki:buffer-name-for-display ()
   "Return a name for the current buffer suitable for display."
@@ -46,6 +49,33 @@
                     (expand-file-name dest))))))))
       (string= current-file link-dest))))
 
+(defun minaduki::apply-link-faces? ()
+  "Return whether we should apply custom link faces in the current context."
+  (or (and (-> (buffer-file-name (buffer-base-buffer))
+             minaduki-vault:in-vault?)
+           minaduki:use-custom-link-faces)
+      (eq minaduki:use-custom-link-faces 'everywhere)))
+
+(defun minaduki-org::a-fuzzy-face (orig-func type key)
+  "Advice for `org-link-get-parameter' to apply face for nonexistant wiki links.
+
+ORIG-FUNC is the original `org-link-get-parameter'.
+TYPE and KEY are passed to ORIG-FUNC. When TYPE is \"fuzzy\" and
+KEY is `:face', return `minaduki-link-invalid' if the link at
+point resolves to a nonexistant file."
+  (cl-block nil
+    (unless (and minaduki-local-mode
+                 (equal type "fuzzy")
+                 (eq key :face)
+                 (minaduki::apply-link-faces?))
+      (cl-return (funcall orig-func type key)))
+    (lambda (path)
+      (let ((resolved (minaduki-obsidian-path path)))
+        (if (and (not (file-remote-p resolved)) ; Prevent looking up remote files
+                 (not (file-exists-p resolved)))
+            'minaduki-link-invalid
+          'minaduki-link)))))
+
 (defun minaduki::file-link-face (path)
   "Conditional face for file: links.
 Applies the `minaduki-link-current' face if PATH corresponds
@@ -53,12 +83,9 @@ to the current file in the backlink buffer, or the
 `minaduki-link' face if PATH corresponds to any other
 file in a vault."
   (save-match-data
-    (let* ((in-vault (-> (buffer-file-name (buffer-base-buffer))
-                         (minaduki-vault:in-vault?)))
-           (custom (or (and in-vault minaduki:use-custom-link-faces)
-                       (eq minaduki:use-custom-link-faces 'everywhere))))
+    (let ((custom (minaduki::apply-link-faces?)))
       (cond ((and custom
-                  (not (file-remote-p path)) ;; Prevent lockups opening Tramp links
+                  (not (file-remote-p path)) ; Prevent lockups opening Tramp links
                   (not (file-exists-p path)))
              'minaduki-link-invalid)
             ((and custom
@@ -413,6 +440,7 @@ See `minaduki-local-mode' for more information on Minaduki-Local mode."
         (advice-add 'rename-file :after #'minaduki::rename-file-advice)
         (advice-add 'delete-file :before #'minaduki::a-delete-file)
         (advice-add 'markdown-follow-thing-at-point :around #'minaduki::a-markdown-follow)
+        (advice-add 'org-link-get-parameter :around #'minaduki-org::a-fuzzy-face)
         (add-to-list 'org-execute-file-search-functions 'minaduki-org//move-to-row-col)
         (add-hook 'org-open-at-point-functions #'minaduki/open-id-at-point)
         (advice-add 'org-id-new :after #'minaduki-org//id-new-advice)
@@ -441,6 +469,7 @@ See `minaduki-local-mode' for more information on Minaduki-Local mode."
     (advice-remove 'delete-file #'minaduki::a-delete-file)
     (advice-remove 'org-id-new #'minaduki-org//id-new-advice)
     (advice-remove 'markdown-follow-thing-at-point #'minaduki::a-markdown-follow)
+    (advice-remove 'org-link-get-parameter #'minaduki-org::a-fuzzy-face)
     (when (fboundp 'org-link-set-parameters)
       (org-link-set-parameters minaduki-wikilink::type :follow nil)
       (org-link-set-parameters "minaduki-btn" :follow nil)
