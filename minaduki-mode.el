@@ -112,7 +112,7 @@ ARG is whether the thing should be opened in another window."
     (minaduki-markdown-follow arg)))
 
 (defun minaduki::delete-file-advice (file &optional _trash)
-  "Advice for maintaining cache consistency when FILE is deleted."
+  "Advice: as FILE is deleted, delete its cache entries as well."
   (when (and (not (auto-save-file-name-p file))
              (minaduki-vault:in-vault? file))
     (minaduki-db::clear-file (expand-file-name file))))
@@ -123,17 +123,19 @@ Will update link to NEW-PATH. If OLD-DESC is set, and is not the
 same as the link description, it is assumed that the user has
 modified the description, and the description will not be
 updated. Else, update with NEW-DESC."
-  (let (path label new-label)
-    (when-let ((link (org-element-lineage (org-element-context) '(link) t)))
-      (setq path (org-element-property :path link))
-      (when (and (string-equal (expand-file-name path) old-path)
-                 (org-in-regexp org-link-bracket-re 1))
-        (setq label (if (match-end 2)
-                        (match-string-no-properties 2)
-                      (org-link-unescape (match-string-no-properties 1))))
-        (setq new-label (if (string-equal label old-desc) new-desc label))
-        (minaduki::format-link :target new-path
-                              :desc new-label)))))
+  (minaduki::file-type-case
+    (:org
+     (let (path label new-label)
+       (when-let ((link (org-element-lineage (org-element-context) '(link) t)))
+         (setq path (org-element-property :path link))
+         (when (and (string-equal (expand-file-name path) old-path)
+                    (org-in-regexp org-link-bracket-re 1))
+           (setq label (if (match-end 2)
+                           (match-string-no-properties 2)
+                         (org-link-unescape (match-string-no-properties 1))))
+           (setq new-label (if (string-equal label old-desc) new-desc label))
+           (minaduki::format-link :target new-path
+                                  :desc new-label)))))))
 
 (defun minaduki::replace-link (old-path new-path &optional old-desc new-desc)
   "Replace Org-roam file links with path OLD-PATH to path NEW-PATH.
@@ -141,10 +143,12 @@ If OLD-DESC is passed, and is not the same as the link
 description, it is assumed that the user has modified the
 description, and the description will not be updated. Else,
 update with NEW-DESC."
-  (org-with-point-at 1
-    (while (re-search-forward org-link-bracket-re nil t)
-      (when-let ((link (save-match-data (minaduki::get-link-replacement old-path new-path old-desc new-desc))))
-        (replace-match link)))))
+  (minaduki::file-type-case
+    (:org
+     (org-with-point-at 1
+       (while (re-search-forward org-link-bracket-re nil t)
+         (when-let ((link (save-match-data (minaduki::get-link-replacement old-path new-path old-desc new-desc))))
+           (replace-match link)))))))
 
 (defun minaduki::fix-relative-links (old-path)
   "Fix file-relative links in current buffer.
