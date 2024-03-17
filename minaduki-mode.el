@@ -109,7 +109,9 @@ ARG is whether the thing should be opened in another window."
   (cl-letf (((symbol-function
               'markdown-follow-thing-at-point)
              orig-func))
-    (minaduki-markdown-follow arg)))
+    (if minaduki-local-mode
+        (minaduki-markdown-follow arg)
+      (funcall orig-func arg))))
 
 (defun minaduki::delete-file-advice (file &optional _trash)
   "Advice: as FILE is deleted, delete its cache entries as well."
