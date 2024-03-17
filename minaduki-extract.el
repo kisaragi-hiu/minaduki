@@ -87,11 +87,12 @@ This is used to extract #+roam_tags."
        ;; We have a list of lists at this point. Join them.
        (apply #'append it)))
 
-(defun minaduki-extract//org-citation (file-from)
+(defun minaduki-extract//org-citation (&optional file-from)
   "Extract Org 9.5+ citations.
 
 Currently citations are treated as links of the `cite' type, from
 FILE-FROM to the key."
+  (setq file-from (minaduki::current-file-name (list file-from)))
   (save-excursion
     (goto-char (point-min))
     (cl-loop while (re-search-forward org-element-citation-prefix-re nil t)
@@ -132,10 +133,11 @@ FILE-FROM to the key."
            (hash-table-p org-id-locations)
            (gethash id org-id-locations))))
 
-(defun minaduki-extract//org-links (file-from)
+(defun minaduki-extract//org-links (&optional file-from)
   "Extract links in current buffer in Org mode format ([[target][desc]]).
 
 Assume links come from FILE-FROM."
+  (setq file-from (minaduki::current-file-name (list file-from)))
   (save-excursion
     (goto-char (point-min))
     (let (links)
@@ -176,10 +178,11 @@ Assume links come from FILE-FROM."
                     (push (vector file-from name type properties) links))))))))
       links)))
 
-(defun minaduki-extract//obsidian-links (file-from)
+(defun minaduki-extract//obsidian-links (&optional file-from)
   "Extract Obsidian links from current buffer.
 
 Links are assumed to originate from FILE-FROM."
+  (setq file-from (minaduki::current-file-name (list file-from)))
   (save-excursion
     (goto-char (point-min))
     (cl-loop
@@ -192,10 +195,11 @@ Links are assumed to originate from FILE-FROM."
                `(:point ,(point)))))))
 
 ;; Modified from md-roam's `md-roam--extract-file-links'
-(defun minaduki-extract//markdown-links (file-from)
+(defun minaduki-extract//markdown-links (&optional file-from)
   "Extract Markdown links from current buffer.
 
 Links are assumed to originate from FILE-FROM."
+  (setq file-from (minaduki::current-file-name (list file-from)))
   (save-excursion
     (goto-char (point-min))
     ;; Adadpted from `markdown-get-used-uris'
@@ -252,10 +256,11 @@ Links are assumed to originate from FILE-FROM."
                              :point begin-of-block))))))
 
 ;; Modified from md-roam's `md-roam--extract-cite-links'
-(defun minaduki-extract//pandoc-citation (file-from)
+(defun minaduki-extract//pandoc-citation (&optional file-from)
   "Extract cite links defined like this: @bibkey.
 
 Assume links come from FILE-FROM."
+  (setq file-from (minaduki::current-file-name (list file-from)))
   (save-excursion
     (goto-char (point-min))
     (cl-loop while (re-search-forward
