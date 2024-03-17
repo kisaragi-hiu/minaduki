@@ -385,8 +385,8 @@ Links in titles are removed."
         (insert "\n\n** "
                 ;; title link
                 (minaduki::format-link :target file-from
-                                      :desc (minaduki::remove-org-links
-                                             (minaduki-db::fetch-title file-from)))
+                                       :desc (minaduki::remove-org-links
+                                              (minaduki-db::fetch-title file-from)))
                 ;; tags
                 (or (-some->> (minaduki-db::fetch-tags file-from)
                       (--remove (member it minaduki-buffer/hidden-tags))
@@ -527,8 +527,8 @@ ORIG-PATH is the path where the CONTENT originated."
         (minaduki-buffer//insert-backlinks
          backlinks
          :heading "Backlink")
-        (when unlinked-references
-          (minaduki-buffer//insert-unlinked-references unlinked-references))
+        ;; (when unlinked-references
+        ;;   (minaduki-buffer//insert-unlinked-references unlinked-references))
         (unless (or backlinks cite-backlinks unlinked-references)
           (insert "\n\n/No backlinks/"))
         (minaduki-buffer//restore-point)
