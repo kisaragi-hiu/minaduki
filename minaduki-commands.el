@@ -307,20 +307,21 @@ REPLACE-REGION?: whether to replace selected text."
   (let ((alias (read-string "Alias: ")))
     (when (string-empty-p alias)
       (user-error "Alias can't be empty"))
-    (org-with-point-at 1
-      (let ((case-fold-search t))
-        (if (re-search-forward "^#\\+alias: .*" nil t)
-            (insert "\n")
-          ;; Skip past the first block of keywords and property drawer
-          (while (and (not (eobp))
-                      (looking-at "^[#:]"))
-            (if (> (line-end-position) (1- (buffer-size)))
-                (progn
-                  (end-of-line)
-                  (insert "\n"))
-              (forward-line)
-              (beginning-of-line))))
-        (insert "#+alias: " alias)))
+    (org-with-wide-buffer
+     (goto-char 1)
+     (let ((case-fold-search t))
+       (if (re-search-forward "^#\\+alias: .*" nil t)
+           (insert "\n")
+         ;; Skip past the first block of keywords and property drawer
+         (while (and (not (eobp))
+                     (looking-at "^[#:]"))
+           (if (> (line-end-position) (1- (buffer-size)))
+               (progn
+                 (end-of-line)
+                 (insert "\n"))
+             (forward-line)
+             (beginning-of-line))))
+       (insert "#+alias: " alias)))
     (when (minaduki-vault:in-vault?)
       (minaduki-db::insert-meta 'update))
     alias))
@@ -331,11 +332,12 @@ REPLACE-REGION?: whether to replace selected text."
   (interactive)
   (if-let ((aliases (minaduki-extract/aliases)))
       (let ((alias (completing-read "Alias: " aliases nil 'require-match)))
-        (org-with-point-at 1
-          (let ((case-fold-search t))
-            (when (search-forward (concat "#+alias: " alias) (point-max) t)
-              (delete-region (line-beginning-position)
-                             (1+ (line-end-position))))))
+        (org-with-wide-buffer
+         (goto-char 1)
+         (let ((case-fold-search t))
+           (when (search-forward (concat "#+alias: " alias) (point-max) t)
+             (delete-region (line-beginning-position)
+                            (1+ (line-end-position))))))
         (when (minaduki-vault:in-vault?)
           (minaduki-db::insert-meta 'update)))
     (user-error "No aliases to delete")))

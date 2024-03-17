@@ -639,21 +639,22 @@ Assume buffer is widened and point is on a headline."
   "Set a file property called NAME to VALUE.
 
 If the property is already set, it's value is replaced."
-  (org-with-point-at 1
-    (let ((case-fold-search t))
-      (if (re-search-forward (format "^#\\+%s:\\(.*\\)"
-                                     (regexp-quote name))
-                             (point-max) t)
-          (replace-match (concat " " value) 'fixedcase nil nil 1)
-        (while (and (not (eobp))
-                    (looking-at "^[#:]"))
-          (if (save-excursion (end-of-line) (eobp))
-              (progn
-                (end-of-line)
-                (insert "\n"))
-            (forward-line)
-            (beginning-of-line)))
-        (insert "#+" name ": " value "\n")))))
+  (org-with-wide-buffer
+   (goto-char 1)
+   (let ((case-fold-search t))
+     (if (re-search-forward (format "^#\\+%s:\\(.*\\)"
+                                    (regexp-quote name))
+                            (point-max) t)
+         (replace-match (concat " " value) 'fixedcase nil nil 1)
+       (while (and (not (eobp))
+                   (looking-at "^[#:]"))
+         (if (save-excursion (end-of-line) (eobp))
+             (progn
+               (end-of-line)
+               (insert "\n"))
+           (forward-line)
+           (beginning-of-line)))
+       (insert "#+" name ": " value "\n")))))
 
 (defun minaduki::get-heading-id ()
   "Return the ID of the current heading."

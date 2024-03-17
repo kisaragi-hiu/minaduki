@@ -145,10 +145,11 @@ description, and the description will not be updated. Else,
 update with NEW-DESC."
   (minaduki::file-type-case
     (:org
-     (org-with-point-at 1
-       (while (re-search-forward org-link-bracket-re nil t)
-         (when-let ((link (save-match-data (minaduki::get-link-replacement old-path new-path old-desc new-desc))))
-           (replace-match link)))))))
+     (org-with-wide-buffer
+      (goto-char 1)
+      (while (re-search-forward org-link-bracket-re nil t)
+        (when-let ((link (save-match-data (minaduki::get-link-replacement old-path new-path old-desc new-desc))))
+          (replace-match link)))))))
 
 (defun minaduki::fix-relative-links (old-path)
   "Fix file-relative links in current buffer.
@@ -156,17 +157,18 @@ File relative links are assumed to originate from OLD-PATH. The
 replaced links are made relative to the current buffer."
   (minaduki::file-type-case
     (:org
-     (org-with-point-at 1
-       (let (link new-link type path)
-         (while (re-search-forward org-link-bracket-re nil t)
-           (when (setq link (save-match-data (org-element-lineage (org-element-context) '(link) t)))
-             (setq type (org-element-property :type link))
-             (setq path (org-element-property :path link))
-             (when (and (string= type "file")
-                        (f-relative-p path))
-               (setq new-link
-                     (concat type ":" (minaduki::convert-path-format (expand-file-name path (file-name-directory old-path)))))
-               (replace-match new-link nil t nil 1)))))))))
+     (org-with-wide-buffer
+      (goto-char 1)
+      (let (link new-link type path)
+        (while (re-search-forward org-link-bracket-re nil t)
+          (when (setq link (save-match-data (org-element-lineage (org-element-context) '(link) t)))
+            (setq type (org-element-property :type link))
+            (setq path (org-element-property :path link))
+            (when (and (string= type "file")
+                       (f-relative-p path))
+              (setq new-link
+                    (concat type ":" (minaduki::convert-path-format (expand-file-name path (file-name-directory old-path)))))
+              (replace-match new-link nil t nil 1)))))))))
 
 (defun minaduki::rename-file-advice (old-file new-file-or-dir &rest _args)
   "Rename backlinks of OLD-FILE to refer to NEW-FILE-OR-DIR.

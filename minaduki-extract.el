@@ -405,14 +405,14 @@ Return a list of `minaduki-id' objects."
                  result))))
       ('org
        ;; Handle the file property drawer (outline level 0)
-       (org-with-point-at (point-min)
-         (when-let ((before-first-heading (= 0 (org-outline-level)))
-                    (id (org-entry-get nil "ID")))
-           (push (minaduki-id :id id
-                              :file file-path
-                              :level 0
-                              :point (point))
-                 result)))
+       (goto-char (point-min))
+       (when-let ((before-first-heading (= 0 (org-outline-level)))
+                  (id (org-entry-get nil "ID")))
+         (push (minaduki-id :id id
+                            :file file-path
+                            :level 0
+                            :point (point))
+               result))
        ;; Extract every other ID
        (org-map-region
         (lambda ()
