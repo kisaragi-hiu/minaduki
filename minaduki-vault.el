@@ -126,24 +126,25 @@ EXECUTABLE is the Ripgrep executable."
 
 (defun minaduki-vault::search-files (dir regexp)
   "Return files whose names match REGEXP within DIR.
-This relies on Find."
+This relies on Fd, which means REGEXP is not Emacs Regular
+Expressions, but the syntax defined by the Rust Regex crate."
   (with-temp-buffer
-    (let (prune-exprs exprs)
-      (dolist (folder '(".git" ".svn" "node_modules"))
-        (push (list "-name" folder) prune-exprs))
-      ;; -name .git -o -name node_modules ...
-      (setq prune-exprs (-flatten (-interpose "-o" prune-exprs)))
-      (setq exprs `("-not" "(" "(" ,@prune-exprs ")" "-prune" ")"
-                    ;; I can't use `rx' because it emits non-capturing groups
-                    ;; which find doesn't appear to support
-                    "-regex" ,(format ".*\\.\\(%s\\)\\(\\.\\(gpg\\|gz\\)\\)?"
-                                      (mapconcat #'regexp-quote minaduki-file-extensions "\\|"))
-                    "-regex" ,regexp))
-      (apply #'call-process "find" nil '(t nil) nil "-L" dir exprs))
+    (let (exts args)
+      (dolist (ext minaduki-file-extensions)
+        (dolist (variant '("" ".gz" ".gpg"))
+          (push (list "-e" (concat ext variant)) exts)))
+      ;; -e org -e org.gz -e org.gpg ...
+      (setq exts (-flatten exts))
+      (setq args `("--print0"
+                   ,@exts
+                   ,regexp
+                   ,(f-expand dir)))
+      (apply #'call-process "fd" nil '(t nil) nil args))
     (-some--> (buffer-string)
-      (s-split "\n" it :omit-nulls)
-      (-remove #'minaduki-vault:excluded? it)
-      (-map #'f-expand it))))
+      (s-split "\0" it :omit-nulls)
+      ;; Feeding `minaduki-file-exclude-regexp' to find seems to yield basically
+      ;; the same performance
+      (-remove #'minaduki-vault:excluded? it))))
 
 (defun minaduki-vault::list-files (dir)
   "List tracked files in DIR.
@@ -327,9 +328,12 @@ VAULT is computed from `minaduki-vault:closest' if not given."
           (setq written (org-link-expand-abbrev written)))
         (cl-return (f-join closest-vault written)))
       (setq files
+            ;; XXX: this means `written' is interpreted as a regexp. Ideally
+            ;; `regexp-quote' would work, but it's for Elisp regexps while Fd
+            ;; wants Rust Regex crate expressions. (We're using Fd for speed.)
             (minaduki-vault::search-files
              closest-vault
-             (format ".*%s\\(\\..*\\)?" (regexp-quote written))))
+             (format "^(%s)(\\..*)?$" written)))
       (cond
        ((= 0 (length files))
         (let ((attachment nil))
