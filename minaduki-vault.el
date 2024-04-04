@@ -124,10 +124,13 @@ EXECUTABLE is the Ripgrep executable."
         (push file result)))
     result))
 
-(defun minaduki-vault::search-files (dir regexp)
+(defun minaduki-vault::search-files (dir regexp &optional case-sensitive)
   "Return files whose names match REGEXP within DIR.
 This relies on Fd, which means REGEXP is not Emacs Regular
-Expressions, but the syntax defined by the Rust Regex crate."
+Expressions, but the syntax defined by the Rust Regex crate.
+
+If CASE-SENSITIVE is non-nil, do a case sensitive search,
+otherwise (by default) tell Fd to ignore case."
   (with-temp-buffer
     (let (exts args)
       (dolist (ext minaduki-file-extensions)
@@ -136,6 +139,8 @@ Expressions, but the syntax defined by the Rust Regex crate."
       ;; -e org -e org.gz -e org.gpg ...
       (setq exts (-flatten exts))
       (setq args `("--print0"
+                   ,@(unless case-sensitive
+                       '("--ignore-case"))
                    ,@exts
                    ,regexp
                    ,(f-expand dir)))
