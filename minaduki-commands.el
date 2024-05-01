@@ -504,6 +504,26 @@ REPLACE-REGION?: whether to replace selected text."
     (minaduki:local-commands key)))
 
 ;;;###autoload
+(cl-defun minaduki/new-stray-note (&key title dir)
+  "Add a new concept note / stray note with TITLE.
+
+When DIR is non-nil, put the new file under a subdirectory called
+DIR in the main vault. Otherwise, put it the top level of the
+main vault."
+  ;; (interactive "MTitle: ")
+  (unless title
+    (setq title (read-string "Title: ")))
+  (find-file
+   (--> (minaduki::to-slug title)
+        (s-replace "_" "-" it)
+        (format "%s.org" it)
+        (f-join (minaduki-vault:main)
+                (or dir "")
+                it)))
+  (insert "#+title: " title "\n"
+          "#+created: " (format-time-string "%FT%T%z") "\n"))
+
+;;;###autoload
 (cl-defun minaduki/new-concept-note (&key title visit?)
   "Create a new concept note with TITLE.
 
