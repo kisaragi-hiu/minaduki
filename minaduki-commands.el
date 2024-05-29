@@ -136,6 +136,7 @@ Like `markdown-follow-thing-at-point', but has support for:
 
 - Obsidian links,
 - ID links (written as [text](#<ID>), ie. a path starting with a hash)
+- Info links
 
 When OTHER is non-nil (with a \\[universal-argument]),
 open in another window instead of in the current one."
@@ -147,9 +148,12 @@ open in another window instead of in the current one."
                (minaduki::find-file (minaduki-obsidian-path (match-string 3))))
               ((markdown-link-p)
                (let ((url (markdown-link-url)))
-                 (if (s-prefix? "#" url)
-                     (minaduki/open-id (substring url 1))
-                   (markdown-follow-thing-at-point other))))
+                 (cond
+                  ((s-prefix? "#" url)
+                   (minaduki/open-id (substring url 1)))
+                  ((s-prefix? "info:" url)
+                   (info (substring url 5)))
+                  (t (markdown-follow-thing-at-point other)))))
               (t (markdown-follow-thing-at-point other))))
     (markdown-follow-thing-at-point other)))
 
@@ -238,7 +242,9 @@ REPLACE-REGION?: whether to replace selected text."
     (when lowercase?
       (setq desc (downcase desc)))
     (insert (minaduki::format-link
-             :target (or id path)
+             :target (if (eq 'info (minaduki-node::type entry))
+                         (format "info:%s" id)
+                       (or id path))
              :desc desc
              :id? id))))
 

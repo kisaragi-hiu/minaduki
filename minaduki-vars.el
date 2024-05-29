@@ -22,6 +22,9 @@
    (key :initarg :key :initform nil)
    (key-type :initarg :key-type :initform nil)
    (new? :initarg :new? :initform nil)))
+(defun minaduki-node::type (node)
+  "Return the file type of NODE."
+  (minaduki::file-type::path (oref node path)))
 
 ;; Note that I take the shortcut of creating instances of these
 ;; classes with `record' instead of through a constructor. So it is
