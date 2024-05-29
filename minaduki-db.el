@@ -557,6 +557,12 @@ correspond to the TO field in the cache DB."
                (:constructor minaduki-db::count))
   err modified id link ref lit)
 
+(defun minaduki-db::files-hash-table (files)
+  "Return a table mapping each file in FILES to its hash."
+  (let ((table (make-hash-table :test #'equal)))
+    (dolist (file files)
+      (puthash file (minaduki::compute-content-hash file) table))
+    table))
 (defun minaduki-db:build-cache::find-modified-files (files db-files)
   "Find modified files among FILES by comparing their hashes with DB-FILES.
 
@@ -628,6 +634,13 @@ If the file exists, update the cache with information."
         (puthash file-path content-hash files-table)
         (minaduki-db::update-files files-table))
       (minaduki::message "Updated: %s" file-path))))
+(defun minaduki-db:refresh-info-file ()
+  "Refresh the cache for Info entries."
+  (interactive)
+  (let ((info-files
+         (let ((minaduki-file-extensions '("info")))
+           (minaduki-vault:all-files))))
+    (minaduki-db::update-files (minaduki-db::files-hash-table info-files))))
 (defun minaduki-db::update-files (files-table &optional rebuild)
   "Update cache for files in FILES-TABLE.
 
