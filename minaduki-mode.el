@@ -337,6 +337,24 @@ When NEW-FILE-OR-DIR is a directory, we use it to compute the new file path."
                          'follow-link t
                          'face 'button))))))))
 
+(defun minaduki-mode::handle-double-bracket-h ()
+  "Run completion after inserting double brackets."
+  (when (and (eql ?\[ (char-before (point)))
+             ;; This does not cause out-of-bounds at point = 1
+             ;; because (char-before 0) is nil and does not error
+             (eql ?\[ (char-before (1- (point)))))
+    ;; Delete the open brackets
+    (delete-char -2)
+    ;; Try to handle the auto brackets added by Smartparens etc.
+    ;; We try twice, because there's two open brackets. But we also don't assert
+    ;; that there's either none or two: there could be just one if Smartparen's
+    ;; post-self-insert-hook function hasn't run yet.
+    (when (eql ?\] (char-after (point)))
+      (delete-char 1))
+    (when (eql ?\] (char-after (point)))
+      (delete-char 1))
+    (call-interactively #'minaduki:insert)))
+
 ;;;; The minor mode itself
 (defun minaduki::local-mode-enable ()
   "Do the actual work to enable `minaduki-local-mode'."
@@ -369,8 +387,8 @@ When NEW-FILE-OR-DIR is a directory, we use it to compute the new file path."
              (minaduki-vault-path vault)))))
   (add-hook 'post-command-hook #'minaduki-buffer//update-maybe nil t)
   (add-hook 'after-save-hook #'minaduki-db::incremental-update nil t)
-  (dolist (fn '(minaduki-completion/tags-at-point
-                minaduki-completion/everywhere))
+  (add-hook 'post-self-insert-hook #'minaduki-mode::handle-double-bracket-h nil t)
+  (dolist (fn '(minaduki-completion/tags-at-point))
     (add-hook 'completion-at-point-functions fn nil t))
   (minaduki-buffer//update-maybe :redisplay t))
 

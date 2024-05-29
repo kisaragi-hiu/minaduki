@@ -34,7 +34,6 @@
 
 (declare-function ivy--flx-sort "ivy")
 (declare-function ivy--shorter-matches-first "ivy")
-
 (declare-function marginalia--fields "marginalia")
 
 ;; Keeping the `require' at top level allows the byte compiler to
@@ -233,27 +232,6 @@ PROMPT: the text shown in the prompt."
 
 ;;;; `completion-at-point' completions
 
-(defun minaduki-completion/everywhere ()
-  "`completion-at-point' function for word at point.
-This is active when `minaduki:completion-everywhere' is non-nil."
-  (when (and minaduki:completion-everywhere
-             (thing-at-point 'word))
-    (let* ((bounds (bounds-of-thing-at-point 'word))
-           (start (car bounds))
-           (end (cdr bounds))
-           (prefix (buffer-substring-no-properties start end)))
-      (list start end
-            (--> (completion-table-dynamic
-                  ;; Get our own completion request string
-                  (lambda (_)
-                    (->> (minaduki-db::fetch-all-titles)
-                         (--remove (string= prefix it)))))
-                 (completion-table-case-fold it (not minaduki:ignore-case-during-completion)))
-            :exit-function (lambda (str _status)
-                             (delete-char (- (length str)))
-                             (insert (org-link-make-string
-                                      (format "%s:%s" minaduki-wikilink::type str))))))))
-
 (defun minaduki-completion/tags-at-point ()
   "`completion-at-point' function for in-buffer tags."
   (let ((end (point))
@@ -278,6 +256,7 @@ This is active when `minaduki:completion-everywhere' is non-nil."
               :exit-function (lambda (str _status)
                                (delete-char (- (length str)))
                                (insert "\"" str "\"")))))))
+
 
 (provide 'minaduki-completion)
 

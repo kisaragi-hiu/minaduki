@@ -214,11 +214,6 @@ whose title is 'Index'."
           (function :tag "Function to generate the path"))
   :group 'minaduki)
 
-(defcustom minaduki:completion-everywhere nil
-  "If non-nil, provide completions from the current word at point."
-  :group 'minaduki
-  :type 'boolean)
-
 (defcustom minaduki/slug-replacements
   '(;; Domains
     ("https://www.nicovideo.jp/watch/" . "niconico-")
