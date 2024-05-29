@@ -56,9 +56,6 @@
 (require 'minaduki-utils)
 (require 'minaduki-vault)
 
-(when (featurep 'embark)
-  (require 'minaduki-embark))
-
 (require 'minaduki-buffer)
 (require 'minaduki-bibtex)
 (require 'minaduki-capture)
