@@ -338,11 +338,14 @@ Like `minaduki::format-link' but without the path magic."
             (format "[%s](%s)" desc target))))
     (_ target)))
 
-(cl-defun minaduki::format-link (&key target desc id?)
+(cl-defun minaduki::format-link (&key target desc type)
   "Format TARGET and DESC as a link according to the major mode.
 
 `org-link-abbrev-alist' is applied when in Org mode, unless
 TARGET is an HTTP link.
+
+TYPE can be `id', `info', or nil. When it is nil, automatically
+determine if we need a file link or a URL link.
 
 If ID? is non-nil and we're in Org mode, return an ID link instead."
   (let ((url? (minaduki::url? target))
@@ -352,9 +355,9 @@ If ID? is non-nil and we're in Org mode, return an ID link instead."
                  (replace-regexp-in-string "^file://" "" target))))
     (minaduki::file-type-case
       ('org
-       (unless (or url? id?)
+       (unless (or url? type)
          (setq target (minaduki::convert-path-format target)))
-       (when id?
+       (when (eq type 'id)
          (setq target (concat "id:" target)))
        (if (and (not desc) url?) ; plain url
            target

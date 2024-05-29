@@ -464,6 +464,7 @@ See `minaduki-local-mode' for more information on Minaduki-Local mode."
         (when (fboundp 'org-link-set-parameters)
           (org-link-set-parameters minaduki-wikilink::type :follow #'minaduki-wikilink:follow)
           (org-link-set-parameters "minaduki-btn" :follow #'minaduki-btn:follow)
+          (org-link-set-parameters "info" :follow #'info)
           (org-link-set-parameters "f" :follow #'minaduki-org::fuzzy-follow)
           (org-link-set-parameters "file" :face 'minaduki::file-link-face)
           (org-link-set-parameters "id" :face 'minaduki::id-link-face))

@@ -208,7 +208,7 @@ REPLACE-REGION?: whether to replace selected text."
   ;; 5. Create a new note if the entry doesn't exist
   ;; 6. Downcase desc if we should
   ;; 7. Format entry and insert!
-  (let (title id path desc)
+  (let (title id path desc info?)
     (when (and replace-region?
                (region-active-p))
       (setq desc (-> (buffer-substring-no-properties
@@ -241,12 +241,18 @@ REPLACE-REGION?: whether to replace selected text."
       (minaduki::message "Created new note \"%s\"" title))
     (when lowercase?
       (setq desc (downcase desc)))
+    (setq info? (eq 'info (minaduki-node::type entry)))
+    ;; For links to Info documents, we don't want an ID link, so it shouldn't be
+    ;; treated as an Org ID.
+    (when info?
+      (setq path (format "info:%s" id))
+      (setq id nil))
     (insert (minaduki::format-link
-             :target (if (eq 'info (minaduki-node::type entry))
-                         (format "info:%s" id)
-                       (or id path))
+             :target (or id path)
              :desc desc
-             :id? id))))
+             :type (cond (id 'id)
+                         (info? 'info)
+                         (t nil))))))
 
 (defun minaduki:move-file-to-directory ()
   "Move the current file to a new directory."
