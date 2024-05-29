@@ -290,7 +290,7 @@ When NEW-FILE-OR-DIR is a directory, we use it to compute the new file path."
         (minaduki::with-file new-file nil
           (minaduki::fix-relative-links old-file)))
       (when (minaduki-vault:in-vault? new-file)
-        (minaduki-db::update-file new-file))
+        (minaduki-db:update-file new-file))
       ;; Replace links from old-file.org -> new-file.org in all Org-roam files with these links
       (mapc (lambda (file)
               (setq file (if (string-equal (car file) old-file)
@@ -299,7 +299,7 @@ When NEW-FILE-OR-DIR is a directory, we use it to compute the new file path."
               (minaduki::with-file file nil
                 (minaduki::replace-link old-file new-file)
                 (save-buffer)
-                (minaduki-db::update-file)))
+                (minaduki-db:update-file)))
             files-affected))))
 
 (defun minaduki-org::buttonize-tags ()

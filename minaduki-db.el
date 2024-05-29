@@ -557,27 +557,6 @@ correspond to the TO field in the cache DB."
                (:constructor minaduki-db::count))
   err modified id link ref lit)
 
-(defun minaduki-db::update-file (&optional file-path)
-  "Update cache for FILE-PATH.
-If the file does not exist anymore, remove it from the cache.
-If the file exists, update the cache with information."
-  (setq file-path (or file-path
-                      (buffer-file-name (buffer-base-buffer))))
-  (if (not (file-exists-p file-path))
-      (minaduki-db::clear-file file-path)
-    ;; save the file before performing a database update
-    (when-let ((buf (find-buffer-visiting file-path)))
-      (with-current-buffer buf
-        (save-buffer)))
-    (minaduki::with-temp-buffer file-path
-      (with-sqlite-transaction (minaduki-db)
-        (when (member file-path (minaduki-lit:bibliography))
-          (minaduki-db::insert-lit-entries 'update))
-        (unless (eq major-mode 'bibtex-mode)
-          (minaduki-db::insert-meta 'update)
-          (minaduki-db::insert-refs 'update)
-          (minaduki-db::insert-ids 'update)
-          (minaduki-db::insert-links 'update))))))
 (defun minaduki-db:build-cache::find-modified-files (files db-files)
   "Find modified files among FILES by comparing their hashes with DB-FILES.
 
@@ -636,11 +615,12 @@ If FORCE, force a rebuild of the cache from scratch."
              (minaduki::message "Cache is up to date"))
             (t
              (minaduki::message "Updated cache for %s file(s)" modified-count))))))
-;; TODO: what's the difference between this and the private version?
-(defun minaduki-db:update-file (file-path)
+(defun minaduki-db:update-file (&optional file-path)
   "Update cache for FILE-PATH.
 If the file does not exist anymore, remove it from the cache.
 If the file exists, update the cache with information."
+  (setq file-path (or file-path
+                      (buffer-file-name (buffer-base-buffer))))
   (let ((content-hash (minaduki::compute-content-hash file-path))
         (db-hash (minaduki-db::fetch-file-hash file-path)))
     (unless (string= content-hash db-hash)
