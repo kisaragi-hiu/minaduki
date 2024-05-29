@@ -164,6 +164,7 @@ INITIAL-INPUT: passed to `completing-read'.
 PROMPT: the prompt to use during completion. Default: \"Note: \""
   (minaduki::with-comp-setup
       ((ivy-sort-matches-functions-alist . #'ivy--flx-sort))
+    (minaduki::message "Fetching nodes...")
     (let* ((entries (minaduki-db::fetch-all-nodes))
            (alist
             (let (ret)
