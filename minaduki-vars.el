@@ -54,11 +54,6 @@
 
 ;;;; User Options
 
-(defcustom minaduki:track-files-outside-vaults t
-  "Whether to keep track of files outside of any vault."
-  :group 'minaduki
-  :type 'boolean)
-
 (defcustom minaduki:note-title-in-frame-title nil
   "Use the note's declared title instead of the buffer name as frame title.
 
