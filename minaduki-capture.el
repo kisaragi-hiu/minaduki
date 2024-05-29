@@ -332,11 +332,11 @@ the capture)."
                (if (eq (point) (marker-position mkr))
                    (insert (minaduki::format-link :target path
                                                   :desc desc
-                                                  :id? id?))
+                                                  :type (and id? 'id)))
                  (org-with-point-at mkr
                    (insert (minaduki::format-link :target path
                                                   :desc desc
-                                                  :id? id?))))))))))
+                                                  :type (and id? 'id)))))))))))
     (when region
       (set-marker beg nil)
       (set-marker end nil))

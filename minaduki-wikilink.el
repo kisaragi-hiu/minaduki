@@ -202,7 +202,8 @@ DESC is the link description."
       (replace-match "")
       (insert (minaduki::format-link :target loc
                                      :desc desc
-                                     :id? (equal type "id"))))))
+                                     :type (and (equal type "id")
+                                                'id))))))
 
 (defun minaduki-wikilink:replace-all ()
   "Replace all wikilinks in the current buffer."

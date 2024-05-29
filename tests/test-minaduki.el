@@ -228,14 +228,14 @@ members that should be equal."
      (let ((minaduki:link-insertion-format 'absolute)
            (major-mode 'org-mode))
        (minaduki::format-link :target "file:///tmp/abc.org"
-                             :desc "ABC"))
+                              :desc "ABC"))
      :to-equal
      "[[/tmp/abc.org][ABC]]")
     (expect
      (let ((minaduki:link-insertion-format 'absolute)
            (major-mode 'org-mode))
        (minaduki::format-link :target "https://kisaragi-hiu.com"
-                             :desc "ABC"))
+                              :desc "ABC"))
      :to-equal
      "[[https://kisaragi-hiu.com][ABC]]"))
   (it "formats Markdown links"
@@ -243,7 +243,7 @@ members that should be equal."
      (let ((minaduki:link-insertion-format 'absolute)
            (major-mode 'markdown-mode))
        (minaduki::format-link :target "https://kisaragi-hiu.com"
-                             :desc "ABC"))
+                              :desc "ABC"))
      :to-equal
      "[ABC](https://kisaragi-hiu.com)"))
   (it "formats local absolute links"
