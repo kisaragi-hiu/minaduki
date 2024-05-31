@@ -561,22 +561,14 @@ what."
   (unless (one-window-p)
     (let ((window-size-fixed)
           (w (max width window-min-width)))
-      (cond
-       ((> (window-width) w)
-        (shrink-window-horizontally  (- (window-width) w)))
-       ((< (window-width) w)
-        (enlarge-window-horizontally (- w (window-width))))))))
+      (enlarge-window-horizontally (- w (window-width))))))
 
 (defun minaduki-buffer//set-height (height)
   "Set the height of the current window to HEIGHT."
   (unless (one-window-p)
     (let ((window-size-fixed)
           (h (max height window-min-height)))
-      (cond
-       ((> (window-height) h)
-        (shrink-window  (- (window-height) h)))
-       ((< (window-height) h)
-        (enlarge-window (- h (window-height))))))))
+      (enlarge-window (- h (window-height))))))
 
 (defun minaduki-buffer/activate ()
   "Activate display of the `minaduki-buffer'."
