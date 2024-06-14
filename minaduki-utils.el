@@ -139,8 +139,7 @@ collection, and to sort matches with `ivy--shorter-matches-first'."
   (when minaduki-verbose
     (apply #'message `(,(concat "(minaduki) " format-string) ,@args))))
 
-
-(defsubst minaduki::keyword-to-symbol (kw)
+(defun minaduki::keyword-to-symbol (kw)
   "Given keyword :KW, return 'KW.
 
 Return KW unchanged if it's not a keyword."
@@ -326,9 +325,9 @@ Inverse of `org-link-expand-abbrev'."
 
 Like `minaduki::format-link' but without the path magic."
   (minaduki::file-type-case
-    ('org
+    (:org
      (org-link-make-string target desc))
-    ('markdown
+    (:markdown
      (cond ((not desc)
             ;; Just a URL
             (format "[%s](%s)"
