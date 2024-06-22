@@ -140,9 +140,9 @@ collection, and to sort matches with `ivy--shorter-matches-first'."
     (apply #'message `(,(concat "(minaduki) " format-string) ,@args))))
 
 (defun minaduki::keyword-to-symbol (kw)
-  "Given keyword :KW, return 'KW.
+  "Given keyword :KW, return \\='KW.
 
-Return KW unchanged if it's not a keyword."
+Return KW unchanged if it\\='s not a keyword."
   (if (not (keywordp kw))
       kw
     (intern (substring (symbol-name kw) 1))))
@@ -355,7 +355,7 @@ If ID? is non-nil and we're in Org mode, return an ID link instead."
         (target (org-link-decode
                  (replace-regexp-in-string "^file://" "" target))))
     (minaduki::file-type-case
-      ('org
+      (:org
        (unless (or url? type)
          (setq target (minaduki::convert-path-format target)))
        (when (eq type 'id)
@@ -366,7 +366,7 @@ If ID? is non-nil and we're in Org mode, return an ID link instead."
          (when (equal target desc)
            (setq desc nil))
          (org-link-make-string target desc)))
-      ('markdown
+      (:markdown
        (cond ((and (not desc) url?)
               ;; plain URL links
               (format "<%s>" target))
@@ -662,10 +662,10 @@ If the property is already set, it's value is replaced."
 
 (defun minaduki::get-heading-id ()
   "Return the ID of the current heading."
-  (pcase (minaduki::file-type)
-    ('markdown
+  (minaduki::file-type-case
+    (:markdown
      (car (minaduki::markdown-matched-heading nil t)))
-    ('org (org-id-get))))
+    (:org (org-id-get))))
 
 (defun minaduki::set-heading-id (new-id &optional force)
   "Set the ID of the current heading to NEW-ID if it\\='s not set yet.
@@ -675,13 +675,13 @@ Returns NEW-ID."
     (unless force
       (when (minaduki::get-heading-id)
         (cl-return nil)))
-    (pcase (minaduki::file-type)
-      ('markdown
+    (minaduki::file-type-case
+      (:markdown
        (save-excursion
          (outline-back-to-heading)
          (end-of-line)
          (insert (format " {#%s}" new-id))))
-      ('org
+      (:org
        (org-entry-put nil "ID" new-id)))
     new-id))
 
