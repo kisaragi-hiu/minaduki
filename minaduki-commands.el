@@ -127,6 +127,22 @@ what they want to do with it."
                   (user-error "Aborted")))))))
     (minaduki:local-commands key)))
 
+(defun minaduki-org-set-startup ()
+  "Set the STARTUP option for the current buffer."
+  (interactive)
+  (minaduki::set-global-prop
+   "startup"
+   (minaduki::completing-read-annotation
+    "Startup option: "
+    `(("overview" . "fold everything")
+      ("nofold" . "show all")
+      ("content" . "all headlines")
+      ("show2levels" . "2 levels of headlines")
+      ("show3levels" . "3 levels of headlines")
+      ("show4levels" . "4 levels of headlines")
+      ("show5levels" . "5 levels of headlines")
+      ("showeverything" . "show everything, even drawers")))))
+
 ;;;; Markdown-specific local commands
 
 (defun minaduki-markdown-follow (&optional other)

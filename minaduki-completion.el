@@ -231,6 +231,21 @@ PROMPT: the text shown in the prompt."
           (setq answer (list answer)))
         (--map (cdr (assoc it alist)) answer)))))
 
+(defun minaduki::completing-read-annotation (prompt alist)
+  "Prompt to select from a list of options, each with an annotation.
+The user is prompted with PROMPT.
+ALIST maps each option to their annotation string."
+  (let (strings)
+    (setq strings (--map (format "%s %s"
+                                 (car it)
+                                 (propertize
+                                  (format "(%s)" (cdr it))
+                                  'face 'font-lock-doc-face))
+                         alist))
+    (replace-regexp-in-string
+     (rx " (" (* nonl)) ""
+     (completing-read prompt strings nil t))))
+
 ;;;; `completion-at-point' completions
 
 (defun minaduki-completion/tags-at-point ()
