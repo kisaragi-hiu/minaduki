@@ -303,6 +303,8 @@ and PATH is \"/home/abc\", this returns \"x:abc\".
 Inverse of `org-link-expand-abbrev'."
   ;; FIXME: this should be applied to `minaduki/vaults'.
   (catch 'ret
+    (unless path
+      (throw 'ret path))
     (setq path (f-canonical path))
     (pcase-dolist (`(,key . ,abbrev) org-link-abbrev-alist)
       ;; Get the symbol property if the value is a function / symbol
