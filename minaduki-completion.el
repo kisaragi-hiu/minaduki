@@ -231,20 +231,32 @@ PROMPT: the text shown in the prompt."
           (setq answer (list answer)))
         (--map (cdr (assoc it alist)) answer)))))
 
-(defun minaduki::completing-read-annotation (prompt alist)
+(defun minaduki::completing-read-annotation (prompt alist &optional cdr)
   "Prompt to select from a list of options, each with an annotation.
+
+Return the selected option itself. If CDR is non-nil, return the
+annotation of the selected option.
+
 The user is prompted with PROMPT.
 ALIST maps each option to their annotation string."
-  (let (strings)
-    (setq strings (--map (format "%s %s"
+  (let (mapping strings selected-cell)
+    ;; Map from the actual strings presented to the original values
+    (setq mapping (--map
+                   (cons (format "%s %s"
                                  (car it)
                                  (propertize
                                   (format "(%s)" (cdr it))
                                   'face 'font-lock-doc-face))
-                         alist))
-    (replace-regexp-in-string
-     (rx " (" (* nonl)) ""
-     (completing-read prompt strings nil t))))
+                         it)
+                   alist))
+    (setq strings (-map #'car mapping))
+    (setq selected-cell
+          ;; The original (str . doc) mapping
+          (cdr (assoc (completing-read prompt strings nil t)
+                      mapping)))
+    (if cdr
+        (cdr selected-cell)
+      (car selected-cell))))
 
 ;;;; `completion-at-point' completions
 

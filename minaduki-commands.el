@@ -1066,11 +1066,12 @@ This first adds an entry for it into a file in
   "Command palette."
   (declare (interactive-only command-execute))
   (interactive)
-  (let* ((candidates minaduki::global-commands)
-         (selection (completing-read "Minaduki Global Command: " candidates))
-         (func (cdr (assoc selection candidates)))
-         (prefix-arg current-prefix-arg))
-    (command-execute func)))
+  (let* ((prefix-arg current-prefix-arg))
+    (command-execute
+     (minaduki::completing-read-annotation
+      "Minaduki Global Command: "
+      minaduki::global-commands
+      t))))
 
 (defun minaduki:local-commands (&optional citekey)
   "Prompt for note-related actions.
@@ -1104,8 +1105,8 @@ given or can be retrieved, actions from
                          minaduki::local-commands::biblio)
                        (when (derived-mode-p 'org-mode)
                          minaduki::local-commands::org))))
-         (selection (completing-read prompt candidates))
-         (func (cdr (assoc selection candidates))))
+         (func (minaduki::completing-read-annotation
+                prompt candidates t)))
     (if (/= 1 (car (func-arity func)))
         (funcall func)
       (when (and citekey
