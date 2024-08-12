@@ -217,8 +217,8 @@ If UPDATE-P is non-nil, first remove the meta for the file in the database.
 If HASH is non-nil, assume that is the file's hash without recomputing it."
   (let* ((file (minaduki::current-file-name))
          (attr (file-attributes file))
-         (atime (file-attribute-access-time attr))
          (mtime (file-attribute-modification-time attr))
+         (modified (minaduki-extract--modified))
          (hash (or hash (minaduki::compute-content-hash file)))
          (tags (minaduki-extract/tags file))
          (titles (minaduki-extract/titles))
@@ -231,8 +231,8 @@ If HASH is non-nil, assume that is the file's hash without recomputing it."
      'files
      (list (vector file
                    hash
-                   (list :atime (vconcat atime)
-                         :mtime (vconcat mtime))
+                   (list :mtime (vconcat mtime)
+                         :modified modified)
                    (vconcat tags)
                    (vconcat titles))))
     (let ((sources (cl-loop

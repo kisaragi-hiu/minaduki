@@ -116,7 +116,12 @@ A /daily note/ is a fleeting note named after the /day/ it was created, instead 
 
 - Command: =minaduki/open-diary-entry=
 
-  Open (or create) a fleeting note associated with today. With a universal argument, this will prompt to select another date instead of today. =org-extend-today-until= is honored.
+  Open (or create) a file associated with today. With a universal argument, this will prompt to select another date instead of today. =org-extend-today-until= is honored.
+
+  A file is associated with a day by:
+
+  - if it is a file in =minaduki/diary-directory=, then by its file name starting with the date (in YYYYMMDD)
+  - for all files, via the properties =modified=, =created=, and =date=, in that order
 
 *** Concept notes
 

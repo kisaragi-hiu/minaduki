@@ -525,6 +525,16 @@ Return a list of `minaduki-id' objects."
          (list (or (match-string-no-properties 1)
                    (match-string-no-properties 4))))))))
 
+(defun minaduki-extract--modified ()
+  "Extract the last modified timestamp from the current buffer.
+
+This only considers the \"modified\", \"created\", or \"date\"
+properties, and does not consider the modification time of the file."
+  (when-let ((timestamps (or (minaduki-extract//file-prop "modified")
+                             (minaduki-extract//file-prop "created")
+                             (minaduki-extract//file-prop "date"))))
+    (car timestamps)))
+
 (defun minaduki-extract/titles ()
   "Extract the titles from current buffer.
 

@@ -91,16 +91,35 @@ When there are multiple entries, prompt for selection.
 DAY should be written in the format \"YYYY-MM-DD\" or
 \"YYYYMMDD\".
 
-This only considers files with names starting with DAY (with
-dashes removed), and does not use any other method to determine
-whether an entry is from DAY or not."
+This considers:
+- files in `minaduki/diary-directory' whose names start with DAY (without dashes)
+  like diary/20000102.org, \"diary/20150501-whatever.org\"
+- files that declared a timestamp in a \"modified\", \"created\", or
+  \"date\" file property"
   (setq day (s-replace "-" "" day))
-  (let ((file-list
-         (directory-files
-          minaduki/diary-directory :full
-          (format (rx bos "%s" (0+ any) ".org")
-                  day)
-          :nosort)))
+  (let* ((day (s-replace "-" "" day))
+         (long-day (format "%s-%s-%s"
+                           (substring day 0 4)
+                           (substring day 4 6)
+                           (substring day 6 8)))
+         (modified-file-list
+          ;; First select using glob, then use elisp to do precise filter
+          (->> (minaduki-db-select
+                "select file, meta from files where meta glob ?"
+                (format "*%s*" long-day))
+               (-filter
+                (pcase-lambda (`(,_path ,meta))
+                  (-some--> (minaduki-db::parse-value meta)
+                    (map-elt it "modified")
+                    (s-starts-with? long-day it))))
+               (-map #'car)))
+         (diary-file-list
+          (directory-files
+           minaduki/diary-directory :full
+           (format (rx bos "%s" (0+ any) ".org")
+                   day)
+           :nosort))
+         (file-list (append modified-file-list diary-file-list)))
     (pcase (length file-list)
       (0 nil)
       (1 (car file-list))
