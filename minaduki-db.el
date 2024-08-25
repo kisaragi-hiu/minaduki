@@ -52,6 +52,10 @@
 This is the value passed to `sqlite-execute' and the like.
 Use the function `minaduki-db' to access this value.")
 
+(defvar minaduki-db::stale t
+  "Whether to consider the db stale.
+When this is non-nil, `minaduki-db' automatically updates the cache.")
+
 ;; Timer-based updating
 ;; The timer is hooked up in minaduki-mode.el
 ;; Current name is `minaduki-db/file-update-timer'
@@ -118,6 +122,9 @@ Use the function `minaduki-db' to access this value.")
 Performs initialization and migration when required."
   (unless (sqlitep minaduki-db::connection)
     (minaduki-db::init-and-migrate))
+  (when minaduki-db::stale
+    ;; build-cache sets stale to nil in its first steps
+    (minaduki-db:build-cache))
   minaduki-db::connection)
 
 ;; Like `emacsql-escape-scalar'
@@ -590,6 +597,9 @@ If FORCE, force a rebuild of the cache from scratch."
   (when force (delete-file minaduki:db-location))
   ;; Force a reconnect
   (setq minaduki-db::connection nil)
+  ;; This must come before other calls to `minaduki-db' otherwise we've just
+  ;; created an infinite loop.
+  (setq minaduki-db::stale nil)
   ;; Initialize the database if necessary
   (minaduki-db)
   (let* ((gc-cons-threshold minaduki-db/gc-threshold)
