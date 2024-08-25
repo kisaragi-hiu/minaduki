@@ -857,7 +857,7 @@ process."
 (defun minaduki:insert-citation (citekey)
   "Insert a citation to CITEKEY."
   (minaduki::file-type-case
-    ('org
+    (:org
      (let ((minaduki-read:lit-entry::citekey citekey))
        (org-cite-insert nil)))
     (_ (insert "@" citekey))))
@@ -910,12 +910,12 @@ CITEKEY is a list whose car is a citation key."
 (defun minaduki-lit::literature-key-at-point ()
   "Return the key of the literature entry at point."
   (minaduki::file-type-case
-    ('org
+    (:org
      (let ((value (org-entry-get nil minaduki-lit/key-prop t)))
        (when (and value
                   (not (string= "" value)))
          value)))
-    ('json
+    (:json
      (save-excursion
        (let (here doc)
          (setq here (point))
@@ -933,7 +933,7 @@ CITEKEY is a list whose car is a citation key."
   (let ((key (minaduki-lit::literature-key-at-point)))
     (unless key
       (minaduki::file-type-case
-        ('org
+        (:org
          (dolist (prop '("url" "author" "date"))
            (let ((value (pcase prop
                           ("author" (minaduki-read:author))
@@ -948,7 +948,7 @@ CITEKEY is a list whose car is a citation key."
                 :date (or (org-entry-get nil "date")
                           (org-entry-get nil "year"))))
          (org-entry-put nil minaduki-lit/key-prop key))
-        ('json
+        (:json
          (error "Support for setting the key of the CSL-JSON entry at point has not yet been implemented"))))
     key))
 (defun minaduki-lit:literature-key-get-create ()
@@ -959,7 +959,7 @@ Return the key."
   (let ((key (minaduki-lit::literature-key-at-point)))
     (unless key
       (minaduki::file-type-case
-        ('org
+        (:org
          (setq key
                (minaduki-lit::generate-key-from
                 :title (org-entry-get nil "ITEM")
@@ -967,7 +967,7 @@ Return the key."
                 :date (or (org-entry-get nil "date")
                           (org-entry-get nil "year"))))
          (org-entry-put nil minaduki-lit/key-prop key))
-        ('json
+        (:json
          (error "Support for setting the key of the CSL-JSON entry at point has not yet been implemented"))))
     key))
 
@@ -1001,7 +1001,7 @@ This first adds an entry for it into a file in
     ;; Use find-file to ensure we save into it
     (find-file target-biblio)
     (minaduki::file-type-case
-      ('org
+      (:org
        ;; Go to just before the first heading
        (goto-char (point-min))
        (outline-next-heading)
@@ -1027,7 +1027,7 @@ This first adds an entry for it into a file in
              (setq info (plist-put info prop value)))))
        (setq info (plist-put info
                              :citekey (minaduki-lit:literature-key-get-create))))
-      ('json
+      (:json
        (goto-char (point-min))
        (let ((v (json-read)))
          (dolist (prop '(:author :date))
