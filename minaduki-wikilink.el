@@ -17,7 +17,7 @@
 ;; FIXME: [[minaduki:nonexistent][some description]] would try to open "some
 ;; description" and error out
 ;; FIXME: [[minaduki:nonexistent]] would try to open "nonexistent" and still
-;; error out instead of creating a note (a problem with minaduki/open?)
+;; error out instead of creating a note (a problem with minaduki:open?)
 ;;;
 ;;; Code:
 
@@ -33,7 +33,7 @@
 (require 'minaduki-vars)
 (require 'minaduki-completion)
 
-(declare-function minaduki/open "minaduki-commands" (&optional entry))
+(declare-function minaduki:open "minaduki-commands" (&optional entry))
 
 (defun minaduki-wikilink:follow (_path)
   "Follow a minaduki: wikilink.
@@ -46,7 +46,7 @@ This function is called by Org when following links of the type
       ("file"
        (if loc
            (minaduki::find-file loc)
-         (minaduki/open desc)))
+         (minaduki:open desc)))
       ("id"
        (org-goto-marker-or-bmk mkr)))))
 

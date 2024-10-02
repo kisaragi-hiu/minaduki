@@ -98,7 +98,7 @@ Subdirectories containing ~minaduki-nested-vault-root-files~ are considered /nes
 - [ ] Markdown: insertion adheres to minaduki/vaults
 ** Note types
 
-=minaduki/open= does not distinguish between different types of notes, but categorizing notes into different types allows Minaduki to offer commands to quickly create them.
+=minaduki:open= does not distinguish between different types of notes, but categorizing notes into different types allows Minaduki to offer commands to quickly create them.
 
 *** Fleeting notes
 
@@ -233,7 +233,7 @@ The =CUSTOM_ID= key can be customized: set =minaduki-lit/key-prop= to something 
 * Tutorials
 ** Browsing notes
 
-Use =minaduki/open= to see a list of indexed notes. Select one to open.
+Use =minaduki:open= to see a list of indexed notes. Select one to open.
 
 If [[https://github.com/minad/marginalia/][Marginalia]] is installed, you'll see the file name listed in the completion as well.
 
