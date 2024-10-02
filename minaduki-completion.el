@@ -24,6 +24,7 @@
 ;;; Code:
 
 (require 'dash)
+(require 's)
 (require 'f)
 
 (require 'minaduki-vars)
@@ -132,26 +133,24 @@ Embark to create what are in effect context menus."
 
 (defun minaduki--format-node (node)
   "Format NODE for use in a completion interface."
-  (concat
-   (minaduki::ensure-display-width
-    (min 800 (* 0.5 (frame-pixel-width)))
-    (oref node title))
-   (or (and (equal (oref node key-type) "cite")
-            (--> (oref node key)
-                 (concat "@" it)
-                 (propertize it 'face 'minaduki-key)
-                 (concat it " ")))
-       "")
-   (or (->> (oref node tags)
-            ;; I want a trailing space here
-            (--map (-> (concat "#" it)
-                       (propertize 'face 'minaduki-tag)
-                       (concat " ")))
-            string-join)
-       "")
-   (--> (or (oref node id)
-            (minaduki-vault:path-relative (oref node path)))
-        (propertize it 'face 'minaduki-path))))
+  (let ((title (concat
+                (oref node title)
+                (propertize
+                 " "
+                 'display
+                 `(space :align-to (,(min 800 (* 0.5 (frame-pixel-width))))))))
+        (cite (and (equal (oref node key-type) "cite")
+                   (--> (oref node key)
+                        (concat "@" it)
+                        (propertize it 'face 'minaduki-key))))
+        (tags (->> (oref node tags)
+                   (--map (-> (concat "#" it)
+                              (propertize 'face 'minaduki-tag)))
+                   (s-join " ")))
+        (id-or-path (-> (or (oref node id)
+                            (minaduki-vault:path-relative (oref node path)))
+                        (propertize 'face 'minaduki-path))))
+    (concat title cite tags id-or-path)))
 
 (cl-defun minaduki-read:note
     (&key initial-input (prompt "Note: "))
