@@ -168,8 +168,9 @@ PROMPT: the prompt to use during completion. Default: \"Note: \""
     (let* ((entries (minaduki-db::fetch-all-nodes))
            (alist
             (let (ret)
-              (minaduki::for "Formating nodes..." entry entries
-                (push (cons (minaduki--format-node entry) entry) ret))
+              (minaduki::loading "Formating nodes..."
+                (dolist (entry entries)
+                  (push (cons (minaduki--format-node entry) entry) ret)))
               (nreverse ret)))
            (completions (map-keys alist))
            (selection

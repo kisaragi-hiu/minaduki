@@ -178,6 +178,14 @@ Difference between this and `lwarn':
               (t it)))
             args))))
 
+(defmacro minaduki::loading (str &rest body)
+  "Show STR, run BODY, then show STR + \"done\"."
+  (declare (indent 1))
+  `(progn
+     (minaduki::message "%s" ,str)
+     ,@body
+     (minaduki::message "%sdone" ,str)))
+
 (defmacro minaduki::for (message var sequence &rest body)
   "Iterate BODY over SEQUENCE.
 
