@@ -257,15 +257,11 @@ like `minaduki-lit/entry' objects."
       (goto-char (point-min))
       (org-map-region
        (lambda ()
-         (let ((props (org-entry-properties))
+         ;; Get all non-special properties plus ITEM and TODO.
+         ;; That function is like org-entry-properties but more efficient
+         ;; because I avoid computing what I don't need in the first place
+         (let ((props (minaduki::org-entry-properties))
                url-as-key)
-           ;; Remove properties that I'm not interested in
-           (setq props
-                 (--remove
-                  (member (car it)
-                          (-difference org-special-properties '("ITEM" "TODO")))
-                  props))
-           ;; Downcase all keys early
            (dolist (pair props)
              (setcar pair (downcase (car pair))))
            (when (or (member minaduki-lit/key-prop (map-keys props))

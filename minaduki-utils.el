@@ -594,6 +594,73 @@ ARGS and BODY are as in `lambda'."
   (minaduki::with-temp-buffer file
     (buffer-string)))
 
+;;;; Org mode stuff
+
+(defun minaduki::org-entry-properties-original (&optional epom)
+  "Reference implementation of `minaduki::org-entry-properties'.
+
+Written here because my Emacs 30 pretest crashed while I was trying to
+put this into the test file and I just want the commit done."
+  (let ((props (org-entry-properties)))
+    (--remove
+     (member (car it)
+             (-difference org-special-properties '("ITEM" "TODO")))
+     props)))
+
+(defun minaduki::org-entry-properties (&optional epom)
+  "Return relevant properties of the org entry at EPOM efficiently.
+
+If EPOM is nil, return properties for the entry at point.
+
+The relevant properties are non-special properties plus ITEM and TODO."
+  (org-with-point-at epom
+    (when (and (derived-mode-p 'org-mode)
+               (org-back-to-heading-or-point-min t))
+      (catch 'exit
+        (let* ((beg (point))
+               props)
+          ;; Special property: ITEM
+          (let ((case-fold-search nil))
+            (when (looking-at org-complex-heading-regexp)
+              (push (cons "ITEM"
+                          (let ((title (match-string-no-properties 4)))
+                            (if (org-string-nw-p title)
+                                (org-remove-tabs title)
+                              "")))
+                    props)))
+          ;; Special property: TODO
+          (let ((case-fold-search nil))
+            (when (and (looking-at org-todo-line-regexp) (match-end 2))
+              (push (cons "TODO" (match-string-no-properties 2)) props)))
+          ;; Get the standard properties, like :PROP:.
+          (let ((range (org-get-property-block beg)))
+            (when range
+              (let ((end (cdr range)) seen-base)
+                (goto-char (car range))
+                ;; Unlike to `org--update-property-plist', we
+                ;; handle the case where base values is found
+                ;; after its extension.  We also forbid standard
+                ;; properties to be named as special properties.
+                (while (re-search-forward org-property-re end t)
+                  (let* ((key (upcase (match-string-no-properties 2)))
+                         (extendp (string-match-p "\\+\\'" key))
+                         (key-base (if extendp (substring key 0 -1) key))
+                         (value (match-string-no-properties 3)))
+                    (cond
+                     ((member-ignore-case key-base org-special-properties))
+                     (extendp
+                      (setq props
+                            (org--update-property-plist key value props)))
+                     ((member key seen-base))
+                     (t (push key seen-base)
+                        (let ((p (assoc-string key props t)))
+                          (if p (setcdr p (concat value " " (cdr p)))
+                            (push (cons key value) props))))))))))
+          (unless (assoc "CATEGORY" props)
+            (push (cons "CATEGORY" (org-get-category beg)) props))
+          ;; Return value.
+          props)))))
+
 ;;;; Markdown local functions
 
 (defun minaduki::markdown-matched-heading
