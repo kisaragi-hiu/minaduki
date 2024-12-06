@@ -127,10 +127,11 @@ collection, and to sort matches with `ivy--shorter-matches-first'."
      (let ((selectrum-should-sort nil)
            ,@(cl-loop for (key . value) in defaults
                       collect `(,key
-                                (if (assoc this-command ,key)
-                                    ,key
-                                  (list (cons this-command
-                                              ,(alist-get key defaults)))))))
+                                (when (boundp ',key)
+                                  (if (assoc this-command ,key)
+                                      ,key
+                                    (list (cons this-command
+                                                ,(alist-get key defaults))))))))
        ,@body)))
 
 ;;;; Error and progress reporting
