@@ -121,7 +121,7 @@ CONTEXT keys:
                                ("/" . "")
                                ("?" . "")))
               downcase))
-           ;; (title (minaduki::to-slug title))
+           (title (minaduki::to-slug title))
            (date
             (-some->> date
               (s-replace "--" "–")
@@ -129,9 +129,7 @@ CONTEXT keys:
               (s-replace "–" "--")
               ;; this should handle ISO 8601 timestamps
               (replace-regexp-in-string "T[[:digit:]].*" ""))))
-      (concat author
-              ;; (or title "")
-              (or date "")))))
+      (s-join "-" (-non-nil (list author title date))))))
 
 (defun minaduki-lit/fetch-new-entry-from-url (url)
   "Fetch information from URL for a new entry."
