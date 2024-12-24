@@ -122,8 +122,8 @@ collection, and to sort matches with `ivy--shorter-matches-first'."
   `(progn
      ;; The keys are never supposed to be lexical variables.
      ,@(cl-loop for (key . _) in defaults
-                collect `(defvar ,key))
-     (defvar selectrum-should-sort)
+                collect `(defvar ,key nil))
+     (defvar selectrum-should-sort nil)
      (let ((selectrum-should-sort nil)
            ,@(cl-loop for (key . value) in defaults
                       collect `(,key
