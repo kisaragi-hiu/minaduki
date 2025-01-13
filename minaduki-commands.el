@@ -1062,6 +1062,7 @@ This first adds an entry for it into a file in
 
 ;;;; Actions
 
+;;;###autoload
 (defun minaduki:global-commands ()
   "Command palette."
   (declare (interactive-only command-execute))
@@ -1073,6 +1074,7 @@ This first adds an entry for it into a file in
       minaduki::global-commands
       t))))
 
+;;;###autoload
 (defun minaduki:local-commands (&optional citekey)
   "Prompt for note-related actions.
 
