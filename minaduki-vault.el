@@ -277,13 +277,15 @@ If VAULT is not given, use the main vault."
   "Given PATH relative to VAULT-NAME, return its absolute path.
 
 VAULT-NAME is a name in `minaduki/vaults'. If nil, use the
-current closest vault."
+current closest vault, or the main vault if there isn't one."
   (let ((dir
-         (if vault-name
-             (--> minaduki/vaults
-                  (--first (equal vault-name (minaduki-vault-name it)) it)
-                  minaduki-vault-path)
-           (minaduki-vault:closest))))
+         (or (and
+              vault-name
+              (--> minaduki/vaults
+                   (--first (equal vault-name (minaduki-vault-name it)) it)
+                   minaduki-vault-path))
+             (minaduki-vault:closest)
+             (minaduki-vault:main))))
     (expand-file-name path dir)))
 
 (defun minaduki-vault:obsidian-vault? (&optional vault)

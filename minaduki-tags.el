@@ -7,7 +7,7 @@
 ;;; Code:
 
 (require 'org)
-(require 'f)
+(require 'dash)
 
 (require 'minaduki-vars)
 (require 'minaduki-utils)
@@ -23,24 +23,18 @@
      (point-max))
     ret))
 
+(defun minaduki-tags--current-library ()
+  "Return path of the current tags library."
+  (minaduki-vault:path-absolute minaduki:tags-file))
+
 (defun minaduki-tags-library ()
   "Return all tags in library."
-  (minaduki::with-temp-buffer
-      (minaduki-vault:path-absolute minaduki:tags-file)
+  (minaduki::with-temp-buffer (minaduki-tags--current-library)
     (minaduki-tags--extract-tags)))
 
-(defvar kisaragi-tags/insert/history nil)
-
-(defun kisaragi-tags/insert ()
-  "Select and insert a tag from the library."
-  (interactive)
-  (let ((tag (completing-read
-              "Tag: " (minaduki-tags-library)
-              nil t nil 'kisaragi-tags/insert/history)))
-    (insert tag)))
-
-(defun k/org-tag ()
-  "Add or remove tags in `org-mode', using tags from `kisaragi-tags'."
+;;;###autoload
+(defun minaduki-org-set-heading-tags ()
+  "Add or remove tags in `org-mode', utilizing the tags library."
   (interactive)
   (let ((current-tags (org-get-tags (point) t))
         input)
@@ -58,6 +52,32 @@
         (org-set-tags (if (-intersection input current-tags)
                           (-difference current-tags input)
                         (append current-tags input)))))))
+
+(defun minaduki-tags-describe (tag)
+  "Jump to the definition of TAG in the tags library."
+  (interactive
+   (list (completing-read "Describe tag: "
+                          (minaduki-tags-library))))
+  (find-file (minaduki-tags--current-library))
+  (let ((target
+         ;; The correct way to do this is to save the tag position on scan
+         ;; instead of doing another scan. But, err, this works fo now.
+         (cl-block here
+           (org-map-region
+            (lambda ()
+              (when (and (equal (org-entry-get nil "ITEM")
+                                tag)
+                         (not (minaduki--org-has-children?)))
+                (cl-return-from here (point))))
+            (point-min) (point-max)))))
+    (goto-char target)))
+
+(defun minaduki-tags-new ()
+  "Jump to the current tags library and prepare to create a new tag."
+  (interactive)
+  (find-file (minaduki-tags--current-library))
+  (goto-char (point-min))
+  (re-search-forward org-complex-heading-regexp nil t))
 
 (provide 'minaduki-tags)
 

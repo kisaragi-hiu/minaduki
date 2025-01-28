@@ -6,6 +6,20 @@ Minaduki is my fork of Org-roam v1.
 
 It has support for reading Obsidian vaults.
 
+* Tags library
+
+In the interest of keeping a controlled library of tags, the minaduki-tags module is made to help with that.
+
+Tags are kept in the vault-specific =minaduki:tags-file=. Headings in that file who have no subheadings are treated as tag definitions; this helps with explaining nuances of tags that are often single-word.
+
+Programmatic API:
+
+- minaduki-tags-library: return tags from the current tag library
+
+Commands:
+
+- minaduki-org-set-heading-tags: like =org-set-tags= but using the tag library for completion
+
 * File formats
 
 Minaduki has support for notes written in Org and Markdown. I hope to add support for more formats (reStructuredText, AsciiDoc, etc.) in the future.
