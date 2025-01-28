@@ -1,4 +1,4 @@
-;;; minaduki.el --- An Org-roam v1 fork -*- lexical-binding: t; -*-
+;;; minaduki.el --- An extremely opinionated Org-roam v1 fork -*- lexical-binding: t; -*-
 
 ;; Copyright © 2020 Jethro Kuan <jethrokuan95@gmail.com>
 

@@ -597,6 +597,18 @@ ARGS and BODY are as in `lambda'."
 
 ;;;; Org mode stuff
 
+(defun minaduki--org-has-children? ()
+  "Does the current Org heading have child entries?
+
+Cursor should be placed on the heading line."
+  (let ((this-level (or (org-current-level) 0))
+        (next-level (save-excursion
+                      (or (and (goto-char (line-end-position))
+                               (re-search-forward org-heading-regexp nil t)
+                               (org-current-level))
+                          0))))
+    (< this-level next-level)))
+
 (defun minaduki::org-entry-properties-original (&optional epom)
   "Reference implementation of `minaduki::org-entry-properties'.
 

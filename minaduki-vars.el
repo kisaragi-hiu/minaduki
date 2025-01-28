@@ -200,6 +200,11 @@ defaults, however."
           (const :tag "Include everything" nil))
   :group 'minaduki)
 
+(defcustom minaduki:tags-file "tags.org"
+  "Vault-local path to the tags library."
+  :type 'string
+  :group 'minaduki)
+
 (defcustom minaduki:index-file "index.org"
   "Path to the index file.
 The path can be a string or a function.
