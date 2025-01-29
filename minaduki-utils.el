@@ -419,8 +419,11 @@ If ID? is non-nil and we're in Org mode, return an ID link instead."
   "Convert CALENDAR-EL-DATE (a list (MM DD YYYY)) to a date string YYYY-MM-DD."
   (apply #'format "%3$04d-%1$02d-%2$02d" calendar-el-date))
 
-(defun minaduki::today (&optional n)
+(defun minaduki::today (&optional n ignore-extend)
   "Return today's date, taking `org-extend-today-until' into account.
+
+If IGNORE-EXTEND is non-nil, then *don\\='t* take
+`org-extend-today-until' into account.
 
 Return values look like \"2020-01-23\".
 
@@ -433,11 +436,12 @@ means tomorrow, and N = -1 means yesterday."
     (* n 86400)
     (time-since
      ;; if it's bound and it's a number, do the same thing `org-today' does
-     (or (and (boundp 'org-extend-today-until)
-              (numberp org-extend-today-until)
-              (* 3600 org-extend-today-until))
-         ;; otherwise just return (now - 0) = now.
-         0)))))
+     (if (and (not ignore-extend)
+              (boundp 'org-extend-today-until)
+              (numberp org-extend-today-until))
+         (* 3600 org-extend-today-until)
+       ;; otherwise just return (now - 0) = now.
+       0)))))
 
 ;;;; File utilities
 (defun minaduki::ensure-not-file:// (path)

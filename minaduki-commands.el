@@ -673,8 +673,7 @@ are named with a YYYYMMDD prefix (optionally with dashes)."
 
              (and (or current-prefix-arg minaduki-btn::pressed (not noprompt))
                   (minaduki//read-date "Visit diary entry from day:"))
-
-             (minaduki::today))))
+             (minaduki::today nil t))))
     (if-let ((file (minaduki//find-entry-for-day day)))
         (find-file file)
       (and (y-or-n-p (format "No entry from %s. Create one? " day))
