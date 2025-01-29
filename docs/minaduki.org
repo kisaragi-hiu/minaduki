@@ -75,35 +75,17 @@ Goals:
 
 ** Vaults
 
+This is functioning as a planning document.
+
 A vault represents a path full of notes.
 
-If a vault has a name, it can be linked to from other places.
+Vaults are for clearly separated stuff. Note libraries of different people should be in different vaults. Fiction writing projects should be in different vaults.
 
-There will also be other vault properties. =skipped= means the vault is not automatically indexed when =minaduki-db/build-cache= runs. Instead, files are only cached when you visit and edit them.
+To prevent scope creep you /cannot/ link to different vaults. Or, rather, there is no special mechanism to do so: file links of course still work but they are fragile.
 
-Links can specify a vault. If a link doesn't specify a vault, that makes it a normal relative or absolute link, so it will refer to paths inside the current vault.
+Links to resource libraries will be handled with an extention to =org-link-abbrev-alist= that extends it to eg. Markdown.
 
-Additionally, some commands like =minaduki/open-index= will use a default vault.
-
-- Variable: minaduki/vaults
-
-  A list of vaults. Each vault is either a path or a plist =(:name NAME :path PATH :skipped SKIPPED)=.
-
-  #+begin_src elisp
-  (setq minaduki/vaults
-        '((:name "notes" :path "~/notes" :skipped nil)
-          (:name "cloud" :path "~/Dropbox" :skipped t)))
-  #+end_src
-
-The name of a vault can be used to link to it. In Org this is the same as setting =org-link-abbrev-alist=. In this example, to link to =~/Dropbox=, write:
-
-#+begin_src org
-[[cloud:myfile.org]]
-#+end_src
-
-which will refer to =~/Dropbox/myfile.org=.
-
-The main vault is set as the first vault with the =:main= property, or the first vault in general.
+There is a default vault. This vault represents the main notes collection of the user.
 
 Subdirectories containing ~minaduki-nested-vault-root-files~ are considered /nested vaults/. Right now this is only used to implement Obsidian's default /shortest link when possible/ links.
 
