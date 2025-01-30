@@ -742,13 +742,13 @@ The index file is specified in this order:
     (if (and index (f-exists? index))
         (minaduki::find-file index)
       (when (y-or-n-p "Index file does not exist.  Would you like to create it? ")
-        (minaduki:open "Index")))))
+        (minaduki-open "Index")))))
 
 ;;;###autoload
-(defun minaduki:open (&optional entry)
+(defun minaduki-open (&optional entry)
   ;; Some usages:
-  ;; (minaduki:open title)
-  ;; (minaduki:open
+  ;; (minaduki-open title)
+  ;; (minaduki-open
   ;;   (minaduki-read:note :initial-input initial-input))
   "Find and open the note ENTRY.
 
@@ -843,7 +843,7 @@ process."
                                (`citekey citekey)
                                (`title title)
                                (_ (user-error "`minaduki-lit:slug-source' can only be `citekey' or `title'"))))))
-                  (minaduki:open
+                  (minaduki-open
                    (minaduki-node
                     :path (f-join minaduki/literature-notes-directory (format "%s.org" slug))))
                   (insert

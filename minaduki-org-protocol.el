@@ -88,7 +88,7 @@ emacsclient \\='org-protocol://notes?file=characters/闇音レンリ.org\\='
 emacsclient \\='org-protocol://notes?key=banjoazusa2020\\='"
   (cond
    (title
-    (minaduki:open title))
+    (minaduki-open title))
    (file
     (find-file (f-join (minaduki-vault:main) file)))
    (key

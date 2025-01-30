@@ -323,7 +323,7 @@ headings with an ID are cached (extracted with
 `minaduki-extract/ids')."
   ;; TODO: cache all headings, even those without IDs.
   ;;
-  ;; This requires minaduki:open to not assume that when the ID is nil, it's a
+  ;; This requires minaduki-open to not assume that when the ID is nil, it's a
   ;; file. We should grab the ID information from the ids table.
   (setq file-path (minaduki::current-file-name (list file-path)))
   (let (result)

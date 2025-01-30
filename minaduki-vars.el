@@ -396,7 +396,7 @@ descriptive warnings when certain operations fail (e.g. parsing).")
   "Matches a typed link in double brackets.")
 
 (defvar minaduki::global-commands
-  '(("Open or create a note"              . minaduki:open)
+  '(("Open or create a note"              . minaduki-open)
     ("Browse literature entries"          . minaduki/literature-entries)
     ("Open the notes directory"           . minaduki/open-directory)
     ("Open or create a template"          . minaduki/open-template)
