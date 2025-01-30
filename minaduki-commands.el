@@ -197,6 +197,17 @@ overwriting the existing one if necessary."
     (or (minaduki::get-heading-id)
         (minaduki::set-heading-id (org-id-new)))))
 
+(defun minaduki-insert-link (target &optional label)
+  "Insert a link to TARGET with LABEL.
+This dispatches based on the current file type."
+  (insert
+   (minaduki::format-link :target target :desc label)))
+
+(defun minaduki-insert-file-link (path)
+  "Insert a link to PATH."
+  (interactive "fInsert link to file: ")
+  (minaduki-insert-link path))
+
 (cl-defun minaduki:insert (&key entry lowercase? replace-region?)
   "Insert a link to a note.
 
