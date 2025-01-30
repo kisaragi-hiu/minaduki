@@ -208,7 +208,7 @@ This dispatches based on the current file type."
   (interactive "fInsert link to file: ")
   (minaduki-insert-link path))
 
-(cl-defun minaduki:insert (&key entry lowercase? replace-region?)
+(cl-defun minaduki-insert (&key entry lowercase? replace-region?)
   "Insert a link to a note.
 
 If region is active, the new link uses the selected text as the
@@ -304,7 +304,7 @@ REPLACE-REGION?: whether to replace selected text."
     ;; with a text property can only be done with Ivy.
     (concat str (propertize (format "%S" id) 'invisible t))))
 
-(defun minaduki:insert-local ()
+(defun minaduki-insert-local ()
   "Insert a link to a heading in the same file."
   (interactive)
   (-when-let (headings (mapcar #'minaduki--format-id
@@ -332,7 +332,7 @@ REPLACE-REGION?: whether to replace selected text."
                     ;; newly inserted link will not be highlighted as
                     ;; an invalid link.
                     (save-buffer)))))
-        (minaduki:insert
+        (minaduki-insert
          :replace-region? t
          :entry (minaduki-node
                  :id id
@@ -864,7 +864,7 @@ process."
                             (nreverse extra-props))))))
             (minaduki::warn :warning "Something went wrong while creating a new literature note")))))))
 
-(defun minaduki:insert-citation (citekey)
+(defun minaduki-insert-citation (citekey)
   "Insert a citation to CITEKEY."
   (minaduki::file-type-case
     (:org
@@ -899,12 +899,12 @@ CITEKEY is a list whose car is a citation key."
     (minaduki::find-file (minaduki-lit-entry-file entry))
     (goto-char (minaduki-lit-entry-point entry))))
 
-(defun minaduki:insert-note-to-citekey (citekey)
+(defun minaduki-insert-note-to-citekey (citekey)
   "Insert a link to the note associated with CITEKEY."
   (-if-let* ((path (minaduki-db::fetch-file :key citekey))
              (title (minaduki-db::fetch-title path)))
       ;; A corresponding note already exists. Insert a link to it.
-      (minaduki:insert :entry (minaduki-node :path path :title title))
+      (minaduki-insert :entry (minaduki-node :path path :title title))
     ;; There is no corresponding note. Barf about it for now. Ideally
     ;; we'd create a note as usual, and insert a link after that's
     ;; done. But I don't know how to do that with the current

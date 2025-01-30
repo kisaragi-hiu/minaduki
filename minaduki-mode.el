@@ -353,7 +353,7 @@ When NEW-FILE-OR-DIR is a directory, we use it to compute the new file path."
       (delete-char 1))
     (when (eql ?\] (char-after (point)))
       (delete-char 1))
-    (call-interactively #'minaduki:insert)))
+    (call-interactively #'minaduki-insert)))
 
 ;;;; The minor mode itself
 (defun minaduki::local-mode-enable ()
