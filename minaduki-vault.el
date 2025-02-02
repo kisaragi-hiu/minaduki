@@ -318,24 +318,48 @@ A path is in a vault if it:
 If PATH is nil, use `default-directory'."
   (f-exists? (f-join (minaduki-vault:closest path) ".obsidian")))
 
-(defun minaduki-vault:path-relative (path &optional vault)
+(defvar minaduki-vault:path-relative--cache nil
+  "Used to store cache for `minaduki-vault:path-relative'.")
+(defun minaduki-vault:path-relative (path &optional vault use-cache)
   "Return PATH's relative path in VAULT.
 
-If VAULT is not given, use the main vault."
-  (let ((vault-path
-         (f-expand (minaduki-vault-path (or vault (minaduki-vault:main))))))
-    ;; A short common parent means forcing PATH to be relative to vault-path
-    ;; might just end up pointing all the way back to root. Leave it as-is in
-    ;; this case.
-    ;;
-    ;; We don't test "equals '/'" or "has zero element when split with path
-    ;; separator" because I don't think that would work on Windows.
-    ;; `f-common-parent' would be more accurate, but it's too slow. We just test
-    ;; that the first 3 characters are the same.
-    (if (equal (substring path 0 (min (length path) 3))
-               (substring vault-path 0 (min (length vault-path) 3)))
-        (f-relative path vault-path)
-      path)))
+If VAULT is not given, use the main vault.
+
+This function can be called *very* often, like in
+`minaduki--format-node'. To help with that, if USE-CACHE is
+non-nil then calls are cached into
+`minaduki-vault:path-relative--cache' (as a hash table) until the
+next time USE-CACHE is nil again."
+  (cl-block nil
+    ;; In cached mode, if the cache hasn't been initialized, initialize it.
+    ;; In non-cached mode, clear it if it's initialized
+    (if use-cache
+        (unless minaduki-vault:path-relative--cache
+          (setq minaduki-vault:path-relative--cache (make-hash-table :test #'equal)))
+      (when minaduki-vault:path-relative--cache
+        (setq minaduki-vault:path-relative--cache nil)))
+    (let ((vault-path (f-expand (minaduki-vault-path
+                                 (or vault (minaduki-vault:main)))))
+          (key (and use-cache (list path vault)))
+          value)
+      (when use-cache
+        (when-let (cached-value (gethash key minaduki-vault:path-relative--cache))
+          (cl-return cached-value)))
+      ;; A short common parent means forcing PATH to be relative to vault-path
+      ;; might just end up pointing all the way back to root. Leave it as-is in
+      ;; this case.
+      ;;
+      ;; We don't test "equals '/'" or "has zero element when split with path separator"
+      ;; because I don't think that would work on Windows.
+      ;; `f-common-parent' would be more accurate, but it's too slow. We just
+      ;; test that the first 3 characters are the same.
+      (setq value (if (equal (substring path 0 (min (length path) 3))
+                             (substring vault-path 0 (min (length vault-path) 3)))
+                      (f-relative path vault-path)
+                    path))
+      (when use-cache
+        (puthash key value minaduki-vault:path-relative--cache))
+      value)))
 
 (defun minaduki-vault:path-absolute (path &optional vault-name)
   "Given PATH relative to VAULT-NAME, return its absolute path.
