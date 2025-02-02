@@ -537,7 +537,7 @@ correspond to the TO field in the cache DB."
       (push (minaduki-node
              :id id
              :path file
-             :title (format "* %s - %s"
+             :title (format "%s/%s"
                             (car (minaduki-db::parse-value file-titles))
                             title)
              :tags nil
