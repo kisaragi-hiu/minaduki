@@ -354,7 +354,7 @@ Like `minaduki::format-link' but without the path magic."
 `org-link-abbrev-alist' is applied when in Org mode, unless
 TARGET is an HTTP link.
 
-TYPE can be `id', `info', or nil. When it is nil, automatically
+TYPE can be `id' or nil. When it is nil, automatically
 determine if we need a file link or a URL link.
 
 If ID? is non-nil and we're in Org mode, return an ID link instead."
@@ -470,8 +470,7 @@ means tomorrow, and N = -1 means yesterday."
 Like `file-name-extension', but:
 
 - this does not strip version number
-- this strips the .gpg and .gz extensions
-- this treats .info-<digits> files as .info files"
+- this strips the .gpg and .gz extensions"
   (let (file ext)
     (save-match-data
       (setq file (file-name-nondirectory path))
@@ -481,27 +480,17 @@ Like `file-name-extension', but:
     ;; This can repeat more than once. Is this a problem?
     (cond ((member ext '("gpg" "gz"))
            (minaduki::file-name-extension (f-no-ext path)))
-          ;; Info has "subfiles" that have extensions like "info-9". Discard
-          ;; that information here to simplify matching elsewhere.
-          ((and (stringp ext)
-                (string-match-p "info-[[:digit:]]+" ext))
-           "info")
           (t ext))))
 
 ;;;; File functions
 (defun minaduki::find-file (file &optional other?)
   "Open FILE in an appropriate way.
 
-If FILE is an Info file, use `info' to open it. Otherwise, use
-`find-file'.
-
 If OTHER? is non-nil, open FILE in another window, otherwise open
 it in the current window."
   ;; `other-window' is from Emacs 17. It's fine.
   (when other? (other-window 1))
-  (if (eq 'info (minaduki::file-type::path file))
-      (info file)
-    (find-file file)))
+  (find-file file))
 
 (defun minaduki::compute-content-hash (file)
   "Compute the hash of the raw bytes of FILE."

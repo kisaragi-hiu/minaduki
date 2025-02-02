@@ -29,18 +29,6 @@
 
 (require 'markdown-mode)
 
-(describe "extraction for info"
-  (it "extracts ids"
-    (with-current-buffer
-        (let ((inhibit-message t))
-          (find-file-noselect "/usr/share/info/emacs-mime.info.gz"))
-      (equal (car (minaduki-extract/ids))
-             (minaduki-id :id "(emacs-mime.info)Index"
-                          :file "/usr/share/info/emacs-mime.info.gz"
-                          :point 84575
-                          :level 1
-                          :title "7 Index")))))
-
 (defun test-minaduki--abs-path (file-path)
   "Get absolute FILE-PATH from `org-directory'."
   (expand-file-name file-path org-directory))

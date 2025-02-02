@@ -183,8 +183,7 @@ defaults, however."
     ("markdown" . markdown)
     ("bib" . bibtex)
     ("json" . json)
-    ("edn" . edn)
-    ("info" . info))
+    ("edn" . edn))
   "Alist mapping extensions to file types."
   :type '(alist :key-type string :value-type symbol)
   :group 'minaduki)

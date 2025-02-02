@@ -152,7 +152,6 @@ Like `markdown-follow-thing-at-point', but has support for:
 
 - Obsidian links,
 - ID links (written as [text](#<ID>), ie. a path starting with a hash)
-- Info links
 
 When OTHER is non-nil (with a \\[universal-argument]),
 open in another window instead of in the current one."
@@ -167,8 +166,6 @@ open in another window instead of in the current one."
                  (cond
                   ((s-prefix? "#" url)
                    (minaduki/open-id (substring url 1)))
-                  ((s-prefix? "info:" url)
-                   (info (substring url 5)))
                   (t (markdown-follow-thing-at-point other)))))
               (t (markdown-follow-thing-at-point other))))
     (markdown-follow-thing-at-point other)))
@@ -235,7 +232,7 @@ REPLACE-REGION?: whether to replace selected text."
   ;; 5. Create a new note if the entry doesn't exist
   ;; 6. Downcase desc if we should
   ;; 7. Format entry and insert!
-  (let (title id path desc info?)
+  (let (title id path desc)
     (when (and replace-region?
                (region-active-p))
       (setq desc (-> (buffer-substring-no-properties
@@ -268,17 +265,10 @@ REPLACE-REGION?: whether to replace selected text."
       (minaduki::message "Created new note \"%s\"" title))
     (when lowercase?
       (setq desc (downcase desc)))
-    (setq info? (eq 'info (minaduki-node::type entry)))
-    ;; For links to Info documents, we don't want an ID link, so it shouldn't be
-    ;; treated as an Org ID.
-    (when info?
-      (setq path (format "info:%s" id))
-      (setq id nil))
     (insert (minaduki::format-link
              :target (or id path)
              :desc desc
              :type (cond (id 'id)
-                         (info? 'info)
                          (t nil))))))
 
 (defun minaduki:move-file-to-directory ()
@@ -785,10 +775,8 @@ This assumes ID is present in the cache database.
 If OTHER? is non-nil, open it in another window, otherwise in the
 current window."
   (-when-let (id (minaduki-db::fetch-id id))
-    (if (eq 'info (minaduki::file-type::path (minaduki-id-file id)))
-        (info (minaduki-id-id id))
-      (minaduki::find-file (minaduki-id-file id) other?)
-      (goto-char (minaduki-id-point id)))))
+    (minaduki::find-file (minaduki-id-file id) other?)
+    (goto-char (minaduki-id-point id))))
 
 (defun minaduki/open-id-at-point ()
   "Open the ID link at point.

@@ -644,13 +644,6 @@ If the file exists, update the cache with information."
         (puthash file-path content-hash files-table)
         (minaduki-db::update-files files-table))
       (minaduki::message "Updated: %s" file-path))))
-(defun minaduki-db:refresh-info-file ()
-  "Refresh the cache for Info entries."
-  (interactive)
-  (let ((info-files
-         (let ((minaduki-file-extensions '("info")))
-           (minaduki-vault:all-files))))
-    (minaduki-db::update-files (minaduki-db::files-hash-table info-files))))
 (defun minaduki-db::update-files (files-table &optional rebuild)
   "Update cache for files in FILES-TABLE.
 

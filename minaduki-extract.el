@@ -357,47 +357,6 @@ Return a list of `minaduki-id' objects."
   (setq file-path (minaduki::current-file-name (list file-path)))
   (let (result)
     (minaduki::file-type-case
-      (:info
-       (goto-char (point-min))
-       (let ((seen-nodes (make-hash-table :test #'equal)))
-         (while (re-search-forward (rx bol (>= 2 (any "*.=-"))) nil t)
-           (let ((title nil)
-                 (node nil)
-                 (infofile nil)
-                 (level (alist-get (char-before)
-                                   '((?* . nil)
-                                     (?= . 2)
-                                     (?- . 3)
-                                     (?. . 4)))))
-             (save-excursion
-               ;; "move to the start of line I + N"
-               (forward-line -1)
-               (unless level
-                 (setq level (if (looking-at (rx digit))
-                                 1
-                               0)))
-               (setq title
-                     (buffer-substring-no-properties
-                      (point)
-                      (line-end-position)))
-               (save-excursion
-                 (re-search-backward
-                  (rx bol
-                      "File: " (group (+ (not ","))) "," (+ space)
-                      "Node: " (group (+ (not ","))) ","))
-                 (setq infofile (match-string-no-properties 1)
-                       node (match-string-no-properties 2)))
-               (unless (gethash node seen-nodes)
-                 (puthash node t seen-nodes)
-                 (push (minaduki-id :id (format "(%s)%s"
-                                                (or infofile
-                                                    (f-no-ext (f-base file-path)))
-                                                node)
-                                    :file file-path
-                                    :level level
-                                    :title title
-                                    :point (point))
-                       result)))))))
       (:markdown
        (goto-char (point-min))
        (while (re-search-forward markdown-regex-header nil t)
@@ -431,25 +390,6 @@ Return a list of `minaduki-id' objects."
         (point-min) (point-max))))
     result))
 
-(defun minaduki-extract::info-dir-entry ()
-  "Extract the file name and main title from the dir entry."
-  (save-excursion
-    (goto-char (point-min))
-    (when (re-search-forward "^START-INFO-DIR-ENTRY$" nil t)
-      (forward-line)
-      ;; "|* Guile Reference: (guile) ..."
-      (looking-at (rx bol "* "
-                      (group (+ (not ":")))
-                      ":" (+ space)
-                      ;; This should be the file name, but it can be malformed.
-                      ;; For instance, libmicrohttpd-tutorial writes
-                      ;; "(libmicrohttpd)" here. It's IMO a bug on their end
-                      ;; (I've submitted as
-                      ;; https://bugs.gnunet.org/view.php?id=7928 ), but that
-                      ;; also means the dir entry is unreliable.
-                      "(" (+ (not (any "()"))) ")"))
-      (list :main-title (match-string-no-properties 1)))))
-
 (defun minaduki-extract/main-title ()
   "Return a list containing the main title of the current buffer."
   ;; Outside of a vault, the title is always the file name.
@@ -457,11 +397,6 @@ Return a list of `minaduki-id' objects."
       (list (minaduki::apply-link-abbrev
              (buffer-file-name)))
     (minaduki::file-type-case
-      (:info (list
-              (or (-some-> (minaduki-extract::info-dir-entry)
-                    (plist-get :main-title))
-                  (minaduki::apply-link-abbrev
-                   (buffer-file-name)))))
       (:org
        (-some-> (car (minaduki-extract//file-prop "title"))
          list))
@@ -480,14 +415,6 @@ Return a list of `minaduki-id' objects."
 (defun minaduki-extract/first-headline ()
   "Extract the first headline."
   (minaduki::file-type-case
-    (:info
-     (save-excursion
-       (goto-char (point-min))
-       (when (re-search-forward "^\\*\\{2\\}+" nil t)
-         (forward-line -1)
-         (buffer-substring-no-properties
-          (line-beginning-position)
-          (line-end-position)))))
     (:org
      (save-excursion
        (goto-char (point-min))
