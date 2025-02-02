@@ -138,5 +138,28 @@ This considers:
          (cdr
           (assoc selected-key title-file-alist)))))))
 
+(defun minaduki--file-date ()
+  "Return the date associated with this file."
+  (cl-block nil
+    (dolist (candidate
+             (list 'main-title 'file-name 'created-prop))
+      (when-let* ((cand-value
+                   (pcase candidate
+                     ('main-title
+                      (car (minaduki-extract/main-title)))
+                     ('file-name
+                      (f-base (buffer-file-name)))
+                     ('created-prop
+                      (car (minaduki-extract//file-prop "created")))))
+                  (date (car
+                         (s-match
+                          (rx bos
+                              (= 4 digit) (opt "-")
+                              (= 2 digit) (opt "-")
+                              (= 2 digit))
+                          cand-value))))
+        (when (iso8601-parse-date date)
+          (cl-return date))))))
+
 (provide 'minaduki-diary)
 ;;; minaduki-diary.el ends here

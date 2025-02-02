@@ -681,10 +681,18 @@ are named with a YYYYMMDD prefix (optionally with dashes)."
            (minaduki/new-daily-note day)))))
 
 ;;;###autoload
-(defun minaduki/open-diary-entry-yesterday ()
-  "Open a diary entry from yesterday."
-  (interactive)
-  (let ((day (minaduki::today -1)))
+(defun minaduki/open-diary-entry-yesterday (&optional ignore-current-file)
+  "Open a diary entry from the previous day.
+If the date for the current file can be figured out (by
+`minaduki--file-date'), then try to open for the day before the
+current file's day. Otherwise, try to files from yesterday.
+
+If IGNORE-CURRENT-FILE is non-nil, always open files from
+yesterday instead."
+  (interactive "P")
+  (let ((day (or (and (not ignore-current-file)
+                      (minaduki--file-date))
+                 (minaduki::today -1))))
     (if-let ((file (minaduki//find-entry-for-day day)))
         (find-file file)
       (and (y-or-n-p (format "No entry from %s. Create one? " day))
