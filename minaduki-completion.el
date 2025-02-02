@@ -150,7 +150,7 @@ Embark to create what are in effect context menus."
         (id-or-path (-> (or (oref node id)
                             (minaduki-vault:path-relative (oref node path)))
                         (propertize 'face 'minaduki-path))))
-    (concat title cite tags id-or-path)))
+    (s-join " " (list title cite tags id-or-path))))
 
 (cl-defun minaduki-read:note
     (&key initial-input (prompt "Note: "))
