@@ -19,8 +19,31 @@
 (require 'yaml)
 
 ;;;; Vault objects
-(defcustom minaduki/vaults nil
+(defvar minaduki/vaults nil
   "A list of vaults that are tracked by Minaduki.
+
+Do not set this variable directly; vaults are saved/loaded from
+`minaduki-vaults-file' instead. If you must use a variable, set
+it in `minaduki-vaults-extra' instead, which will be merged into
+this variable.
+
+Each vault is either a string, representing the path of the
+vault, or a plist with the keys `:name' and `:path', and
+optionally `:skipped' and `:main'.
+
+The first vault with `:main' is the main vault.
+
+A vault with a name can be linked to. Right now this is only
+supported in Org mode by being added to `org-link-abbrev-alist'.
+
+Files under the paths are indexed by Minaduki.
+
+Each vault is represented with a list (NAME PATH).
+Files under any PATH are indexed by Minaduki.
+Each NAME is added to `org-link-abbrev-alist'.")
+
+(defcustom minaduki-vaults-extra nil
+  "A list of extra vaults, on top of those declared in `minaduki-vaults-file'.
 
 Each vault is either a string, representing the path of the
 vault, or a plist with the keys `:name' and `:path', and
@@ -66,8 +89,11 @@ This file is used to declare or register known vaults."
     (let ((json-encoding-pretty-print t)
           (json-encoding-default-indentation " ")
           (json-encoding-object-sort-predicate #'string<))
-      (with-temp-file minaduki-vaults-file
-        (insert (json-encode minaduki/vaults))))))
+      (let* ((extra-paths (mapcar #'minaduki-vault-path minaduki-vaults-extra))
+             (non-extra (--remove (member (minaduki-vault-path it) extra-paths)
+                                  minaduki/vaults)))
+        (with-temp-file minaduki-vaults-file
+          (insert (json-encode non-extra)))))))
 
 (defun minaduki-vaults-load ()
   "Load vaults from `minaduki-vaults-file' into `minaduki/vaults'."
@@ -75,7 +101,17 @@ This file is used to declare or register known vaults."
         (json-array-type 'list))
     (-some--> (ignore-errors
                 (json-read-file minaduki-vaults-file))
-      (setq minaduki/vaults it))))
+      (setq minaduki/vaults (append it minaduki-vaults-extra)))))
+
+(defun minaduki-vaults-save-load-mode (&optional arg)
+  "Minimal minor mode to load minaduki vaults, and save it when appropriate.
+If ARG is a number less than 1, disable it, otherwise enable it."
+  (cond ((and (numberp arg) (< arg 1))
+         (add-hook 'kill-emacs-hook #'minaduki-vaults-save)
+         (minaduki-vaults-load))
+        (t
+         (minaduki-vaults-save)
+         (remove-hook 'kill-emacs-hook #'minaduki-vaults-save))))
 
 (defun minaduki-vault-config (vault)
   "Get the config object for VAULT."

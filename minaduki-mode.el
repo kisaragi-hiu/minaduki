@@ -445,8 +445,6 @@ See `minaduki-local-mode' for more information on Minaduki-Local mode."
                    #'org-cite-basic--complete-style))
         (setq org-cite-follow-processor 'minaduki
               org-cite-insert-processor 'minaduki)
-        (add-hook 'after-change-major-mode-hook 'minaduki-initialize)
-        (add-hook 'find-file-hook 'minaduki-initialize)
         (when (and (not minaduki-db::file-update-timer)
                    (eq minaduki-db/update-method 'idle-timer))
           (setq minaduki-db::file-update-timer (run-with-idle-timer minaduki-db/update-idle-seconds t #'minaduki-db::file-update-timer::update-cache)))
@@ -468,9 +466,15 @@ See `minaduki-local-mode' for more information on Minaduki-Local mode."
           (org-link-set-parameters "f" :follow #'minaduki-org::fuzzy-follow)
           (org-link-set-parameters "file" :face 'minaduki::file-link-face)
           (org-link-set-parameters "id" :face 'minaduki::id-link-face))
+        ;; Set up vault list save/load
+        (minaduki-vaults-save-load-mode)
+        (add-hook 'after-change-major-mode-hook 'minaduki-initialize)
+        (add-hook 'find-file-hook 'minaduki-initialize)
         (dolist (buf (buffer-list))
           (with-current-buffer buf
             (minaduki-initialize))))
+    ;; Vault list save/load
+    (minaduki-vaults-save-load-mode -1)
     (org-cite-unregister-processor 'minaduki)
     (setq org-cite-follow-processor 'basic
           org-cite-insert-processor 'basic)
