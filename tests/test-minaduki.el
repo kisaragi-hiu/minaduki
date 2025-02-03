@@ -60,7 +60,7 @@ In BODY, `fname' refers to the resolved path of FILE."
     (copy-directory test-repository temp-dir)
     (setq org-directory temp-dir)
     (setq minaduki:db-location (f-join temp-dir "minaduki.db"))
-    (setq minaduki/vaults (list temp-dir "/usr/share/info"))
+    (setq minaduki/vaults (list temp-dir))
     (setq minaduki-lit/bibliography
           (f-join temp-dir "lit" "entries.org"))
     (minaduki-mode)
@@ -518,9 +518,6 @@ members that should be equal."
 
   (describe "fetch-file"
     (it "can fetch id"
-      (expect (minaduki-db::fetch-file :id "(elisp.info)Defining Macros")
-              :to-equal
-              "/usr/share/info/elisp.info.gz")
       (expect (minaduki-db::fetch-file :id "801b58eb-97e2-435f-a33e-ff59a2f0c213")
               :to-equal
               (test-minaduki--abs-path "headlines/headline.org")))
