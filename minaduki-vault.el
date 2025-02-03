@@ -45,6 +45,38 @@ Each NAME is added to `org-link-abbrev-alist'."
                         (const :skipped (boolean :tag "Skipped?"))
                         (const :main (boolean :tag "Main?"))))))
 
+;; Somewhat inspired by projectile-known-projects and how that's handled
+(defcustom minaduki-vaults-file
+  (expand-file-name "minaduki-vaults.json" user-emacs-directory)
+  "Path to the vaults file.
+This file is used to declare or register known vaults."
+  :type 'string
+  :group 'minaduki)
+
+(defun minaduki-vaults-save ()
+  "Save `minaduki/vaults' into `minaduki-vaults-file'."
+  (cl-letf (((symbol-function 'json-alist-p)
+             ;; `minaduki/vaults' is a simple list of plists; unfortunately it
+             ;; also looks like an alist and gets treated as an alist first.
+             ;; This overrides that behavior.
+             (lambda (_list)
+               nil)))
+    ;; This is meant to be able to be hand-edited, as well as being diff-able. So
+    ;; I want it to be pretty-printed JSON.
+    (let ((json-encoding-pretty-print t)
+          (json-encoding-default-indentation " ")
+          (json-encoding-object-sort-predicate #'string<))
+      (with-temp-file minaduki-vaults-file
+        (insert (json-encode minaduki/vaults))))))
+
+(defun minaduki-vaults-load ()
+  "Load vaults from `minaduki-vaults-file' into `minaduki/vaults'."
+  (let ((json-object-type 'plist)
+        (json-array-type 'list))
+    (-some--> (ignore-errors
+                (json-read-file minaduki-vaults-file))
+      (setq minaduki/vaults it))))
+
 (defun minaduki-vault-config (vault)
   "Get the config object for VAULT."
   (let* ((path (minaduki-vault-path vault))
