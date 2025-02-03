@@ -515,15 +515,24 @@ VAULT is computed from `minaduki-vault-closest' if not given."
               (length (-common-prefix (f-split other) here))))
            files))))))
 
-(defun minaduki-vault-register (directory)
-  "Register DIRECTORY into `minaduki/vaults' for indexing."
+(defun minaduki-vault-register (directory &optional message?)
+  "Register DIRECTORY into `minaduki/vaults' for indexing.
+If MESSAGE? is non-nil, display a message after registering."
+  (interactive
+   (list
+    (read-directory-name "Register directory as vault: "
+                         nil nil t)
+    t))
   (unless (--any? (f-equal? directory
                             (minaduki-vault-path it))
                   minaduki/vaults)
     (push
      `(:name ,(f-base directory)
        :path ,directory)
-     minaduki/vaults)))
+     minaduki/vaults)
+    (minaduki-vaults-save)
+    (when message?
+      (message "%s has been registered into %s" directory minaduki-vaults-file))))
 
 (defun minaduki-vault-create (directory)
   "Create a vault in DIRECTORY."
