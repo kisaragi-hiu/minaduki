@@ -76,6 +76,7 @@ This file is used to declare or register known vaults."
   :type 'string
   :group 'minaduki)
 
+;; FIXME: sometimes this writes just a "null" into the file!
 (defun minaduki-vaults-save ()
   "Save `minaduki/vaults' into `minaduki-vaults-file'."
   (cl-letf (((symbol-function 'json-alist-p)
