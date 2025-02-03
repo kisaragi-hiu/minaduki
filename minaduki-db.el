@@ -308,15 +308,14 @@ If UPDATE-P is non-nil, first remove the ref for the file in the database."
              "Cannot insert citekeys declared in %s; skipping"
              file)))))
     count))
-(defun minaduki-db::insert-links (&optional update-p)
-  "Update the file links of the current buffer in the cache.
-If UPDATE-P is non-nil, first remove the links for the file in the database.
+(defun minaduki-db::insert-links ()
+  "Put links from the current buffer into the cache database.
+Existing cached link entries from the current buffer are removed
 Return the number of rows inserted."
   (let ((file (minaduki::current-file-name)))
-    (when update-p
-      (minaduki-db-execute
-       "delete from \"links\" where source = ?"
-       file))
+    (minaduki-db-execute
+     "delete from \"links\" where source = ?"
+     file)
     (let ((links (minaduki-extract/links)))
       (minaduki-db-insert 'links links)
       (length links))))
@@ -486,7 +485,7 @@ correspond to the TO field in the cache DB."
      (-let (((source dest props) it))
        (list source dest (minaduki-db::parse-value props)))
      (minaduki-db-select
-      `("SELECT source, dest, props FROM links"
+      `("SELECT DISTINCT source, dest, props FROM links"
         "WHERE" ,@conditions
         "ORDER BY source ASC")))))
 (defun minaduki-db::fetch-file-hash (&optional file)
