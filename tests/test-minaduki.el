@@ -87,18 +87,18 @@ members that should be equal."
 (buttercup-define-matcher-for-binary-function :to-equal/ht test-equal-ht)
 
 (describe "minaduki::file-type"
-  (it "checks unregisted files"
+  (it "does not check unregisted files"
     (expect (with-temp-buffer
               (setq buffer-file-name "hello.whatever")
               (prog1 (minaduki::file-type)
                 (setq buffer-file-name nil)))
-            :to-be 'whatever)
+            :to-be nil)
     (expect (with-temp-buffer
               (setq buffer-file-name "hello.java"
                     major-mode 'java-mode)
               (prog1 (minaduki::file-type)
                 (setq buffer-file-name nil)))
-            :to-be 'java))
+            :to-be nil))
   (it "checks registered types"
     (expect (with-temp-buffer
               (gfm-mode)
