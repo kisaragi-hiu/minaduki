@@ -607,7 +607,7 @@ If FORCE, force a rebuild of the cache from scratch."
          (minaduki-extract::file-prop::use-cache t)
          (deleted-count 0)
          dir-files db-files counts modified-files)
-    (setq dir-files (minaduki-vault:all-files)
+    (setq dir-files (minaduki-vault-all-files)
           db-files (minaduki-db::fetch-all-files-hash))
     (setq modified-files
           (car (minaduki-db:build-cache::find-modified-files

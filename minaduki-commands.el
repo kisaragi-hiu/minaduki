@@ -93,7 +93,7 @@ Interactively, please use the transient command instead."
 
 (defun minaduki-org//id-new-advice (&rest _args)
   "Update the database if a new Org ID is created."
-  (when (and (minaduki-vault:in-vault?)
+  (when (and (minaduki-vault-in-vault?)
              (not (eq minaduki-db/update-method 'immediate))
              (not (minaduki-capture/p)))
     (minaduki-db::incremental-update)))
@@ -275,7 +275,7 @@ REPLACE-REGION?: whether to replace selected text."
   "Move the current file to a new directory."
   (interactive)
   (-when-let* ((file (minaduki::current-file-name))
-               (vault (minaduki-vault:closest)))
+               (vault (minaduki-vault-closest)))
     (let* ((newdir (read-directory-name
                     "Move current file to directory: "
                     vault nil t))
@@ -351,7 +351,7 @@ REPLACE-REGION?: whether to replace selected text."
              (forward-line)
              (beginning-of-line))))
        (insert "#+alias: " alias)))
-    (when (minaduki-vault:in-vault?)
+    (when (minaduki-vault-in-vault?)
       (minaduki-db::insert-meta 'update))
     alias))
 
@@ -367,7 +367,7 @@ REPLACE-REGION?: whether to replace selected text."
            (when (search-forward (concat "#+alias: " alias) (point-max) t)
              (delete-region (line-beginning-position)
                             (1+ (line-end-position))))))
-        (when (minaduki-vault:in-vault?)
+        (when (minaduki-vault-in-vault?)
           (minaduki-db::insert-meta 'update)))
     (user-error "No aliases to delete")))
 
@@ -383,7 +383,7 @@ REPLACE-REGION?: whether to replace selected text."
     (minaduki::set-global-prop
      "tags[]"
      (combine-and-quote-strings (seq-uniq (cons tag existing-tags))))
-    (when (minaduki-vault:in-vault?)
+    (when (minaduki-vault-in-vault?)
       (minaduki-db::insert-meta 'update))
     tag))
 
@@ -396,7 +396,7 @@ REPLACE-REGION?: whether to replace selected text."
         (minaduki::set-global-prop
          "tags[]"
          (combine-and-quote-strings (delete tag tags)))
-        (when (minaduki-vault:in-vault?)
+        (when (minaduki-vault-in-vault?)
           (minaduki-db::insert-meta 'update)))
     (user-error "No tag to delete")))
 
@@ -417,7 +417,7 @@ REPLACE-REGION?: whether to replace selected text."
                     revert-buffer-function (lambda (&rest _)
                                              (minaduki/fix-broken-links)))))
     ;; Collect missing links
-    (let* ((all-files (minaduki-vault:all-files))
+    (let* ((all-files (minaduki-vault-all-files))
            (i 0)
            (length (length all-files)))
       (cl-loop
@@ -510,8 +510,8 @@ REPLACE-REGION?: whether to replace selected text."
            (let ((file file))
              (make-text-button
               (format "%s::C%s"
-                      (if (f-descendant-of? file (minaduki-vault:main))
-                          (f-relative file (minaduki-vault:main))
+                      (if (f-descendant-of? file (minaduki-vault-main))
+                          (f-relative file (minaduki-vault-main))
                         file)
                       point)
               nil
@@ -546,7 +546,7 @@ main vault."
    (--> (minaduki::to-slug title)
         (s-replace "_" "-" it)
         (format "%s.org" it)
-        (f-join (minaduki-vault:main)
+        (f-join (minaduki-vault-main)
                 (or dir "")
                 it)))
   (insert "#+title: " title "\n"
@@ -563,7 +563,7 @@ If VISIT? is non-nil, go to the newly created note."
    (list :title (read-string "Title: ")
          :visit? t))
   (let* ((file (-> (minaduki::to-slug title)
-                   (f-expand (minaduki-vault:main))
+                   (f-expand (minaduki-vault-main))
                    (concat ".org")))
          (org-capture-templates
           `(("a" "" plain
@@ -709,14 +709,14 @@ yesterday instead."
 (defun minaduki/open-directory ()
   "Open the main vault."
   (interactive)
-  (find-file (minaduki-vault:main)))
+  (find-file (minaduki-vault-main)))
 
 ;;;###autoload
 (defun minaduki/open-random-note ()
   ;; Originally `org-roam-random-note'
   "Open a random note."
   (interactive)
-  (find-file (seq-random-elt (minaduki-vault:all-files))))
+  (find-file (seq-random-elt (minaduki-vault-all-files))))
 
 ;;;###autoload
 (defun minaduki/open-index ()
@@ -731,10 +731,10 @@ The index file is specified in this order:
   (let ((index (cond
                 ((functionp minaduki:index-file)
                  (f-expand (funcall minaduki:index-file)
-                           (minaduki-vault:main)))
+                           (minaduki-vault-main)))
                 ((stringp minaduki:index-file)
                  (f-expand minaduki:index-file
-                           (minaduki-vault:main)))
+                           (minaduki-vault-main)))
                 (t
                  (car (minaduki-db::fetch-file :title "Index"))))))
     (if (and index (f-exists? index))
@@ -990,12 +990,12 @@ This first adds an entry for it into a file in
            ((= 1 (length bibliographies))
             (car bibliographies))
            (t
-            (let ((default-directory (minaduki-vault:main))
+            (let ((default-directory (minaduki-vault-main))
                   (maybe-relative
                    (cl-loop
                     for f in bibliographies
-                    collect (if (f-descendant-of? f (minaduki-vault:main))
-                                (f-relative f (minaduki-vault:main))
+                    collect (if (f-descendant-of? f (minaduki-vault-main))
+                                (f-relative f (minaduki-vault-main))
                               f))))
               (-->
                maybe-relative

@@ -52,7 +52,7 @@
 (defun minaduki::apply-link-faces? ()
   "Return whether we should apply custom link faces in the current context."
   (or (and (-> (buffer-file-name (buffer-base-buffer))
-             minaduki-vault:in-vault?)
+             minaduki-vault-in-vault?)
            minaduki:use-custom-link-faces)
       (eq minaduki:use-custom-link-faces 'everywhere)))
 
@@ -93,7 +93,7 @@ file in a vault."
                   (minaduki::link-to-current-p))
              'minaduki-link-current)
             ((and custom
-                  (minaduki-vault:in-vault? path))
+                  (minaduki-vault-in-vault? path))
              'minaduki-link)
             (t
              'org-link)))))
@@ -106,7 +106,7 @@ to the current file in the backlink buffer, or the
 file in a vault."
   (save-match-data
     (let* ((in-vault (-> (buffer-file-name (buffer-base-buffer))
-                         (minaduki-vault:in-vault?)))
+                         (minaduki-vault-in-vault?)))
            (custom (or (and in-vault minaduki:use-custom-link-faces)
                        (eq minaduki:use-custom-link-faces 'everywhere))))
       (cond ((and custom
@@ -175,7 +175,7 @@ Minaduki binds this to [[f:<target>]]."
 (defun minaduki::a-delete-file (file &optional _trash)
   "Advice: as FILE is deleted, delete its cache entries as well."
   (when (and (not (auto-save-file-name-p file))
-             (minaduki-vault:in-vault? file))
+             (minaduki-vault-in-vault? file))
     (minaduki-db::clear-file (expand-file-name file))))
 
 (defun minaduki::get-link-replacement (old-path new-path &optional old-desc new-desc)
@@ -202,7 +202,7 @@ updated. Else, update with NEW-DESC."
                              label))
            (minaduki::link::write
             (minaduki-link
-             :to (minaduki-vault:path-relative new-path)
+             :to (minaduki-vault-path-relative new-path)
              :desc new-label)
             type)))))
     (:org
@@ -217,7 +217,7 @@ updated. Else, update with NEW-DESC."
                                new-desc
                              label))
            (minaduki::format-link
-            :target (minaduki-vault:path-relative new-path)
+            :target (minaduki-vault-path-relative new-path)
             :desc new-label)))))))
 
 (defun minaduki::replace-link (old-path new-path &optional old-desc new-desc)
@@ -277,7 +277,7 @@ When NEW-FILE-OR-DIR is a directory, we use it to compute the new file path."
                (not (auto-save-file-name-p new-file))
                (not (backup-file-name-p old-file))
                (not (backup-file-name-p new-file))
-               (minaduki-vault:in-vault? old-file))
+               (minaduki-vault-in-vault? old-file))
       (minaduki-db::ensure-built)
       (setq files-affected
             (minaduki-db-select "select distinct source from links where dest = ?" old-file))
@@ -289,7 +289,7 @@ When NEW-FILE-OR-DIR is a directory, we use it to compute the new file path."
                        (file-name-directory new-file))
         (minaduki::with-file new-file nil
           (minaduki::fix-relative-links old-file)))
-      (when (minaduki-vault:in-vault? new-file)
+      (when (minaduki-vault-in-vault? new-file)
         (minaduki-db:update-file new-file))
       ;; Replace links from old-file.org -> new-file.org in all Org-roam files with these links
       (mapc (lambda (file)
@@ -412,7 +412,7 @@ when appropriate."
 
 (defun minaduki-initialize ()
   "Initialize minaduki for this buffer."
-  (when (minaduki-vault:in-vault?)
+  (when (minaduki-vault-in-vault?)
     (minaduki-local-mode)))
 
 (define-minor-mode minaduki-mode

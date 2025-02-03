@@ -90,7 +90,7 @@ emacsclient \\='org-protocol://notes?key=banjoazusa2020\\='"
    (title
     (minaduki-open title))
    (file
-    (find-file (f-join (minaduki-vault:main) file)))
+    (find-file (f-join (minaduki-vault-main) file)))
    (key
     (minaduki:edit-citekey-notes key))))
 

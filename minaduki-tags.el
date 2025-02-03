@@ -25,7 +25,7 @@
 
 (defun minaduki-tags--current-library ()
   "Return path of the current tags library."
-  (minaduki-vault:path-absolute minaduki:tags-file))
+  (minaduki-vault-path-absolute minaduki:tags-file))
 
 (defun minaduki-tags-library ()
   "Return all tags in library."

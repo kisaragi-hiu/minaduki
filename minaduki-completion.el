@@ -59,7 +59,7 @@ title."
          ((when .tags
             (format "(%s)" (s-join "," .tags)))
           :width 30 :face 'marginalia-list)
-         ((f-relative .path (minaduki-vault:main))
+         ((f-relative .path (minaduki-vault-main))
           :truncate 40 :face 'marginalia-file-name))))))
 
 (cl-defun minaduki-read:author (&key def (prompt "Author: "))
@@ -147,9 +147,9 @@ Embark to create what are in effect context menus."
                    (--map (-> (concat "#" it)
                               (propertize 'face 'minaduki-tag)))
                    (s-join " ")))
-        (path (-> (minaduki-vault:path-relative
+        (path (-> (minaduki-vault-path-relative
                    (oref node path)
-                   (minaduki-vault:main)
+                   (minaduki-vault-main)
                    t)
                   (propertize 'face 'minaduki-path))))
     (s-join " " (list title cite tags path))))

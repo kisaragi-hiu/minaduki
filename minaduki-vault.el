@@ -147,13 +147,13 @@ nested vaults regardless of whether they contain
   :group 'minaduki
   :type '(repeat string))
 
-(defsubst minaduki-vault:excluded? (path)
+(defsubst minaduki-vault-excluded? (path)
   "Should PATH be excluded from indexing?"
   (and minaduki-file-exclude-regexp
        (string-match-p minaduki-file-exclude-regexp path)))
 
 ;;;; Internal
-(defun minaduki-vault::list-files/rg (executable dir)
+(defun minaduki-vault--list-files/rg (executable dir)
   "List all tracked files in DIR with Ripgrep.
 
 EXECUTABLE is the Ripgrep executable."
@@ -171,10 +171,10 @@ EXECUTABLE is the Ripgrep executable."
       (goto-char (point-min))
       (-some--> (buffer-string)
         (s-split "\n" it :omit-nulls)
-        (-remove #'minaduki-vault:excluded? it)
+        (-remove #'minaduki-vault-excluded? it)
         (-map #'f-expand it)))))
 
-(defun minaduki-vault::list-files/elisp (dir)
+(defun minaduki-vault--list-files/elisp (dir)
   "List all tracked files in DIR with `directory-files-recursively'."
   (let ((regexp (rx "."
                     (regexp
@@ -184,11 +184,11 @@ EXECUTABLE is the Ripgrep executable."
         result)
     (dolist (file (directory-files-recursively dir regexp nil nil t))
       (when (and (file-readable-p file)
-                 (not (minaduki-vault:excluded? file)))
+                 (not (minaduki-vault-excluded? file)))
         (push file result)))
     result))
 
-(defun minaduki-vault::search-files (dir regexp &optional case-sensitive)
+(defun minaduki-vault--search-files (dir regexp &optional case-sensitive)
   "Return files whose names match REGEXP within DIR.
 This relies on Fd, which means REGEXP is not Emacs Regular
 Expressions, but the syntax defined by the Rust Regex crate.
@@ -213,18 +213,18 @@ otherwise (by default) tell Fd to ignore case."
       (s-split "\0" it :omit-nulls)
       ;; Feeding `minaduki-file-exclude-regexp' to find seems to yield basically
       ;; the same performance
-      (-remove #'minaduki-vault:excluded? it))))
+      (-remove #'minaduki-vault-excluded? it))))
 
-(defun minaduki-vault::list-files (dir)
+(defun minaduki-vault--list-files (dir)
   "List tracked files in DIR.
 
 Uses either Ripgrep or `directory-files-recursively'."
   (let ((cmd (executable-find "rg")))
     (if cmd
-        (minaduki-vault::list-files/rg cmd dir)
-      (minaduki-vault::list-files/elisp dir))))
+        (minaduki-vault--list-files/rg cmd dir)
+      (minaduki-vault--list-files/elisp dir))))
 
-(cl-defun minaduki-vault::paths (&key skip)
+(cl-defun minaduki-vault--paths (&key skip)
   "Return the paths of all vaults in `minaduki/vaults'.
 
 If SKIP is non-nil, list only those whose `skipped' prop is nil.
@@ -241,24 +241,24 @@ The result is guaranteed to only contain paths."
     (nreverse ret)))
 
 ;;;; Other public functions
-(defun minaduki-vault:main ()
+(defun minaduki-vault-main ()
   "Return the path to the main vault."
   (minaduki-vault-path
    (or (-first #'minaduki-vault-main? minaduki/vaults)
        org-directory
        (car minaduki/vaults))))
 
-(defun minaduki-vault:all-files ()
+(defun minaduki-vault-all-files ()
   "Return a list of all tracked files.
 
 Tracked files are those within one of `minaduki/vaults' that
 isn't skipped."
-  (let ((paths (minaduki-vault::paths :skip t)))
+  (let ((paths (minaduki-vault--paths :skip t)))
     (apply #'append
-           (--map (minaduki-vault::list-files (expand-file-name it))
+           (--map (minaduki-vault--list-files (expand-file-name it))
                   paths))))
 
-(defun minaduki-vault:in-vault? (&optional path)
+(defun minaduki-vault-in-vault? (&optional path)
   "Return t if PATH is in a vault.
 
 If PATH is not specified, use the current buffer's file-path.
@@ -276,17 +276,17 @@ A path is in a vault if it:
       (and
        (member (minaduki::file-name-extension path)
                minaduki-file-extensions)
-       (not (minaduki-vault:excluded? path))
+       (not (minaduki-vault-excluded? path))
        (--any? (s-prefix? (expand-file-name it) path)
-               (minaduki-vault::paths))))))
+               (minaduki-vault--paths))))))
 
 ;; TODO: return closest registered vault.
 ;; Currently this just returns the closest nested vault.
-(defun minaduki-vault:closest (&optional path)
+(defun minaduki-vault-closest (&optional path)
   "Return the innermost vault that contains PATH."
   (unless path
     (setq path default-directory))
-  (let* ((main-vault (minaduki-vault:main))
+  (let* ((main-vault (minaduki-vault-main))
          (nested-vaults
           ;; These folders are nested vaults no matter what.
           (mapcan (lambda (x)
@@ -306,21 +306,15 @@ A path is in a vault if it:
         (if (or
              (member path nested-vaults)
              (equal (f-full path)
-                    (f-full (minaduki-vault:main)))
+                    (f-full (minaduki-vault-main)))
              (--any? (f-exists? (f-join path it))
                      minaduki-nested-vault-root-files))
             (throw 'ret path)
           (setq path (f-dirname path)))))))
 
-(defun minaduki-vault:in-obsidian-vault? (&optional path)
-  "Is PATH in an Obsidian vault?
-
-If PATH is nil, use `default-directory'."
-  (f-exists? (f-join (minaduki-vault:closest path) ".obsidian")))
-
-(defvar minaduki-vault:path-relative--cache nil
-  "Used to store cache for `minaduki-vault:path-relative'.")
-(defun minaduki-vault:path-relative (path &optional vault use-cache)
+(defvar minaduki-vault-path-relative--cache nil
+  "Used to store cache for `minaduki-vault-path-relative'.")
+(defun minaduki-vault-path-relative (path &optional vault use-cache)
   "Return PATH's relative path in VAULT.
 
 If VAULT is not given, use the main vault.
@@ -328,22 +322,22 @@ If VAULT is not given, use the main vault.
 This function can be called *very* often, like in
 `minaduki--format-node'. To help with that, if USE-CACHE is
 non-nil then calls are cached into
-`minaduki-vault:path-relative--cache' (as a hash table) until the
+`minaduki-vault-path-relative--cache' (as a hash table) until the
 next time USE-CACHE is nil again."
   (cl-block nil
     ;; In cached mode, if the cache hasn't been initialized, initialize it.
     ;; In non-cached mode, clear it if it's initialized
     (if use-cache
-        (unless minaduki-vault:path-relative--cache
-          (setq minaduki-vault:path-relative--cache (make-hash-table :test #'equal)))
-      (when minaduki-vault:path-relative--cache
-        (setq minaduki-vault:path-relative--cache nil)))
+        (unless minaduki-vault-path-relative--cache
+          (setq minaduki-vault-path-relative--cache (make-hash-table :test #'equal)))
+      (when minaduki-vault-path-relative--cache
+        (setq minaduki-vault-path-relative--cache nil)))
     (let ((vault-path (f-expand (minaduki-vault-path
-                                 (or vault (minaduki-vault:main)))))
+                                 (or vault (minaduki-vault-main)))))
           (key (and use-cache (list path vault)))
           value)
       (when use-cache
-        (when-let (cached-value (gethash key minaduki-vault:path-relative--cache))
+        (when-let (cached-value (gethash key minaduki-vault-path-relative--cache))
           (cl-return cached-value)))
       ;; A short common parent means forcing PATH to be relative to vault-path
       ;; might just end up pointing all the way back to root. Leave it as-is in
@@ -358,10 +352,10 @@ next time USE-CACHE is nil again."
                       (f-relative path vault-path)
                     path))
       (when use-cache
-        (puthash key value minaduki-vault:path-relative--cache))
+        (puthash key value minaduki-vault-path-relative--cache))
       value)))
 
-(defun minaduki-vault:path-absolute (path &optional vault-name)
+(defun minaduki-vault-path-absolute (path &optional vault-name)
   "Given PATH relative to VAULT-NAME, return its absolute path.
 
 VAULT-NAME is a name in `minaduki/vaults'. If nil, use the
@@ -372,22 +366,22 @@ current closest vault, or the main vault if there isn't one."
               (--> minaduki/vaults
                    (--first (equal vault-name (minaduki-vault-name it)) it)
                    minaduki-vault-path))
-             (minaduki-vault:closest)
-             (minaduki-vault:main))))
+             (minaduki-vault-closest)
+             (minaduki-vault-main))))
     (expand-file-name path dir)))
 
-(defun minaduki-vault:obsidian-vault? (&optional vault)
+(defun minaduki-vault-obsidian-vault? (&optional vault)
   "Return if VAULT is an Obsidian vault.
-VAULT is the result of `minaduki-vault:closest' by default."
-  (let ((vault (or vault (minaduki-vault:closest))))
+VAULT is the result of `minaduki-vault-closest' by default."
+  (let ((vault (or vault (minaduki-vault-closest))))
     (f-dir-p (f-join vault ".obsidian"))))
 
-(defun minaduki-vault:obsidian:get-prop (namespace prop &optional vault)
+(defun minaduki-vault-obsidian-get-prop (namespace prop &optional vault)
   "Get VAULT's Obsidian configuration PROP from NAMESPACE.
 This reads PROP from .obsidian/NAMESPACE.json.
-VAULT is computed from `minaduki-vault:closest' if not given."
+VAULT is computed from `minaduki-vault-closest' if not given."
   (cl-block nil
-    (let* ((vault (or vault (minaduki-vault:closest)))
+    (let* ((vault (or vault (minaduki-vault-closest)))
            (json-file (f-join vault
                               ".obsidian"
                               (format "%s.json" namespace))))
@@ -406,13 +400,13 @@ VAULT is computed from `minaduki-vault:closest' if not given."
 (defun minaduki-obsidian-path (written)
   "Convert WRITTEN path to actual path."
   (cl-block nil
-    (let ((closest-vault (minaduki-vault:closest))
+    (let ((closest-vault (minaduki-vault-closest))
           obsidian?
           files)
       ;; Early return if we're not in a vault
       (unless closest-vault
         (cl-return))
-      (setq obsidian? (minaduki-vault:obsidian-vault? closest-vault))
+      (setq obsidian? (minaduki-vault-obsidian-vault? closest-vault))
       ;; Not just a base name -> just a local-absolute path
       (when
           (or
@@ -429,7 +423,7 @@ VAULT is computed from `minaduki-vault:closest' if not given."
             ;; XXX: this means `written' is interpreted as a regexp. Ideally
             ;; `regexp-quote' would work, but it's for Elisp regexps while Fd
             ;; wants Rust Regex crate expressions. (We're using Fd for speed.)
-            (minaduki-vault::search-files
+            (minaduki-vault--search-files
              closest-vault
              (format "^(%s)(\\..*)?$" written)))
       (cond
@@ -437,7 +431,7 @@ VAULT is computed from `minaduki-vault:closest' if not given."
         (let ((attachment nil))
           (when obsidian?
             (setq attachment
-                  (-some--> (minaduki-vault:obsidian:get-prop
+                  (-some--> (minaduki-vault-obsidian-get-prop
                              "app" "attachmentFolderPath"
                              closest-vault)
                     (f-join it written))))

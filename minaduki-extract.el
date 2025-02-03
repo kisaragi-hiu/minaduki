@@ -393,7 +393,7 @@ Return a list of `minaduki-id' objects."
 (defun minaduki-extract/main-title ()
   "Return a list containing the main title of the current buffer."
   ;; Outside of a vault, the title is always the file name.
-  (if (not (minaduki-vault:in-vault?))
+  (if (not (minaduki-vault-in-vault?))
       (list (minaduki::apply-link-abbrev
              (buffer-file-name)))
     (minaduki::file-type-case
@@ -476,25 +476,25 @@ headline."
             (minaduki-extract/first-headline)
             (list
              (--> (buffer-file-name)
-                  (f-relative it (f-expand (minaduki-vault:main)))
+                  (f-relative it (f-expand (minaduki-vault-main)))
                   f-no-ext)))
         (minaduki-extract/aliases))))))
 
 (defun minaduki-extract//tags/nested-vault (path)
   "If PATH is in a nested vault, return the vault's name as a tag."
-  (-some-> (minaduki-vault:closest path)
+  (-some-> (minaduki-vault-closest path)
     f-filename
     list))
 (defun minaduki-extract//tags/all-directories (path)
   "Return PATH's relative path in the vault in segments."
   (-some-> (file-name-directory
-            (minaduki-vault:path-relative path))
+            (minaduki-vault-path-relative path))
     f-split))
 (defun minaduki-extract//tags/first-directory (path)
   "Return PATH's first directory in the vault."
   (-some->> path
     f-parent
-    minaduki-vault:path-relative
+    minaduki-vault-path-relative
     f-split
     car
     list
@@ -506,7 +506,7 @@ headline."
     (remove (f-path-separator))))
 (defun minaduki-extract//tags/last-directory (path)
   "Return PATH's last directory in the vault."
-  (-some-> (minaduki-vault:path-relative path)
+  (-some-> (minaduki-vault-path-relative path)
     f-split
     last))
 (defun minaduki-extract//tags/org-tags ()

@@ -389,7 +389,7 @@ The file is saved if the original value of :no-save is not t and
   (let* ((ext (or (car minaduki-file-extensions)
                   "org"))
          (file (concat basename "." ext)))
-    (expand-file-name file (minaduki-vault:main))))
+    (expand-file-name file (minaduki-vault-main))))
 
 (defun minaduki-capture//new-file (&optional allow-existing-file-p)
   "Return the path to file during an Org-roam capture.

@@ -150,7 +150,7 @@ This function hooks into `org-open-at-point' via `org-open-at-point-functions'."
    ((let* ((context (org-element-context))
            (path (org-element-property :path context)))
       (when (and (eq (org-element-type context) 'link)
-                 (minaduki-vault:in-vault? path))
+                 (minaduki-vault-in-vault? path))
         (minaduki-buffer//find-file path)
         t)))
    ;; Backlinks context
@@ -249,7 +249,7 @@ are returned."
                file-path
                (or titles refs))
       (with-temp-buffer
-        (let ((default-directory (minaduki-vault:main)))
+        (let ((default-directory (minaduki-vault-main)))
           (apply
            #'call-process
            rg-cmd
@@ -512,7 +512,7 @@ ORIG-PATH is the path where the CONTENT originated."
         (with-current-buffer minaduki-buffer//current
           (setq cite-backlinks (minaduki//backlinks 'refs)
                 backlinks (minaduki//backlinks 'titles))
-          (when (minaduki-vault:in-vault?)
+          (when (minaduki-vault-in-vault?)
             (setq unlinked-references (minaduki//unlinked-references))))
         (erase-buffer)
         (run-hooks 'minaduki-buffer/before-insert-hook)
