@@ -385,8 +385,8 @@ Links in titles are removed."
         (insert "\n\n** "
                 ;; title link
                 (minaduki::format-link :target file-from
-                                       :desc (minaduki::remove-org-links
-                                              (minaduki-db::fetch-title file-from)))
+                                       :desc (-some-> (minaduki-db::fetch-title file-from)
+                                               minaduki::remove-org-links))
                 ;; tags
                 (or (-some->> (minaduki-db::fetch-tags file-from)
                       (--remove (member it minaduki-buffer/hidden-tags))
@@ -459,8 +459,8 @@ Links in titles are removed."
                     collect (concat "** "
                                     (minaduki::format-link
                                      :target file
-                                     :desc (minaduki::remove-org-links
-                                            (minaduki-db::fetch-title file)))))
+                                     :desc (-some-> (minaduki-db::fetch-title file)
+                                             minaduki::remove-org-links))))
            (s-join "\n")
            insert))))
 
