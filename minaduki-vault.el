@@ -106,12 +106,12 @@ This file is used to declare or register known vaults."
 (defun minaduki-vaults-save-load-mode (&optional arg)
   "Minimal minor mode to load minaduki vaults, and save it when appropriate.
 If ARG is a number less than 1, disable it, otherwise enable it."
-  (cond ((and (numberp arg) (< arg 1))
-         (add-hook 'kill-emacs-hook #'minaduki-vaults-save)
-         (minaduki-vaults-load))
-        (t
+  (cond ((and (numberp arg) (< arg 1)) ; disable
          (minaduki-vaults-save)
-         (remove-hook 'kill-emacs-hook #'minaduki-vaults-save))))
+         (remove-hook 'kill-emacs-hook #'minaduki-vaults-save))
+        (t ; enable
+         (add-hook 'kill-emacs-hook #'minaduki-vaults-save)
+         (minaduki-vaults-load))))
 
 (defun minaduki-vault-config (vault)
   "Get the config object for VAULT."
