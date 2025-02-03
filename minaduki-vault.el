@@ -96,7 +96,8 @@ This file is used to declare or register known vaults."
           (insert (json-encode non-extra)))))))
 
 (defun minaduki-vaults-load ()
-  "Load vaults from `minaduki-vaults-file' into `minaduki/vaults'."
+  "Load vaults from `minaduki-vaults-file' into `minaduki/vaults'.
+If there are errors on loading, this will do nothing."
   (let ((json-object-type 'plist)
         (json-array-type 'list))
     (-some--> (ignore-errors
@@ -516,7 +517,7 @@ VAULT is computed from `minaduki-vault-closest' if not given."
            files))))))
 
 (defun minaduki-vault-register (directory &optional message?)
-  "Register DIRECTORY into `minaduki/vaults' for indexing.
+  "Register DIRECTORY into `minaduki-vaults-file' for indexing.
 If MESSAGE? is non-nil, display a message after registering."
   (interactive
    (list
