@@ -453,7 +453,7 @@ VAULT is computed from `minaduki-vault-closest' if not given."
                             (minaduki-vault-path it))
                   minaduki/vaults)
     (push
-     `(:name ,name
+     `(:name ,(f-base directory)
        :path ,directory)
      minaduki/vaults)))
 
@@ -461,15 +461,16 @@ VAULT is computed from `minaduki-vault-closest' if not given."
   "Create a vault in DIRECTORY."
   (interactive
    (list (read-directory-name "New vault path: ")))
-  (cl-block init
-    (when (and (f-dir? directory)
-               (directory-empty-p directory))
-      (minaduki::message "%s already has content, creation skipped; registering"
-                         directory)
-      (cl-return-from init))
-    (make-directory directory t)
-    (call-process "git" nil nil nil "init" directory))
-  (minaduki-vault-register directory))
+  (let ((directory (f-expand directory)))
+    (cl-block init
+      (when (and (f-dir? directory)
+                 (not (directory-empty-p directory)))
+        (minaduki::message "%s already has content, creation skipped; registering"
+                           directory)
+        (cl-return-from init))
+      (make-directory directory t)
+      (call-process "git" nil nil nil "init" directory))
+    (minaduki-vault-register directory)))
 
 (provide 'minaduki-vault)
 
