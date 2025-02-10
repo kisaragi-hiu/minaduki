@@ -109,12 +109,15 @@ This file is used to declare or register known vaults."
 
 (defun minaduki-vaults-load ()
   "Load vaults from `minaduki-vaults-file' into `minaduki/vaults'.
-If there are errors on loading, this will do nothing."
+This also loads from the `minaduki-vaults-extra' variable.
+If there are errors on loading, nothing will be loaded from
+`minaduki-vaults-file'."
   (let ((json-object-type 'plist)
         (json-array-type 'list))
-    (-some--> (ignore-errors
-                (json-read-file minaduki-vaults-file))
-      (setq minaduki/vaults (append it minaduki-vaults-extra)))))
+    (setq minaduki/vaults
+          (append (ignore-errors
+                    (json-read-file minaduki-vaults-file))
+                  minaduki-vaults-extra))))
 
 (defun minaduki-vaults-save-load-mode (&optional arg)
   "Minimal minor mode to load minaduki vaults, and save it when appropriate.
