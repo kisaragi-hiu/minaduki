@@ -121,7 +121,8 @@ CONTEXT keys:
                                ("/" . "")
                                ("?" . "")))
               downcase))
-           (title (minaduki::to-slug title))
+           (title (-some-> title
+                    minaduki::to-slug))
            (date
             (-some->> date
               (s-replace "--" "–")

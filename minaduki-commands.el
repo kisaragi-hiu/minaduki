@@ -981,7 +981,7 @@ CITEKEY is a list whose car is a citation key."
                (org-entry-put nil prop value))))
          (setq key
                (minaduki-lit::generate-key-from
-                :title (org-entry-get nil "ITEM")
+                ;; :title (org-entry-get nil "ITEM")
                 :author (org-entry-get nil "author")
                 :date (or (org-entry-get nil "date")
                           (org-entry-get nil "year"))))
@@ -1000,7 +1000,7 @@ Return the key."
         (:org
          (setq key
                (minaduki-lit::generate-key-from
-                :title (org-entry-get nil "ITEM")
+                ;; :title (org-entry-get nil "ITEM")
                 :author (org-entry-get nil "author")
                 :date (or (org-entry-get nil "date")
                           (org-entry-get nil "year"))))
