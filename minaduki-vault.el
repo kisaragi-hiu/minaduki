@@ -100,8 +100,10 @@ This file is used to declare or register known vaults."
                       (format-time-string
                        "%Y%m%dT%H%M%S%z"))
             (insert (message "Writing nil to vaults file!
+   minaduki/vaults: %S
    extra-paths: %S
    non-extra: %S"
+                             minaduki/vaults
                              extra-paths
                              non-extra))))
         (with-temp-file minaduki-vaults-file
