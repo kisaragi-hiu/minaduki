@@ -649,8 +649,8 @@ fill it in with the \"daily\" template."
     (let (;; Since we're creating a daily note, this
           ;; variable should not be used.
           (org-extend-today-until 0))
-      (-some-> (minaduki-templates:get "daily")
-        (minaduki-templates:fill `(:default-time ,now))
+      (-some--> (minaduki-templates:get "daily")
+        (minaduki-templates:fill it now)
         insert))))
 
 ;;;###autoload
@@ -877,7 +877,6 @@ process."
                   (insert
                    (apply #'minaduki-templates:fill
                           (minaduki-templates:get "literature")
-                          nil
                           :title title
                           :ref citekey
                           :slug slug

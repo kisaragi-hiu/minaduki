@@ -95,16 +95,16 @@ selected template instead of the name."
         (map-elt templates (completing-read prompt (map-keys templates))))
     (completing-read prompt (minaduki-templates::list-templates :all all))))
 
-(defun minaduki-templates:fill (template options &rest args)
+(defun minaduki-templates:fill (template
+                                 moment
+                                 &rest args)
   "Fill out TEMPLATE and return the result as a string.
 
 TEMPLATE is the raw template text, in the syntax described by the
 docstring of `org-capture-templates'. (Search \"%T\" in that
-docstring to jump to the relevant section.) Variables
+docstring to jump to the relevant section.)
 
-OPTIONS is the value of `org-capture-plist', used to configure the
-template. Search org-capture.el for usages of `org-capture-get'
-for possible keys.
+MOMENT is used for expanding date and time within the template.
 
 ARGS is a plist of arguments that are available to the template.
 For example,
@@ -115,7 +115,8 @@ with \"https://example.com\". This uses the
 
 This is a wrapper around `org-capture-fill-template'."
   (declare (indent 2))
-  (let ((org-capture-plist options)
+  (let ((org-capture-plist
+         `(:default-time ,moment))
         (org-store-link-plist args))
     (org-capture-fill-template template)))
 
