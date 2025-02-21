@@ -653,8 +653,14 @@ fill it in with the \"daily\" template."
         (minaduki-templates--insert it now)))))
 
 ;;;###autoload
-(defun minaduki/new-fleeting-note (&optional time dir)
-  "Create a new diary entry in DIR.
+(defun minaduki/new-fleeting-note (&optional moment dir)
+  "Create a new fleeting note for MOMENT in DIR.
+
+MOMENT is the current time by default.
+DIR is `minaduki/diary-directory' by default.
+
+A fleeting note is one whose title is a timestamp, down to the second;
+its filename is also based on the current time.
 
 The entry will be stored as a file named after the current time
 under DIR. For example, assuming DIR is \"/path/to/diary\", the
@@ -662,25 +668,24 @@ file will be located at something like:
 
     /path/to/diary/20211019T233513+0900.org
 
-DIR is `minaduki/diary-directory' by default.
-
-When TIME is non-nil, create an entry for TIME instead of
-`current-time'."
+The content of the fleeting note uses the \"fleeting\" template."
   (interactive
    (list
     (and current-prefix-arg
          (parse-iso8601-time-string
           (read-string "Create new diary entry at (yyyymmddThhmmssz): ")))
     minaduki/diary-directory))
-  (let* ((now (or time (current-time)))
+  (let* ((now (or moment (current-time)))
          (filename (format-time-string "%Y%m%dT%H%M%S%z" now))
-         (title (format-time-string "%FT%T%z" now))
          ;; Put this here so if we allow different templates later
          ;; it's easier to change
          (ext "org"))
     (find-file (f-join (or dir minaduki/diary-directory)
                        (concat filename "." ext)))
-    (insert (concat "#+title: " title "\n"))))
+    (minaduki-templates--insert
+     (minaduki-template-content
+      (minaduki-templates--get "fleeting"))
+     now)))
 
 ;;;###autoload
 (defun minaduki/open-diary-entry (&optional noprompt)

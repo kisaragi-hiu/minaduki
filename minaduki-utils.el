@@ -719,6 +719,7 @@ Assume buffer is widened and point is on a headline."
                 while (org-up-heading-safe)
                 finally return (vconcat headings))))))
 
+;; TODO: support Markdown
 (defun minaduki::set-file-prop (name value)
   "Set a file property called NAME to VALUE.
 

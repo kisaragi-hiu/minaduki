@@ -2,6 +2,7 @@
 
 ;;; Commentary:
 
+;; TODO specify location of resulting file
 ;; TODO: Replace minaduki-capture with this
 ;; TODO: passing in arguments: just use %s?
 ;; TODO: each special template needs a documentation on what arguments
