@@ -873,29 +873,30 @@ template (or whatever `minaduki-lit-template' is set to), with the following arg
                          (pcase minaduki-lit:slug-source
                            (`citekey citekey)
                            (`title title)
-                           (_ (user-error "`minaduki-lit:slug-source' can only be `citekey' or `title'"))))))
+                           (_ (user-error "`minaduki-lit:slug-source' can only be `citekey' or `title'")))))
+                  (now (current-time)))
               ;; Create the note
               (minaduki-open
                (minaduki-node
                 :path
                 (f-join minaduki/literature-notes-directory (format "%s.org" slug))))
-              (apply
-               #'minaduki-templates--insert
-               (minaduki-template-content
-                (minaduki-templates--get minaduki-lit-template))
-               nil
-               :title title
-               :ref citekey
-               :slug slug
-               (let ((extra-props nil))
-                 (pcase-dolist (`(,key . ,value) props)
-                   (when (and (eq 'string (type-of value))
-                              (not (equal key "title")))
-                     (when (member key '("=type=" "=key="))
-                       (setq key (substring key 1 -1)))
-                     (push (intern (format ":%s" key)) extra-props)
-                     (push value extra-props)))
-                 (nreverse extra-props))))))))))
+              (apply #'minaduki-templates--insert
+                     (minaduki-template-content
+                      (minaduki-templates--get minaduki-lit-template))
+                     now
+                     :title title
+                     :ref citekey
+                     :slug slug
+                     (let ((extra-props nil))
+                       (pcase-dolist (`(,key . ,value) props)
+                         (when (and (eq 'string (type-of value))
+                                    (not (equal key "title")))
+                           (when (member key '("=type=" "=key="))
+                             (setq key (substring key 1 -1)))
+                           (push (intern (format ":%s" key)) extra-props)
+                           (push value extra-props)))
+                       (nreverse extra-props)))
+              (minaduki--set-created-prop now))))))))
 
 (defun minaduki-insert-citation (citekey)
   "Insert a citation to CITEKEY."

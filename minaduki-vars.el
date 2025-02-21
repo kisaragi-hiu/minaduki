@@ -134,6 +134,9 @@ value like `most-positive-fixnum'."
   '(("daily.org" . "#+title: %<%F>")
     ("fleeting.org" . "#+title: %:now")
     ("concept.org" . "#+title: %:title")
+    ("lit.org" . "#+title: %:title
+#+key: %:ref
+#+key: %:url")
     ("literature.org" . "#+title: %:author - %:title
 #+key: %:ref
 #+key: %:url"))
