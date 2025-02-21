@@ -719,6 +719,11 @@ Assume buffer is widened and point is on a headline."
                 while (org-up-heading-safe)
                 finally return (vconcat headings))))))
 
+(defun minaduki--set-created-prop (&optional moment zone)
+  "Set the `created' file prop to MOMENT as a timestamp.
+If ZONE is non-nil it's also passed to `format-time-string' along with MOMENT."
+  (minaduki::set-file-prop "created" (format-time-string "%FT%T%z" moment zone)))
+
 ;; TODO: support Markdown
 (defun minaduki::set-file-prop (name value)
   "Set a file property called NAME to VALUE.

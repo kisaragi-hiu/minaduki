@@ -63,7 +63,7 @@ Usage:
     (let* ((decoded (parse-time-string commit-date))
            (zone (car (last decoded)))
            (encoded (encode-time decoded)))
-      (minaduki::set-file-prop "created" (format-time-string "%FT%T%z" encoded zone)))))
+      (minaduki--set-created-prop encoded zone))))
 
 (defun minaduki/org-heading-to-file//suffix (&optional dir full? visit?)
   "Write the current heading to a file under DIR.
@@ -651,8 +651,9 @@ fill it in with the \"daily\" template."
           ;; variable should not be used.
           (org-extend-today-until 0))
       (-some--> (minaduki-templates--get "daily")
+        minaduki-template-content
         (minaduki-templates--insert it moment))
-      (minaduki::set-file-prop "created" (format-time-string "%FT%T%z" actual-now)))))
+      (minaduki--set-created-prop actual-now))))
 
 ;;;###autoload
 (defun minaduki/new-fleeting-note (&optional moment dir)
