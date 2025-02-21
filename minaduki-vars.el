@@ -138,7 +138,7 @@ value like `most-positive-fixnum'."
   "An alist for templates.
 
 Templates can be files in the template directory (which will
-eventually be vault-specific). This alist provides a way to set
+be vault-specific). This alist provides a way to set
 defaults, however."
   :group 'minaduki
   :type '(alist :key-type string :value-type string))
@@ -157,14 +157,24 @@ defaults, however."
   :group 'minaduki
   :type 'string)
 
+(defgroup minaduki-lit nil
+  "Minaduki literature notes."
+  :group 'minaduki
+  :prefix "minaduki-lit-")
+
+(defcustom minaduki-lit-template "lit"
+  "Template file for creating literature entries."
+  :group 'minaduki-lit
+  :type 'string)
+
 (defcustom minaduki-lit/key-prop "custom_id"
   "The Org property that defines the keys of literature entries."
-  :group 'group
-  :type 'type)
+  :group 'minaduki-lit
+  :type 'string)
 
 (defcustom minaduki-lit/bibliography (list (f-join org-directory "bibliography.org"))
   "Path to the Org file that stores literature entries."
-  :group 'minaduki
+  :group 'minaduki-lit
   :type 'string)
 
 (defun minaduki-lit:bibliography ()

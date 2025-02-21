@@ -60,8 +60,14 @@ names prepended with a colon."
 When FULL is non-nil, return full paths."
   (directory-files minaduki/templates-directory full (rx bos (not "."))))
 
-(defun minaduki-templates:get (name)
-  "Get the string content for the template named NAME."
+(defun minaduki-template-content (template)
+  "Return the content of a template."
+  ;; Right now a template is still just a string. The goal is for a template to
+  ;; also have metadata.
+  template)
+
+(defun minaduki-templates--get (name)
+  "Get the template object for the template named NAME."
   (let ((has-colon (s-prefix? ":" name)))
     ;; Use a prefix colon to only get templates from the alist
     (when has-colon
@@ -95,9 +101,7 @@ selected template instead of the name."
         (map-elt templates (completing-read prompt (map-keys templates))))
     (completing-read prompt (minaduki-templates::list-templates :all all))))
 
-(defun minaduki-templates--fill (template
-                                 moment
-                                 &rest args)
+(defun minaduki-templates--fill (template moment &rest args)
   "Fill out TEMPLATE and return the result as a string.
 
 TEMPLATE is the raw template text, in the syntax described by the
@@ -113,12 +117,20 @@ means that the template can write \"%:url\" and have it replaced
 with \"https://example.com\". This uses the
 `org-store-link-plist' mechanism.
 
+%:now is always available as an ISO 8601 timestamp of MOMENT.
+
 This is a wrapper around `org-capture-fill-template'."
   (declare (indent 2))
-  (let ((org-capture-plist
-         `(:default-time ,moment))
-        (org-store-link-plist args))
+  (let* ((moment (or moment (current-time)))
+         (org-capture-plist
+          `(:default-time ,moment))
+         (org-store-link-plist
+          (append args `(:now ,(format-time-string "%FT%T%z" moment)))))
     (org-capture-fill-template template)))
+
+(defun minaduki-templates--insert (template moment &rest args)
+  "Insert the result `minaduki-templates--fill' on TEMPLATE, MOMENT, and ARGS."
+  (insert (apply #'minaduki-templates--fill template moment args)))
 
 (provide 'minaduki-templates)
 

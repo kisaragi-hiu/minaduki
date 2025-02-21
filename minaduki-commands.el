@@ -649,9 +649,8 @@ fill it in with the \"daily\" template."
     (let (;; Since we're creating a daily note, this
           ;; variable should not be used.
           (org-extend-today-until 0))
-      (-some--> (minaduki-templates:get "daily")
-        (minaduki-templates--fill it now)
-        insert))))
+      (-some--> (minaduki-templates--get "daily")
+        (minaduki-templates--insert it now)))))
 
 ;;;###autoload
 (defun minaduki/new-fleeting-note (&optional time dir)
@@ -843,7 +842,13 @@ This function hooks into `org-open-at-point' via
 
 CITEKEY's information is extracted from files listed in
 `minaduki-lit/bibliography' during Minaduki's cache build
-process."
+process.
+
+If the note doesn\\='t exist, it is created with the \"lit\"
+template (or whatever `minaduki-lit-template' is set to), with the following arguments:
+- %:title: title of the entry
+- %:ref: the CITEKEY
+- %:now: (common to all templates) the current moment."
   (let* ((file (minaduki-db::fetch-file :key citekey))
          (_title (minaduki-db::fetch-title file))
          title)
@@ -872,24 +877,28 @@ process."
                            (`citekey citekey)
                            (`title title)
                            (_ (user-error "`minaduki-lit:slug-source' can only be `citekey' or `title'"))))))
+              ;; Create the note
               (minaduki-open
                (minaduki-node
-                :path (f-join minaduki/literature-notes-directory (format "%s.org" slug))))
-              (insert
-               (apply #'minaduki-templates--fill
-                      (minaduki-templates:get "literature")
-                      :title title
-                      :ref citekey
-                      :slug slug
-                      (let ((extra-props nil))
-                        (pcase-dolist (`(,key . ,value) props)
-                          (when (and (eq 'string (type-of value))
-                                     (not (equal key "title")))
-                            (when (member key '("=type=" "=key="))
-                              (setq key (substring key 1 -1)))
-                            (push (intern (format ":%s" key)) extra-props)
-                            (push value extra-props)))
-                        (nreverse extra-props)))))))))))
+                :path
+                (f-join minaduki/literature-notes-directory (format "%s.org" slug))))
+              (apply
+               #'minaduki-templates--insert
+               (minaduki-template-content
+                (minaduki-templates--get minaduki-lit-template))
+               nil
+               :title title
+               :ref citekey
+               :slug slug
+               (let ((extra-props nil))
+                 (pcase-dolist (`(,key . ,value) props)
+                   (when (and (eq 'string (type-of value))
+                              (not (equal key "title")))
+                     (when (member key '("=type=" "=key="))
+                       (setq key (substring key 1 -1)))
+                     (push (intern (format ":%s" key)) extra-props)
+                     (push value extra-props)))
+                 (nreverse extra-props))))))))))
 
 (defun minaduki-insert-citation (citekey)
   "Insert a citation to CITEKEY."
