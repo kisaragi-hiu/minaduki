@@ -834,7 +834,7 @@ This function hooks into `org-open-at-point' via
 
 ;;;; Literature note actions
 
-(defun minaduki:edit-citekey-notes (citekey)
+(defun minaduki/edit-citekey-notes (citekey)
   "Open a note associated with the CITEKEY or create a new one.
 
 CITEKEY's information is extracted from files listed in
@@ -1101,7 +1101,7 @@ This first adds an entry for it into a file in
     ;; Save the buffer
     (basic-save-buffer)
     (-when-let (citekey (plist-get info :citekey))
-      (minaduki:edit-citekey-notes citekey))))
+      (minaduki/edit-citekey-notes citekey))))
 
 ;;;; Actions
 

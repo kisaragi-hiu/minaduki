@@ -92,7 +92,7 @@ emacsclient \\='org-protocol://notes?key=banjoazusa2020\\='"
    (file
     (find-file (f-join (minaduki-vault-main) file)))
    (key
-    (minaduki:edit-citekey-notes key))))
+    (minaduki/edit-citekey-notes key))))
 
 ;;;###autoload
 (define-minor-mode minaduki-org-protocol-mode
