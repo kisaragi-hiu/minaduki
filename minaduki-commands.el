@@ -1015,7 +1015,7 @@ Return the key."
     key))
 
 ;;;###autoload
-(defun minaduki:new-literature-note-from-url ()
+(defun minaduki/new-literature-note-from-url ()
   "Create a new literature note from a URL.
 
 This first adds an entry for it into a file in

@@ -417,7 +417,7 @@ descriptive warnings when certain operations fail (e.g. parsing).")
     ("Create a new note with the \"daily\" template" . minaduki/new-daily-note)
     ("Find broken local links"            . minaduki/fix-broken-links)
     ("Open the index file"                . minaduki/open-index)
-    ("Create a new literature note from URL" . minaduki:new-literature-note-from-url)
+    ("Create a new literature note from URL" . minaduki/new-literature-note-from-url)
     ("Open a random note"                 . minaduki/open-random-note)
     ("Refresh cache"                      . minaduki-db:build-cache))
   "Global commands shown in `minaduki:global-commands'.
