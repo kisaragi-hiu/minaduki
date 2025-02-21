@@ -133,6 +133,7 @@ value like `most-positive-fixnum'."
 (defcustom minaduki-templates-alist
   '(("daily.org" . "#+title: %<%F>")
     ("fleeting.org" . "#+title: %:now")
+    ("concept.org" . "#+title: %:title")
     ("literature.org" . "#+title: %:author - %:title
 #+key: %:ref
 #+key: %:url"))

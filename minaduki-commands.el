@@ -565,45 +565,34 @@ REPLACE-REGION?: whether to replace selected text."
     (minaduki:local-commands key)))
 
 ;;;###autoload
-(cl-defun minaduki/new-stray-note (&key title dir)
-  "Add a new concept note / stray note with TITLE.
-
-When DIR is non-nil, put the new file under a subdirectory called
-DIR in the main vault. Otherwise, put it the top level of the
-main vault."
-  ;; (interactive "MTitle: ")
-  (unless title
-    (setq title (read-string "Title: ")))
-  (find-file
-   (--> (minaduki::to-slug title)
-        (s-replace "_" "-" it)
-        (format "%s.org" it)
-        (f-join (minaduki-vault-main)
-                (or dir "")
-                it)))
-  (insert "#+title: " title "\n"
-          "#+created: " (format-time-string "%FT%T%z") "\n"))
-
-;;;###autoload
-(cl-defun minaduki/new-concept-note (&key title visit?)
+(cl-defun minaduki/new-concept-note (&key title dir (visit? t))
   "Create a new concept note with TITLE.
 
 Return the path of the newly created note.
 
-If VISIT? is non-nil, go to the newly created note."
+If TITLE is nil, prompt the user for it.
+If DIR is non-nil, put the file under DIR instead.
+If VISIT? is non-nil (default), go to the newly created note."
+  ;; VISIT? needs to be non-nil by default for this function to itself be usable
+  ;; in `org-capture-templates' (when using org-capture just as a dispatcher).
   (interactive
    (list :title (read-string "Title: ")
          :visit? t))
-  (let* ((file (-> (minaduki::to-slug title)
-                   (f-expand (minaduki-vault-main))
-                   (concat ".org")))
-         (org-capture-templates
-          `(("a" "" plain
-             (file ,file)
-             ,(format "#+title: %s\n" title)
-             :jump-to-captured ,visit?
-             :immediate-finish t))))
-    (org-capture nil "a")
+  (let* ((title (or title (read-string "Title: ")))
+         (file (--> (minaduki::to-slug title)
+                    (f-join (minaduki-vault-main)
+                            (or dir "")
+                            it)
+                    (concat it ".org")))
+         (now (current-time))
+         (buf (find-file-noselect file)))
+    (with-current-buffer buf
+      (minaduki-templates--insert
+       (minaduki-templates--get "concept")
+       now
+       :title title)
+      (minaduki--set-created-prop now))
+    (when visit? (pop-to-buffer-same-window buf))
     file))
 
 ;;;###autoload
