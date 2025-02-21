@@ -719,7 +719,7 @@ Assume buffer is widened and point is on a headline."
                 while (org-up-heading-safe)
                 finally return (vconcat headings))))))
 
-(defun minaduki::set-global-prop (name value)
+(defun minaduki::set-file-prop (name value)
   "Set a file property called NAME to VALUE.
 
 If the property is already set, it's value is replaced."

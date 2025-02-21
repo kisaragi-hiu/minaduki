@@ -59,11 +59,11 @@ Usage:
         (setq commit-date (buffer-substring-no-properties
                            (point) (pos-eol)))))
     (delete-region beg end)
-    (minaduki::set-global-prop "commit" commit-id)
+    (minaduki::set-file-prop "commit" commit-id)
     (let* ((decoded (parse-time-string commit-date))
            (zone (car (last decoded)))
            (encoded (encode-time decoded)))
-      (minaduki::set-global-prop "created" (format-time-string "%FT%T%z" encoded zone)))))
+      (minaduki::set-file-prop "created" (format-time-string "%FT%T%z" encoded zone)))))
 
 (defun minaduki/org-heading-to-file//suffix (&optional dir full? visit?)
   "Write the current heading to a file under DIR.
@@ -162,7 +162,7 @@ what they want to do with it."
 (defun minaduki-org-set-startup ()
   "Set the STARTUP option for the current buffer."
   (interactive)
-  (minaduki::set-global-prop
+  (minaduki::set-file-prop
    "startup"
    (minaduki::completing-read-annotation
     "Startup option: "
@@ -412,7 +412,7 @@ REPLACE-REGION?: whether to replace selected text."
          (existing-tags (minaduki-extract//tags/org-prop)))
     (when (string-empty-p tag)
       (user-error "Tag can't be empty"))
-    (minaduki::set-global-prop
+    (minaduki::set-file-prop
      "tags[]"
      (combine-and-quote-strings (seq-uniq (cons tag existing-tags))))
     (when (minaduki-vault-in-vault?)
@@ -425,7 +425,7 @@ REPLACE-REGION?: whether to replace selected text."
   (interactive)
   (if-let* ((tags (minaduki-extract//tags/org-prop)))
       (let ((tag (completing-read "Tag: " tags nil 'require-match)))
-        (minaduki::set-global-prop
+        (minaduki::set-file-prop
          "tags[]"
          (combine-and-quote-strings (delete tag tags)))
         (when (minaduki-vault-in-vault?)
