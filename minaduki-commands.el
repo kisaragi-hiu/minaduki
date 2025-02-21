@@ -634,14 +634,15 @@ This will create diary/20211129.org on the day 2021-11-29, then
 fill it in with the \"daily\" template."
   (interactive)
   (let* ((day (or day (minaduki::today)))
-         (now (pcase-let ((`(,y ,m ,d)
-                           (mapcar
-                            #'string-to-number
-                            (cdr (s-match (rx (group (= 4 digit)) "-"
-                                              (group (= 2 digit)) "-"
-                                              (group (= 2 digit)))
-                                          day)))))
-                (encode-time `(0 0 0 ,d ,m ,y nil nil nil))))
+         (actual-now (current-time))
+         (moment (pcase-let ((`(,y ,m ,d)
+                              (mapcar
+                               #'string-to-number
+                               (cdr (s-match (rx (group (= 4 digit)) "-"
+                                                 (group (= 2 digit)) "-"
+                                                 (group (= 2 digit)))
+                                             day)))))
+                   (encode-time `(0 0 0 ,d ,m ,y nil nil nil))))
          (filename (s-replace "-" "" day))
          (ext "org"))
     (find-file (f-join minaduki/diary-directory
@@ -650,7 +651,8 @@ fill it in with the \"daily\" template."
           ;; variable should not be used.
           (org-extend-today-until 0))
       (-some--> (minaduki-templates--get "daily")
-        (minaduki-templates--insert it now)))))
+        (minaduki-templates--insert it moment))
+      (minaduki::set-file-prop "created" (format-time-string "%FT%T%z" actual-now)))))
 
 ;;;###autoload
 (defun minaduki/new-fleeting-note (&optional moment dir)
