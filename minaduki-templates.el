@@ -95,7 +95,7 @@ selected template instead of the name."
         (map-elt templates (completing-read prompt (map-keys templates))))
     (completing-read prompt (minaduki-templates::list-templates :all all))))
 
-(defun minaduki-templates:fill (template
+(defun minaduki-templates--fill (template
                                  moment
                                  &rest args)
   "Fill out TEMPLATE and return the result as a string.

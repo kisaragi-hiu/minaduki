@@ -650,7 +650,7 @@ fill it in with the \"daily\" template."
           ;; variable should not be used.
           (org-extend-today-until 0))
       (-some--> (minaduki-templates:get "daily")
-        (minaduki-templates:fill it now)
+        (minaduki-templates--fill it now)
         insert))))
 
 ;;;###autoload
@@ -875,7 +875,7 @@ process."
                    (minaduki-node
                     :path (f-join minaduki/literature-notes-directory (format "%s.org" slug))))
                   (insert
-                   (apply #'minaduki-templates:fill
+                   (apply #'minaduki-templates--fill
                           (minaduki-templates:get "literature")
                           :title title
                           :ref citekey
