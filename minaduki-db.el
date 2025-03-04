@@ -698,7 +698,7 @@ Returns a `minaduki-db::count' object."
                         (minaduki-db::insert-meta nil contents-hash))
                       (setq id-count
                             (+ id-count
-                               (minaduki-db::insert-ids))))
+                               (minaduki-db::insert-ids t))))
                   (error
                    (setq error-count
                          (1+ error-count))
