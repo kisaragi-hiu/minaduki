@@ -61,11 +61,34 @@ names prepended with a colon."
 When FULL is non-nil, return full paths."
   (directory-files minaduki/templates-directory full (rx bos (not "."))))
 
+(cl-defstruct (minaduki-template (:copier nil)
+                                 (:constructor minaduki-template))
+  "Object representing a template.
+A template has its content string, as well as frontmatter props that
+specify properties like where the resulting file from the template
+should go.
+
+The frontmatter of the template itself is the first YAML block,
+delimited by \"---\" lines, regardless of the format of the content."
+  -content -frontmatter)
+
+(defun minaduki-template-frontmatter (template)
+  "Return frontmatter of TEMPLATE.
+TEMPLATE can be a `minaduki-template' object or a string. If it is a
+string, this is just nil."
+  (cond ((stringp template) nil)
+        ((minaduki-template-p template)
+         (minaduki-template--frontmatter template))
+        (t (signal 'wrong-type-argument nil))))
+
 (defun minaduki-template-content (template)
-  "Return the content of a template."
-  ;; Right now a template is still just a string. The goal is for a template to
-  ;; also have metadata.
-  template)
+  "Return content of TEMPLATE.
+TEMPLATE can be a `minaduki-template' object or a string. If it is a
+string, the entire string is treated as the content."
+  (cond ((stringp template) template)
+        ((minaduki-template-p template)
+         (minaduki-template--content template))
+        (t (signal 'wrong-type-argument nil))))
 
 (defun minaduki-templates--get (name)
   "Get the template object for the template named NAME."
@@ -80,7 +103,21 @@ When FULL is non-nil, return full paths."
             (when-let (file (or (--first (equal name it) files)
                                 (--first (equal name (f-filename it)) files)
                                 (--first (equal name (f-base it)) files)))
-              (minaduki::file-content file))))
+              (minaduki::with-temp-buffer file
+                (let ((frontmatter-region (minaduki::find-front-matter)))
+                  (if frontmatter-region
+                      (minaduki-template
+                       :-frontmatter (buffer-substring-no-properties
+                                      (car frontmatter-region)
+                                      (cdr frontmatter-region))
+                       :-content (buffer-substring-no-properties
+                                  ;; This jumps past the marker.
+                                  (+ (cdr frontmatter-region)
+                                     (length "---"))
+                                  (point-max)))
+                    (minaduki-template :-frontmatter nil
+                                       :-content (buffer-substring-no-properties
+                                                  (point-min) (point-max)))))))))
      ;; Then `minaduki-templates-alist', using the same matching logic
      (let ((templates minaduki-templates-alist))
        (when-let (pair (or (--first (equal name (car it)) templates)

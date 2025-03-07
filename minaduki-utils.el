@@ -560,26 +560,33 @@ ARGS and BODY are as in `lambda'."
      (setq self (lambda ,args ,@body))
      self))
 
+(defun minaduki::find-front-matter ()
+  "Return start and end positions of the frontmatter, if any.
+This excludes the markers."
+  (goto-char (point-min))
+  (let (start end)
+    ;; The beginning of the frontmatter, which has to be at the beginning
+    ;; of the buffer (before char position 4).
+    (setq start (re-search-forward "^---$" 4 t))
+    ;; The end of the frontmatter
+    (setq end (re-search-forward "^---$" nil t))
+    (when (and start end)
+      (list start
+            ;; `end' is after the "---", so the region between `start' and `end'
+            ;; right now includes the ending marker. Subtracting like this
+            ;; excludes it.
+            (- end (length "---"))))))
+
 (cl-defmacro minaduki::with-front-matter (&rest body)
   "Run BODY with the buffer narrowed to the front matter, if any."
   (declare (indent 0))
   (cl-with-gensyms (start end)
     `(save-excursion
        (goto-char (point-min))
-       (let (,start ,end)
-         ;; The beginning of the frontmatter, which has to be at the beginning
-         ;; of the buffer (before char position 4).
-         (setq ,start (re-search-forward "^---$" 4 t))
-         ;; The end of the frontmatter
-         (setq ,end (re-search-forward "^---$" nil t))
+       (-let (((,start ,end) (minaduki::find-front-matter)))
          (when (and ,start ,end)
            (save-restriction
-             (narrow-to-region
-              ,start
-              ;; `end' is after the "---", so the region between `start' and
-              ;; `end' right now includes the ending marker. Subtracting like
-              ;; this excludes it.
-              (- ,end (length "---")))
+             (narrow-to-region ,start ,end)
              ,@body))))))
 
 (defun minaduki::file-content (file)

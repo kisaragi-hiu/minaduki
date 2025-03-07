@@ -588,7 +588,8 @@ If VISIT? is non-nil (default), go to the newly created note."
          (buf (find-file-noselect file)))
     (with-current-buffer buf
       (minaduki-templates--insert
-       (minaduki-templates--get "concept")
+       (minaduki-template-content
+        (minaduki-templates--get "concept"))
        now
        :title title)
       (minaduki--set-created-prop now))
