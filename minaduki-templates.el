@@ -127,7 +127,9 @@ This is a wrapper around `org-capture-fill-template'."
           `(:default-time ,moment))
          (org-store-link-plist
           (append args `(:now ,(format-time-string "%FT%T%z" moment)))))
-    (org-capture-fill-template template)))
+    ;; Because this is never interactive, we shouldn't have much in `org-mode-hook'.
+    (let ((org-mode-hook nil))
+      (org-capture-fill-template template))))
 
 (defun minaduki-templates--insert (template moment &rest args)
   "Insert the result `minaduki-templates--fill' on TEMPLATE, MOMENT, and ARGS."
