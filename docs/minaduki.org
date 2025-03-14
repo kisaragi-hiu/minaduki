@@ -20,6 +20,25 @@ Commands:
 
 - minaduki-org-set-heading-tags: like =org-set-tags= but using the tag library for completion
 
+* minaduki-everywhere
+:PROPERTIES:
+:created:  2025-03-15T01:10:55+0900
+:END:
+
+Like creating a new note from anywhere within Emacs, it is also useful to be able to create a new note from any window by simply pressing a shortcut.
+
+This can be done by the =minaduki-everywhere= module. This module depends on =emacs-everywhere=, which needs to be installed separately (FIXME).
+
+Once =emacs-everywhere= works, =minaduki-everywhere= can work by binding a key to this:
+
+#+begin_src sh
+emacsclient --eval '(minaduki-everywhere)'
+#+end_src
+
+Pressing the key now will bring up an =emacs-everywhere= window for a [[fleeting note]]. Press =C-c C-c= to finish editing it.
+
+FIXME: aborting the edit does not get rid of the empty file.
+
 * File formats
 
 Minaduki has support for notes written in Org and Markdown. I hope to add support for more formats (reStructuredText, AsciiDoc, etc.) in the future.
