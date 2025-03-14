@@ -67,8 +67,27 @@ ORIG is the original function; ABORT is passed to the original function."
       ;; doesn't run twice.
       (funcall orig abort))))
 
-(defun minaduki-everywhere--init-advice ()
-  "After advice for `emacs-everywhere-initialise'."
+(defun minaduki-everywhere--init-advice (orig)
+  "Around advice for `emacs-everywhere-initialise'.
+ORIG is the original function."
+  ;; We'll set frame name, position, major mode, etc. ourselves
+  (org-mode)
+  (let ((emacs-everywhere-init-hooks nil))
+    (funcall orig))
+  ;; Override app info with stuff more appropriate for our use case
+  (let ((current-app emacs-everywhere-current-app))
+    (setq-local emacs-everywhere-current-app
+                (make-emacs-everywhere-app
+                 ;; ID should be kept so it returns us to the right place afterwards
+                 ;; Geometry is also kept because we might as well
+                 :id (emacs-everywhere-app-id current-app)
+                 :geometry (emacs-everywhere-app-geometry current-app)
+                 ;; For doom modeline's use
+                 :class "Minaduki"
+                 :title (format-time-string "%FT%T%z" minaduki-everywhere--moment))))
+  (set-frame-name
+   (format "Minaduki :: New fleeting note for %s"
+           (format-time-string "%FT%T%z" minaduki-everywhere--moment)))
   ;; the moment is already set by the entry point.
   (minaduki-templates--insert "fleeting" minaduki-everywhere--moment)
   ;; This is done by `emacs-everywhere-insert-selection' in a normal
@@ -88,7 +107,7 @@ ORIG is the original function; ABORT is passed to the original function."
          (setq minaduki-everywhere--moment (current-time))
          (advice-add 'emacs-everywhere-insert-selection :override #'ignore)
          (advice-add 'emacs-everywhere-finish :around #'minaduki-everywhere--finish-advice)
-         (advice-add 'emacs-everywhere-initialise :after #'minaduki-everywhere--init-advice))
+         (advice-add 'emacs-everywhere-initialise :around #'minaduki-everywhere--init-advice))
         (t
          (setq minaduki-everywhere--moment nil)
          (advice-remove 'emacs-everywhere-insert-selection #'ignore)
