@@ -169,8 +169,14 @@ This is a wrapper around `org-capture-fill-template'."
       (org-capture-fill-template template))))
 
 (defun minaduki-templates--insert (template moment &rest args)
-  "Insert the result `minaduki-templates--fill' on TEMPLATE, MOMENT, and ARGS."
-  (insert (apply #'minaduki-templates--fill template moment args)))
+  "Insert the result of `minaduki-templates--fill' on TEMPLATE, MOMENT, and ARGS.
+TEMPLATE names a template and will be resolved via `minaduki-templates--get'.
+
+If there is no template named TEMPLATE, or if its content is somehow
+nil, nothing will be done."
+  (when-let* ((template-obj (minaduki-templates--get template))
+              (content (minaduki-template-content template-obj)))
+    (insert (apply #'minaduki-templates--fill content moment args))))
 
 (provide 'minaduki-templates)
 

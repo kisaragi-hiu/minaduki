@@ -588,8 +588,7 @@ If VISIT? is non-nil (default), go to the newly created note."
          (buf (find-file-noselect file)))
     (with-current-buffer buf
       (minaduki-templates--insert
-       (minaduki-template-content
-        (minaduki-templates--get "concept"))
+       "concept"
        now
        :title title)
       (minaduki--set-created-prop now))
@@ -640,9 +639,7 @@ fill it in with the \"daily\" template."
     (let (;; Since we're creating a daily note, this
           ;; variable should not be used.
           (org-extend-today-until 0))
-      (-some--> (minaduki-templates--get "daily")
-        minaduki-template-content
-        (minaduki-templates--insert it moment))
+      (minaduki-templates--insert "daily" moment)
       (minaduki--set-created-prop actual-now))))
 
 ;;;###autoload
@@ -675,10 +672,7 @@ The content of the fleeting note uses the \"fleeting\" template."
          (ext "org"))
     (find-file (f-join (or dir minaduki/diary-directory)
                        (concat filename "." ext)))
-    (minaduki-templates--insert
-     (minaduki-template-content
-      (minaduki-templates--get "fleeting"))
-     now)))
+    (minaduki-templates--insert "fleeting" now)))
 
 ;;;###autoload
 (defun minaduki/open-diary-entry (&optional noprompt)
@@ -882,8 +876,7 @@ template (or whatever `minaduki-lit-template' is set to), with the following arg
                 :path
                 (f-join minaduki/literature-notes-directory (format "%s.org" slug))))
               (apply #'minaduki-templates--insert
-                     (minaduki-template-content
-                      (minaduki-templates--get minaduki-lit-template))
+                     minaduki-lit-template
                      now
                      :title title
                      :ref citekey
