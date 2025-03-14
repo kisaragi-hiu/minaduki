@@ -166,7 +166,10 @@ This is a wrapper around `org-capture-fill-template'."
           (append args `(:now ,(format-time-string "%FT%T%z" moment)))))
     ;; Because this is never interactive, we shouldn't have much in `org-mode-hook'.
     (let ((org-mode-hook nil))
-      (org-capture-fill-template template))))
+      (-some-> (org-capture-fill-template template)
+        ;; org-capture-fill-template tries to ensure there is an ending newline.
+        ;; Undo that as that's almost never what we want.
+        s-trim-right))))
 
 (defun minaduki-templates--insert (template moment &rest args)
   "Insert the result of `minaduki-templates--fill' on TEMPLATE, MOMENT, and ARGS.
