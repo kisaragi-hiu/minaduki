@@ -42,20 +42,33 @@ ORIG is the original function; ABORT is passed to the original function."
   (let ((emacs-everywhere-copy-command nil) ; don't actually copy
         (emacs-everywhere-paste-command nil) ; and don't actually paste
         (emacs-everywhere-final-hooks '())) ; don't do any conversion
-    (save-buffer)
-    (funcall orig abort)
-    (minaduki-everywhere-mode -1)))
+    (let (content)
+      ;; Grab the content now
+      (unless abort
+        (setq content (buffer-string)))
+      (unless abort
+        (with-current-buffer (minaduki/new-fleeting-note
+                              minaduki-everywhere--moment
+                              nil nil)
+          (erase-buffer)
+          (insert content)
+          (save-buffer)))
+      (minaduki-everywhere-mode -1)
+      ;; This might run itself again, because it calls server-buffer-done at the
+      ;; end, which triggers server-done-hook, which runs
+      ;; emacs-everywhere-finish again. It avoids an infinite loop by turning
+      ;; off emacs-everywhere-mode unconditionally and not doing anything else
+      ;; if it is already off.
+      ;;
+      ;; So we turn off `minaduki-everywhere-mode' *before* calling this so that
+      ;; our advices are removed when it refers to itself. This way this advice
+      ;; doesn't run twice.
+      (funcall orig abort))))
 
-(defun minaduki-everywhere--init-advice (orig)
-  "Around advice for `emacs-everywhere-initialise'."
-  (let ((emacs-everywhere-init-hooks '(minaduki/new-fleeting-note)))
-    (funcall orig)
-    ;; Because we've switched to a different buffer in `minaduki/new-fleeting-note',
-    ;; `emacs-everywhere-current-app' is now different. Set it to what it
-    ;; expects again.
-    (setq-local emacs-everywhere-current-app
-                (or (frame-parameter nil 'emacs-everywhere-app)
-                    (emacs-everywhere-app-info)))))
+(defun minaduki-everywhere--init-advice ()
+  "After advice for `emacs-everywhere-initialise'."
+  ;; the moment is already set by the entry point.
+  (minaduki-templates--insert "fleeting" minaduki-everywhere--moment))
 
 (define-minor-mode minaduki-everywhere-mode
   "Tweak `emacs-everywhere' to use it for `minaduki-everywhere' features."
@@ -65,10 +78,12 @@ ORIG is the original function; ABORT is passed to the original function."
   :global t
   (cond (minaduki-everywhere-mode
          (setq minaduki-everywhere--moment (current-time))
+         (advice-add 'emacs-everywhere-insert-selection :override #'ignore)
          (advice-add 'emacs-everywhere-finish :around #'minaduki-everywhere--finish-advice)
-         (advice-add 'emacs-everywhere-initialise :around #'minaduki-everywhere--init-advice))
+         (advice-add 'emacs-everywhere-initialise :after #'minaduki-everywhere--init-advice))
         (t
          (setq minaduki-everywhere--moment nil)
+         (advice-remove 'emacs-everywhere-insert-selection #'ignore)
          (advice-remove 'emacs-everywhere-finish #'minaduki-everywhere--finish-advice)
          (advice-remove 'emacs-everywhere-initialise #'minaduki-everywhere--init-advice))))
 

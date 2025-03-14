@@ -35,9 +35,7 @@ Once =emacs-everywhere= works, =minaduki-everywhere= can work by binding a key t
 emacsclient --eval '(minaduki-everywhere)'
 #+end_src
 
-Pressing the key now will bring up an =emacs-everywhere= window for a [[fleeting note]]. Press =C-c C-c= to finish editing it.
-
-FIXME: aborting the edit does not get rid of the empty file.
+Pressing the key now will bring up an =emacs-everywhere= window for a [[fleeting note]]. Press =C-c C-c= to finish editing and save the text into the corresponding file. Press =C-c C-k= to abort, which will discard the text just like a normal =emacs-everywhere= session.
 
 * File formats
 

@@ -643,11 +643,13 @@ fill it in with the \"daily\" template."
       (minaduki--set-created-prop actual-now))))
 
 ;;;###autoload
-(defun minaduki/new-fleeting-note (&optional moment dir)
+(cl-defun minaduki/new-fleeting-note (&optional moment dir (visit? t))
   "Create a new fleeting note for MOMENT in DIR.
 
 MOMENT is the current time by default.
 DIR is `minaduki/diary-directory' by default.
+If VISIT? is non-nil (default), visit the resulting buffer afterwards.
+Return the buffer created for the note regardless of VISIT?.
 
 A fleeting note is one whose title is a timestamp, down to the second;
 its filename is also based on the current time.
@@ -669,10 +671,14 @@ The content of the fleeting note uses the \"fleeting\" template."
          (filename (format-time-string "%Y%m%dT%H%M%S%z" now))
          ;; Put this here so if we allow different templates later
          ;; it's easier to change
-         (ext "org"))
-    (find-file (f-join (or dir minaduki/diary-directory)
-                       (concat filename "." ext)))
-    (minaduki-templates--insert "fleeting" now)))
+         (ext "org")
+         (buf (find-file-noselect (f-join (or dir minaduki/diary-directory)
+                                          (concat filename "." ext)))))
+    (with-current-buffer buf
+      (minaduki-templates--insert "fleeting" now))
+    (when visit?
+      (pop-to-buffer-same-window buf))
+    buf))
 
 ;;;###autoload
 (defun minaduki/open-diary-entry (&optional noprompt)
