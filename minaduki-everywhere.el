@@ -17,6 +17,8 @@
 (require 'emacs-everywhere)
 (require 'minaduki-commands)
 
+(declare-function evil-insert-state "evil-states")
+
 (defun minaduki-everywhere ()
   "Write a note from anywhere.
 
@@ -68,7 +70,13 @@ ORIG is the original function; ABORT is passed to the original function."
 (defun minaduki-everywhere--init-advice ()
   "After advice for `emacs-everywhere-initialise'."
   ;; the moment is already set by the entry point.
-  (minaduki-templates--insert "fleeting" minaduki-everywhere--moment))
+  (minaduki-templates--insert "fleeting" minaduki-everywhere--moment)
+  ;; This is done by `emacs-everywhere-insert-selection' in a normal
+  ;; `emacs-everywhere' session. Here we have to do it ourselves because we
+  ;; override that function to disable its main functionality. (We want to fill
+  ;; the buffer with the template, as done above.)
+  (when (bound-and-true-p evil-local-mode)
+    (evil-insert-state)))
 
 (define-minor-mode minaduki-everywhere-mode
   "Tweak `emacs-everywhere' to use it for `minaduki-everywhere' features."
