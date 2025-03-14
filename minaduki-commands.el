@@ -852,15 +852,20 @@ template (or whatever `minaduki-lit-template' is set to), with the following arg
          title)
     (cl-block nil
       (cond
+       ;; If a corresponding file exists, just visit it
        (file (minaduki::find-file file))
+       ;; Otherwise create a file for it
        (t (let ((props (or (-some-> (minaduki-db::fetch-lit-entry citekey)
                              minaduki-lit-entry-props)
                            (minaduki::warn :warning
-                             "Could not find the literature entry %s" citekey))))
-            (puthash "=key=" (gethash "key" props) props)
-            (remhash "key" props)
-            (puthash "=type=" (gethash "type" props) props)
-            (remhash "type" props)
+                             "Could not find the literature entry %s" citekey)
+                           (make-hash-table :test #'equal))))
+            (when-let (key (gethash "key" props))
+              (puthash "=key=" key props)
+              (remhash "key" props))
+            (when-let (type (gethash "type" props))
+              (puthash "=type=" type props)
+              (remhash "type" props))
             (setq props (map-into props 'alist))
             (setq title (or (cdr (assoc "title" props))
                             (minaduki::warn :warning "Title not found for this entry")
