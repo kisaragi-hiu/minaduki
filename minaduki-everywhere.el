@@ -14,11 +14,12 @@
 
 ;;; Code:
 
-(require 'emacs-everywhere)
+(require 'emacs-everywhere nil t)
 (require 'minaduki-commands)
 
 (declare-function evil-insert-state "evil-states")
 
+;;;###autoload
 (defun minaduki-everywhere ()
   "Write a note from anywhere.
 
@@ -26,6 +27,8 @@ This function is meant to be called from emacsclient. Bind this command
 to an OS shortcut:
 
     emacsclient --eval \\='(minaduki-everywhere)\\='"
+  (unless (featurep 'emacs-everywhere)
+    (error "`minaduki-everywhere' requires `emacs-everywhere' in order to function"))
   (minaduki-everywhere-mode)
   (emacs-everywhere))
 
