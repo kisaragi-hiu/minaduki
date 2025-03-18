@@ -2,5 +2,4 @@
 ;;; For more information see (info "(emacs) Directory Variables")
 
 ((emacs-lisp-mode
-  (sentence-end-double-space . nil)
-  (nameless-separator . "/")))
+  (sentence-end-double-space . nil)))
