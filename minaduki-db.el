@@ -716,7 +716,7 @@ Returns a `minaduki-db::count' object."
             (let ((inhibit-message t))
               (minaduki::with-temp-buffer file
                 (setq modified-count (1+ modified-count))
-                (setq ref-count (+ ref-count (minaduki-db::insert-refs)))
+                (setq ref-count (+ ref-count (minaduki-db::insert-refs t)))
                 (setq link-count (+ link-count (minaduki-db::insert-links)))))
           (error
            (setq error-count (1+ error-count))
