@@ -56,6 +56,11 @@ supported in Org mode by being added to `org-link-abbrev-alist'.
 
 Files under the paths are indexed by Minaduki.
 
+Note that paths should be passed in as the same form Emacs would
+visit them. For performance, Minaduki does not resolve symlinks,
+so if you use `find-file-visit-truename' you would have to make
+sure vault paths are also truenames.
+
 Each vault is represented with a list (NAME PATH).
 Files under any PATH are indexed by Minaduki.
 Each NAME is added to `org-link-abbrev-alist'."
