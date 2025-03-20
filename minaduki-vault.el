@@ -99,20 +99,9 @@ This file is used to declare or register known vaults."
              (non-extra (--remove (member (minaduki-vault-path it) extra-paths)
                                   minaduki/vaults))
              (json (json-encode non-extra)))
-        (when (equal json "null")
-          (with-temp-file
-              (format "~/minaduki-temp-%s"
-                      (format-time-string
-                       "%Y%m%dT%H%M%S%z"))
-            (insert (message "Writing nil to vaults file!
-   minaduki/vaults: %S
-   extra-paths: %S
-   non-extra: %S"
-                             minaduki/vaults
-                             extra-paths
-                             non-extra))))
-        (with-temp-file minaduki-vaults-file
-          (insert json))))))
+        (when non-extra
+          (with-temp-file minaduki-vaults-file
+            (insert json)))))))
 
 (defun minaduki-vaults-load ()
   "Load vaults from `minaduki-vaults-file' into `minaduki/vaults'.
