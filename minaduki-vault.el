@@ -379,37 +379,45 @@ A path is in a vault if it:
        (--any? (s-prefix? (expand-file-name it) path)
                (minaduki-vault--paths))))))
 
-;; TODO: return closest registered vault.
-;; Currently this just returns the closest nested vault.
 (defun minaduki-vault-closest (&optional path)
   "Return the innermost vault that contains PATH."
   (unless path
     (setq path default-directory))
-  (let* ((main-vault (minaduki-vault-main))
-         (nested-vaults
-          ;; These folders are nested vaults no matter what.
-          (mapcan (lambda (x)
-                    (let ((d (f-join main-vault x)))
-                      (when (f-dir? d)
-                        (f-directories d))))
-                  minaduki-nested-vault-search-path)))
-    (catch 'ret
-      (while t
-        (when (equal (f-expand path)
-                     (f-expand main-vault))
-          (throw 'ret path))
-        (unless (s-starts-with?
-                 (f-full main-vault)
-                 (f-full path))
-          (throw 'ret nil))
-        (if (or
-             (member path nested-vaults)
-             (equal (f-full path)
-                    (f-full (minaduki-vault-main)))
-             (--any? (f-exists? (f-join path it))
-                     minaduki-nested-vault-root-files))
-            (throw 'ret path)
-          (setq path (f-dirname path)))))))
+  (cl-block nil
+    (dolist (vault-path (minaduki-vault--paths :skip t))
+      (let* ((nested-vaults
+              ;; These folders are nested vaults no matter what.
+              (mapcan (lambda (x)
+                        (let ((d (f-join vault-path x)))
+                          (when (f-dir? d)
+                            (f-directories d))))
+                      minaduki-nested-vault-search-path))
+             (result (cl-block nil
+                       (let ((path path)) ; don't actually consume the outer reference
+                         (while path ; traverse up until worst case we hit root
+                           ;; path = vault-path: path belongs in vault-path
+                           (when (equal (f-expand path)
+                                        (f-expand vault-path))
+                             (cl-return path))
+                           ;; path doesn't start with vault-path: path cannot be
+                           ;; in vault path
+                           (unless (s-starts-with?
+                                    (f-full vault-path)
+                                    (f-full path))
+                             (cl-return nil))
+                           ;; in these cases path is the vault we want
+                           (when (or (member path nested-vaults)
+                                     (equal (f-full path)
+                                            (f-full vault-path))
+                                     (--any? (f-exists? (f-join path it))
+                                             minaduki-nested-vault-root-files))
+                             (cl-return path))
+                           ;; nothing matches, traverse up and try again
+                           (setq path (f-dirname path)))))))
+        ;; if we've found it, stop here and return it
+        ;; if not, try the next one
+        (when result
+          (cl-return result))))))
 
 (defvar minaduki-vault-path-abbrev--cache nil
   "Used to store cache for `minaduki-vault-path-abbrev'.")
