@@ -514,7 +514,14 @@ If UNDER-PATH is non-nil, only return nodes that are under it."
                                         "refs.type")
                                       (string-join ","))
                         "FROM files"
-                        "LEFT JOIN refs ON refs.file = files.file")))
+                        "LEFT JOIN refs ON refs.file = files.file"
+                        ;; "||" is string concatenation; this is how you put a
+                        ;; param into the LIKE value without SQL injection.
+                        ;;
+                        ;; This doesn't filter out enough but does do so faster
+                        ;; than `f-descendant-of?' in Elisp.
+                        "WHERE files.file LIKE ? || '%'")
+                      (or under-path "")))
     (pcase-dolist (`(,file ,titles ,tags ,meta ,ref ,key-type) file-nodes)
       (dolist (title (minaduki-db::parse-value titles))
         (when (or (not under-path)
@@ -534,7 +541,11 @@ If UNDER-PATH is non-nil, only return nodes that are under it."
                                       "ids.file")
                                     (string-join ","))
                       "FROM ids"
-                      "LEFT JOIN files ON files.file = ids.file")))
+                      "LEFT JOIN files ON files.file = ids.file"
+                      ;; Same as above. This doesn't filter out enough but does
+                      ;; do so faster than `f-descendant-of?' in Elisp.
+                      "WHERE files.file LIKE ? || '%'")
+                    (or under-path "")))
     (pcase-dolist (`(,id ,title ,file-titles ,meta ,file) id-nodes)
       (when (or (not under-path)
                 (f-descendant-of? file under-path))
