@@ -194,11 +194,18 @@ open in another window instead of in the current one."
         (cond ((markdown-wiki-link-p)
                (minaduki::find-file (minaduki-obsidian-path (match-string 3))))
               ((markdown-link-p)
-               (let ((url (markdown-link-url)))
+               (let ((url (markdown-link-url))
+                     expanded)
                  (cond
                   ((s-prefix? "#" url)
                    (minaduki/open-id (substring url 1)))
-                  (t (markdown-follow-thing-at-point other)))))
+                  ;; Support link expansion; right now just read from
+                  ;; `org-link-abbrev-alist' directly.
+                  ((not (equal url
+                               (setq expanded (org-link-expand-abbrev url))))
+                   (markdown--browse-url expanded))
+                  (t
+                   (markdown-follow-thing-at-point other)))))
               (t (markdown-follow-thing-at-point other))))
     (markdown-follow-thing-at-point other)))
 
