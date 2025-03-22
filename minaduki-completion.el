@@ -147,10 +147,7 @@ Embark to create what are in effect context menus."
                    (--map (-> (concat "#" it)
                               (propertize 'face 'minaduki-tag)))
                    (s-join " ")))
-        (path (-> (minaduki-vault-path-relative
-                   (oref node path)
-                   (minaduki-vault-main)
-                   t)
+        (path (-> (minaduki-vault-path-abbrev (oref node path) t)
                   (propertize 'face 'minaduki-path))))
     (s-join " " (list title cite tags path))))
 

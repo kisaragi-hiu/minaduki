@@ -307,6 +307,22 @@ Uses either Ripgrep or `directory-files-recursively'."
         (minaduki-vault--list-files/rg cmd dir)
       (minaduki-vault--list-files/elisp dir))))
 
+(cl-defun minaduki-vault--abbrev-alist (&key skip)
+  "Return vaults in the same form as `org-link-abbrev-alist'.
+
+In other words, as a list of (NAME . PATH) pairs.
+
+If SKIP is non-nil, list only those whose `skipped' prop is nil.
+Vaults without a name or path are always skipped."
+  (let (ret)
+    (dolist (vault minaduki/vaults)
+      (let ((path (expand-file-name (minaduki-vault-path vault)))
+            (name (minaduki-vault-name vault)))
+        (when (and path name)
+          (unless (and skip (minaduki-vault-skipped vault))
+            (push (cons name path) ret)))))
+    (nreverse ret)))
+
 (cl-defun minaduki-vault--paths (&key skip)
   "Return the paths of all vaults in `minaduki/vaults'.
 
@@ -394,6 +410,30 @@ A path is in a vault if it:
                      minaduki-nested-vault-root-files))
             (throw 'ret path)
           (setq path (f-dirname path)))))))
+
+(defvar minaduki-vault-path-abbrev--cache nil
+  "Used to store cache for `minaduki-vault-path-abbrev'.")
+(defun minaduki-vault-path-abbrev (path &optional use-cache)
+  "Abbreviate PATH to one of the vaults.
+
+This function can be called *very* often, like in
+`minaduki--format-node'. To help with that, if USE-CACHE is
+non-nil then `minaduki-vault-path-abbrev--cache' is used as a
+cache for values reused across calls within e.g. a loop, until
+the next time USE-CACHE is nil again."
+  (cl-block nil
+    ;; In non-cached mode, clear it if it's initialized
+    (unless use-cache
+      (when minaduki-vault-path-abbrev--cache
+        (setq minaduki-vault-path-abbrev--cache nil)))
+    (let (vault-abbrev-alist value)
+      (when use-cache
+        (setq vault-abbrev-alist minaduki-vault-path-abbrev--cache))
+      (unless vault-abbrev-alist
+        (setq vault-abbrev-alist (minaduki-vault--abbrev-alist :skip t)))
+      (when use-cache
+        (setq minaduki-vault-path-abbrev--cache vault-abbrev-alist))
+      (minaduki::apply-link-abbrev path vault-abbrev-alist :dont))))
 
 (defvar minaduki-vault-path-relative--cache nil
   "Used to store cache for `minaduki-vault-path-relative'.")

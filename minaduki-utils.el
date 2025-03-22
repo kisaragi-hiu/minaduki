@@ -302,8 +302,12 @@ when URL `https://google.com' is passed as `//google.com'."
       (s-prefix? "http://" path)
       (s-prefix? "https://" path)))
 
-(defun minaduki::apply-link-abbrev (path)
+(defun minaduki::apply-link-abbrev (path &optional alist no-truename)
   "Apply `org-link-abbrev-alist' to PATH.
+
+If ALIST is given, use it instead of `org-link-abbrev-alist'.
+If NO-TRUENAME is non-nil, DON\\='T resolve PATH if it\\='s a
+symlink. This is useful for performance.
 
 For example, if `org-link-abbrev-alist' maps \"x\" to \"/home/\",
 and PATH is \"/home/abc\", this returns \"x:abc\".
@@ -313,8 +317,9 @@ Inverse of `org-link-expand-abbrev'."
   (catch 'ret
     (unless path
       (throw 'ret path))
-    (setq path (f-canonical path))
-    (pcase-dolist (`(,key . ,abbrev) org-link-abbrev-alist)
+    (unless no-truename
+      (setq path (f-canonical path)))
+    (pcase-dolist (`(,key . ,abbrev) (or alist org-link-abbrev-alist))
       ;; Get the symbol property if the value is a function / symbol
       ;; FIXME: this is specific to `kisaragi-file-finders'. There
       ;; should be support for function values in `minaduki/vaults'.
@@ -324,7 +329,8 @@ Inverse of `org-link-expand-abbrev'."
       (when (stringp abbrev)
         ;; Resolving symlinks here allows us to treat different ways
         ;; to reach a path as the same
-        (setq abbrev (f-canonical abbrev))
+        (unless no-truename
+          (setq abbrev (f-canonical abbrev)))
         ;; starts-with is more accurate
         (when (s-starts-with? abbrev path)
           (throw 'ret (s-replace abbrev (concat key ":") path)))))
