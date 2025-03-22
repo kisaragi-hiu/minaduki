@@ -589,6 +589,7 @@ Return a list of two items:
           (puthash file content-hash modified-files)))
       (remhash file db-files))
     (list modified-files db-files)))
+(defalias 'minaduki-db:refresh 'minaduki-db:build-cache)
 (defun minaduki-db:build-cache (&optional force)
   "Build the cache for all applicable notes.
 If FORCE, force a rebuild of the cache from scratch."
