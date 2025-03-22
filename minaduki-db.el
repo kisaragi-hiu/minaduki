@@ -501,8 +501,9 @@ correspond to the TO field in the cache DB."
     caar
     minaduki-db::parse-value))
 
-(defun minaduki-db--fetch-nodes ()
-  "Fetch `minaduki-node' objects for completion."
+(cl-defun minaduki-db--fetch-nodes (&key under-path)
+  "Fetch all `minaduki-node' objects for completion.
+If UNDER-PATH is non-nil, only return nodes that are under it."
   (let (file-nodes id-nodes rows)
     (setq file-nodes (minaduki-db-select
                       `("SELECT" ,(-> '("files.file"
@@ -516,13 +517,15 @@ correspond to the TO field in the cache DB."
                         "LEFT JOIN refs ON refs.file = files.file")))
     (pcase-dolist (`(,file ,titles ,tags ,meta ,ref ,key-type) file-nodes)
       (dolist (title (minaduki-db::parse-value titles))
-        (push (minaduki-node :path file
-                             :title title
-                             :tags (minaduki-db::parse-value tags)
-                             :meta (minaduki-db::parse-value meta)
-                             :key ref
-                             :key-type key-type)
-              rows)))
+        (when (or (not under-path)
+                  (f-descendant-of? file under-path))
+          (push (minaduki-node :path file
+                               :title title
+                               :tags (minaduki-db::parse-value tags)
+                               :meta (minaduki-db::parse-value meta)
+                               :key ref
+                               :key-type key-type)
+                rows))))
     (setq id-nodes (minaduki-db-select
                     `("SELECT" ,(-> '("ids.id"
                                       "ids.title"
@@ -533,15 +536,17 @@ correspond to the TO field in the cache DB."
                       "FROM ids"
                       "LEFT JOIN files ON files.file = ids.file")))
     (pcase-dolist (`(,id ,title ,file-titles ,meta ,file) id-nodes)
-      (push (minaduki-node
-             :id id
-             :path file
-             :title (format "%s/%s"
-                            (car (minaduki-db::parse-value file-titles))
-                            title)
-             :tags nil
-             :meta (minaduki-db::parse-value meta))
-            rows))
+      (when (or (not under-path)
+                (f-descendant-of? file under-path))
+        (push (minaduki-node
+               :id id
+               :path file
+               :title (format "%s/%s"
+                              (car (minaduki-db::parse-value file-titles))
+                              title)
+               :tags nil
+               :meta (minaduki-db::parse-value meta))
+              rows)))
     (setq rows (sort rows
                      (lambda (a b)
                        (time-less-p
