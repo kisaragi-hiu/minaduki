@@ -152,18 +152,19 @@ Embark to create what are in effect context menus."
     (s-join " " (list title cite tags path))))
 
 (cl-defun minaduki-read:note
-    (&key initial-input (prompt "Note: "))
-  "Read a note from the repository.
+    (&key initial-input (prompt "Note: ") under-path)
+  "Read a note that is indexed by Minaduki.
 
 Return the `minaduki-node' object.
 
 INITIAL-INPUT: passed to `completing-read'.
-
-PROMPT: the prompt to use during completion. Default: \"Note: \""
+PROMPT: the prompt to use during completion. Default: \"Note: \"
+UNDER-PATH: only list nodes under this path for completion."
   (minaduki::with-comp-setup
       ((ivy-sort-matches-functions-alist . #'ivy--flx-sort))
     (minaduki::message "Fetching nodes...")
-    (let* ((entries (minaduki-db--fetch-nodes))
+    (let* ((entries (minaduki-db--fetch-nodes
+                     :under-path under-path))
            (alist
             (let (ret)
               (minaduki::loading "Formating nodes..."

@@ -247,6 +247,8 @@ This dispatches based on the current file type."
 (cl-defun minaduki-insert (&key entry lowercase? replace-region?)
   "Insert a link to a note.
 
+This only lists notes from the current vault for selection.
+
 If region is active, the new link uses the selected text as the
 description. For example, if the text \"hello world\" is
 selected, and the user chooses to insert a link to
@@ -281,7 +283,8 @@ REPLACE-REGION?: whether to replace selected text."
     (unless entry
       (setq entry (minaduki-read:note
                    :initial-input desc
-                   :prompt "Insert link to note: ")))
+                   :prompt "Insert link to note: "
+                   :under-path (minaduki-vault-closest))))
     (setq title (oref entry title)
           id (oref entry id)
           path (minaduki::ensure-not-file://
@@ -298,6 +301,11 @@ REPLACE-REGION?: whether to replace selected text."
                (not (minaduki::url? path))
                (not (f-exists? path)))
       (setq path
+            ;; FIXME: support creating notes in the current vault, not just in
+            ;; the main vault. Perhaps this needs support for template paths.
+            ;; Maybe this should be called the "default" template. Maybe if the
+            ;; entered text is foo:bar we should attempt to create a file based
+            ;; on the "foo" template.
             (minaduki/new-concept-note
              :title title
              :visit? nil))
