@@ -115,15 +115,16 @@ If there are errors on loading, nothing will be loaded from
                     (json-read-file minaduki-vaults-file))
                   minaduki-vaults-extra))))
 
-(defun minaduki-vaults-save-load-mode (&optional arg)
-  "Minimal minor mode to load minaduki vaults, and save it when appropriate.
+(define-minor-mode minaduki-vaults-save-load-mode
+  "Minor mode to load minaduki vaults, and save it when appropriate.
 If ARG is a number less than 1, disable it, otherwise enable it."
-  (cond ((and (numberp arg) (< arg 1)) ; disable
-         (minaduki-vaults-save)
-         (remove-hook 'kill-emacs-hook #'minaduki-vaults-save))
-        (t ; enable
+  :global t :lighter nil :group 'minaduki
+  (cond (minaduki-vaults-save-load-mode ; enable
          (add-hook 'kill-emacs-hook #'minaduki-vaults-save)
-         (minaduki-vaults-load))))
+         (minaduki-vaults-load))
+        (t ; disable
+         (minaduki-vaults-save)
+         (remove-hook 'kill-emacs-hook #'minaduki-vaults-save))))
 
 (defun minaduki-vault-config (vault)
   "Get the config object for VAULT."
