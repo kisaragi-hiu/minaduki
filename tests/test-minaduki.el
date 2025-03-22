@@ -86,6 +86,32 @@ members that should be equal."
 
 (buttercup-define-matcher-for-binary-function :to-equal/ht test-equal-ht)
 
+(describe "minaduki-vault"
+  (before-all
+    (setq minaduki/vaults '("/tmp/a" "/tmp/b"))
+    (make-directory "/tmp/b/external/hugo" t)
+    (with-temp-file "/tmp/b/external/hugo/config.yaml"
+      (insert "this is used to test nested vault detection")))
+  (it "can detect current vault"
+    (expect (minaduki-vault-closest "/tmp/b")
+            :to-equal "/tmp/b")
+    (expect (minaduki-vault-closest "/tmp/b/more/stuff")
+            :to-equal "/tmp/b")
+    (expect (minaduki-vault-closest "/tmp/a/more/stuff")
+            :to-equal "/tmp/a"))
+  (it "can return nil when outside a vault"
+    (expect (minaduki-vault-closest "/tmp/c")
+            :to-be nil))
+  (it "can detect nested vaults"
+    (expect (let ((minaduki-nested-vault-search-path '("external"))
+                  (minaduki-nested-vault-root-files '(".obsidian" "config.yaml")))
+              (minaduki-vault-closest "/tmp/b/external/nothing"))
+            :to-equal "/tmp/b")
+    (expect (let ((minaduki-nested-vault-search-path '("external"))
+                  (minaduki-nested-vault-root-files '(".obsidian" "config.yaml")))
+              (minaduki-vault-closest "/tmp/b/external/hugo"))
+            :to-equal "/tmp/b/external/hugo")))
+
 (describe "minaduki::file-type"
   (it "does not check unregisted files"
     (expect (with-temp-buffer
