@@ -163,7 +163,7 @@ PROMPT: the prompt to use during completion. Default: \"Note: \""
   (minaduki::with-comp-setup
       ((ivy-sort-matches-functions-alist . #'ivy--flx-sort))
     (minaduki::message "Fetching nodes...")
-    (let* ((entries (minaduki-db::fetch-all-nodes))
+    (let* ((entries (minaduki-db--fetch-nodes))
            (alist
             (let (ret)
               (minaduki::loading "Formating nodes..."

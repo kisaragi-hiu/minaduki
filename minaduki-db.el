@@ -501,7 +501,7 @@ correspond to the TO field in the cache DB."
     caar
     minaduki-db::parse-value))
 
-(defun minaduki-db::fetch-all-nodes ()
+(defun minaduki-db--fetch-nodes ()
   "Fetch `minaduki-node' objects for completion."
   (let (file-nodes id-nodes rows)
     (setq file-nodes (minaduki-db-select
