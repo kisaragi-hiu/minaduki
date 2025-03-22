@@ -77,11 +77,14 @@ Each NAME is added to `org-link-abbrev-alist'."
 (defcustom minaduki-vaults-file
   (expand-file-name "minaduki-vaults.json" user-emacs-directory)
   "Path to the vaults file.
-This file is used to declare or register known vaults."
+This file is used to declare or register known vaults.
+
+This needs to be set before enabling `minaduki-mode', or
+`minaduki-vaults-load' has to be run afterwards for it to take
+effect."
   :type 'string
   :group 'minaduki)
 
-;; FIXME: sometimes this writes just a "null" into the file!
 (defun minaduki-vaults-save ()
   "Save `minaduki/vaults' into `minaduki-vaults-file'."
   (cl-letf (((symbol-function 'json-alist-p)
@@ -99,9 +102,8 @@ This file is used to declare or register known vaults."
              (non-extra (--remove (member (minaduki-vault-path it) extra-paths)
                                   minaduki/vaults))
              (json (json-encode non-extra)))
-        (when non-extra
-          (with-temp-file minaduki-vaults-file
-            (insert json)))))))
+        (with-temp-file minaduki-vaults-file
+          (insert json))))))
 
 (defun minaduki-vaults-load ()
   "Load vaults from `minaduki-vaults-file' into `minaduki/vaults'.
