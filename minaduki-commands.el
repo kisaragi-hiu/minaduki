@@ -850,8 +850,62 @@ This function hooks into `org-open-at-point' via
 
 ;;;; Literature note actions
 
+;; CITEKEY: string
+(defun minaduki/new-for-citekey (citekey)
+  "Create a new note for CITEKEY based on the \"lit\" template."
+  (cl-block nil
+    (let ((title nil)
+          (props (or (-some-> (minaduki-db::fetch-lit-entry citekey)
+                       minaduki-lit-entry-props)
+                     (minaduki::warn :warning
+                       "Could not find the literature entry %s" citekey)
+                     (make-hash-table :test #'equal))))
+      (when-let (key (gethash "key" props))
+        (puthash "=key=" key props)
+        (remhash "key" props))
+      (when-let (type (gethash "type" props))
+        (puthash "=type=" type props)
+        (remhash "type" props))
+      (setq props (map-into props 'alist))
+      (setq title (or (cdr (assoc "title" props))
+                      (minaduki::warn :warning "Title not found for this entry")
+                      ;; this is not critical, the user may input their own
+                      ;; title
+                      "Title not found"))
+      (unless title
+        (cl-return
+         (minaduki::warn :warning "Something went wrong while creating a new literature note")))
+      (let ((slug (minaduki::to-slug
+                   (pcase minaduki-lit:slug-source
+                     (`citekey citekey)
+                     (`title title)
+                     (_ (user-error "`minaduki-lit:slug-source' can only be `citekey' or `title'")))))
+            (now (current-time)))
+        ;; Create the note
+        (minaduki-open
+         (minaduki-node
+          :path
+          (f-join minaduki/literature-notes-directory (format "%s.org" slug))))
+        (apply #'minaduki-templates--insert
+               minaduki-lit-template
+               now
+               :title title
+               :ref citekey
+               :slug slug
+               (let ((extra-props nil))
+                 (pcase-dolist (`(,key . ,value) props)
+                   (when (and (eq 'string (type-of value))
+                              (not (equal key "title")))
+                     (when (member key '("=type=" "=key="))
+                       (setq key (substring key 1 -1)))
+                     (push (intern (format ":%s" key)) extra-props)
+                     (push value extra-props)))
+                 (nreverse extra-props)))
+        (minaduki--set-created-prop now)))))
+
 (defun minaduki/edit-citekey-notes (citekey)
-  "Open a note associated with the CITEKEY or create a new one.
+  "Open a note associated with the CITEKEY.
+If there isn\\='t one, create it.
 
 CITEKEY's information is extracted from files listed in
 `minaduki-lit/bibliography' during Minaduki's cache build
@@ -870,53 +924,7 @@ template (or whatever `minaduki-lit-template' is set to), with the following arg
        ;; If a corresponding file exists, just visit it
        (file (minaduki::find-file file))
        ;; Otherwise create a file for it
-       (t (let ((props (or (-some-> (minaduki-db::fetch-lit-entry citekey)
-                             minaduki-lit-entry-props)
-                           (minaduki::warn :warning
-                             "Could not find the literature entry %s" citekey)
-                           (make-hash-table :test #'equal))))
-            (when-let (key (gethash "key" props))
-              (puthash "=key=" key props)
-              (remhash "key" props))
-            (when-let (type (gethash "type" props))
-              (puthash "=type=" type props)
-              (remhash "type" props))
-            (setq props (map-into props 'alist))
-            (setq title (or (cdr (assoc "title" props))
-                            (minaduki::warn :warning "Title not found for this entry")
-                            ;; this is not critical, the user may input their own
-                            ;; title
-                            "Title not found"))
-            (unless title
-              (cl-return
-               (minaduki::warn :warning "Something went wrong while creating a new literature note")))
-            (let ((slug (minaduki::to-slug
-                         (pcase minaduki-lit:slug-source
-                           (`citekey citekey)
-                           (`title title)
-                           (_ (user-error "`minaduki-lit:slug-source' can only be `citekey' or `title'")))))
-                  (now (current-time)))
-              ;; Create the note
-              (minaduki-open
-               (minaduki-node
-                :path
-                (f-join minaduki/literature-notes-directory (format "%s.org" slug))))
-              (apply #'minaduki-templates--insert
-                     minaduki-lit-template
-                     now
-                     :title title
-                     :ref citekey
-                     :slug slug
-                     (let ((extra-props nil))
-                       (pcase-dolist (`(,key . ,value) props)
-                         (when (and (eq 'string (type-of value))
-                                    (not (equal key "title")))
-                           (when (member key '("=type=" "=key="))
-                             (setq key (substring key 1 -1)))
-                           (push (intern (format ":%s" key)) extra-props)
-                           (push value extra-props)))
-                       (nreverse extra-props)))
-              (minaduki--set-created-prop now))))))))
+       (t (minaduki/new-for-citekey citekey))))))
 
 (defun minaduki-insert-citation (citekey)
   "Insert a citation to CITEKEY."

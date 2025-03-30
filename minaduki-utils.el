@@ -738,6 +738,7 @@ If ZONE is non-nil it's also passed to `format-time-string' along with MOMENT."
   (minaduki::set-file-prop "created" (format-time-string "%FT%T%z" moment zone)))
 
 ;; TODO: support Markdown
+;; (minaduki::set-file-prop :: (function (string string) mixed))
 (defun minaduki::set-file-prop (name value)
   "Set a file property called NAME to VALUE.
 
