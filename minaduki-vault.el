@@ -316,7 +316,8 @@ If SKIP is non-nil, list only those whose `skipped' prop is nil.
 Vaults without a name or path are always skipped."
   (let (ret)
     (dolist (vault minaduki/vaults)
-      (let ((path (expand-file-name (minaduki-vault-path vault)))
+      (let ((path (-some-> (minaduki-vault-path vault)
+                    expand-file-name))
             (name (minaduki-vault-name vault)))
         (when (and path name)
           (unless (and skip (minaduki-vault-skipped vault))
