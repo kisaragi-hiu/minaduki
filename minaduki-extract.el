@@ -48,18 +48,24 @@ is meant to be edited, so this should not be set to non-nil globally.")
      (minaduki::with-front-matter
        ;; TODO: We might have to fold cases here ourselves;
        ;; `case-fold-search' obviously does not affect `equal'
-       (unless minaduki-extract::file-prop::use-cache
+       (if minaduki-extract::file-prop::use-cache
+           ;; cached mode: set cache if available
+           (unless minaduki-extract::file-prop::cache
+             (setq minaduki-extract::file-prop::cache
+                   (yaml-parse-string
+                    (buffer-string)
+                    :object-key-type 'string
+                    :sequence-type 'list)))
+         ;; uncached mode: clear cache
          (setq minaduki-extract::file-prop::cache nil))
-       (ensure-list
-        (map-elt
-         (or minaduki-extract::file-prop::cache
-             (setq
-              minaduki-extract::file-prop::cache
-              (yaml-parse-string
-               (buffer-string)
-               :object-key-type 'string
-               :sequence-type 'list)))
-         prop))))
+       (let ((frontmatter (if minaduki-extract::file-prop::use-cache
+                              minaduki-extract::file-prop::cache
+                            (yaml-parse-string
+                             (buffer-string)
+                             :object-key-type 'string
+                             :sequence-type 'list))))
+         (ensure-list
+          (map-elt frontmatter prop)))))
     (:org
      ;; Don't use `org-collect-keywords', which refuses to read the
      ;; "source" keyword for reasons. `org-element-at-point' also refuses.
