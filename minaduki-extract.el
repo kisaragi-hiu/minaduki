@@ -91,10 +91,14 @@ without merging."
   (save-excursion
     (goto-char (point-min))
     (let (this-keyword keywords)
-      (while (setq this-keyword
-                   (save-match-data
-                     (ignore-errors
-                       (org-element-keyword-parser 0 nil))))
+      ;; sometimes org-element-keyword-parser could just succeed in places where
+      ;; it shouldn't (or that I don't expect it to). Just this regexp is far
+      ;; more reliable at not getting stuck.
+      (while (looking-at "^#\\+")
+        (setq this-keyword
+              (save-match-data
+                (ignore-errors
+                  (org-element-keyword-parser 0 nil))))
         (forward-line)
         (push (cons (org-element-property :key this-keyword)
                     (org-element-property :value this-keyword))
@@ -584,6 +588,7 @@ Tags are specified like this at the beginning of the buffer:
   (minaduki::with-front-matter
     (minaduki-extract//tags/hashtag)))
 
+;; TODO: markdown frontmatter "tags: ["abc", "def"]". Just hook up //file-prop.
 (defun minaduki-extract/tags (&optional file)
   "Extract file tags from the current buffer.
 
@@ -640,17 +645,26 @@ The \"cite:\" prefix is removed."
 This is for allowing declaring lit entries within notes directly without
 registering them in a bibliography.
 
-Return a `minaduki-lit/entry' object."
-  (mapcan #'minaduki-extract//file-prop minaduki--source-keys)
-  (minaduki-lit/entry
-   :author (minaduki-extract//file-prop "author")
-   :date (minaduki-extract//file-prop "published")
-   :title (minaduki-extract/main-title)
-   :key source
-   :sources sources
-   :tags tags)
-  (let ((author))))
+If the current file doesn\\='t have both title (obtained as the main
+title) and author (declared as the \"author\" property), no lit entry is
+created.
 
+Return a `minaduki-lit/entry' object."
+  (let ((title (car (minaduki-extract/main-title)))
+        (author (car (minaduki-extract//file-prop "author")))
+        sources)
+    (when (and title author)
+      (setq sources (mapcan #'minaduki-extract//file-prop minaduki--source-keys))
+      (minaduki-lit/entry
+       :author author
+       :date (car (minaduki-extract//file-prop "published"))
+       :title title
+       :key (or (car (minaduki-extract//file-prop "key"))
+                (car sources))
+       :sources sources
+       :tags (append
+              (minaduki-extract//file-prop "tags")
+              (minaduki-extract//tags/org-prop))))))
 
 (defun minaduki-extract/lit-entries ()
   "Extract literature entries from this bibliography file.

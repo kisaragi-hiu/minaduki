@@ -261,8 +261,29 @@ If HASH is non-nil, assume that is the file's hash without recomputing it."
                          :title (elt titles 0)
                          :key key
                          :sources sources)))))))))
+(defun minaduki-db::insert-note-lit-entries (&optional update-p)
+  "Extract a lit entry from the current note, if any, and insert it into the cache.
+If UPDATE-P is non-nil, first remove the entries from the file in the database."
+  (cl-block nil
+    (let ((file (or minaduki::file-name (buffer-file-name)))
+          (count 0))
+      (when update-p
+        (minaduki-db-execute
+         "delete from \"keys\" where file = ?"
+         file))
+      ;; entries
+      (-when-let (entry (minaduki-extract/note-lit-entry))
+        (cl-incf count)
+        (minaduki-db-insert
+         'keys
+         (list (vector (gethash "key" entry)
+                       file
+                       1
+                       entry))
+         "insert"))
+      count)))
 (defun minaduki-db::insert-lit-entries (&optional update-p)
-  "Update the lit-entries of the current buffer into the cache.
+  "Update the lit-entries of the current bibliography buffer into the cache.
 If UPDATE-P is non-nil, first remove the entries from the file in the database."
   (cl-block nil
     (let ((file (or minaduki::file-name (buffer-file-name)))
@@ -733,6 +754,7 @@ Returns a `minaduki-db::count' object."
             (let ((inhibit-message t))
               (minaduki::with-temp-buffer file
                 (setq modified-count (1+ modified-count))
+                (setq lit-count (+ lit-count (minaduki-db::insert-note-lit-entries t)))
                 (setq ref-count (+ ref-count (minaduki-db::insert-refs t)))
                 (setq link-count (+ link-count (minaduki-db::insert-links)))))
           (error
