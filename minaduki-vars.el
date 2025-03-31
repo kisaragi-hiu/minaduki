@@ -520,6 +520,12 @@ links will be updated eventually.")
 Invalid links are those without a destination."
   :group 'minaduki-faces)
 
+;;;; etc.
+
+(defconst minaduki--source-keys
+  '("url" "source" "pdf" "doi" "link" "file")
+  "Keys that represent sources of lit entries.")
+
 (provide 'minaduki-vars)
 
 ;;; minaduki-vars.el ends here

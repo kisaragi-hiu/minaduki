@@ -61,11 +61,39 @@ is meant to be edited, so this should not be set to non-nil globally.")
                :sequence-type 'list)))
          prop))))
     (:org
-     ;; ((key . (val val val val)))
-     (let ((values (cdar (org-collect-keywords (list prop)))))
+     ;; Don't use `org-collect-keywords', which refuses to read the
+     ;; "source" keyword for reasons. `org-element-at-point' also refuses.
+     ;; `org-element-keyword-parser' accepts it though.
+     (let* ((keyword-pairs (minaduki-org--collect-frontmatter-keywords))
+            (values
+             (->> keyword-pairs
+                  (--filter (equal (upcase prop) (car it)))
+                  (--map (cdr it)))))
+       ;; Add level 0 property drawer values as well
        (-when-let (v (org-entry-get 1 prop))
          (push v values))
        values))))
+
+(defun minaduki-org--collect-frontmatter-keywords ()
+  "Collect all keywords at the top of the buffer.
+This has the benefit over `org-collect-keywords' in that it doesn\\='t
+care about what the keys are.
+
+The return value is a list of cons cells (KEY . VALUE). If the same
+keywords appears multiple times the return value will reflect that
+without merging."
+  (save-excursion
+    (goto-char (point-min))
+    (let (this-keyword keywords)
+      (while (setq this-keyword
+                   (save-match-data
+                     (ignore-errors
+                       (org-element-keyword-parser 0 nil))))
+        (forward-line)
+        (push (cons (org-element-property :key this-keyword)
+                    (org-element-property :value this-keyword))
+              keywords))
+      keywords)))
 
 (defun minaduki-extract//org-prop-as-list (prop)
   "Extract PROP from the current Org buffer as a list.
@@ -600,6 +628,23 @@ The \"cite:\" prefix is removed."
               ref (match-string 2 ref))))
     (cons type
           (s-replace-regexp (rx bos "cite:") "" ref))))
+
+(defun minaduki-extract/note-lit-entry ()
+  "Extract one lit entry from the current file.
+This is for allowing declaring lit entries within notes directly without
+registering them in a bibliography.
+
+Return a `minaduki-lit/entry' object."
+  (mapcan #'minaduki-extract//file-prop minaduki--source-keys)
+  (minaduki-lit/entry
+   :author (minaduki-extract//file-prop "author")
+   :date (minaduki-extract//file-prop "published")
+   :title (minaduki-extract/main-title)
+   :key source
+   :sources sources
+   :tags tags)
+  (let ((author))))
+
 
 (defun minaduki-extract/lit-entries ()
   "Extract literature entries from this bibliography file.
