@@ -33,6 +33,51 @@
 
 ;;;; Org-specific local commands
 
+(defun minaduki--cut-commit-metadata (beg end)
+  "Cut commit metadata written between BEG and END.
+The text will be deleted.
+Return ((commit-id . ID) (created-time . ENCODED-TIME) (created-zone . ZONE))."
+  (let ((text
+         (s-trim (buffer-substring-no-properties beg end)))
+        commit-id commit-date)
+    (with-temp-buffer
+      (insert text)
+      (goto-char (point-min))
+      (setq commit-id (buffer-substring-no-properties
+                       (pos-bol) (pos-eol)))
+      (when (re-search-forward "CommitDate: " nil t)
+        (setq commit-date (buffer-substring-no-properties
+                           (point) (pos-eol)))))
+    (delete-region beg end)
+    (let* ((decoded (parse-time-string commit-date))
+           (zone (car (last decoded)))
+           (encoded (encode-time decoded)))
+      `((commit-id . ,commit-id)
+        (created-time . ,encoded)
+        (created-zone . ,zone)))))
+(defun minaduki-convert-commit-metadata-to-properties (beg end)
+  "Convert commit metadata written between BEG and END to Org properties.
+
+Usage:
+
+1. Find the first commit creating this file in
+   \\[universal-argument]
+   \\[magit-log-buffer-file] (`magit-log-buffer-file' with a
+   `universal-argument' in order to turn on \"--follow\"
+2. Enter it and copy the commit ID ~ CommitDate lines
+3. Paste the lines into this file
+4. Line-select these lines
+4. Run this command.
+
+The result is that the created time and commit ID for the current entry
+are set via `org-entry-put'."
+  (interactive "r")
+  (let-alist (minaduki--cut-commit-metadata beg end)
+    (org-entry-put (point) "commit" .commit-id)
+    (org-entry-put (point) "created" (format-time-string
+                                      "%FT%T%z"
+                                      .created-time
+                                      .created-zone))))
 (defun minaduki-convert-commit-metadata-to-keywords (beg end)
   "Convert commit metadata written between BEG and END to Org keywords.
 
@@ -47,23 +92,9 @@ Usage:
 4. Line-select these lines
 4. Run this command."
   (interactive "r")
-  (let ((text
-         (s-trim (buffer-substring-no-properties beg end)))
-        commit-id commit-date)
-    (with-temp-buffer
-      (insert text)
-      (goto-char (point-min))
-      (setq commit-id (buffer-substring-no-properties
-                       (pos-bol) (pos-eol)))
-      (when (re-search-forward "CommitDate: " nil t)
-        (setq commit-date (buffer-substring-no-properties
-                           (point) (pos-eol)))))
-    (delete-region beg end)
-    (minaduki::set-file-prop "commit" commit-id)
-    (let* ((decoded (parse-time-string commit-date))
-           (zone (car (last decoded)))
-           (encoded (encode-time decoded)))
-      (minaduki--set-created-prop encoded zone))))
+  (let-alist (minaduki--cut-commit-metadata beg end)
+    (minaduki::set-file-prop "commit" .commit-id)
+    (minaduki--set-created-prop .created-time .created-zone)))
 
 (defun minaduki/org-heading-to-file//suffix (&optional dir full? visit?)
   "Write the current heading to a file under DIR.
