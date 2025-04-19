@@ -497,12 +497,31 @@ it in the current window."
   (when other? (other-window 1))
   (find-file file))
 
-(defun minaduki::compute-content-hash (file)
-  "Compute the hash of the raw bytes of FILE."
-  (with-temp-buffer
-    (set-buffer-multibyte nil)
-    (insert-file-contents-literally file)
-    (secure-hash 'sha1 (current-buffer))))
+(defvar minaduki--content-hash-cache nil
+  "Cache for `minaduki::compute-content-hash'.")
+(defun minaduki::compute-content-hash (file &optional cached)
+  "Compute the hash of the raw bytes of FILE.
+If CACHED is non-nil, use a memoized cache. If not, clear it."
+  (cl-block nil
+    ;; if cached, init cache if not yet, otherwise try to get cached value
+    ;; if not using cache, clear the cache
+    (if cached
+        (if minaduki--content-hash-cache
+            (when-let (cached-value (gethash file minaduki--content-hash-cache))
+              (cl-return cached-value))
+          (setq minaduki--content-hash-cache (make-hash-table :test #'equal)))
+      (when minaduki--content-hash-cache
+        (setq minaduki--content-hash-cache nil))))
+  (let ((value
+         ;; main computation
+         ;; Yes, this is faster than shelling out.
+         (with-temp-buffer
+           (set-buffer-multibyte nil)
+           (insert-file-contents-literally file)
+           (secure-hash 'sha1 (current-buffer)))))
+    (if cached
+        (puthash file value minaduki--content-hash-cache)
+      value)))
 
 ;;;; Macros
 (defmacro minaduki::with-file (file keep-buf-p &rest body)

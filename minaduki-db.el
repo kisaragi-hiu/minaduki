@@ -226,7 +226,7 @@ If HASH is non-nil, assume that is the file's hash without recomputing it."
          (attr (file-attributes file))
          (mtime (file-attribute-modification-time attr))
          (modified (minaduki-extract--modified))
-         (hash (or hash (minaduki::compute-content-hash file)))
+         (hash (or hash (minaduki::compute-content-hash file t)))
          (tags (minaduki-extract/tags file))
          (titles (minaduki-extract/titles))
          (keys (minaduki-extract/refs)))
@@ -604,7 +604,7 @@ If UNDER-PATH is non-nil, only return nodes that are under it."
   "Return a table mapping each file in FILES to its hash."
   (let ((table (make-hash-table :test #'equal)))
     (dolist (file files)
-      (puthash file (minaduki::compute-content-hash file) table))
+      (puthash file (minaduki::compute-content-hash file t) table))
     table))
 (defun minaduki-db:build-cache::find-modified-files (files db-files)
   "Find modified files among FILES by comparing their hashes with DB-FILES.
@@ -621,7 +621,7 @@ Return a list of two items:
   (let ((modified-files (make-hash-table :test #'equal)))
     (dolist-with-progress-reporter (file files)
         "(minaduki) Finding modified files"
-      (let ((content-hash (minaduki::compute-content-hash file)))
+      (let ((content-hash (minaduki::compute-content-hash file t)))
         (unless (string= content-hash (gethash file db-files))
           (puthash file content-hash modified-files)))
       (remhash file db-files))
