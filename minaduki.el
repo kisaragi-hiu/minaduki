@@ -61,6 +61,7 @@
 (require 'minaduki-capture)
 (require 'minaduki-extract)
 (require 'minaduki-db)
+(require 'minaduki-timeline)
 
 (require 'minaduki-wikilink)
 

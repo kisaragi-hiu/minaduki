@@ -76,6 +76,8 @@ is meant to be edited, so this should not be set to non-nil globally.")
                   (--filter (equal (upcase prop) (car it)))
                   (--map (cdr it)))))
        ;; Add level 0 property drawer values as well
+       ;; Or level 1 property drawer if the file starts with a heading, that's
+       ;; fine too
        (-when-let (v (org-entry-get 1 prop))
          (push v values))
        values))))
