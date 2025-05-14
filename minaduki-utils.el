@@ -45,6 +45,9 @@ This does zero type checks, and it is up to the user to make sure
 (defun minaduki::current-file-name (&optional fallback buffer)
   "Return current file name of BUFFER in a consistent way.
 
+Takes care of using `minaduki::file-name' for temp buffers as well as
+using the base buffer of indirect buffers.
+
 BUFFER defaults to the current buffer.
 
 FALLBACK should be a one element list containing the file name
