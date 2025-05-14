@@ -122,6 +122,12 @@ value like `most-positive-fixnum'."
   :type 'integer
   :group 'minaduki)
 
+(defcustom minaduki-db-skip-initial-modification-check nil
+  "Whether to skip the automatic check for all modified files.
+It can take a long time in some cases, and may be desirable to skip."
+  :type 'boolean
+  :group 'minaduki)
+
 ;; TODO: relative = relative to main vault
 (defcustom minaduki/templates-directory (f-slash
                                          (f-join

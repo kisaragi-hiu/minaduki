@@ -124,7 +124,7 @@ Performs initialization and migration when required."
     (minaduki-db::init-and-migrate))
   (when minaduki-db::stale
     ;; build-cache sets stale to nil in its first steps
-    (minaduki-db:build-cache))
+    (minaduki-db:build-cache nil minaduki-db-skip-initial-modification-check))
   minaduki-db::connection)
 
 ;; Like `emacsql-escape-scalar'
@@ -606,30 +606,35 @@ If UNDER-PATH is non-nil, only return nodes that are under it."
     (dolist (file files)
       (puthash file (minaduki::compute-content-hash file t) table))
     table))
-(defun minaduki-db:build-cache::find-modified-files (files db-files)
+(defun minaduki-db:build-cache::find-modified-files (files db-files skip)
   "Find modified files among FILES by comparing their hashes with DB-FILES.
 
 FILES is a list of file names.
 DB-FILES is a hash table, with keys being file names and values
 being the corresponding hash value for the file.
+If SKIP is non-nil, skip modification check as if nothing was modified.
 
 DB-FILES is modified in place.
 
 Return a list of two items:
 - the first item is the modified files, as a hash table shaped like DB-FILES;
-- the second item is DB-FILES."
+- the second item is DB-FILES, containing just the unmodified files."
   (let ((modified-files (make-hash-table :test #'equal)))
-    (dolist-with-progress-reporter (file files)
-        "(minaduki) Finding modified files"
-      (let ((content-hash (minaduki::compute-content-hash file t)))
-        (unless (string= content-hash (gethash file db-files))
-          (puthash file content-hash modified-files)))
-      (remhash file db-files))
+    (if skip
+        (minaduki::message "Modification check skipped")
+      (dolist-with-progress-reporter (file files)
+          "(minaduki) Finding modified files"
+        (let ((content-hash (minaduki::compute-content-hash file t)))
+          (unless (string= content-hash (gethash file db-files))
+            (puthash file content-hash modified-files)))
+        (remhash file db-files)))
     (list modified-files db-files)))
 (defalias 'minaduki-db:refresh 'minaduki-db:build-cache)
-(defun minaduki-db:build-cache (&optional force)
+(defun minaduki-db:build-cache (&optional force skip-modification-check)
   "Build the cache for all applicable notes.
-If FORCE, force a rebuild of the cache from scratch."
+If FORCE, force a rebuild of the cache from scratch.
+If SKIP-MODIFICATION-CHECK, treat all files as unmodified and don't
+bother computing new hashes."
   (interactive "P")
   (when force (delete-file minaduki:db-location))
   ;; Force a reconnect
@@ -648,7 +653,7 @@ If FORCE, force a rebuild of the cache from scratch."
           db-files (minaduki-db::fetch-all-files-hash))
     (setq modified-files
           (car (minaduki-db:build-cache::find-modified-files
-                dir-files db-files)))
+                dir-files db-files skip-modification-check)))
     (minaduki::for "Removing deleted files from cache (%s/%s)"
         file (hash-table-keys db-files)
       ;; These files are no longer around, remove from cache...
