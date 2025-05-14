@@ -600,12 +600,6 @@ If UNDER-PATH is non-nil, only return nodes that are under it."
                (:constructor minaduki-db::count))
   err modified id link ref lit)
 
-(defun minaduki-db::files-hash-table (files)
-  "Return a table mapping each file in FILES to its hash."
-  (let ((table (make-hash-table :test #'equal)))
-    (dolist (file files)
-      (puthash file (minaduki::compute-content-hash file t) table))
-    table))
 (defun minaduki-db:build-cache::find-modified-files (files db-files skip)
   "Find modified files among FILES by comparing their hashes with DB-FILES.
 
@@ -634,7 +628,13 @@ Return a list of two items:
   "Build the cache for all applicable notes.
 If FORCE, force a rebuild of the cache from scratch.
 If SKIP-MODIFICATION-CHECK, treat all files as unmodified and don't
-bother computing new hashes."
+bother computing new hashes.
+
+Interactively, a \\[universal-argument] stands for FORCE, and
+modification check is never skipped. Ideally you should never need to
+run this directly, but in cases when you do have the need,
+SKIP-MODIFICATION-CHECK would be actively harmful if it is on in some
+way."
   (interactive "P")
   (when force (delete-file minaduki:db-location))
   ;; Force a reconnect
