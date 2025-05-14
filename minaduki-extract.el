@@ -41,7 +41,7 @@ It should be used when the buffer will be thrown away (like when
 creating the db for the first time), and not used when the buffer
 is meant to be edited, so this should not be set to non-nil globally.")
 
-(defun minaduki-extract//file-prop (prop)
+(defun minaduki--get-file-prop (prop)
   "Return values of the file level property PROP as a list."
   (minaduki::file-type-case
     (:markdown
@@ -117,7 +117,7 @@ This is used to extract #+roam_tags."
   ;;     #+prop: a b
   ;;     #+prop: c d
   ;;     -> '(\"a\" \"b\" \"c\" \"d\")
-  (--> (minaduki-extract//file-prop prop)
+  (--> (minaduki--get-file-prop prop)
        ;; so that the returned order is the same as in the buffer
        nreverse
        ;; '("a b" "c d")
@@ -436,19 +436,19 @@ Return a list of `minaduki-id' objects."
              (buffer-file-name)))
     (minaduki::file-type-case
       (:org
-       (-some-> (car (minaduki-extract//file-prop "title"))
+       (-some-> (car (minaduki--get-file-prop "title"))
          list))
       (:markdown
        (ensure-list
-        (car (minaduki-extract//file-prop "title")))))))
+        (car (minaduki--get-file-prop "title")))))))
 
 (defun minaduki-extract/aliases ()
   "Return a list of aliases from the current buffer."
   (minaduki::file-type-case
     (:org
-     (minaduki-extract//file-prop "ALIAS"))
+     (minaduki--get-file-prop "ALIAS"))
     (:markdown
-     (minaduki-extract//file-prop "alias"))))
+     (minaduki--get-file-prop "alias"))))
 
 (defun minaduki-extract/first-headline ()
   "Extract the first headline."
@@ -495,9 +495,9 @@ Return a list of `minaduki-id' objects."
 
 This only considers the \"modified\", \"created\", or \"date\"
 properties, and does not consider the modification time of the file."
-  (when-let ((timestamps (or (minaduki-extract//file-prop "modified")
-                             (minaduki-extract//file-prop "created")
-                             (minaduki-extract//file-prop "date"))))
+  (when-let ((timestamps (or (minaduki--get-file-prop "modified")
+                             (minaduki--get-file-prop "created")
+                             (minaduki--get-file-prop "date"))))
     (car timestamps)))
 
 (defun minaduki-extract/titles ()
@@ -651,19 +651,19 @@ created.
 
 Return a `minaduki-lit/entry' object."
   (let ((title (car (minaduki-extract/main-title)))
-        (author (car (minaduki-extract//file-prop "author")))
+        (author (car (minaduki--get-file-prop "author")))
         sources)
     (when (and title author)
-      (setq sources (mapcan #'minaduki-extract//file-prop minaduki--source-keys))
+      (setq sources (mapcan #'minaduki--get-file-prop minaduki--source-keys))
       (minaduki-lit/entry
        :author author
-       :date (car (minaduki-extract//file-prop "published"))
+       :date (car (minaduki--get-file-prop "published"))
        :title title
-       :key (or (car (minaduki-extract//file-prop "key"))
+       :key (or (car (minaduki--get-file-prop "key"))
                 (car sources))
        :sources sources
        :tags (append
-              (minaduki-extract//file-prop "tags")
+              (minaduki--get-file-prop "tags")
               (minaduki-extract//tags/org-prop))))))
 
 (defun minaduki-extract/lit-entries ()
@@ -688,7 +688,7 @@ In Org mode, the keys are specified with the #+KEY keyword."
   (minaduki::file-type-case
     (:org
      (let (refs)
-       (dolist (key (minaduki-extract//file-prop "key"))
+       (dolist (key (minaduki--get-file-prop "key"))
          (pcase key
            ('nil nil)
            ((pred string-empty-p)
@@ -701,7 +701,7 @@ In Org mode, the keys are specified with the #+KEY keyword."
               (push r refs)))))
        refs))
     (:markdown
-     (-some--> (minaduki-extract//file-prop "key")
+     (-some--> (minaduki--get-file-prop "key")
        car
        (list (cons "cite" it))))))
 

@@ -150,7 +150,7 @@ This considers:
                      ('file-name
                       (f-base (buffer-file-name)))
                      ('created-prop
-                      (car (minaduki-extract//file-prop "created")))))
+                      (car (minaduki--get-file-prop "created")))))
                   (date (car
                          (s-match
                           (rx bos
