@@ -72,11 +72,6 @@ When this is non-nil, `minaduki-db' automatically updates the cache.")
   "Mark the database as dirty for timer-based updating."
   (setq minaduki-db::file-update-dirty t))
 
-(defun minaduki-db::set-version (version)
-  "Set the user_version of the database to VERSION."
-  (unless (and (integerp version) (> version 0))
-    (error "Invalid version, must be a positive integer"))
-  (minaduki-db-execute (format "PRAGMA user_version = %s" version)))
 (defun minaduki-db::init-and-migrate ()
   "Initialize and migrate the database."
   (let ((should-init (not (file-exists-p minaduki:db-location)))
@@ -209,12 +204,6 @@ File defaults to the current buffer\\='s file name."
     ;; Rows in other tables referencing the file will also be deleted thanks to
     ;; ON DELETE CASCADE.
     (minaduki-db-execute "delete from files where file = ?" file)))
-
-(defun minaduki-db::clear-files (pattern)
-  "Clear information coming from files matching PATTERN.
-PATTERN is a LIKE pattern."
-  (with-sqlite-transaction (minaduki-db)
-    (minaduki-db-execute "delete from files where file like ?" pattern)))
 
 ;; Inserting
 (defun minaduki-db::insert-meta (&optional update-p hash)
