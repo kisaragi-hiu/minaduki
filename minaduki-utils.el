@@ -393,7 +393,10 @@ If ID? is non-nil and we're in Org mode, return an ID link instead."
                       (f-filename target)
                       (f-relative target)))
              (t
-              (format "[%s](%s)" desc target))))
+              (format "[%s](%s)"
+                      desc
+                      (url-encode-url
+                       (f-relative target))))))
       ;; No common way to insert descriptions
       (_ target))))
 
