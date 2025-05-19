@@ -535,7 +535,7 @@ If UNDER-PATH is non-nil, only return nodes that are under it."
     (pcase-dolist (`(,file ,titles ,tags ,meta ,ref ,key-type) file-nodes)
       (dolist (title (minaduki-db::parse-value titles))
         (when (or (not under-path)
-                  (f-descendant-of? file under-path))
+                  (minaduki--fast-path-descendant-of? file under-path))
           (push (minaduki-node :path file
                                :title title
                                :tags (minaduki-db::parse-value tags)
@@ -558,7 +558,7 @@ If UNDER-PATH is non-nil, only return nodes that are under it."
                     (or under-path "")))
     (pcase-dolist (`(,id ,title ,file-titles ,meta ,file) id-nodes)
       (when (or (not under-path)
-                (f-descendant-of? file under-path))
+                (minaduki--fast-path-descendant-of? file under-path))
         (push (minaduki-node
                :id id
                :path file

@@ -455,6 +455,10 @@ means tomorrow, and N = -1 means yesterday."
        0)))))
 
 ;;;; File utilities
+(defun minaduki--fast-path-descendant-of? (path maybe-ancestor)
+  "Like `f-descendant-of?' but fast and less accurate."
+  (s-prefix? (f-slash maybe-ancestor) path))
+
 (defun minaduki::ensure-not-file:// (path)
   "If PATH is a file:// URL, convert it back to a normal path."
   (if (s-prefix? "file://" path)
