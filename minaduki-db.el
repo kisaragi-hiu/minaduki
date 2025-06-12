@@ -643,11 +643,12 @@ way."
     (setq modified-files
           (car (minaduki-db:build-cache::find-modified-files
                 dir-files db-files skip-modification-check)))
-    (minaduki::for "Removing deleted files from cache (%s/%s)"
-        file (hash-table-keys db-files)
-      ;; These files are no longer around, remove from cache...
-      (minaduki-db::clear-file file)
-      (cl-incf deleted-count))
+    (unless skip-modification-check
+      (minaduki::for "Removing deleted files from cache (%s/%s)"
+          file (hash-table-keys db-files)
+        ;; These files are no longer around, remove from cache...
+        (minaduki-db::clear-file file)
+        (cl-incf deleted-count)))
     (setq counts (minaduki-db::update-files modified-files force))
     (pcase-let (((cl-struct minaduki-db::count
                             (modified modified-count)
