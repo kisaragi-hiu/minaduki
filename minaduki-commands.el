@@ -666,8 +666,15 @@ If VISIT? is non-nil (default), go to the newly created note."
   "Create a new daily note on DAY.
 
 This will create diary/20211129.org on the day 2021-11-29, then
-fill it in with the \"daily\" template."
-  (interactive)
+fill it in with the \"daily\" template.
+
+If the file already exists, this will just visit it.
+
+With a \\[universal-argument], prompt which day to create a diary
+entry for."
+  (interactive
+   (list (and current-prefix-arg
+              (minaduki//read-date "Create diary entry for day: "))))
   (let* ((day (or day (minaduki::today)))
          (actual-now (current-time))
          (moment (pcase-let ((`(,y ,m ,d)
@@ -682,11 +689,12 @@ fill it in with the \"daily\" template."
          (ext "org"))
     (find-file (f-join minaduki/diary-directory
                        (concat filename "." ext)))
-    (let (;; Since we're creating a daily note, this
-          ;; variable should not be used.
-          (org-extend-today-until 0))
-      (minaduki-templates--insert "daily" moment)
-      (minaduki--set-created-prop actual-now))))
+    (when (equal 0 (buffer-size))
+      (let (;; Since we're creating a daily note, this
+            ;; variable should not be used.
+            (org-extend-today-until 0))
+        (minaduki-templates--insert "daily" moment)
+        (minaduki--set-created-prop actual-now)))))
 
 ;;;###autoload
 (cl-defun minaduki/new-fleeting-note (&optional moment dir (visit? t))
