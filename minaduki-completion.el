@@ -42,8 +42,8 @@
 ;; report errors for `minaduki-completion--annotate-note'.
 (require 'marginalia nil t)
 (when (featurep 'marginalia)
-  (defvar marginalia-annotator-registry)
-  (add-to-list 'marginalia-annotator-registry
+  (defvar marginalia-annotators)
+  (add-to-list 'marginalia-annotators
                '(note minaduki-completion--annotate-note none)))
 
 (defun minaduki-completion--annotate-note (cand)
