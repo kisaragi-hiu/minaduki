@@ -447,7 +447,7 @@ List of (DISPLAY-NAME . COMMAND) pairs.")
   "Local commands that act on the current file or heading.")
 
 (defvar minaduki::local-commands::org
-  '(("Export current heading to a file" . minaduki/org-heading-to-file))
+  '()
   "Local commands that are specific to Org Mode.")
 
 (defvar minaduki::local-commands::lit
