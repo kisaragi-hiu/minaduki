@@ -295,13 +295,32 @@ If UPDATE-P is non-nil, first remove the entries from the file in the database."
                                      file
                                      point
                                      entry))))
-        (minaduki-db-insert
-         'keys
-         entries
-         ;; Entries from bibliographies have priority. If there's an
-         ;; existing entry (perhaps from insert-meta), just replace
-         ;; it.
-         "insert or replace"))
+        (condition-case nil
+            (minaduki-db-insert
+             'keys
+             entries
+             ;; Entries from bibliographies have priority. If there's an
+             ;; existing entry (perhaps from insert-meta), just replace
+             ;; it.
+             "insert or replace")
+          ;; Fall back to trying one by one to detect whose problem is it
+          (error
+           (cl-loop for (point . entry) in entries
+                    do
+                    (condition-case nil
+                        (minaduki-db-insert
+                         'keys
+                         (list (vector (gethash "key" entry)
+                                       file
+                                       point
+                                       entry))
+                         "insert or replace")
+                      (error (minaduki::warn
+                                 :error
+                               "Malformed entry. key: %s, point: %s, file: %s"
+                               (gethash "key" entry)
+                               point
+                               file)))))))
       count)))
 (defun minaduki-db::insert-refs (&optional update-p)
   "Insert the citekeys of the current buffer into the cache.
