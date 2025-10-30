@@ -893,7 +893,9 @@ CITEKEY's information is extracted from files listed in
 process.
 
 If the note doesn\\='t exist, it is created with the \"lit\"
-template (or whatever `minaduki-lit-template' is set to), with the following arguments:
+template (or whatever `minaduki-lit-template' is set to), with
+the following arguments:
+
 - %:title: title of the entry
 - %:ref: the CITEKEY
 - %:now: (common to all templates) the current moment."
