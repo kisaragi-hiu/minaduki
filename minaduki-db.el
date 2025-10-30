@@ -256,12 +256,16 @@ If UPDATE-P is non-nil, first remove the entries from the file in the database."
   (cl-block nil
     (let ((file (or minaduki::file-name (buffer-file-name)))
           (count 0))
-      (when update-p
-        (minaduki-db-execute
-         "delete from \"keys\" where file = ?"
-         file))
       ;; entries
       (-when-let (entry (minaduki-extract/note-lit-entry))
+        ;; This must only happen if there is an entry found already.
+        ;; Otherwise bibliographies would have all their entries cleared.
+        ;; FIXME: this would still be triggered if you set "author" on a
+        ;; bibliography file.
+        (when update-p
+          (minaduki-db-execute
+           "delete from \"keys\" where file = ?"
+           file))
         (cl-incf count)
         (minaduki-db-insert
          'keys
@@ -707,7 +711,7 @@ Returns a `minaduki-db::count' object."
               ;; We need the files to be in the files table first
               ;; before we can reference them
               (minaduki-db::insert-meta)
-              (cl-incf lit-count (minaduki-db::insert-lit-entries)))
+              (cl-incf lit-count (minaduki-db::insert-lit-entries t)))
           (error
            (cl-incf error-count)
            (minaduki-db::clear-file it)
