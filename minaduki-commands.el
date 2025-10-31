@@ -1052,7 +1052,8 @@ This first adds an entry for it into a file in
                (completing-read "Which bibliography? " it nil t)
                f-expand)))))
          (info (minaduki-lit/fetch-new-entry-from-url
-                (read-string "Create new literature entry for URL: "))))
+                (string-trim
+                 (read-string "Create new literature entry for URL: ")))))
     ;; Use find-file to ensure we save into it
     (find-file target-biblio)
     (minaduki::file-type-case
