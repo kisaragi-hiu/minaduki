@@ -127,9 +127,9 @@ For example: (setq minaduki-buffer/window-parameters \\='((no-other-window . t))
   (let ((last-window minaduki::last-window))
     (if (window-valid-p last-window)
         (progn (with-selected-window last-window
-                 (minaduki::find-file file))
+                 (find-file file))
                (select-window last-window))
-      (minaduki::find-file file))))
+      (find-file file))))
 
 (defun minaduki-buffer//insert-title ()
   "Insert the minaduki-buffer title."
@@ -505,7 +505,7 @@ ORIG-PATH is the path where the CONTENT originated."
       ;; Locally overwrite the file opening function to re-use the
       ;; last window org-roam was called from
       (setq-local org-link-frame-setup
-                  (cons '(file . minaduki::find-file) org-link-frame-setup))
+                  (cons '(file . find-file) org-link-frame-setup))
       (let ((inhibit-read-only t)
             backlinks cite-backlinks
             unlinked-references)

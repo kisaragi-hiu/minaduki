@@ -498,15 +498,6 @@ Like `file-name-extension', but:
           (t ext))))
 
 ;;;; File functions
-(defun minaduki::find-file (file &optional other?)
-  "Open FILE in an appropriate way.
-
-If OTHER? is non-nil, open FILE in another window, otherwise open
-it in the current window."
-  ;; `other-window' is from Emacs 17. It's fine.
-  (when other? (other-window 1))
-  (find-file file))
-
 (defvar minaduki--content-hash-cache nil
   "Cache for `minaduki::compute-content-hash'.")
 (defun minaduki::compute-content-hash (file &optional cached)

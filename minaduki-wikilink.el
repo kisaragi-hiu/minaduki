@@ -45,7 +45,7 @@ This function is called by Org when following links of the type
     (pcase link-type
       ("file"
        (if loc
-           (minaduki::find-file loc)
+           (find-file loc)
          (minaduki-open desc)))
       ("id"
        (org-goto-marker-or-bmk mkr)))))

@@ -318,7 +318,7 @@ the capture)."
       (pcase finalize
         ('find-file
          (when-let ((file-path (minaduki-capture//get :file-path)))
-           (minaduki::find-file file-path)
+           (find-file file-path)
            (run-hooks 'minaduki-capture/after-find-file-hook)))
         ('insert-link
          (when-let* ((mkr (minaduki-capture//get :insert-at))

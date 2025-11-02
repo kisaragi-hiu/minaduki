@@ -144,7 +144,7 @@ ARG is whether the thing should be opened in another window."
   "`org-open-link-functions' handler for Obsidian-style wiki links in Org.
 TARGET is the link's target, as passed to `org-open-link-functions'."
   (let ((resolved-path (minaduki-obsidian-path target)))
-    (minaduki::find-file resolved-path)))
+    (find-file resolved-path)))
 
 (defun minaduki-org::fuzzy-follow (target)
   "A follow function that acts like Org [[plain]] links.
@@ -333,7 +333,7 @@ When NEW-FILE-OR-DIR is a directory, we use it to compute the new file path."
                         (make-button
                          start end
                          'action (lambda (&rest _)
-                                   (minaduki::find-file file))
+                                   (find-file file))
                          'follow-link t
                          'face 'button))))))))
 

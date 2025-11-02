@@ -165,7 +165,7 @@ open in another window instead of in the current one."
       (let ((markdown-enable-wiki-links t))
         (when other (other-window 1))
         (cond ((markdown-wiki-link-p)
-               (minaduki::find-file (minaduki-obsidian-path (match-string 3))))
+               (find-file (minaduki-obsidian-path (match-string 3))))
               ((markdown-link-p)
                (let ((url (markdown-link-url))
                      expanded)
@@ -595,7 +595,7 @@ If VISIT? is non-nil (default), go to the newly created note."
          (+ it n)
          (% it (length siblings))
          (nth it siblings)
-         minaduki::find-file)))
+         find-file)))
 
 ;;;###autoload
 (cl-defun minaduki/diary-prev (&optional (n 1))
@@ -727,7 +727,7 @@ yesterday instead."
 (defun minaduki/open-template ()
   "Open a template in `minaduki/templates-directory' for edit."
   (interactive)
-  (minaduki::find-file
+  (find-file
    (minaduki-templates:read "Open template file: " :all 'files)))
 
 ;;;###autoload
@@ -763,7 +763,7 @@ The index file is specified in this order:
                 (t
                  (car (minaduki-db::fetch-file :title "Index"))))))
     (if (and index (f-exists? index))
-        (minaduki::find-file index)
+        (find-file index)
       (when (y-or-n-p "Index file does not exist.  Would you like to create it? ")
         (minaduki-open "Index")))))
 
@@ -798,9 +798,9 @@ one."
           ((oref entry id)
            (minaduki/open-id (oref entry id)))
           (t
-           (minaduki::find-file path)))))
+           (find-file path)))))
 
-(defun minaduki/open-id (id &optional other?)
+(defun minaduki/open-id (id)
   "Open an ID.
 
 This assumes ID is present in the cache database.
@@ -808,7 +808,7 @@ This assumes ID is present in the cache database.
 If OTHER? is non-nil, open it in another window, otherwise in the
 current window."
   (-when-let (id (minaduki-db::fetch-id id))
-    (minaduki::find-file (minaduki-id-file id) other?)
+    (find-file (minaduki-id-file id))
     (goto-char (minaduki-id-point id))))
 
 (defun minaduki/open-id-at-point ()
@@ -904,7 +904,7 @@ the following arguments:
     ;; just visit it
     ;; (A file may exist in the db but not on file system if it was later deleted.)
     (if (and file (file-exists-p file))
-        (minaduki::find-file file)
+        (find-file file)
       ;; Otherwise create a file for it
       (minaduki/new-for-citekey citekey))))
 
@@ -940,7 +940,7 @@ CITEKEY is a list whose car is a citation key."
 (defun minaduki:citekey-show-entry (citekey)
   "Go to where CITEKEY is defined."
   (let ((entry (minaduki-db::fetch-lit-entry citekey)))
-    (minaduki::find-file (minaduki-lit-entry-file entry))
+    (find-file (minaduki-lit-entry-file entry))
     (goto-char (minaduki-lit-entry-point entry))))
 
 (defun minaduki-insert-note-to-citekey (citekey)
