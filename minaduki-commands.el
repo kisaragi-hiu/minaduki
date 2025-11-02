@@ -899,15 +899,14 @@ the following arguments:
 - %:title: title of the entry
 - %:ref: the CITEKEY
 - %:now: (common to all templates) the current moment."
-  (let* ((file (minaduki-db::fetch-file :key citekey))
-         (_title (minaduki-db::fetch-title file))
-         title)
-    (cl-block nil
-      (cond
-       ;; If a corresponding file exists, just visit it
-       (file (minaduki::find-file file))
-       ;; Otherwise create a file for it
-       (t (minaduki/new-for-citekey citekey))))))
+  (let* ((file (minaduki-db::fetch-file :key citekey)))
+    ;; If a corresponding file exists (both in cache and on file system), then
+    ;; just visit it
+    ;; (A file may exist in the db but not on file system if it was later deleted.)
+    (if (and file (file-exists-p file))
+        (minaduki::find-file file)
+      ;; Otherwise create a file for it
+      (minaduki/new-for-citekey citekey))))
 
 (defun minaduki-insert-citation (citekey)
   "Insert a citation to CITEKEY."
