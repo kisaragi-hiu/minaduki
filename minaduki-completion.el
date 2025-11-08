@@ -35,32 +35,6 @@
 
 (declare-function ivy--flx-sort "ivy")
 (declare-function ivy--shorter-matches-first "ivy")
-(declare-function marginalia--fields "marginalia")
-
-;; Keeping the `require' at top level allows the byte compiler to
-;; see the definition of `marginalia--fields' so that it doesn't
-;; report errors for `minaduki-completion--annotate-note'.
-(require 'marginalia nil t)
-(when (featurep 'marginalia)
-  (defvar marginalia-annotators)
-  (add-to-list 'marginalia-annotators
-               '(note minaduki-completion--annotate-note none)))
-
-(defun minaduki-completion--annotate-note (cand)
-  "Marginalia annotation for note entries.
-
-CAND is the entry in the completion. Metadata is passed through
-text properties to distinguish between entries with the same
-title."
-  (when (featurep 'marginalia)
-    (-when-let (metadata (get-text-property 0 :metadata cand))
-      (let-alist metadata
-        (marginalia--fields
-         ((when .tags
-            (format "(%s)" (s-join "," .tags)))
-          :width 30 :face 'marginalia-list)
-         ((f-relative .path (minaduki-vault-main))
-          :truncate 40 :face 'marginalia-file-name))))))
 
 (cl-defun minaduki-read:author (&key def (prompt "Author: "))
   "Ask the user using PROMPT to select an author.
