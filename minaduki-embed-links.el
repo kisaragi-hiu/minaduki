@@ -62,7 +62,8 @@ If SYNC is non-nil, do this synchronously."
                            (backward-char (length (match-string 0)))
                            (setq title (--> (xml-parse-tag)
                                             (dom-text it)
-                                            (decode-coding-string it 'undecided)))
+                                            (decode-coding-string it 'undecided)
+                                            string-trim))
                            (with-current-buffer text-buf
                              (goto-char start)
                              (let ((inhibit-read-only t))
