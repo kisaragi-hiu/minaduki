@@ -33,13 +33,12 @@ If region isn\\='t active, do it for the current line only."
     (setq start (pos-bol)
           end (pos-eol)))
   (save-mark-and-excursion
-    (with-restriction start end
-      (goto-char (point-min))
-      (while (not (eobp))
-        (save-excursion
-          (minaduki-embed-links--add-title-to-url-at-point :sync))
-        (redisplay)
-        (forward-line)))))
+    (goto-char start)
+    (while (<= (point) end)
+      (save-excursion
+        (minaduki-embed-links--add-title-to-url-at-point :sync))
+      (redisplay)
+      (forward-line))))
 
 (defun minaduki-embed-links--add-title-to-url-at-point (&optional sync)
   "Fetch the title of the URL at point, then write it in.
