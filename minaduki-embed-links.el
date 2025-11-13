@@ -10,6 +10,8 @@
 
 ;;; Code:
 
+(require 'minaduki-utils)
+
 (require 'eww)
 (require 'dash)
 (require 'org)
@@ -61,10 +63,10 @@ If SYNC is non-nil, do this synchronously."
                              (goto-char start)
                              (let ((inhibit-read-only t))
                                (delete-region start end)
-                               (markdown-insert-inline-link
-                                ;; yes it works for Markdown as well
-                                (org-link-escape title)
-                                url)
+                               (insert
+                                (minaduki::format-plain-link
+                                 :target url
+                                 :desc title))
                                ;; (insert (format "[[%s][%s]]" url title))
                                (unless sync
                                  (read-only-mode -1)))))))))

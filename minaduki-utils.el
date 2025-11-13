@@ -353,7 +353,10 @@ Like `minaduki::format-link' but without the path magic."
                     target
                     target))
            (t
-            (format "[%s](%s)" desc target))))
+            (format "[%s](%s)"
+                    ;; yes this works for Markdown as well
+                    (org-link-escape desc)
+                    target))))
     (_ target)))
 
 (cl-defun minaduki::format-link (&key target desc type)
