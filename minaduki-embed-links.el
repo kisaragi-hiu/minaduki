@@ -23,22 +23,24 @@
 This only does it for bare links that are on their own lines.
 If region isn\\='t active, do it for the current line only."
   (interactive "r")
-  (if (region-active-p)
-      (setq start (progn
-                    (goto-char start)
-                    (pos-bol))
-            end (progn
-                  (goto-char end)
-                  (pos-eol)))
-    (setq start (pos-bol)
-          end (pos-eol)))
   (save-mark-and-excursion
+    (if (region-active-p)
+        (setq start (progn
+                      (goto-char start)
+                      (pos-bol))
+              end (progn
+                    (goto-char end)
+                    (pos-eol)))
+      (setq start (pos-bol)
+            end (pos-eol)))
+    ;; this needs to be a marker because we're inserting stuff before it
+    (setq end (set-marker (make-marker) end))
     (goto-char start)
-    (while (<= (point) end)
+    (while (< (point) end)
       (save-excursion
         (minaduki-embed-links--add-title-to-url-at-point :sync))
-      (redisplay)
-      (forward-line))))
+      (forward-line)
+      (redisplay))))
 
 (defun minaduki-embed-links--add-title-to-url-at-point (&optional sync)
   "Fetch the title of the URL at point, then write it in.
