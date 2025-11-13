@@ -50,6 +50,7 @@ If SYNC is non-nil, do this synchronously."
            (end (cdr bounds))
            (url (string-trim
                  (buffer-substring-no-properties start end)))
+           (domain (url-domain (url-generic-parse-url url)))
            (text-buf (current-buffer))
            (callback (lambda (&optional _status)
                        (let (title)
@@ -74,15 +75,17 @@ If SYNC is non-nil, do this synchronously."
                                 (minaduki::format-plain-link
                                  :target url
                                  :desc title))
-                               ;; (insert (format "[[%s][%s]]" url title))
                                (unless sync
-                                 (read-only-mode -1)))))))))
+                                 (read-only-mode -1))
+                               ;; this is the callback, this happens later
+                               (message "Fetching title from %s...done" domain))))))))
+      (message "Fetching title from %s..." domain)
       (if sync
           (progn
-            (with-current-buffer (url-retrieve-synchronously url)
+            (with-current-buffer (url-retrieve-synchronously url t)
               (funcall callback)))
         (read-only-mode)
-        (url-retrieve url callback)))))
+        (url-retrieve url callback nil t)))))
 
 (provide 'minaduki-embed-links)
 
