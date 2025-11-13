@@ -17,6 +17,7 @@
 (require 'org)
 (require 'markdown-mode)
 
+;;;###autoload
 (defun minaduki-embed-links (start end)
   "Find and insert titles for links between START and END.
 This only does it for bare links that are on their own lines.
