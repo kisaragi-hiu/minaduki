@@ -270,3 +270,7 @@ Some commands should be in here instead.
 ** minaduki-embed-links
 
 Take bare URL links and fetch their titles, giving them titles in the buffer.
+
+** minaduki-timeline
+
+TODO. Very unfinished, including even the concept.

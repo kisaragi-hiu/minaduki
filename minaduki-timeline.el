@@ -3,8 +3,14 @@
 ;;; Commentary:
 
 ;; Commands for listing notes on a timeline.
+;; TODO: sketch out what we actually want with this
 
 ;;; Code:
+
+(require 's)
+(require 'minaduki-utils)
+(require 'minaduki-extract)
+(require 'f)
 
 (defun minaduki-timeline--get-year (str)
   "Return the year based on STR."
