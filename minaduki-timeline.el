@@ -4,6 +4,11 @@
 
 ;; Commands for listing notes on a timeline.
 ;; TODO: sketch out what we actually want with this
+;; * TODO ways to make reading multi-file collections more pleasant
+;; ** TODO go to the next/prev file with this tag
+;; ** TODO go to the next/prev file with a link to a file
+;; ** TODO dedicated view listing backlinks to a file
+;; ** TODO dedicated view listing files with a given tag
 
 ;;; Code:
 

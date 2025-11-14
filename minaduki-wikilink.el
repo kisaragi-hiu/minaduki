@@ -19,6 +19,8 @@
 ;; FIXME: [[minaduki:nonexistent]] would try to open "nonexistent" and still
 ;; error out instead of creating a note (a problem with minaduki-open?)
 ;; TODO: replace this with real support for inserting and following wikilinks
+;; TODO: indexing wikilinks
+;; TODO: make it possible to follow wikilinks from ledger files?
 ;;;
 ;;; Code:
 
