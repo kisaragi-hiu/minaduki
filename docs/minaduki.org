@@ -261,3 +261,12 @@ Obsidian links are supported. You can follow them, and they are tracked by backl
 In an Obsidian vault, the file name is used as the main title.
 
 Try cloning a public Obsidian vault like [[https://github.com/sw-yx/brain][sw-yx/brain]] or [[https://help.obsidian.md/][Obsidian Help]]. Backlinks and title search should just work.
+* “Extensions”
+
+Really Minaduki “extensions” are just Emacs files that freely depend on Minaduki's internal utils.
+
+Some commands should be in here instead.
+
+** minaduki-embed-links
+
+Take bare URL links and fetch their titles, giving them titles in the buffer.
