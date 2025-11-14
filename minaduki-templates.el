@@ -2,8 +2,8 @@
 
 ;;; Commentary:
 
-;; TODO specify location of resulting file
-;; TODO: Replace minaduki-capture with this
+;; TODO: specify location of resulting file
+;; TODO: study Obsidian templates
 ;; TODO: passing in arguments: just use %s?
 ;; TODO: each special template needs a documentation on what arguments
 ;; they will receive. "new" will get the title as the first argument,

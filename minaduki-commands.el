@@ -99,8 +99,7 @@ Usage:
 (defun minaduki-org//id-new-advice (&rest _args)
   "Update the database if a new Org ID is created."
   (when (and (minaduki-vault-in-vault?)
-             (not (eq minaduki-db/update-method 'immediate))
-             (not (minaduki-capture/p)))
+             (not (eq minaduki-db/update-method 'immediate)))
     (minaduki-db::incremental-update)))
 
 (defun minaduki-org//move-to-row-col (s)

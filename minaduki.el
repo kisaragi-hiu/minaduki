@@ -57,7 +57,6 @@
 (require 'minaduki-vault)
 
 (require 'minaduki-buffer)
-(require 'minaduki-capture)
 (require 'minaduki-extract)
 (require 'minaduki-db)
 (require 'minaduki-timeline)
