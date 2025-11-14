@@ -322,7 +322,9 @@ Inverse of `org-link-expand-abbrev'."
       (throw 'ret path))
     (unless no-truename
       (setq path (f-canonical path)))
-    (pcase-dolist (`(,key . ,abbrev) (or alist org-link-abbrev-alist))
+    (pcase-dolist (`(,key . ,abbrev) (or alist
+                                         (append org-link-abbrev-alist-local
+                                                 org-link-abbrev-alist)))
       ;; Get the symbol property if the value is a function / symbol
       ;; FIXME: this is specific to `kisaragi-file-finders'. There
       ;; should be support for function values in `minaduki/vaults'.

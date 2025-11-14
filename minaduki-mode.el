@@ -16,6 +16,8 @@
 (require 'minaduki-commands)
 (require 'minaduki-buffer)
 
+(require 'minaduki-resources)
+
 (require 'minaduki-wikilink)
 
 (declare-function org-cite-basic--complete-style "oc-basic")
@@ -376,15 +378,22 @@ When NEW-FILE-OR-DIR is a directory, we use it to compute the new file path."
      (add-hook 'org-open-link-functions #'minaduki-org::h-open-wiki-link nil t)
      (add-hook 'before-save-hook #'minaduki-wikilink::replace-link-on-save nil t)
      (add-hook 'post-command-hook #'minaduki-org::buttonize-tags nil t)))
+  ;; vaults can reference each other
   (dolist (vault
            ;; Ensure first element in `minaduki/vaults' is the
            ;; first element in `org-link-abbrev-alist' by
            ;; setting it last.
            (reverse minaduki/vaults))
     (when (minaduki-vault-path vault)
-      (setf (map-elt org-link-abbrev-alist (minaduki-vault-name vault))
+      (setf (map-elt org-link-abbrev-alist-local (minaduki-vault-name vault))
             (f-slash
              (minaduki-vault-path vault)))))
+  ;; hook up resources
+  (dolist (resources (minaduki-vault-resources (minaduki-vault-closest)))
+    (let ((name (car resources))
+          (value (cdr resources)))
+      (setf (map-elt org-link-abbrev-alist-local name)
+            value)))
   (add-hook 'post-command-hook #'minaduki-buffer//update-maybe nil t)
   (add-hook 'after-save-hook #'minaduki-db::incremental-update nil t)
   (add-hook 'post-self-insert-hook #'minaduki-mode::handle-double-bracket-h nil t)
