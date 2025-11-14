@@ -128,15 +128,32 @@ If ARG is a number less than 1, disable it, otherwise enable it."
          (minaduki-vaults-save)
          (remove-hook 'kill-emacs-hook #'minaduki-vaults-save))))
 
-(defun minaduki-vault-config (vault)
-  "Get the config object for VAULT."
+(defun minaduki-vault-config-dir-get-create (vault)
+  "Return the config dir for VAULT.
+Also make sure it is present."
   (let* ((path (minaduki-vault-path vault))
-         (config-path (f-join path ".minaduki.yml")))
+         (config-dir (f-join path ".minaduki")))
+    (unless (file-directory-p config-dir)
+      (when (file-exists-p config-dir)
+        (error ".minaduki already exists but isn't a directory"))
+      (make-directory config-dir t))
+    config-dir))
+
+(defun minaduki-vault-config-load (vault namespace)
+  "Load the NAMESPACE config object for VAULT."
+  (let* ((config-dir (minaduki-vault-config-dir-get-create vault))
+         (config-path (f-join config-dir (format "%s.yaml" namespace))))
     (when (file-regular-p config-path)
       (yaml-parse-string
        (with-temp-buffer
          (insert-file-contents config-path)
          (buffer-string))))))
+(defun minaduki-vault-config-save (vault namespace value)
+  "Save VALUE into VAULT\\='s config for NAMESPACE."
+  (let* ((config-dir (minaduki-vault-config-dir-get-create vault))
+         (config-path (f-join config-dir (format "%s.yaml" namespace))))
+    (with-temp-file config-path
+      (insert (yaml-encode value)))))
 
 (defun minaduki-vault-resources (vault)
   "Get registered resources for VAULT.
