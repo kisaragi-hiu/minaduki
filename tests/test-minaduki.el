@@ -28,11 +28,6 @@
 (require 'ht)
 (require 'markdown-mode)
 
-(require 'undercover)
-(undercover "*.el"
-            (:report-file "/tmp/local-report.json")
-            (:send-report nil))
-
 (require 'minaduki)
 
 (defun test-minaduki--abs-path (file-path)

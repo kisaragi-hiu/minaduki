@@ -1,16 +1,12 @@
 export HOME := /tmp/test
 
-.eask: Eask
-	eask install-deps --dev
-	touch .eask # needed because Eask doesn't update the time
+test: Eldev
+	eldev test -u off
 
-minaduki.elc: .eask $(wildcard *.el)
-	eask compile
+# For some reason tests fail in bizarre ways when (and only when) coverage is
+# enabled. But coverage still gets generated...
+coverage-summary: Eldev
+	@-eldev test -u on,text,dontsend -U /tmp/out >/dev/null 2>/dev/null
+	@cat /tmp/out
 
-compile: minaduki.elc
-
-test: .eask
-	@if [ "$$CI" != true ]; then make compile; fi # Locally, always rebuild
-	eask test buttercup
-
-.PHONY: test compile
+.PHONY: test coverage

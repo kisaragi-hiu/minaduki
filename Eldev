@@ -6,4 +6,6 @@
 ;; for ht-equal?, used for testing
 (eldev-add-extra-dependencies 'test 'ht)
 
+(eldev-use-plugin 'undercover)
+
 (setq eldev-project-main-file "minaduki.el")

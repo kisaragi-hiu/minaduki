@@ -19,12 +19,8 @@ jobs:
         uses: purcell/setup-emacs@master
         with:
           version: ${{ matrix.emacs_version }}
-      - uses: emacs-eask/setup-eask@master
-        with:
-          version: "snapshot"
-      - name: Compile
-        run: |
-          make compile
+      - name: Set up Eldev
+        uses: emacs-eldev/setup-eldev@v1
       - name: Test
         run: |
           make test

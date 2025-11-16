@@ -1,8 +1,4 @@
 **/*.elc
 *.elc
-.cask
-.eask
-
-# Added automatically by ‘eldev init’.
 /.eldev
 /Eldev-local

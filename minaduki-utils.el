@@ -414,9 +414,14 @@ If ID? is non-nil and we're in Org mode, return an ID link instead."
   "Convert TITLE to a filename-suitable slug."
   (let ((slug
          (--> title
+              ;; For some reason I have to write this like this, otherwise tests
+              ;; about this file would hang after printing an error about
+              ;; reading this symbol as a variable (??) but only when
+              ;; instrumented by Undercover (???).
+              ;;
               ;; Normalize combining characters (use single character ä
               ;; instead of combining a + #x308 (combining diaeresis))
-              ucs-normalize-NFC-string
+              (ucs-normalize-NFC-string it)
               ;; Do the replacement. Note that `s-replace-all' does not
               ;; use regexp.
               (--reduce-from
