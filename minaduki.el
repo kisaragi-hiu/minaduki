@@ -65,5 +65,10 @@
 
 (require 'minaduki-mode)
 
+;; "extensions"
+;; (require 'minaduki-everywhere)
+;; (require 'minaduki-tags)
+;; (require 'minaduki-embed-links)
+
 (provide 'minaduki)
 ;;; minaduki.el ends here
