@@ -5,12 +5,10 @@ test: Eldev
 
 # For some reason tests fail in bizarre ways when (and only when) coverage is
 # enabled. But coverage still gets generated...
-coverage-text: Eldev
-	@-eldev test -u on,text,dontsend -U /tmp/out.txt >/dev/null 2>/dev/null
-	@cat /tmp/out.txt
 coverage-local: Eldev
-	@-eldev test -u on,coveralls,dontsend -U ./coverage-final.json >/dev/null 2>/dev/null
-	@echo Coverage info should be available now, try cov-mode in Emacs
+	@-eldev test -u on,coveralls,dontsend -U ./coverage-final.json >/dev/null 2>/dev/null || true
+	@-eldev test -u on,text,dontsend -U /tmp/out.txt >/dev/null 2>/dev/null || true
+	@cat /tmp/out.txt
 coverage-ci: Eldev
 	@-eldev test -u on,coveralls,send >/dev/null 2>/dev/null
 
