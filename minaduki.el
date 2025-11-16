@@ -7,9 +7,7 @@
 ;; URL: https://github.com/kisaragi-hiu/minaduki
 ;; Keywords: org-mode, convenience
 ;; Version: 0.1
-;; Package-Requires: ((emacs "29.1") (yaml "0.5.1") (dash "2.13") (f "0.17.2")
-;;         (s "1.12.0") (org "9.5") (markdown-mode "2.4") (transient "0.3.7")
-;;         (parsebib "6.7"))
+;; Package-Requires: ((emacs "29.1") (yaml "0.5.1") (dash "2.13") (f "0.17.2") (s "1.12.0") (org "9.5") (markdown-mode "2.4") (transient "0.3.7") (parsebib "6.7"))
 
 ;; This file is NOT part of GNU Emacs.
 
