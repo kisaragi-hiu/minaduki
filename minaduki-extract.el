@@ -80,7 +80,7 @@ is meant to be edited, so this should not be set to non-nil globally.")
        ;; fine too
        (-when-let (v (org-entry-get 1 prop))
          (push v values))
-       values))))
+       (nreverse values)))))
 
 (defun minaduki-org--collect-frontmatter-keywords ()
   "Collect all keywords at the top of the buffer.
