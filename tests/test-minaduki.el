@@ -20,14 +20,20 @@
 ;;; Commentary:
 ;;; Code:
 
+
 (require 'buttercup)
 (require 'parsebib) ; necessary for testing bibtex extraction support
-(require 'minaduki)
 (require 'seq)
 (require 'dash)
 (require 'ht)
-
 (require 'markdown-mode)
+
+(require 'undercover)
+(undercover "*.el"
+            (:report-file "/tmp/local-report.json")
+            (:send-report nil))
+
+(require 'minaduki)
 
 (defun test-minaduki--abs-path (file-path)
   "Get absolute FILE-PATH from `org-directory'."

@@ -31,6 +31,7 @@
 (depends-on "transient")
 
 (development
+ (depends-on "undercover")
  (depends-on "ht") ; for ht-equal?, used for testing
  ;; Optional dependencies
  (depends-on "parsebib"))
