@@ -5,11 +5,6 @@
 ;;
 ;; Author: Kisaragi Hiu <mail@kisaragi-hiu.com>
 ;;         Jethro Kuan <jethrokuan95@gmail.com>
-;; URL: https://github.com/kisaragi-hiu/org-roam
-;;
-;; Keywords: org-mode, convenience, org-protocol
-;; Version: 1.2.3
-;; Package-Requires: ((emacs "26.1") (org "9.3"))
 
 ;; This file is NOT part of GNU Emacs.
 

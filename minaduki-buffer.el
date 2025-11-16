@@ -3,9 +3,6 @@
 ;; Copyright © 2020 Jethro Kuan <jethrokuan95@gmail.com>
 
 ;; Author: Jethro Kuan <jethrokuan95@gmail.com>
-;; URL: https://github.com/org-roam/org-roam
-;; Keywords: org-mode, convenience
-;; Version: 1.2.3
 
 ;; This file is NOT part of GNU Emacs.
 
