@@ -253,7 +253,7 @@ REPLACE-REGION?: whether to replace selected text."
                      s-trim)))
     (unless entry
       (setq entry (minaduki-read:note
-                   :initial-input desc
+                   ;; :initial-input desc
                    :prompt "Insert link to note: "
                    :under-path (minaduki-vault-closest))))
     (setq title (oref entry title)
