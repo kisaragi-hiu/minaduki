@@ -207,7 +207,7 @@ members that should be equal."
         (expand-file-name "entries.bib" test-lit-directory))
        (minaduki-lit/parse-entries/bibtex))
      :to-equal/ht
-     '((8 . #s(hash-table
+     '((1 . #s(hash-table
                size 65 test equal rehash-size 1.5
                rehash-threshold 0.8125
                data ("author" "大崎ひとみ"
@@ -217,7 +217,7 @@ members that should be equal."
                      "tags" ["voice"]
                      "year" "2013"
                      "publisher" "t2library課外活動部")))
-       (160 .
+       (153 .
             #s(hash-table
                size 65 test equal rehash-size 1.5
                rehash-threshold 0.8125
