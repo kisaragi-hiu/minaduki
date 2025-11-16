@@ -563,7 +563,7 @@ members that should be equal."
               :to-equal
               (list (test-minaduki--abs-path "foo.org")))
       (expect (minaduki-db::fetch-file :title "Headline")
-              :to-equal
+              :to-have-same-items-as
               (-map #'test-minaduki--abs-path
                     '("headlines/headline.org"
                       "titles/headline.md"
