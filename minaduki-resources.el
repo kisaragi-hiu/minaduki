@@ -125,7 +125,7 @@ Resources are used to set up custom link types via
 
 A resource can have the following properties:
 - \"path\" (necessary): a path value resolved according to
-  `minaduki-vault-config--path'. If the result is relative, it is
+  `minaduki-resources--path'. If the result is relative, it is
   relative to the root path of VAULT.
 - \"regexp\" (optional): make this a file finder."
   (let* ((config (minaduki-vault-config vault))
@@ -183,7 +183,7 @@ VALUE can be:
       (cl-return nil))
     (when-let (join (map-elt value 'join))
       (cl-return
-       (apply #'f-join (mapcar #'minaduki-vault-config--path join))))
+       (apply #'f-join (mapcar #'minaduki-resources--path join))))
     (when-let (variable (map-elt value 'variable))
       (let ((resolved (ignore-errors
                         (symbol-value
