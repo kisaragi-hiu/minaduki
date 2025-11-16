@@ -2,3 +2,4 @@
 *.elc
 /.eldev
 /Eldev-local
+coverage-final.json

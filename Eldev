@@ -5,7 +5,26 @@
 
 ;; for ht-equal?, used for testing
 (eldev-add-extra-dependencies 'test 'ht)
+(eldev-add-extra-dependencies 'test 'undercover)
 
-(eldev-use-plugin 'undercover)
+;; The Eldev plugin hasn't hooked up the lcov output format yet, so I want to
+;; configure it myself.
+;; Doing it here for some reason replicates how it works when using the plugin
+;; (weird errors in the test but coverage report works), so... yeah.
+(add-hook 'eldev-test-hook
+          (lambda ()
+            (when-let ((val (getenv "K_COVERAGE")))
+              ;; setting undercover-force-coverage here has no effect
+              (setenv "UNDERCOVER_FORCE" "true")
+              (let* ((split (split-string val ","))
+                     (fmt (elt split 0))
+                     (file (elt split 1)))
+                (eldev-load-extra-dependencies 'test)
+                (require 'undercover)
+                (undercover "*.el"
+                            (:merge-report nil)
+                            (:report-file file)
+                            (:report-format (intern fmt))
+                            (:send-report (not file)))))))
 
 (setq eldev-project-main-file "minaduki.el")
