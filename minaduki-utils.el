@@ -98,15 +98,10 @@ strings."
                 ,@(cdr it))
               conditions))
       (setq conditions (nreverse conditions))
-      `(let ((,type-sym (minaduki::file-type)))
-         ;; HACK to get `cl-case' to match strings
-         ;; probably not necessary since the input only comes from ::file-type,
-         ;; which returns symbols and maybe nil.
-         ;; (cl-letf (((symbol-function #'eql)
-         ;;            (symbol-function #'equal)))
-         ;; Special case: return the value if there is no match specified
-         ,(cond ((not conditions) type-sym)
-                (t `(cl-case ,type-sym ,@conditions)))))))
+      ;; expand to just nil if no condition is specified
+      (when conditions
+        `(let ((,type-sym (minaduki::file-type)))
+           (cl-case ,type-sym ,@conditions))))))
 
 (defmacro minaduki::with-comp-setup (defaults &rest body)
   "Run BODY with completion frameworks set up according to DEFAULTS.
