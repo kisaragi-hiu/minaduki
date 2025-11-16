@@ -6,6 +6,7 @@
 
 ;;; Code:
 
+(require 'dash)
 (require 'f)
 (require 'org)
 (require 'eieio)
@@ -22,9 +23,6 @@
    (key :initarg :key :initform nil)
    (key-type :initarg :key-type :initform nil)
    (new? :initarg :new? :initform nil)))
-(defun minaduki-node::type (node)
-  "Return the file type of NODE."
-  (minaduki::file-type::path (oref node path)))
 
 ;; Note that I take the shortcut of creating instances of these
 ;; classes with `record' instead of through a constructor. So it is
@@ -188,7 +186,8 @@ defaults, however."
   (cond
    ((stringp minaduki-lit/bibliography)
     (list minaduki-lit/bibliography))
-   ((listp minaduki-lit/bibliography)
+   ((and (listp minaduki-lit/bibliography)
+         (-every? #'stringp minaduki-lit/bibliography))
     minaduki-lit/bibliography)
    (t
     (error "`minaduki-lit/bibliography' must be a string or list of strings"))))

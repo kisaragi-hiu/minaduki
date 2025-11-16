@@ -150,6 +150,21 @@ members that should be equal."
             :to-be 'json)))
 
 (describe "minaduki-lit"
+  (it "accepts multiple bibliography files"
+    (let ((minaduki-lit/bibliography
+           (list (f-join temp-dir "lit" "entries.org")
+                 (f-join temp-dir "lit" "date_LocalizedDateFormats-zh-TW.json"))))
+      (let ((inhibit-message t))
+        (minaduki-db:build-cache))
+      (expect (minaduki-db::fetch-lit-authors)
+              :to-equal nil)))
+  (it "fails on invalid values"
+    (let ((minaduki-lit/bibliography 'a))
+      (expect (minaduki-lit:bibliography)
+              :to-throw 'error))
+    (let ((minaduki-lit/bibliography '(a)))
+      (expect (minaduki-lit:bibliography)
+              :to-throw 'error)))
   (it "parses our own Org-based bibliography format"
     (expect
      ;; This must be in org mode and must have the file name (for the
@@ -541,6 +556,16 @@ members that should be equal."
             :to-be-truthy)
     (expect (minaduki-db::file-present? (test-minaduki--abs-path "no"))
             :to-be nil))
+
+  (describe "fetch-nodes"
+    (it "can fetch all"
+      (let ((nodes (minaduki-db--fetch-nodes)))
+        (expect (length nodes)
+                :to-equal
+                58)
+        (expect (-uniq (--map (minaduki::file-type::path (oref it path)) nodes))
+                :to-have-same-items-as
+                '(org markdown json bibtex)))))
 
   (describe "fetch-file"
     (it "can fetch id"
