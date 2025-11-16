@@ -231,7 +231,7 @@ If it is is a function, the function should return the path to
 the index file.
 
 Otherwise, the index is assumed to be a note in `org-directory'
-whose title is 'Index'."
+whose title is \\='Index\\='."
   :type '(choice
           (string :tag "Path to index" "%s")
           (function :tag "Function to generate the path"))
@@ -330,7 +330,7 @@ This can also be a list like \\='(string-less-p :key downcase), in
 which case the list is passed to `cl-sort' as arguments."
   :type '(choice
           (boolean)
-          (list :tag "Arguments to cl-loop"))
+          (sexp :tag "Arguments to cl-sort"))
   :group 'minaduki)
 
 (defcustom minaduki:ignore-case-during-completion t
@@ -364,9 +364,9 @@ This can be set in a directory local variable."
   ;; - [X] Absolute path
   :group 'minaduki
   :type '(choice
-          (const absolute-in-vault :tag "Absolute path in vault")
-          (const relative :tag "Relative path")
-          (const absolute :tag "Absolute path"))
+          (const :tag "Absolute path in vault" absolute-in-vault)
+          (const :tag "Relative path" relative)
+          (const :tag "Absolute path" absolute))
   :safe (lambda (x)
           (memq x '(relative absolute absolute-in-vault))))
 

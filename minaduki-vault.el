@@ -383,7 +383,7 @@ the next time USE-CACHE is nil again."
     (unless use-cache
       (when minaduki-vault-path-abbrev--cache
         (setq minaduki-vault-path-abbrev--cache nil)))
-    (let (vault-abbrev-alist value)
+    (let (vault-abbrev-alist)
       (when use-cache
         (setq vault-abbrev-alist minaduki-vault-path-abbrev--cache))
       (unless vault-abbrev-alist

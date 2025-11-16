@@ -92,8 +92,11 @@ DAY should be written in the format \"YYYY-MM-DD\" or
 \"YYYYMMDD\".
 
 This considers:
-- files in `minaduki/diary-directory' whose names start with DAY (without dashes)
-  like diary/20000102.org, \"diary/20150501-whatever.org\"
+
+- files in `minaduki/diary-directory' whose names start with DAY
+  (without dashes) like diary/20000102.org,
+  \"diary/20150501-whatever.org\"
+
 - files that declared a timestamp in a \"modified\", \"created\", or
   \"date\" file property"
   (setq day (s-replace "-" "" day))

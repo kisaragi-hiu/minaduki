@@ -466,7 +466,7 @@ REPLACE-REGION?: whether to replace selected text."
     ;; Insert them into the buffer
     (with-current-buffer list-buffer
       (let ((inhibit-read-only t)
-            (count-bounds '(nil . nil)))
+            (count-bounds (cons nil nil)))
         (insert "Click the file names to visit the error.\n"
                 "Checkboxes are available for keeping track of which ones are fixed.\n\n")
         ;; "100 broken links (100 to go)\n\n"

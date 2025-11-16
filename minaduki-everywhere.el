@@ -17,6 +17,17 @@
 (require 'emacs-everywhere nil t)
 (require 'minaduki-commands)
 
+;; These should be special variables
+(defvar emacs-everywhere-copy-command)
+(defvar emacs-everywhere-paste-command)
+(defvar emacs-everywhere-final-hooks)
+(defvar emacs-everywhere-init-hooks)
+(defvar emacs-everywhere-current-app)
+(declare-function emacs-everywhere-app-geometry "emacs-everywhere")
+(declare-function emacs-everywhere-app-id "emacs-everywhere")
+(declare-function make-emacs-everywhere-app "emacs-everywhere")
+(declare-function emacs-everywhere "emacs-everywhere")
+
 (declare-function evil-insert-state "evil-states")
 
 ;;;###autoload

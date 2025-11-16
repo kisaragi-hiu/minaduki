@@ -97,8 +97,7 @@ When this is non-nil, `minaduki-db' automatically updates the cache.")
        ((> version minaduki-db::version)
         (minaduki-db::close)
         (user-error
-         "The cache database was created with a newer Minaduki version. "
-         "Please update Minaduki"))
+         "The cache database was created with a newer Minaduki version. Please update Minaduki"))
        ((< version minaduki-db::version)
         (message "Migrating the cache database from version %d to version %d"
                  version minaduki-db::version)
