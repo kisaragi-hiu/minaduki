@@ -19,8 +19,9 @@ jobs:
         uses: purcell/setup-emacs@master
         with:
           version: ${{ matrix.emacs_version }}
-      - name: Set up Cask
-        uses: conao3/setup-cask@master
+      - uses: emacs-eask/setup-eask@master
+        with:
+          version: "snapshot"
       - name: Compile
         run: |
           make compile

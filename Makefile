@@ -1,15 +1,16 @@
 export HOME := /tmp/test
 
-.cask: Cask
-	cask install
+.eask: Eask
+	eask install-deps --dev
+	touch .eask # needed because Eask doesn't update the time
 
-minaduki.elc: .cask $(wildcard *.el)
-	cask build
+minaduki.elc: .eask $(wildcard *.el)
+	eask compile
 
 compile: minaduki.elc
 
-test: .cask
+test: .eask
 	@if [ "$$CI" != true ]; then make compile; fi # Locally, always rebuild
-	cask exec buttercup -L .
+	eask test buttercup
 
 .PHONY: test compile
