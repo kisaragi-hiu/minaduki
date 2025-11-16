@@ -321,7 +321,7 @@ POINT is where the entry is in the file. PROPS is a
                            (entry
                             (--map (cons (intern (car it))
                                          (cdr it))
-                                   (parsebib-read-entry entry-type))))
+                                   (parsebib-read-entry))))
                        (let-alist entry
                          (cons start-position
                                (minaduki-lit/entry
