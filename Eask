@@ -1,8 +1,4 @@
 ;; -*- lexical-binding: t -*-
-;; ^ What fucking lexical binding, why would `read`ing this file need that
-;;
-;; Have I mentioned I don't like Eask? But with Cask basically dead it's the
-;; next best thing.
 ;;
 ;; The fun part where you must duplicate info from your package file
 ;; exactly correctly
