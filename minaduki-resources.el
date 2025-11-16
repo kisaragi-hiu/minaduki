@@ -132,37 +132,38 @@ A resource can have the following properties:
          (vault-path (minaduki-vault-path vault))
          (resources (map-elt config 'resources))
          ret)
-    (->>
-     resources
-     (maphash
-      (lambda (key resource)
-        (when-let (path (minaduki-resources--path
-                         (map-elt resource 'path)))
-          (let ((regexp
-                 (-some--> (map-elt resource 'regexp)
-                   ;; this eval is to allow writing rx.
-                   ;; ...this is not a great idea.
-                   (eval (read it) t))))
-            (push
-             (cons (format "%s" key)
-                   (if regexp
-                       ;; file finder
-                       (minaduki-define-file-finder
-                         :key key
-                         :vault vault
-                         :directory path
-                         :template regexp
-                         :match-type (-some-> (map-elt resource 'match-type)
-                                       intern)
-                         :sort-pred (-some--> (map-elt resource 'sort-pred)
-                                      ;; also not a great idea. This is to eval a lambda.
-                                      (eval (read it) t))
-                         :split-path (map-elt resource 'split-path)
-                         :extra-args (map-elt resource 'extra-args))
-                     ;; simple replacement
-                     (f-slash
-                      (expand-file-name path vault-path))))
-             ret))))))
+    (when resources
+      ;; unlike a maphash this puts the hash table before the body.
+      ;; this does expand to a maphash.
+      (cl-loop
+       for key being the hash-keys of resources using (hash-values resource)
+       do (when-let (path (minaduki-resources--path
+                           (map-elt resource 'path)))
+            (let ((regexp
+                   (-some--> (map-elt resource 'regexp)
+                     ;; this eval is to allow writing rx.
+                     ;; ...this is not a great idea.
+                     (eval (read it) t))))
+              (push
+               (cons (format "%s" key)
+                     (if regexp
+                         ;; file finder
+                         (minaduki-define-file-finder
+                          :key key
+                          :vault vault
+                          :directory path
+                          :template regexp
+                          :match-type (-some-> (map-elt resource 'match-type)
+                                        intern)
+                          :sort-pred (-some--> (map-elt resource 'sort-pred)
+                                       ;; also not a great idea. This is to eval a lambda.
+                                       (eval (read it) t))
+                          :split-path (map-elt resource 'split-path)
+                          :extra-args (map-elt resource 'extra-args))
+                       ;; simple replacement
+                       (f-slash
+                        (expand-file-name path vault-path))))
+               ret)))))
     ret))
 
 (defun minaduki-resources--path (value)
