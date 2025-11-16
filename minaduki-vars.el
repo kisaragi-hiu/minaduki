@@ -45,11 +45,6 @@
   :prefix "minaduki-"
   :link '(url-link :tag "GitHub" "https://github.com/kisaragi-hiu/minaduki"))
 
-(defgroup minaduki-bibtex nil
-  "Bibtex-completion integration for Org-roam."
-  :group 'minaduki
-  :prefix "orb-")
-
 (defgroup minaduki-faces nil
   "Faces used by Org-roam."
   :group 'minaduki
@@ -389,7 +384,7 @@ the slug."
   :type '(choice
           (const citekey)
           (const title))
-  :group 'minaduki-bibtex)
+  :group 'minaduki-lit)
 
 ;;;; Internal Variables
 

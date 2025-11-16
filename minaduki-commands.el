@@ -26,7 +26,6 @@
 
 (require 'minaduki-extract)
 (require 'minaduki-db)
-(require 'minaduki-bibtex)
 
 (defvar ivy-sort-functions-alist)
 (defvar selectrum-should-sort)
