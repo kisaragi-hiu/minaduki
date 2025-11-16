@@ -3,4 +3,7 @@
 (eldev-use-package-archive 'gnu-elpa)
 (eldev-use-package-archive 'melpa)
 
+;; for ht-equal?, used for testing
+(eldev-add-extra-dependencies 'test 'ht)
+
 (setq eldev-project-main-file "minaduki.el")
