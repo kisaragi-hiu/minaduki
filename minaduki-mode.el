@@ -389,7 +389,8 @@ When NEW-FILE-OR-DIR is a directory, we use it to compute the new file path."
             (f-slash
              (minaduki-vault-path vault)))))
   ;; hook up resources
-  (dolist (resources (minaduki-vault-resources (minaduki-vault-closest)))
+  (dolist (resources (-some-> (minaduki-vault-closest)
+                       minaduki-vault-resources))
     (let ((name (car resources))
           (value (cdr resources)))
       (setf (map-elt org-link-abbrev-alist-local name)
