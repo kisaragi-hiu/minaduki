@@ -644,17 +644,6 @@ Cursor should be placed on the heading line."
                           0))))
     (< this-level next-level)))
 
-(defun minaduki::org-entry-properties-original (&optional epom)
-  "Reference implementation of `minaduki::org-entry-properties'.
-
-Written here because my Emacs 30 pretest crashed while I was trying to
-put this into the test file and I just want the commit done."
-  (let ((props (org-entry-properties)))
-    (--remove
-     (member (car it)
-             (-difference org-special-properties '("ITEM" "TODO")))
-     props)))
-
 (defun minaduki::org-entry-properties (&optional epom)
   "Return relevant properties of the org entry at EPOM efficiently.
 
