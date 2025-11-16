@@ -396,12 +396,17 @@ If ID? is non-nil and we're in Org mode, return an ID link instead."
               ;; Just a URL
               (format "[%s](%s)"
                       (f-filename target)
-                      (f-relative target)))
+                      (if url?
+                          target
+                        (f-relative target))))
              (t
               (format "[%s](%s)"
-                      desc
+                      ;; like just like ::insert-plain-link
+                      (org-link-escape desc)
                       (url-encode-url
-                       (f-relative target))))))
+                       (if url?
+                           target
+                         (f-relative target)))))))
       ;; No common way to insert descriptions
       (_ target))))
 
