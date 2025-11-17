@@ -5,6 +5,9 @@ on:
     branches:
       - main
 
+permissions:
+  id-token: write
+
 jobs:
   build:
     runs-on: ubuntu-latest
@@ -24,3 +27,9 @@ jobs:
       - name: Test
         run: |
           make test
+      - name: Coverage
+        run: |
+          make coverage-ci
+      - uses: codecov/codecov-action@v5
+        with:
+          use_oidc: true
