@@ -1,10 +1,14 @@
 # Minaduki
 
-I like Org-roam v1, but I have different ideas of what could make it better in my opinion. So this is my fork.
-
-I plan to also merge other v1 packages into this repository.
+I like Org-roam v1, but I have different ideas of what I want my notes manager to do. So this is my fork.
 
 My goal is to *very* slowly inch towards making this as usable as, say, Obsidian.
+
+## Badges
+
+I might as well set up code coverage, since I like making much needed changes but I don't like to have to fix my broken code while trying to access my notes on my phone.
+
+[![codecov](https://codecov.io/gh/kisaragi-hiu/minaduki/graph/badge.svg?token=237DXF6TAI)](https://codecov.io/gh/kisaragi-hiu/minaduki)
 
 ## Caveat
 
