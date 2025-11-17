@@ -10,6 +10,6 @@ coverage-local: Eldev
 	@-eldev test -u on,text,dontsend -U /tmp/out.txt >/dev/null 2>/dev/null || true
 	@cat /tmp/out.txt
 coverage-ci: Eldev
-	eldev test -u on,codecov,dontsend -U || true
+	eldev test -u on,codecov,dontsend >/dev/null 2>/dev/null || true
 
 .PHONY: test coverage
