@@ -676,10 +676,10 @@ like `minaduki-lit/entry' objects.
 
 If this file is not in `minaduki-lit/bibliography', this does
 nothing and returns nil."
-  (pcase major-mode
-    (`bibtex-mode (minaduki-lit/parse-entries/bibtex))
-    (`json-mode (minaduki-lit/parse-entries/csl-json))
-    (_ (minaduki-lit/parse-entries))))
+  (minaduki::file-type-case
+    (:bibtex (minaduki-lit/parse-entries/bibtex))
+    (:json (minaduki-lit/parse-entries/csl-json))
+    (t (minaduki-lit/parse-entries))))
 
 (defun minaduki-extract/refs ()
   "Extract the citekeys this buffer corresponds with.
