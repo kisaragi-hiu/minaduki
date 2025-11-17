@@ -55,9 +55,8 @@ In BODY, `fname' refers to the resolved path of FILE."
 
 (defun test-minaduki--init ()
   "."
-  (let ((minaduki-verbose nil)
-        (inhibit-message t))
-    (copy-directory test-repository temp-dir)
+  (let ((inhibit-message t))
+    (copy-directory test-repository temp-dir nil t)
     (setq org-directory temp-dir)
     (setq minaduki:db-location (f-join temp-dir "minaduki.db"))
     (setq minaduki/vaults (list temp-dir))
@@ -151,13 +150,21 @@ members that should be equal."
 
 (describe "minaduki-lit"
   (it "accepts multiple bibliography files"
+    (test-minaduki--init)
     (let ((minaduki-lit/bibliography
            (list (f-join temp-dir "lit" "entries.org")
-                 (f-join temp-dir "lit" "date_LocalizedDateFormats-zh-TW.json"))))
+                 (f-join temp-dir "lit" "date_LocalizedDateFormats-zh-TW.json")
+                 (f-join temp-dir "lit" "name_EtAlKanji.json"))))
       (let ((inhibit-message t))
-        (minaduki-db:build-cache))
+        (minaduki-db:build-cache t))
       (expect (minaduki-db::fetch-lit-authors)
-              :to-equal nil)))
+              :to-have-same-items-as
+              '("Bert Bos" "シャノン" "大崎ひとみ"
+                "Zither Ziggy and Yoda Yossarian and Xylophone Xerxes")))
+    ;; Clear it when we're done
+    (let ((inhibit-message t))
+      (minaduki-db:build-cache t)))
+
   (it "fails on invalid values"
     (let ((minaduki-lit/bibliography 'a))
       (expect (minaduki-lit:bibliography)
@@ -330,6 +337,36 @@ members that should be equal."
             :to-equal "starting-and-ending")
     (expect (minaduki::to-slug "isn't alpha numeric")
             :to-equal "isn-t-alpha-numeric"))
+  (describe "pure utils"
+    (it "warns without error"
+      (expect (let ((inhibit-message t))
+                (minaduki::warn :warning
+                  "Values: %s,\n%s\n, %s"
+                  "a string"
+                  `((:a . b) (:c . d))
+                  30))
+              :not :to-throw))
+    (it "converts between structs and vectors"
+      (expect (minaduki::object-to-vector (minaduki-node :path "a"
+                                                         :title "b"
+                                                         :tags (list "c")
+                                                         :id "d"
+                                                         :meta "e"
+                                                         :key "f"
+                                                         :key-type "g"
+                                                         :new? t))
+              :to-equal ["a" "b" ("c") "d" "e" "f" "g" t])
+      (expect (minaduki::vector-to-object
+               ["a" "b" ("c") "d" "e" "f" "g" t]
+               'minaduki-node)
+              :to-equal (minaduki-node :path "a"
+                                       :title "b"
+                                       :tags (list "c")
+                                       :id "d"
+                                       :meta "e"
+                                       :key "f"
+                                       :key-type "g"
+                                       :new? t))))
   (describe "list-files"
     (it "using pure elisp"
       (expect

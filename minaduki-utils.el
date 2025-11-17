@@ -173,7 +173,10 @@ Difference between this and `lwarn':
                                (minaduki::keyword-to-symbol k)
                                v)))
                     (s-join "\n")))
-              (t it)))
+              ;; For everything else, turn them into strings in a reasonable way
+              ;; If we passed numbers through without the format that would've
+              ;; converted codepoints into strings, which is not great
+              (t (format "%s" it))))
             args))))
 
 (defmacro minaduki::loading (str &rest body)
