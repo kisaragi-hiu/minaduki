@@ -75,6 +75,7 @@
   "Return a hash table representing a source.
 
 AUTHOR: the main entity responsible for the source.
+DATE: the date of the source.
 TYPE: the type of the source, like \"book\".
 TITLE: the name or title of the source.
 KEY: the identifying string, like bibtex's ID.
@@ -241,7 +242,9 @@ CONTEXT keys:
          :author author
          :date publishdate
          :url url
-         :title (replace-regexp-in-string "　" "" title))))))
+         :title (s-replace-all '(("　" . "")
+                                 ("\n" . " "))
+                               title))))))
 
 ;;;; Parsing
 
