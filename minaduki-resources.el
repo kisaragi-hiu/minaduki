@@ -184,7 +184,7 @@ VALUE can be:
       (cl-return nil))
     (when-let (join (map-elt value 'join))
       (cl-return
-       (apply #'f-join (mapcar #'minaduki-resources--path join))))
+       (ignore-errors (apply #'f-join (mapcar #'minaduki-resources--path join)))))
     (when-let (variable (map-elt value 'variable))
       (let ((resolved (ignore-errors
                         (symbol-value
