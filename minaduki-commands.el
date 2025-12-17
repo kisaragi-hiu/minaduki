@@ -215,16 +215,16 @@ This dispatches based on the current file type."
   (interactive "fInsert link to file: ")
   (minaduki-insert-link path))
 
-(cl-defun minaduki-insert (&key entry lowercase? replace-region?)
+(cl-defun minaduki-insert (&key prefill? entry lowercase? replace-region?)
   "Insert a link to a note.
 
 This only lists notes from the current vault for selection.
 
-If region is active, the new link uses the selected text as the
-description. For example, if the text \"hello world\" is
-selected, and the user chooses to insert a link to
-./programming.org, the region would be replaced with
-\"[[file:programming.org][hello world]]\".
+If PREFILL? is non-nil (or with a \\[universal-argument]), then when the
+region is active, the new link uses the selected text as the
+description. For example, if the text \"hello world\" is selected, and
+the user chooses to insert a link to ./programming.org, the region would
+be replaced with \"[[file:programming.org][hello world]]\".
 
 If the note with the provided title does not exist, a new one is
 created.
@@ -235,7 +235,8 @@ REPLACE-REGION?: whether to replace selected text."
   (interactive
    (list
     :entry nil
-    :lowercase? current-prefix-arg
+    :lowercase? nil
+    :prefill? current-prefix-arg
     :replace-region? t))
   ;; 1. Fetch region into desc if active
   ;; 2. Ask for an entry
@@ -245,7 +246,7 @@ REPLACE-REGION?: whether to replace selected text."
   ;; 6. Downcase desc if we should
   ;; 7. Format entry and insert!
   (let (title id path desc)
-    (when (and replace-region?
+    (when (and prefill?
                (region-active-p))
       (setq desc (-> (buffer-substring-no-properties
                       (region-beginning)
@@ -253,15 +254,16 @@ REPLACE-REGION?: whether to replace selected text."
                      s-trim)))
     (unless entry
       (setq entry (minaduki-read:note
-                   ;; :initial-input desc
+                   :initial-input desc
                    :prompt "Insert link to note: "
                    :under-path (minaduki-vault-closest))))
     (setq title (oref entry title)
           id (oref entry id)
           path (minaduki::ensure-not-file://
                 (oref entry path)))
-    (if desc
-        (delete-active-region)
+    (when replace-region?
+      (delete-active-region))
+    (unless desc
       (setq desc title))
     ;; We avoid creating a new note if the path is a URL or it refers
     ;; to an existing file.
