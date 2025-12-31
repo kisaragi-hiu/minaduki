@@ -627,6 +627,7 @@ Return a list of two items:
   (let ((modified-files (make-hash-table :test #'equal)))
     (if skip
         (minaduki::message "Modification check skipped")
+      ;; TODO: batch this with sha1sum over multiple files instead
       (dolist-with-progress-reporter (file files)
           "(minaduki) Finding modified files"
         (let ((content-hash (minaduki::compute-content-hash file t)))
