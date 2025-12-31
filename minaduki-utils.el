@@ -511,6 +511,49 @@ Like `file-name-extension', but:
           (t ext))))
 
 ;;;; File functions
+
+;; TODO: use elisp if FILES is small or if xargs or sha1sum is unavailable
+(defun minaduki--each-file-hash (files func &optional message)
+  "Run FUNC on each of FILES with their hashes.
+
+FUNC is called for each file with two arguments, FILE and HASH. The hash
+is sha1.
+
+If MESSAGE is a string, use it to report progress."
+  (declare (indent 1))
+  (with-temp-buffer
+    (when message
+      (message "(minaduki) Calculating hashes..."))
+    (call-process-region
+     (s-join "\0" files) nil
+     "xargs" nil '(t nil) t
+     "-0"
+     "sha1sum" "-z")
+    (when message
+      (message "(minaduki) Calculating hashes...done"))
+    (goto-char (point-min))
+    (let ((reporter (and (stringp message)
+                         (make-progress-reporter
+                          message 1 (point-max))))
+          hash-start hash-end name-start name-end)
+      (while (not (eobp))
+        (setq hash-start (point))
+        (setq hash-end (+ 40 hash-start))
+        (goto-char (+ 2 hash-end))
+        (setq name-start (point))
+        ;; NOERROR not nil or t = if not found, move to the limit (point-max in
+        ;; our case) then return nil.
+        (if (search-forward "\0" nil :to-end)
+            (setq name-end (1- (point)))
+          (setq name-end (point)))
+        (when reporter
+          (progress-reporter-update reporter name-end))
+        (funcall func
+                 (buffer-substring name-start name-end)
+                 (buffer-substring hash-start hash-end)))
+      (when reporter
+        (progress-reporter-done reporter)))))
+
 (defvar minaduki--content-hash-cache nil
   "Cache for `minaduki::compute-content-hash'.")
 (defun minaduki::compute-content-hash (file &optional cached)

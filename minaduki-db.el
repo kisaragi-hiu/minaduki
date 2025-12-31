@@ -619,21 +619,24 @@ DB-FILES is a hash table, with keys being file names and values
 being the corresponding hash value for the file.
 If SKIP is non-nil, skip modification check as if nothing was modified.
 
-DB-FILES is modified in place.
+DB-FILES is modified in place such that it only has entries that are not
+in FILES. This is used to find files that were recorded in the database
+but are no longer present on the file system.
 
 Return a list of two items:
 - the first item is the modified files, as a hash table shaped like DB-FILES;
-- the second item is DB-FILES, containing just the unmodified files."
+- the second item is DB-FILES, containing just the entries not in FILES."
   (let ((modified-files (make-hash-table :test #'equal)))
     (if skip
         (minaduki::message "Modification check skipped")
-      ;; TODO: batch this with sha1sum over multiple files instead
-      (dolist-with-progress-reporter (file files)
-          "(minaduki) Finding modified files"
-        (let ((content-hash (minaduki::compute-content-hash file t)))
-          (unless (string= content-hash (gethash file db-files))
-            (puthash file content-hash modified-files)))
-        (remhash file db-files)))
+      (minaduki--each-file-hash files
+        (lambda (file contents-hash)
+          ;; the file is modified unless the newly computed hash agrees with the
+          ;; hash in the db
+          (unless (string= contents-hash (gethash file db-files))
+            (puthash file contents-hash modified-files))
+          (remhash file db-files))
+       "(minaduki) Comparing hashes to find modified files"))
     (list modified-files db-files)))
 (defalias 'minaduki-db:refresh 'minaduki-db:build-cache)
 (defun minaduki-db:build-cache (&optional force skip-modification-check)
