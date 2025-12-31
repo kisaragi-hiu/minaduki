@@ -724,12 +724,12 @@ Returns a `minaduki-db::count' object."
     ;; also be tracked.
     (minaduki::message "Processing bibliographies...")
     (--each (minaduki-lit:bibliography)
-      (when (gethash it files-table)
+      (when-let ((contents-hash (gethash it files-table)))
         (condition-case nil
             (minaduki::with-temp-buffer it
               ;; We need the files to be in the files table first
               ;; before we can reference them
-              (minaduki-db::insert-meta)
+              (minaduki-db::insert-meta nil contents-hash)
               (cl-incf lit-count (minaduki-db::insert-lit-entries t)))
           (error
            (cl-incf error-count)
