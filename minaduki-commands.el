@@ -245,16 +245,17 @@ REPLACE-REGION?: whether to replace selected text."
   ;; 5. Create a new note if the entry doesn't exist
   ;; 6. Downcase desc if we should
   ;; 7. Format entry and insert!
-  (let (title id path desc)
-    (when (and prefill?
-               (region-active-p))
+  (let (title id path desc (initial-input nil))
+    (when (region-active-p)
       (setq desc (-> (buffer-substring-no-properties
                       (region-beginning)
                       (region-end))
                      s-trim)))
+    (when prefill?
+      (setq initial-input desc))
     (unless entry
       (setq entry (minaduki-read:note
-                   :initial-input desc
+                   :initial-input initial-input
                    :prompt "Insert link to note: "
                    :under-path (minaduki-vault-closest))))
     (setq title (oref entry title)
