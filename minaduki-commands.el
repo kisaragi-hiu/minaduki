@@ -262,7 +262,7 @@ REPLACE-REGION?: whether to replace selected text."
           id (oref entry id)
           path (minaduki::ensure-not-file://
                 (oref entry path)))
-    (when replace-region?
+    (when (and replace-region? (region-active-p))
       (delete-active-region))
     (unless desc
       (setq desc title))
