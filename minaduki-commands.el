@@ -1069,16 +1069,18 @@ This first adds an entry for it into a file in
                                             0))
                                     ?*)
                        (plist-get info :title)))
-       (org-entry-put nil "url"    (plist-get info :url))
-       (org-entry-put nil "author" (plist-get info :author))
-       (org-entry-put nil "date"   (plist-get info :date))
        (dolist (prop '("url" "author" "date"))
+         ;; Store the value we extracted first so that `org-read-property-value'
+         ;; will show it as an option
+         (let ((value (plist-get info (intern (format ":%s" prop)))))
+           (unless (s-blank? value)
+             (org-entry-put nil prop value)))
+         ;; Then read and store it
          (let ((value (pcase prop
                         ("author" (minaduki-read:author
                                    :def (plist-get info :author)))
                         (_ (org-read-property-value prop)))))
-           (unless (or (null value)
-                       (string= value ""))
+           (unless (s-blank? value)
              (org-entry-put nil prop value)
              (setq info (plist-put info prop value)))))
        (setq info (plist-put info
