@@ -167,6 +167,9 @@ CONTEXT keys:
                      ;; <title>
                      (dom-texts (car (dom-by-tag dom 'title))))
               author (or
+                      (and (s-starts-with? "https://archiveofourown.org/" url)
+                           (-some--> (dom-elements dom 'rel (rx bos "author" eos))
+                             (dom-text it)))
                       ;; <meta name="author" content="...">
                       (-some--> meta-elements
                         (--first (equal "author" (dom-attr it 'name)) it)
@@ -198,6 +201,10 @@ CONTEXT keys:
                           (--first (equal "name" (dom-attr it 'itemprop)) it)
                           (dom-attr it 'content))))
               publishdate (or
+                           (and (s-starts-with? "https://archiveofourown.org/" url)
+                                (-some--> (dom-by-class dom "published")
+                                  (--first (eq 'dd (car it)) it)
+                                  dom-text))
                            ;; Open Graph
                            ;; <meta property="article:published_time"
                            ;;       content="2019-08-29T09:54:00-04:00" />
