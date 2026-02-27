@@ -1083,8 +1083,11 @@ This first adds an entry for it into a file in
            (unless (s-blank? value)
              (org-entry-put nil prop value)
              (setq info (plist-put info prop value)))))
-       (setq info (plist-put info
-                             :citekey (minaduki-lit:literature-key-get-create))))
+       (let* ((default-new-key (minaduki-lit:literature-key-get-create))
+              (new-key (read-string "New literature key: " default-new-key 'minaduki-lit-key)))
+         (setq info (plist-put info :citekey (if (s-blank? new-key)
+                                                 default-new-key
+                                               new-key)))))
       (:json
        (goto-char (point-min))
        (let ((v (json-read)))
