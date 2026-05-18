@@ -70,7 +70,7 @@ is meant to be edited, so this should not be set to non-nil globally.")
      ;; Don't use `org-collect-keywords', which refuses to read the
      ;; "source" keyword for reasons. `org-element-at-point' also refuses.
      ;; `org-element-keyword-parser' accepts it though.
-     (let* ((keyword-pairs (minaduki-org--collect-frontmatter-keywords))
+     (let* ((keyword-pairs (minaduki-org--collect-keywords))
             (values
              (->> keyword-pairs
                   (--filter (equal (upcase prop) (car it)))
@@ -82,8 +82,8 @@ is meant to be edited, so this should not be set to non-nil globally.")
          (push v values))
        (nreverse values)))))
 
-(defun minaduki-org--collect-frontmatter-keywords ()
-  "Collect all keywords at the top of the buffer.
+(defun minaduki-org--collect-keywords ()
+  "Collect all keywords in the buffer.
 This has the benefit over `org-collect-keywords' in that it doesn\\='t
 care about what the keys are.
 
@@ -93,15 +93,13 @@ without merging."
   (save-excursion
     (goto-char (point-min))
     (let (this-keyword keywords)
-      ;; sometimes org-element-keyword-parser could just succeed in places where
-      ;; it shouldn't (or that I don't expect it to). Just this regexp is far
-      ;; more reliable at not getting stuck.
-      (while (looking-at "^#\\+")
+      (while (re-search-forward "^#\\+" nil t)
         (setq this-keyword
-              (save-match-data
-                (ignore-errors
-                  (org-element-keyword-parser 0 nil))))
-        (forward-line)
+              (save-excursion
+                (beginning-of-line)
+                (save-match-data
+                  (ignore-errors
+                    (org-element-keyword-parser 0 nil)))))
         (push (cons (org-element-property :key this-keyword)
                     (org-element-property :value this-keyword))
               keywords))
