@@ -181,6 +181,11 @@ defaults, however."
   :group 'minaduki-lit
   :type 'string)
 
+(defcustom minaduki-lit-bibtex-path (expand-file-name "minaduki-lit.bib" user-emacs-directory)
+  "Path to the automatically generated biblatex export."
+  :group 'minaduki-lit
+  :type 'string)
+
 (defun minaduki-lit:bibliography ()
   "Get the bibliograpies from `minaduki-lit/bibliography'."
   (cond

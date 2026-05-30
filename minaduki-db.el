@@ -66,7 +66,8 @@ When this is non-nil, `minaduki-db' automatically updates the cache.")
 (defun minaduki-db::file-update-timer::update-cache ()
   "Update the cache if the database is dirty."
   (when minaduki-db::file-update-dirty
-    (minaduki-db:build-cache))
+    (minaduki-db:build-cache)
+    (minaduki-db--export-lit-entries))
   (setq minaduki-db::file-update-dirty nil))
 (defun minaduki-db::file-update-timer::mark-dirty ()
   "Mark the database as dirty for timer-based updating."
@@ -701,6 +702,8 @@ If the file exists, update the cache with information."
       (let ((files-table (make-hash-table :test #'equal)))
         (puthash file-path content-hash files-table)
         (minaduki-db::update-files files-table))
+      (when (member file-path (minaduki-lit:bibliography))
+        (minaduki-db--export-lit-entries))
       (minaduki::message "Updated: %s" file-path))))
 (defun minaduki-db::update-files (files-table &optional rebuild)
   "Update cache for files in FILES-TABLE.
@@ -801,6 +804,51 @@ Returns a `minaduki-db::count' object."
        (minaduki-db::file-update-timer::mark-dirty))
       (_
        (user-error "Invalid `minaduki-db/update-method'")))))
+
+(defun minaduki-db--export-lit-entries (&optional path)
+  "Export literature entries from the database to a biblatex file at PATH.
+PATH defaults to `minaduki-lit-bibtex-path'."
+  (with-temp-file (or path minaduki-lit-bibtex-path)
+    (pcase-dolist (`(,key ,json) (minaduki-db-select "select key, props from keys"))
+      (cl-block continue
+        (when (string-match-p "https?://" key)
+          (cl-return-from continue))
+        (let* ((parsed (json-parse-string json))
+               (type (map-elt parsed "type"))
+               (keywords nil))
+          (when (or (not type)
+                    (member type '("file")))
+            (cl-return-from continue))
+          (->> parsed
+               (map-do
+                (lambda (k v)
+                  (when (member k '("tags" "keywords"))
+                    (cond
+                     ((stringp v)
+                      (push v keywords))
+                     ((seqp v)
+                      (seq-do (lambda (elem) (push elem keywords))
+                              v)))))))
+          (insert
+           (format "@%s{%s,\n%s\n}\n"
+                   type
+                   key
+                   (string-join
+                    (->> parsed
+                         (map-apply
+                          (lambda (k v)
+                            (cond ((member k '("type" "key" "sources"
+                                               "id" "link" "where" "todo" "physical"))
+                                   nil)
+                                  ((member k '("tags" "keywords"))
+                                   (when keywords
+                                     (prog1 (format "  keywords={%s}"
+                                                    (string-join keywords ","))
+                                       (setq keywords nil))))
+                                  (t
+                                   (format "  %s={%s}" k v)))))
+                         (remove nil))
+                    ",\n"))))))))
 
 (provide 'minaduki-db)
 
