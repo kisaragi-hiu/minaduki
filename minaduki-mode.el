@@ -20,7 +20,6 @@
 
 (require 'minaduki-wikilink)
 
-(declare-function org-cite-basic--complete-style "oc-basic")
 ;; The minor mode is defined at the end, after functions used it. So declare it
 ;; here.
 (defvar minaduki-local-mode)
@@ -448,13 +447,6 @@ See `minaduki-local-mode' for more information on Minaduki-Local mode."
     (minaduki::warn :error "SQLite support not found in this Emacs. Minaduki requires the builtin SQLite support found in Emacs 29 and higher."))
   (if minaduki-mode
       (progn
-        (org-cite-register-processor 'minaduki
-          :follow #'minaduki-cite//follow
-          :insert (org-cite-make-insert-processor
-                   #'minaduki-read:lit-entry
-                   #'org-cite-basic--complete-style))
-        (setq org-cite-follow-processor 'minaduki
-              org-cite-insert-processor 'minaduki)
         (when (and (not minaduki-db::file-update-timer)
                    (eq minaduki-db/update-method 'idle-timer))
           (setq minaduki-db::file-update-timer (run-with-idle-timer minaduki-db/update-idle-seconds t #'minaduki-db::file-update-timer::update-cache)))
@@ -487,9 +479,6 @@ See `minaduki-local-mode' for more information on Minaduki-Local mode."
             (minaduki-initialize))))
     ;; Vault list save/load
     (minaduki-vaults-save-load-mode -1)
-    (org-cite-unregister-processor 'minaduki)
-    (setq org-cite-follow-processor 'basic
-          org-cite-insert-processor 'basic)
     (remove-hook 'after-change-major-mode-hook 'minaduki-initialize)
     (remove-hook 'find-file-hook 'minaduki-initialize)
     (remove-hook 'org-open-at-point-functions #'minaduki/open-id-at-point)
