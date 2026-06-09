@@ -107,7 +107,7 @@ OTHERS: other key -> value pairs."
 
 ;;;; Bibliography
 
-(cl-defun minaduki-lit::generate-key-from (&rest context)
+(cl-defun minaduki-lit--generate-key-from (&rest context)
   "Generate a key from CONTEXT.
 
 CONTEXT keys:
@@ -123,7 +123,7 @@ CONTEXT keys:
                                ("?" . "")))
               downcase))
            (title (-some-> title
-                    minaduki::to-slug))
+                    minaduki--to-slug))
            (date
             (-some->> date
               (s-replace "--" "–")
@@ -269,7 +269,7 @@ like `minaduki-lit/entry' objects."
          ;; Get all non-special properties plus ITEM and TODO.
          ;; That function is like org-entry-properties but more efficient
          ;; because I avoid computing what I don't need in the first place
-         (let ((props (minaduki::org-entry-properties))
+         (let ((props (minaduki--org-entry-properties))
                url-as-key)
            (dolist (pair props)
              (setcar pair (downcase (car pair))))
@@ -335,22 +335,22 @@ POINT is where the entry is in the file. PROPS is a
                        (let-alist entry
                          (cons start-position
                                (minaduki-lit/entry
-                                :author (minaduki::remove-curly .author)
+                                :author (minaduki--remove-curly .author)
                                 :type .=type=
                                 :key .=key=
-                                :title (minaduki::remove-curly .title)
+                                :title (minaduki--remove-curly .title)
                                 :tags
                                 (-some->> .keywords
-                                  minaduki::remove-curly
+                                  minaduki--remove-curly
                                   (s-split ",")
                                   (-map #'s-trim))
                                 :sources (-non-nil
-                                          (mapcar #'minaduki::remove-curly
+                                          (mapcar #'minaduki--remove-curly
                                                   (list .link .url)))
                                 :others
                                 (cl-loop for (k . v) in entry
                                          unless (member k '(author =type= =key= title keywords url link))
-                                         collect (cons k (minaduki::remove-curly v))))))))))
+                                         collect (cons k (minaduki--remove-curly v))))))))))
 
 (defun minaduki-lit/csl-json/process-author (value)
   "Convert CSL-JSON's author VALUE to our format."

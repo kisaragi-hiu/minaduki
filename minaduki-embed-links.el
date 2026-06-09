@@ -72,7 +72,7 @@ If SYNC is non-nil, do this synchronously."
                              (let ((inhibit-read-only t))
                                (delete-region start end)
                                (insert
-                                (minaduki::format-plain-link
+                                (minaduki--format-plain-link
                                  :target url
                                  :desc title))
                                (unless sync

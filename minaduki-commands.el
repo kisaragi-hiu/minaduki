@@ -92,14 +92,14 @@ Usage:
 4. Run this command."
   (interactive "r")
   (let-alist (minaduki--cut-commit-metadata beg end)
-    (minaduki::set-file-prop "commit" .commit-id)
+    (minaduki--set-file-prop "commit" .commit-id)
     (minaduki--set-created-prop .created-time .created-zone)))
 
 (defun minaduki-org//id-new-advice (&rest _args)
   "Update the database if a new Org ID is created."
   (when (and (minaduki-vault-in-vault?)
              (not (eq minaduki-db/update-method 'immediate)))
-    (minaduki-db::incremental-update)))
+    (minaduki-db--incremental-update)))
 
 (defun minaduki-org//move-to-row-col (s)
   "Move to row:col if S match the row:col syntax.
@@ -133,9 +133,9 @@ what they want to do with it."
 (defun minaduki-org-set-startup ()
   "Set the STARTUP option for the current buffer."
   (interactive)
-  (minaduki::set-file-prop
+  (minaduki--set-file-prop
    "startup"
-   (minaduki::completing-read-annotation
+   (minaduki--completing-read-annotation
     "Startup option: "
     `(("overview" . "fold everything")
       ("nofold" . "show all")
@@ -197,18 +197,18 @@ overwriting the existing one if necessary."
   (interactive
    (when current-prefix-arg
      (list (read-string "New ID: "))))
-  (when (and new-id (minaduki-db::has-id? new-id))
+  (when (and new-id (minaduki-db--has-id? new-id))
     (error "ID `%s' already exists in the database" new-id))
   (if new-id
-      (minaduki::set-heading-id new-id)
-    (or (minaduki::get-heading-id)
-        (minaduki::set-heading-id (org-id-new)))))
+      (minaduki--set-heading-id new-id)
+    (or (minaduki--get-heading-id)
+        (minaduki--set-heading-id (org-id-new)))))
 
 (defun minaduki-insert-link (target &optional label)
   "Insert a link to TARGET with LABEL.
 This dispatches based on the current file type."
   (insert
-   (minaduki::format-link :target target :desc label)))
+   (minaduki--format-link :target target :desc label)))
 
 (defun minaduki-insert-file-link (path)
   "Insert a link to PATH."
@@ -260,7 +260,7 @@ REPLACE-REGION?: whether to replace selected text."
                    :under-path (minaduki-vault-closest))))
     (setq title (oref entry title)
           id (oref entry id)
-          path (minaduki::ensure-not-file://
+          path (minaduki--ensure-not-file://
                 (oref entry path)))
     (when (and replace-region? (region-active-p))
       (delete-active-region))
@@ -272,7 +272,7 @@ REPLACE-REGION?: whether to replace selected text."
     ;; This also allows inserting references to existing notes whose
     ;; title happens to be a URL without issue.
     (when (and (oref entry new?)
-               (not (minaduki::url? path))
+               (not (minaduki--url? path))
                (not (f-exists? path)))
       (setq path
             ;; FIXME: support creating notes in the current vault, not just in
@@ -283,10 +283,10 @@ REPLACE-REGION?: whether to replace selected text."
             (minaduki/new-concept-note
              :title title
              :visit? nil))
-      (minaduki::message "Created new note \"%s\"" title))
+      (minaduki--message "Created new note \"%s\"" title))
     (when lowercase?
       (setq desc (downcase desc)))
-    (insert (minaduki::format-link
+    (insert (minaduki--format-link
              :target (or id path)
              :desc desc
              :type (cond (id 'id)
@@ -295,7 +295,7 @@ REPLACE-REGION?: whether to replace selected text."
 (defun minaduki:move-file-to-directory ()
   "Move the current file to a new directory."
   (interactive)
-  (-when-let* ((file (minaduki::current-file-name))
+  (-when-let* ((file (minaduki--current-file-name))
                (vault (minaduki-vault-closest)))
     (let* ((newdir (read-directory-name
                     "Move current file to directory: "
@@ -322,7 +322,7 @@ REPLACE-REGION?: whether to replace selected text."
                                (minaduki-extract//headings)))
     (let (selection
           selected-heading)
-      (minaduki::with-comp-setup
+      (minaduki--with-comp-setup
           ((ivy-sort-functions-alist . nil)
            (ivy-sort-matches-functions-alist . nil))
         (setq selection (completing-read
@@ -347,7 +347,7 @@ REPLACE-REGION?: whether to replace selected text."
          :replace-region? t
          :entry (minaduki-node
                  :id id
-                 :title (minaduki::remove-org-links
+                 :title (minaduki--remove-org-links
                          (minaduki-id-title selected-heading))))))))
 
 ;;;###autoload
@@ -373,7 +373,7 @@ REPLACE-REGION?: whether to replace selected text."
              (beginning-of-line))))
        (insert "#+alias: " alias)))
     (when (minaduki-vault-in-vault?)
-      (minaduki-db::insert-meta 'update))
+      (minaduki-db--insert-meta 'update))
     alias))
 
 ;;;###autoload
@@ -389,23 +389,23 @@ REPLACE-REGION?: whether to replace selected text."
              (delete-region (line-beginning-position)
                             (1+ (line-end-position))))))
         (when (minaduki-vault-in-vault?)
-          (minaduki-db::insert-meta 'update)))
+          (minaduki-db--insert-meta 'update)))
     (user-error "No aliases to delete")))
 
 ;;;###autoload
 (defun minaduki-add-tag ()
   "Add a tag."
   (interactive)
-  (let* ((all-tags (minaduki-db::fetch-all-tags))
+  (let* ((all-tags (minaduki-db--fetch-all-tags))
          (tag (completing-read "Tag: " all-tags))
          (existing-tags (minaduki-extract//tags/org-prop)))
     (when (string-empty-p tag)
       (user-error "Tag can't be empty"))
-    (minaduki::set-file-prop
+    (minaduki--set-file-prop
      "tags[]"
      (combine-and-quote-strings (seq-uniq (cons tag existing-tags))))
     (when (minaduki-vault-in-vault?)
-      (minaduki-db::insert-meta 'update))
+      (minaduki-db--insert-meta 'update))
     tag))
 
 ;;;###autoload
@@ -414,11 +414,11 @@ REPLACE-REGION?: whether to replace selected text."
   (interactive)
   (if-let* ((tags (minaduki-extract//tags/org-prop)))
       (let ((tag (completing-read "Tag: " tags nil 'require-match)))
-        (minaduki::set-file-prop
+        (minaduki--set-file-prop
          "tags[]"
          (combine-and-quote-strings (delete tag tags)))
         (when (minaduki-vault-in-vault?)
-          (minaduki-db::insert-meta 'update)))
+          (minaduki-db--insert-meta 'update)))
     (user-error "No tag to delete")))
 
 ;;;; Global commands
@@ -445,9 +445,9 @@ REPLACE-REGION?: whether to replace selected text."
        for f in all-files
        do
        (cl-incf i)
-       (minaduki::message "(%s/%s) Looking for broken links in %s"
+       (minaduki--message "(%s/%s) Looking for broken links in %s"
                           i length f)
-       (minaduki::with-temp-buffer f
+       (minaduki--with-temp-buffer f
          (save-excursion
            (goto-char (point-min))
            (let ((ast (org-element-parse-buffer)))
@@ -491,7 +491,7 @@ REPLACE-REGION?: whether to replace selected text."
               "[ ]" nil
               'face 'button
               'follow-link t
-              'action (minaduki::lambda-self (&rest _)
+              'action (minaduki--lambda-self (&rest _)
                         (let ((inhibit-read-only t)
                               (bounds
                                (unless (member (char-after) '(?\[ ?\s ?\]))
@@ -517,7 +517,7 @@ REPLACE-REGION?: whether to replace selected text."
                                   (?\[ (cons (point) (+ (point) 2)))
                                   (?\s (cons (1- (point)) (1+ (point))))
                                   (?\] (cons (- (point) 2) (point)))))
-                          (minaduki::set-buffer-substring
+                          (minaduki--set-buffer-substring
                               (car bounds) (1+ (cdr bounds))
                             (make-text-button
                              (if enabled "[X]" "[ ]") nil
@@ -530,7 +530,7 @@ REPLACE-REGION?: whether to replace selected text."
            ;; would open the same file.
            (let ((file file))
              (make-text-button
-              (format "%s::C%s"
+              (format "%s--C%s"
                       (if (f-descendant-of? file (minaduki-vault-main))
                           (f-relative file (minaduki-vault-main))
                         file)
@@ -568,7 +568,7 @@ If VISIT? is non-nil (default), go to the newly created note."
    (list :title (read-string "Title: ")
          :visit? t))
   (let* ((title (or title (read-string "Title: ")))
-         (file (--> (minaduki::to-slug title)
+         (file (--> (minaduki--to-slug title)
                     (f-join (minaduki-vault-main)
                             (or dir "")
                             it)
@@ -589,7 +589,7 @@ If VISIT? is non-nil (default), go to the newly created note."
 (cl-defun minaduki/diary-next (&optional (n 1))
   "Go to the Nth next diary entry."
   (interactive "p")
-  (let* ((current-file (minaduki::current-file-name))
+  (let* ((current-file (minaduki--current-file-name))
          (siblings (directory-files (f-dirname current-file))))
     (--> (cl-position (f-filename current-file)
                       siblings
@@ -619,7 +619,7 @@ entry for."
   (interactive
    (list (and current-prefix-arg
               (minaduki//read-date "Create diary entry for day: "))))
-  (let* ((day (or day (minaduki::today)))
+  (let* ((day (or day (minaduki--today)))
          (actual-now (current-time))
          (moment (pcase-let ((`(,y ,m ,d)
                               (mapcar
@@ -697,11 +697,11 @@ are named with a YYYYMMDD prefix (optionally with dashes)."
          ;; to fall back to the next case. `cond' doesn't do that.
          (or (and (derived-mode-p 'calendar-mode)
                   (-some-> (calendar-cursor-to-date)
-                    minaduki-date::calendar.el->ymd))
+                    minaduki-date--calendar.el->ymd))
 
-             (and (or current-prefix-arg minaduki-btn::pressed (not noprompt))
+             (and (or current-prefix-arg minaduki-btn--pressed (not noprompt))
                   (minaduki//read-date "Visit diary entry from day:"))
-             (minaduki::today nil t))))
+             (minaduki--today nil t))))
     (if-let ((file (minaduki//find-entry-for-day day)))
         (find-file file)
       (and (y-or-n-p (format "No entry from %s. Create one? " day))
@@ -719,7 +719,7 @@ yesterday instead."
   (interactive "P")
   (let ((day (or (and (not ignore-current-file)
                       (minaduki--file-date))
-                 (minaduki::today -1))))
+                 (minaduki--today -1))))
     (if-let ((file (minaduki//find-entry-for-day day)))
         (find-file file)
       (and (y-or-n-p (format "No entry from %s. Create one? " day))
@@ -763,7 +763,7 @@ The index file is specified in this order:
                  (f-expand minaduki:index-file
                            (minaduki-vault-main)))
                 (t
-                 (car (minaduki-db::fetch-file :title "Index"))))))
+                 (car (minaduki-db--fetch-file :title "Index"))))))
     (if (and index (f-exists? index))
         (find-file index)
       (when (y-or-n-p "Index file does not exist.  Would you like to create it? ")
@@ -789,7 +789,7 @@ one."
   (when (stringp entry)
     (setq entry
           (minaduki-node
-           :path (car (minaduki-db::fetch-file :title entry))
+           :path (car (minaduki-db--fetch-file :title entry))
            :title entry)))
   (let ((path (oref entry path))
         (title (oref entry title)))
@@ -809,7 +809,7 @@ This assumes ID is present in the cache database.
 
 If OTHER? is non-nil, open it in another window, otherwise in the
 current window."
-  (-when-let (id (minaduki-db::fetch-id id))
+  (-when-let (id (minaduki-db--fetch-id id))
     (find-file (minaduki-id-file id))
     (goto-char (minaduki-id-point id))))
 
@@ -838,9 +838,9 @@ This function hooks into `org-open-at-point' via
   "Create a new note for CITEKEY based on the \"lit\" template."
   (cl-block nil
     (let ((title nil)
-          (props (or (-some-> (minaduki-db::fetch-lit-entry citekey)
+          (props (or (-some-> (minaduki-db--fetch-lit-entry citekey)
                        minaduki-lit-entry-props)
-                     (minaduki::warn :warning
+                     (minaduki--warn :warning
                        "Could not find the literature entry %s" citekey)
                      (make-hash-table :test #'equal))))
       (when-let (key (gethash "key" props))
@@ -851,14 +851,14 @@ This function hooks into `org-open-at-point' via
         (remhash "type" props))
       (setq props (map-into props 'alist))
       (setq title (or (cdr (assoc "title" props))
-                      (minaduki::warn :warning "Title not found for this entry")
+                      (minaduki--warn :warning "Title not found for this entry")
                       ;; this is not critical, the user may input their own
                       ;; title
                       "Title not found"))
       (unless title
         (cl-return
-         (minaduki::warn :warning "Something went wrong while creating a new literature note")))
-      (let ((slug (minaduki::to-slug
+         (minaduki--warn :warning "Something went wrong while creating a new literature note")))
+      (let ((slug (minaduki--to-slug
                    (pcase minaduki-lit:slug-source
                      (`citekey citekey)
                      (`title title)
@@ -901,7 +901,7 @@ the following arguments:
 - %:title: title of the entry
 - %:ref: the CITEKEY
 - %:now: (common to all templates) the current moment."
-  (let* ((file (minaduki-db::fetch-file :key citekey)))
+  (let* ((file (minaduki-db--fetch-file :key citekey)))
     ;; If a corresponding file exists (both in cache and on file system), then
     ;; just visit it
     ;; (A file may exist in the db but not on file system if it was later deleted.)
@@ -912,9 +912,9 @@ the following arguments:
 
 (defun minaduki-insert-citation (citekey)
   "Insert a citation to CITEKEY."
-  (minaduki::file-type-case
+  (minaduki--file-type-case
     (:org
-     (let ((minaduki-read:lit-entry::citekey citekey))
+     (let ((minaduki-read:lit-entry--citekey citekey))
        (org-cite-insert nil)))
     (_ (insert "@" citekey))))
 
@@ -928,9 +928,9 @@ CITEKEY is a list whose car is a citation key."
 
 (defun minaduki:visit-citekey-source (citekey)
   "Visit the source (URL, file path, DOI...) of CITEKEY."
-  (let ((entry (minaduki-db::fetch-lit-entry citekey))
+  (let ((entry (minaduki-db--fetch-lit-entry citekey))
         sources)
-    (setq sources (minaduki::resolve-org-links
+    (setq sources (minaduki--resolve-org-links
                    (gethash "sources" (minaduki-lit-entry-props entry))))
     (setq minaduki-lit//cache nil)
     (cl-case (length sources)
@@ -941,14 +941,14 @@ CITEKEY is a list whose car is a citation key."
 
 (defun minaduki:citekey-show-entry (citekey)
   "Go to where CITEKEY is defined."
-  (let ((entry (minaduki-db::fetch-lit-entry citekey)))
+  (let ((entry (minaduki-db--fetch-lit-entry citekey)))
     (find-file (minaduki-lit-entry-file entry))
     (goto-char (minaduki-lit-entry-point entry))))
 
 (defun minaduki-insert-note-to-citekey (citekey)
   "Insert a link to the note associated with CITEKEY."
-  (-if-let* ((path (minaduki-db::fetch-file :key citekey))
-             (title (minaduki-db::fetch-title path)))
+  (-if-let* ((path (minaduki-db--fetch-file :key citekey))
+             (title (minaduki-db--fetch-title path)))
       ;; A corresponding note already exists. Insert a link to it.
       (minaduki-insert :entry (minaduki-node :path path :title title))
     ;; There is no corresponding note. Barf about it for now. Ideally
@@ -963,9 +963,9 @@ CITEKEY is a list whose car is a citation key."
 ;; Literature entries are like entries in a .bib file.
 ;; TODO: a generic function for creating a new entry (title, author, date)
 
-(defun minaduki-lit::literature-key-at-point ()
+(defun minaduki-lit--literature-key-at-point ()
   "Return the key of the literature entry at point."
-  (minaduki::file-type-case
+  (minaduki--file-type-case
     (:org
      (let ((value (org-entry-get nil minaduki-lit/key-prop t)))
        (when (and value
@@ -986,9 +986,9 @@ CITEKEY is a list whose car is a citation key."
 (defun minaduki-lit:fill-entry-info ()
   "Fill in information for the current heading, turning it into a literature entry."
   (interactive)
-  (let ((key (minaduki-lit::literature-key-at-point)))
+  (let ((key (minaduki-lit--literature-key-at-point)))
     (unless key
-      (minaduki::file-type-case
+      (minaduki--file-type-case
         (:org
          (dolist (prop '("url" "author" "date"))
            (let ((value (pcase prop
@@ -998,7 +998,7 @@ CITEKEY is a list whose car is a citation key."
                          (string= value ""))
                (org-entry-put nil prop value))))
          (setq key
-               (minaduki-lit::generate-key-from
+               (minaduki-lit--generate-key-from
                 ;; :title (org-entry-get nil "ITEM")
                 :author (org-entry-get nil "author")
                 :date (or (org-entry-get nil "date")
@@ -1012,12 +1012,12 @@ CITEKEY is a list whose car is a citation key."
 
 Return the key."
   (interactive)
-  (let ((key (minaduki-lit::literature-key-at-point)))
+  (let ((key (minaduki-lit--literature-key-at-point)))
     (unless key
-      (minaduki::file-type-case
+      (minaduki--file-type-case
         (:org
          (setq key
-               (minaduki-lit::generate-key-from
+               (minaduki-lit--generate-key-from
                 ;; :title (org-entry-get nil "ITEM")
                 :author (org-entry-get nil "author")
                 :date (or (org-entry-get nil "date")
@@ -1057,7 +1057,7 @@ This first adds an entry for it into a file in
                  (read-string "Create new literature entry for URL: ")))))
     ;; Use find-file to ensure we save into it
     (find-file target-biblio)
-    (minaduki::file-type-case
+    (minaduki--file-type-case
       (:org
        ;; Go to just before the first heading
        (goto-char (point-min))
@@ -1107,7 +1107,7 @@ This first adds an entry for it into a file in
              (unless (or (null value)
                          (string= value ""))
                (setq info (plist-put info prop value)))))
-         (setq info (plist-put info :citekey (minaduki-lit::generate-key-from
+         (setq info (plist-put info :citekey (minaduki-lit--generate-key-from
                                               :author (plist-get info :author)
                                               :date (plist-get info :date))))
          (replace-region-contents
@@ -1140,9 +1140,9 @@ This first adds an entry for it into a file in
   (interactive)
   (let* ((prefix-arg current-prefix-arg))
     (command-execute
-     (minaduki::completing-read-annotation
+     (minaduki--completing-read-annotation
       "Minaduki Global Command: "
-      minaduki::global-commands
+      minaduki--global-commands
       t))))
 
 ;;;###autoload
@@ -1153,12 +1153,12 @@ CITEKEY defaults to the entry at point. If there is no entry at
 point, the KEY specified by the buffer is used. If there are
 multiple keys, the user is asked to select one.
 
-Actions are defined in `minaduki::local-commands'. If CITEKEY is
+Actions are defined in `minaduki--local-commands'. If CITEKEY is
 given or can be retrieved, actions from
-`minaduki::local-commands::lit' are also used."
+`minaduki--local-commands--lit' are also used."
   (interactive)
   (let* ((citekey (or citekey
-                      (minaduki-lit::literature-key-at-point)
+                      (minaduki-lit--literature-key-at-point)
                       (let ((keys (minaduki-extract/refs)))
                         (if (= 1 (length keys))
                             (cdar keys)
@@ -1170,15 +1170,15 @@ given or can be retrieved, actions from
          (candidates (-sort
                       (-on #'string< #'car)
                       (append
-                       minaduki::local-commands
+                       minaduki--local-commands
                        (when citekey
-                         minaduki::local-commands::lit)
+                         minaduki--local-commands--lit)
                        (when (member (buffer-file-name)
                                      (minaduki-lit:bibliography))
-                         minaduki::local-commands::biblio)
+                         minaduki--local-commands--biblio)
                        (when (derived-mode-p 'org-mode)
-                         minaduki::local-commands::org))))
-         (func (minaduki::completing-read-annotation
+                         minaduki--local-commands--org))))
+         (func (minaduki--completing-read-annotation
                 prompt candidates t)))
     (if (/= 1 (car (func-arity func)))
         (funcall func)

@@ -383,7 +383,7 @@ Supported values are symbols `citekey' and `title'.
 A special variable `%:slug` in the \"literature\" template is
 used as a placeholder for an automatically generated string which
 is meant to be used in filenames. This can be based on the
-citekey or the title. `minaduki::to-slug' is used to create
+citekey or the title. `minaduki--to-slug' is used to create
 the slug."
   :type '(choice
           (const citekey)
@@ -392,15 +392,15 @@ the slug."
 
 ;;;; Internal Variables
 
-(defvar-local minaduki::file-name nil
+(defvar-local minaduki--file-name nil
   "The corresponding file for a temp buffer.
-This is set by `minaduki::with-temp-buffer', to allow throwing of
+This is set by `minaduki--with-temp-buffer', to allow throwing of
 descriptive warnings when certain operations fail (e.g. parsing).")
 
-(defvar minaduki::last-window nil
+(defvar minaduki--last-window nil
   "Last window `org-roam' was called from.")
 
-(defvar minaduki::org-link-bracket-typed-re
+(defvar minaduki--org-link-bracket-typed-re
   (rx (seq "[["
            (group (+? anything))
            ":"
@@ -414,7 +414,7 @@ descriptive warnings when certain operations fail (e.g. parsing).")
            "]"))
   "Matches a typed link in double brackets.")
 
-(defvar minaduki::global-commands
+(defvar minaduki--global-commands
   '(("Open or create a note"              . minaduki-open)
     ("Browse literature entries"          . minaduki/literature-entries)
     ("Open the notes directory"           . minaduki/open-directory)
@@ -432,7 +432,7 @@ descriptive warnings when certain operations fail (e.g. parsing).")
 
 List of (DISPLAY-NAME . COMMAND) pairs.")
 
-(defvar minaduki::local-commands
+(defvar minaduki--local-commands
   '(("Create ID for current heading" . minaduki:id-get-create)
     ("Move file to..."               . minaduki:move-file-to-directory)
     ("Insert a button"               . minaduki-btn:insert)
@@ -445,11 +445,11 @@ List of (DISPLAY-NAME . COMMAND) pairs.")
     ("Delete a tag"                  . minaduki-delete-tag))
   "Local commands that act on the current file or heading.")
 
-(defvar minaduki::local-commands::org
+(defvar minaduki--local-commands--org
   '()
   "Local commands that are specific to Org Mode.")
 
-(defvar minaduki::local-commands::lit
+(defvar minaduki--local-commands--lit
   '(("Open URL, DOI, or PDF" . minaduki:visit-citekey-source)
     ("Show entry in the bibliography file" . minaduki:citekey-show-entry)
     ("Edit notes" . minaduki/edit-citekey-notes)
@@ -463,14 +463,14 @@ one argument, the citekey.
 
 Equivalent to `orb-note-actions-default'.")
 
-(defvar minaduki::local-commands::biblio
+(defvar minaduki--local-commands--biblio
   '(("Create bibliography ID for current heading" . minaduki-lit:literature-key-get-create)
     ("Fill in information and turn current heading into a literature entry"
      .
      minaduki-lit:fill-entry-info))
   "Local commands in bibliography files.")
 
-(defconst minaduki-wikilink::type "minaduki"
+(defconst minaduki-wikilink--type "minaduki"
   "The link type for Minaduki Org wikilinks.
 
 The \"minaduki\" in an Org wikilink like \"[[minaduki:title here]]\".")

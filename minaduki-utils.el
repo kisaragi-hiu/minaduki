@@ -28,38 +28,38 @@
 
 (defvar markdown-mode-hook)
 
-(defun minaduki::object-to-vector (obj)
+(defun minaduki--object-to-vector (obj)
   "Turn OBJ into a vector to make it easier to insert into the database."
   (let* ((len (1- (length obj)))
          (v (make-vector len nil)))
     (dotimes (i len)
       (aset v i (aref obj (1+ i))))
     v))
-(defun minaduki::vector-to-object (vec type)
+(defun minaduki--vector-to-object (vec type)
   "Turn VEC into an object of TYPE.
 
 This does zero type checks, and it is up to the user to make sure
 #s(TYPE (elt VEC 0) (elt VEC 1) ...) is valid for TYPE."
   (apply #'record type (append vec nil)))
 
-(defun minaduki::current-file-name (&optional fallback buffer)
+(defun minaduki--current-file-name (&optional fallback buffer)
   "Return current file name of BUFFER in a consistent way.
 
-Takes care of using `minaduki::file-name' for temp buffers as well as
+Takes care of using `minaduki--file-name' for temp buffers as well as
 using the base buffer of indirect buffers.
 
 BUFFER defaults to the current buffer.
 
 FALLBACK should be a one element list containing the file name
-to use instead of `minaduki::file-name'. This allows easily
+to use instead of `minaduki--file-name'. This allows easily
 distinguishing between a caller that does not want to use
-`minaduki::file-name' and a caller that does."
+`minaduki--file-name' and a caller that does."
   (or (if fallback
           (car fallback)
-        minaduki::file-name)
+        minaduki--file-name)
       (buffer-file-name (buffer-base-buffer buffer))))
 
-(defun minaduki::file-type::path (path)
+(defun minaduki--file-type--path (path)
   "Determine the file type from PATH only*.
 
 *: and `minaduki-file-extension-type-alist'."
@@ -68,11 +68,11 @@ distinguishing between a caller that does not want to use
    (pure nil)
    ;; only sends output through return value
    (side-effect-free t))
-  (let* ((ext (minaduki::file-name-extension path))
+  (let* ((ext (minaduki--file-name-extension path))
          (pair (assoc ext minaduki-file-extension-type-alist)))
     (cond (pair (cdr pair))
           (t    nil))))
-(defun minaduki::file-type ()
+(defun minaduki--file-type ()
   "Return the file type of current buffer."
   (let ((case-fold-search t))
     (cond ((derived-mode-p 'org-mode) 'org)
@@ -80,11 +80,11 @@ distinguishing between a caller that does not want to use
           ((derived-mode-p 'bibtex-mode) 'bibtex)
           ((derived-mode-p 'json-mode) 'json)
           ((buffer-file-name)
-           (minaduki::file-type::path
+           (minaduki--file-type--path
             (buffer-file-name))))))
 
-(defmacro minaduki::file-type-case (&rest clauses)
-  "Run bodies in CLAUSES conditionally depending on `minaduki::file-type'.
+(defmacro minaduki--file-type-case (&rest clauses)
+  "Run bodies in CLAUSES conditionally depending on `minaduki--file-type'.
 Each clause looks like (FILE-TYPE BODY...).
 
 This is roughly modeled after `cl-typecase', though each clause
@@ -94,21 +94,21 @@ strings."
   (cl-with-gensyms (type-sym)
     (let ((conditions))
       (--each clauses
-        (push `(,(minaduki::keyword-to-symbol (car it))
+        (push `(,(minaduki--keyword-to-symbol (car it))
                 ,@(cdr it))
               conditions))
       (setq conditions (nreverse conditions))
       ;; expand to just nil if no condition is specified
       (when conditions
-        `(let ((,type-sym (minaduki::file-type)))
+        `(let ((,type-sym (minaduki--file-type)))
            (cl-case ,type-sym ,@conditions))))))
 
-(defmacro minaduki::with-comp-setup (defaults &rest body)
+(defmacro minaduki--with-comp-setup (defaults &rest body)
   "Run BODY with completion frameworks set up according to DEFAULTS.
 
 Example:
 
-  (minaduki::with-comp-setup
+  (minaduki--with-comp-setup
       ((ivy-sort-functions-alist . nil)
        (ivy-sort-matches-functions-alist . #\\='ivy--shorter-matches-first))
     BODY)
@@ -132,12 +132,12 @@ collection, and to sort matches with `ivy--shorter-matches-first'."
        ,@body)))
 
 ;;;; Error and progress reporting
-(defun minaduki::message (format-string &rest args)
+(defun minaduki--message (format-string &rest args)
   "Pass FORMAT-STRING and ARGS to `message' when `minaduki-verbose' is t."
   (when minaduki-verbose
     (apply #'message `(,(concat "(minaduki) " format-string) ,@args))))
 
-(defun minaduki::keyword-to-symbol (kw)
+(defun minaduki--keyword-to-symbol (kw)
   "Given keyword :KW, return \\='KW.
 
 Return KW unchanged if it\\='s not a keyword."
@@ -145,7 +145,7 @@ Return KW unchanged if it\\='s not a keyword."
       kw
     (intern (substring (symbol-name kw) 1))))
 
-(defun minaduki::warn (level msg &rest args)
+(defun minaduki--warn (level msg &rest args)
   "Display a warning for minaduki at LEVEL.
 
 MSG and ARGS are formatted by `format-message'.
@@ -170,7 +170,7 @@ Difference between this and `lwarn':
                     (map-apply
                      (lambda (k v)
                        (format "\t«k:%s»: %S"
-                               (minaduki::keyword-to-symbol k)
+                               (minaduki--keyword-to-symbol k)
                                v)))
                     (s-join "\n")))
               ;; For everything else, turn them into strings in a reasonable way
@@ -179,15 +179,15 @@ Difference between this and `lwarn':
               (t (format "%s" it))))
             args))))
 
-(defmacro minaduki::loading (str &rest body)
+(defmacro minaduki--loading (str &rest body)
   "Show STR, run BODY, then show STR + \"done\"."
   (declare (indent 1))
   `(progn
-     (minaduki::message "%s" ,str)
+     (minaduki--message "%s" ,str)
      ,@body
-     (minaduki::message "%sdone" ,str)))
+     (minaduki--message "%sdone" ,str)))
 
-(defmacro minaduki::for (message var sequence &rest body)
+(defmacro minaduki--for (message var sequence &rest body)
   "Iterate BODY over SEQUENCE.
 
 VAR is the variable bound for each element in SEQUENCE. This is
@@ -205,7 +205,7 @@ extra arguments are passed to the message."
             with length = (length ,sequence)
             do
             (progn
-              (minaduki::message
+              (minaduki--message
                ,(if (stringp message)
                     message
                   (car message))
@@ -217,7 +217,7 @@ extra arguments are passed to the message."
               (let ((inhibit-message t))
                 ,@body))))
 
-(defun minaduki::truncate (len str)
+(defun minaduki--truncate (len str)
   "Truncate STR to LEN number of characters."
   ;; `citar--fit-to-width'
   (setq len (floor len))
@@ -227,23 +227,23 @@ extra arguments are passed to the message."
       (concat truncated (propertize (substring str (length truncated))
                                     'invisible t)))))
 
-(defun minaduki::ensure-display-width (pixels str)
+(defun minaduki--ensure-display-width (pixels str)
   "Ensure STR displays as PIXELS wide."
   (concat
-   (minaduki::truncate
+   (minaduki--truncate
     (floor (/ pixels (frame-char-width)))
     str)
    (propertize
     " "
     'display `(space :align-to (,pixels)))))
 
-(defun minaduki::remove-curly (str)
+(defun minaduki--remove-curly (str)
   "Remove curly braces from STR."
   (when str
     (save-match-data
       (replace-regexp-in-string "[{}]" "" str))))
 
-(defun minaduki::remove-org-links (str)
+(defun minaduki--remove-org-links (str)
   "Remove Org bracket links from STR."
   (let ((links (s-match-strings-all org-link-bracket-re str)))
     (--> (cl-loop for link in links
@@ -254,7 +254,7 @@ extra arguments are passed to the message."
                     (cons orig desc)))
          (s-replace-all it str))))
 
-(defun minaduki::resolve-org-links (strings)
+(defun minaduki--resolve-org-links (strings)
   "Resolve STRINGS as a list of Org links.
 
 Each string in STRINGS might be something like \"[[file:/abc]]\";
@@ -294,7 +294,7 @@ we run `org-element-link-parser' on it and return the
                    str))))))
 
 ;;;; URL
-(defun minaduki::url? (path)
+(defun minaduki--url? (path)
   "Check if PATH is a URL.
 
 Works even if the protocol is not present in PATH, for example
@@ -303,7 +303,7 @@ when URL `https://google.com' is passed as `//google.com'."
       (s-prefix? "http://" path)
       (s-prefix? "https://" path)))
 
-(defun minaduki::apply-link-abbrev (path &optional alist no-truename)
+(defun minaduki--apply-link-abbrev (path &optional alist no-truename)
   "Apply `org-link-abbrev-alist' to PATH.
 
 If ALIST is given, use it instead of `org-link-abbrev-alist'.
@@ -339,11 +339,11 @@ Inverse of `org-link-expand-abbrev'."
           (throw 'ret (s-replace abbrev (concat key ":") path)))))
     (throw 'ret path)))
 
-(cl-defun minaduki::format-plain-link (&key target desc)
+(cl-defun minaduki--format-plain-link (&key target desc)
   "Format TARGET and DESC as a link according to the major mode.
 
-Like `minaduki::format-link' but without the path magic."
-  (minaduki::file-type-case
+Like `minaduki--format-link' but without the path magic."
+  (minaduki--file-type-case
     (:org
      (org-link-make-string target desc))
     (:markdown
@@ -359,7 +359,7 @@ Like `minaduki::format-link' but without the path magic."
                     target))))
     (_ target)))
 
-(cl-defun minaduki::format-link (&key target desc type)
+(cl-defun minaduki--format-link (&key target desc type)
   "Format TARGET and DESC as a link according to the major mode.
 
 `org-link-abbrev-alist' is applied when in Org mode, unless
@@ -369,15 +369,15 @@ TYPE can be `id' or nil. When it is nil, automatically
 determine if we need a file link or a URL link.
 
 If ID? is non-nil and we're in Org mode, return an ID link instead."
-  (let ((url? (minaduki::url? target))
+  (let ((url? (minaduki--url? target))
         ;; Occasionally we get a file URL. Turn it back into a proper
         ;; path.
         (target (org-link-decode
                  (replace-regexp-in-string "^file://" "" target))))
-    (minaduki::file-type-case
+    (minaduki--file-type-case
       (:org
        (unless (or url? type)
-         (setq target (minaduki::convert-path-format target)))
+         (setq target (minaduki--convert-path-format target)))
        (when (eq type 'id)
          (setq target (concat "id:" target)))
        (if (and (not desc) url?) ; plain url
@@ -399,7 +399,7 @@ If ID? is non-nil and we're in Org mode, return an ID link instead."
                         (f-relative target))))
              (t
               (format "[%s](%s)"
-                      ;; like just like ::insert-plain-link
+                      ;; like just like --insert-plain-link
                       (org-link-escape desc)
                       (url-encode-url
                        (if url?
@@ -408,7 +408,7 @@ If ID? is non-nil and we're in Org mode, return an ID link instead."
       ;; No common way to insert descriptions
       (_ target))))
 
-(defun minaduki::to-slug (title)
+(defun minaduki--to-slug (title)
   "Convert TITLE to a filename-suitable slug."
   (let ((slug
          (--> title
@@ -428,7 +428,7 @@ If ID? is non-nil and we're in Org mode, return an ID link instead."
     (downcase slug)))
 
 ;;;; Dates
-(defun minaduki-date::ymd->calendar.el (yyyy-mm-dd)
+(defun minaduki-date--ymd->calendar.el (yyyy-mm-dd)
   "Convert date string YYYY-MM-DD to calendar.el list (MM DD YYYY)."
   (pcase-let ((`(,year ,month ,day) (cdr (s-match (rx (group (= 4 digit)) "-"
                                                       (group (= 2 digit)) "-"
@@ -439,11 +439,11 @@ If ID? is non-nil and we're in Org mode, return an ID link instead."
      (string-to-number day)
      (string-to-number year))))
 
-(defun minaduki-date::calendar.el->ymd (calendar-el-date)
+(defun minaduki-date--calendar.el->ymd (calendar-el-date)
   "Convert CALENDAR-EL-DATE (a list (MM DD YYYY)) to a date string YYYY-MM-DD."
   (apply #'format "%3$04d-%1$02d-%2$02d" calendar-el-date))
 
-(defun minaduki::today (&optional n ignore-extend)
+(defun minaduki--today (&optional n ignore-extend)
   "Return today's date, taking `org-extend-today-until' into account.
 
 If IGNORE-EXTEND is non-nil, then *don\\='t* take
@@ -472,27 +472,27 @@ means tomorrow, and N = -1 means yesterday."
   "Like `f-descendant-of?' but fast and less accurate."
   (s-prefix? (f-slash maybe-ancestor) path))
 
-(defun minaduki::ensure-not-file:// (path)
+(defun minaduki--ensure-not-file:// (path)
   "If PATH is a file:// URL, convert it back to a normal path."
   (if (s-prefix? "file://" path)
       (org-link-decode
        (replace-regexp-in-string "^file://" "" path))
     path))
 
-(defun minaduki::convert-path-format (path)
+(defun minaduki--convert-path-format (path)
   "Convert PATH to the right format according to `minaduki:link-insertion-format'."
-  (setq path (minaduki::ensure-not-file:// path))
+  (setq path (minaduki--ensure-not-file:// path))
   (pcase minaduki:link-insertion-format
     ('absolute
      (abbreviate-file-name (expand-file-name path)))
     ('absolute-in-vault
-     (minaduki::apply-link-abbrev (expand-file-name path)))
+     (minaduki--apply-link-abbrev (expand-file-name path)))
     ('relative
      ;; We can use "file:..." or "./..." here; the former is
      ;; consistent with `org-insert-link'.
      (concat "file:" (file-relative-name path)))))
 
-(defun minaduki::file-name-extension (path)
+(defun minaduki--file-name-extension (path)
   "Return the extension of PATH.
 
 Like `file-name-extension', but:
@@ -507,7 +507,7 @@ Like `file-name-extension', but:
         (setq ext (substring file (1+ (match-beginning 0))))))
     ;; This can repeat more than once. Is this a problem?
     (cond ((member ext '("gpg" "gz"))
-           (minaduki::file-name-extension (f-no-ext path)))
+           (minaduki--file-name-extension (f-no-ext path)))
           (t ext))))
 
 ;;;; File functions
@@ -555,8 +555,8 @@ If MESSAGE is a string, use it to report progress."
         (progress-reporter-done reporter)))))
 
 (defvar minaduki--content-hash-cache nil
-  "Cache for `minaduki::compute-content-hash'.")
-(defun minaduki::compute-content-hash (file &optional cached)
+  "Cache for `minaduki--compute-content-hash'.")
+(defun minaduki--compute-content-hash (file &optional cached)
   "Compute the hash of the raw bytes of FILE.
 If CACHED is non-nil, use a memoized cache. If not, clear it."
   (cl-block nil
@@ -581,7 +581,7 @@ If CACHED is non-nil, use a memoized cache. If not, clear it."
       value)))
 
 ;;;; Macros
-(defmacro minaduki::with-file (file keep-buf-p &rest body)
+(defmacro minaduki--with-file (file keep-buf-p &rest body)
   "Execute BODY within FILE.
 If FILE is nil, execute BODY in the current buffer.
 Kills the buffer if KEEP-BUF-P is nil, and FILE is not yet visited."
@@ -603,12 +603,12 @@ Kills the buffer if KEEP-BUF-P is nil, and FILE is not yet visited."
            (kill-buffer (find-buffer-visiting ,file))))
      res))
 
-(defmacro minaduki::with-temp-buffer (file &rest body)
+(defmacro minaduki--with-temp-buffer (file &rest body)
   "Execute BODY within a temp buffer.
 
 Like `with-temp-buffer', but sets some things up.
 
-If FILE, set `minaduki::file-name' and variable
+If FILE, set `minaduki--file-name' and variable
 `buffer-file-name' to FILE and insert its contents."
   (declare (indent 1) (debug t))
   (let ((current-org-directory (make-symbol "current-org-directory")))
@@ -618,7 +618,7 @@ If FILE, set `minaduki::file-name' and variable
                    (org-inhibit-startup t)
                    (after-change-major-mode-hook '(minaduki-initialize))
                    ,@(when file
-                       `((minaduki::file-name ,file)
+                       `((minaduki--file-name ,file)
                          (default-directory (file-name-directory ,file))
                          (buffer-file-name ,file)))
                    ((symbol-function 'run-mode-hooks)
@@ -632,7 +632,7 @@ If FILE, set `minaduki::file-name' and variable
            (set-auto-mode)
            ,@body)))))
 
-(defmacro minaduki::lambda-self (args &rest body)
+(defmacro minaduki--lambda-self (args &rest body)
   "Like `lambda', except a symbol `self' is bound to the function itself.
 
 ARGS and BODY are as in `lambda'."
@@ -642,7 +642,7 @@ ARGS and BODY are as in `lambda'."
      (setq self (lambda ,args ,@body))
      self))
 
-(defun minaduki::find-front-matter ()
+(defun minaduki--find-front-matter ()
   "Return start and end positions of the frontmatter, if any.
 This excludes the markers."
   (goto-char (point-min))
@@ -659,21 +659,21 @@ This excludes the markers."
             ;; excludes it.
             (- end (length "---"))))))
 
-(cl-defmacro minaduki::with-front-matter (&rest body)
+(cl-defmacro minaduki--with-front-matter (&rest body)
   "Run BODY with the buffer narrowed to the front matter, if any."
   (declare (indent 0))
   (cl-with-gensyms (start end)
     `(save-excursion
        (goto-char (point-min))
-       (-let (((,start ,end) (minaduki::find-front-matter)))
+       (-let (((,start ,end) (minaduki--find-front-matter)))
          (when (and ,start ,end)
            (save-restriction
              (narrow-to-region ,start ,end)
              ,@body))))))
 
-(defun minaduki::file-content (file)
+(defun minaduki--file-content (file)
   "Return the decoded content of FILE."
-  (minaduki::with-temp-buffer file
+  (minaduki--with-temp-buffer file
     (buffer-string)))
 
 ;;;; Org mode stuff
@@ -690,7 +690,7 @@ Cursor should be placed on the heading line."
                           0))))
     (< this-level next-level)))
 
-(defun minaduki::org-entry-properties (&optional epom)
+(defun minaduki--org-entry-properties (&optional epom)
   "Return relevant properties of the org entry at EPOM efficiently.
 
 If EPOM is nil, return properties for the entry at point.
@@ -746,7 +746,7 @@ The relevant properties are non-special properties plus ITEM and TODO."
 
 ;;;; Markdown local functions
 
-(defun minaduki::markdown-matched-heading
+(defun minaduki--markdown-matched-heading
     (&optional skip-match skip-outline-level)
   "Return (ID TEXT LEVEL) for the current heading.
 
@@ -766,7 +766,7 @@ If SKIP-OUTLINE-LEVEL is non-nil, don't calculate outline level."
 ;;;; Shared local functions
 
 ;; Alternative to `org-get-outline-path' that doesn't break
-(defun minaduki::get-outline-path ()
+(defun minaduki--get-outline-path ()
   "Return the outline path to the current entry.
 
 An outline path is a vector of ancestors for current headline, as a
@@ -800,11 +800,11 @@ Assume buffer is widened and point is on a headline."
 (defun minaduki--set-created-prop (&optional moment zone)
   "Set the `created' file prop to MOMENT as a timestamp.
 If ZONE is non-nil it's also passed to `format-time-string' along with MOMENT."
-  (minaduki::set-file-prop "created" (format-time-string "%FT%T%z" moment zone)))
+  (minaduki--set-file-prop "created" (format-time-string "%FT%T%z" moment zone)))
 
 ;; TODO: support Markdown
-;; (minaduki::set-file-prop :: (function (string string) mixed))
-(defun minaduki::set-file-prop (name value)
+;; (minaduki--set-file-prop :: (function (string string) mixed))
+(defun minaduki--set-file-prop (name value)
   "Set a file property called NAME to VALUE.
 
 If the property is already set, it's value is replaced."
@@ -825,22 +825,22 @@ If the property is already set, it's value is replaced."
            (beginning-of-line)))
        (insert "#+" name ": " value "\n")))))
 
-(defun minaduki::get-heading-id ()
+(defun minaduki--get-heading-id ()
   "Return the ID of the current heading."
-  (minaduki::file-type-case
+  (minaduki--file-type-case
     (:markdown
-     (car (minaduki::markdown-matched-heading nil t)))
+     (car (minaduki--markdown-matched-heading nil t)))
     (:org (org-id-get))))
 
-(defun minaduki::set-heading-id (new-id &optional force)
+(defun minaduki--set-heading-id (new-id &optional force)
   "Set the ID of the current heading to NEW-ID if it\\='s not set yet.
 If FORCE is non-nil, overwrite the current value, if any.
 Returns NEW-ID."
   (cl-block nil
     (unless force
-      (when (minaduki::get-heading-id)
+      (when (minaduki--get-heading-id)
         (cl-return nil)))
-    (minaduki::file-type-case
+    (minaduki--file-type-case
       (:markdown
        (save-excursion
          (outline-back-to-heading)
@@ -850,13 +850,13 @@ Returns NEW-ID."
        (org-entry-put nil "ID" new-id)))
     new-id))
 
-(defun minaduki::collate-types (type)
+(defun minaduki--collate-types (type)
   "Collate TYPE into a parent type."
   (cond ((member type '("http" "https"))
          "website")
         (t type)))
 
-(defun minaduki::set-buffer-substring (start end &rest strings)
+(defun minaduki--set-buffer-substring (start end &rest strings)
   "Set buffer content between START and END to STRINGS."
   (declare (indent 2))
   (save-excursion

@@ -29,7 +29,7 @@
 
 (defun minaduki-tags-library ()
   "Return all tags in library."
-  (minaduki::with-temp-buffer (minaduki-tags--current-library)
+  (minaduki--with-temp-buffer (minaduki-tags--current-library)
     (minaduki-tags--extract-tags)))
 
 ;;;###autoload

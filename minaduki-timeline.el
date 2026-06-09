@@ -24,7 +24,7 @@
     car))
 (defun minaduki-timeline--get-buffer-year ()
   "Get the year this buffer represents."
-  (or (-some->> (minaduki::current-file-name)
+  (or (-some->> (minaduki--current-file-name)
         f-base
         minaduki-timeline--get-year)
       (-some->> (car (minaduki--get-file-prop "created"))

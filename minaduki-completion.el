@@ -53,7 +53,7 @@ when a value is already present."
           (replace-match
            (format "\\& [%s]" def)
            nil nil prompt 1)))
-  (completing-read prompt (minaduki-db::fetch-lit-authors)
+  (completing-read prompt (minaduki-db--fetch-lit-authors)
                    nil nil nil nil
                    def))
 
@@ -83,7 +83,7 @@ Embark to create what are in effect context menus."
 (defun minaduki--format-lit-entry (entry)
   "Format ENTRY for display."
   (concat
-   (minaduki::ensure-display-width
+   (minaduki--ensure-display-width
     (min 400 (* 0.3 (frame-pixel-width)))
     (format "%-4.4s %s%s %s"
             (or (gethash "date" entry)
@@ -134,14 +134,14 @@ Return the `minaduki-node' object.
 INITIAL-INPUT: passed to `completing-read'.
 PROMPT: the prompt to use during completion. Default: \"Note: \"
 UNDER-PATH: only list nodes under this path for completion."
-  (minaduki::with-comp-setup
+  (minaduki--with-comp-setup
       ((ivy-sort-matches-functions-alist . #'ivy--flx-sort))
-    (minaduki::message "Fetching nodes...")
+    (minaduki--message "Fetching nodes...")
     (let* ((entries (minaduki-db--fetch-nodes
                      :under-path under-path))
            (alist
             (let (ret)
-              (minaduki::loading "Formating nodes..."
+              (minaduki--loading "Formating nodes..."
                 (dolist (entry entries)
                   (push (cons (minaduki--format-node entry) entry) ret)))
               (nreverse ret)))
@@ -159,12 +159,12 @@ UNDER-PATH: only list nodes under this path for completion."
            :path (s-trim selection)
            :new? t)))))
 
-(defvar minaduki-read:lit-entry::citekey nil
+(defvar minaduki-read:lit-entry--citekey nil
   "Let-bind this variable to use `org-cite-insert' on a particular citekey.
 
 For example:
 
-  (let ((minaduki-read:lit-entry::citekey \"iso20041201\"))
+  (let ((minaduki-read:lit-entry--citekey \"iso20041201\"))
     (org-cite-insert nil))")
 
 (cl-defun minaduki-read:lit-entry
@@ -173,7 +173,7 @@ For example:
 
 Always return a list of citekeys.
 
-If `minaduki-read:lit-entry::citekey' is non-nil,
+If `minaduki-read:lit-entry--citekey' is non-nil,
 return that instead. This allows us to call `org-cite-insert'
 without prompting.
 
@@ -182,18 +182,18 @@ MULTIPLE: if non-nil, try to read multiple values with
 for the `minaduki' org-cite insert processor.
 
 PROMPT: the text shown in the prompt."
-  (when minaduki-read:lit-entry::citekey
+  (when minaduki-read:lit-entry--citekey
     (cl-return-from minaduki-read:lit-entry
       ;; org-cite expects a list if it asked for one
-      (if (listp minaduki-read:lit-entry::citekey)
-          minaduki-read:lit-entry::citekey
-        (list minaduki-read:lit-entry::citekey))))
-  (minaduki::with-comp-setup
+      (if (listp minaduki-read:lit-entry--citekey)
+          minaduki-read:lit-entry--citekey
+        (list minaduki-read:lit-entry--citekey))))
+  (minaduki--with-comp-setup
       ((ivy-sort-functions-alist . nil)
        (ivy-sort-matches-functions-alist . #'ivy--shorter-matches-first))
     (let* ((entries (->> (minaduki-db-select "select props from keys")
                          (mapcar #'car)
-                         (mapcar #'minaduki-db::parse-value)))
+                         (mapcar #'minaduki-db--parse-value)))
            (alist (--map (cons (minaduki--format-lit-entry it)
                                (map-elt it "key"))
                          entries))
@@ -205,7 +205,7 @@ PROMPT: the text shown in the prompt."
           (setq answer (list answer)))
         (--map (cdr (assoc it alist)) answer)))))
 
-(defun minaduki::completing-read-annotation (prompt alist &optional cdr)
+(defun minaduki--completing-read-annotation (prompt alist &optional cdr)
   "Prompt to select from a list of options, each with an annotation.
 
 Return the selected option itself. If CDR is non-nil, return the
@@ -252,7 +252,7 @@ ALIST maps each option to their annotation string."
               (--> (completion-table-dynamic
                     ;; Get our own completion request string
                     (lambda (_)
-                      (->> (minaduki-db::fetch-all-tags)
+                      (->> (minaduki-db--fetch-all-tags)
                            (--remove (string= prefix it)))))
                    (completion-table-case-fold it (not minaduki:ignore-case-during-completion)))
               :exit-function (lambda (str _status)

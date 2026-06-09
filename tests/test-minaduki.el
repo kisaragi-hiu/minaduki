@@ -111,40 +111,40 @@ members that should be equal."
               (minaduki-vault-closest "/tmp/b/external/hugo"))
             :to-equal "/tmp/b/external/hugo")))
 
-(describe "minaduki::file-type"
+(describe "minaduki--file-type"
   (it "does not check unregisted files"
     (expect (with-temp-buffer
               (setq buffer-file-name "hello.whatever")
-              (prog1 (minaduki::file-type)
+              (prog1 (minaduki--file-type)
                 (setq buffer-file-name nil)))
             :to-be nil)
     (expect (with-temp-buffer
               (setq buffer-file-name "hello.java"
                     major-mode 'java-mode)
-              (prog1 (minaduki::file-type)
+              (prog1 (minaduki--file-type)
                 (setq buffer-file-name nil)))
             :to-be nil))
   (it "checks registered types"
     (expect (with-temp-buffer
               (gfm-mode)
-              (minaduki::file-type))
+              (minaduki--file-type))
             :to-be 'markdown)
     (expect (with-temp-buffer
               (setq major-mode 'markdown-mode)
-              (minaduki::file-type))
+              (minaduki--file-type))
             :to-be 'markdown)
     (expect (with-temp-buffer
               (setq major-mode 'bibtex-mode)
-              (minaduki::file-type))
+              (minaduki--file-type))
             :to-be 'bibtex)
     (expect (with-temp-buffer
               (setq major-mode 'json-mode)
-              (minaduki::file-type))
+              (minaduki--file-type))
             :to-be 'json)
     (expect (with-temp-buffer
               (setq buffer-file-name "hello.json"
                     major-mode 'text-mode)
-              (prog1 (minaduki::file-type)
+              (prog1 (minaduki--file-type)
                 (setq buffer-file-name nil)))
             :to-be 'json)))
 
@@ -157,7 +157,7 @@ members that should be equal."
                  (f-join temp-dir "lit" "name_EtAlKanji.json"))))
       (let ((inhibit-message t))
         (minaduki-db:build-cache t))
-      (expect (minaduki-db::fetch-lit-authors)
+      (expect (minaduki-db--fetch-lit-authors)
               :to-have-same-items-as
               '("Bert Bos" "シャノン" "大崎ひとみ"
                 "Zither Ziggy and Yoda Yossarian and Xylophone Xerxes")))
@@ -252,25 +252,25 @@ members that should be equal."
                      "tags" ["webdev" "css" "html"]
                      "date" "2003-03-06")))))))
 
-(describe "minaduki::format-link"
+(describe "minaduki--format-link"
   (it "formats Org links"
     (expect
      (let ((minaduki:link-insertion-format 'absolute)
            (major-mode 'org-mode))
-       (minaduki::format-link :target "file:///tmp/abc.org"))
+       (minaduki--format-link :target "file:///tmp/abc.org"))
      :to-equal
      "[[/tmp/abc.org]]")
     (expect
      (let ((minaduki:link-insertion-format 'absolute)
            (major-mode 'org-mode))
-       (minaduki::format-link :target "file:///tmp/abc.org"
+       (minaduki--format-link :target "file:///tmp/abc.org"
                               :desc "ABC"))
      :to-equal
      "[[/tmp/abc.org][ABC]]")
     (expect
      (let ((minaduki:link-insertion-format 'absolute)
            (major-mode 'org-mode))
-       (minaduki::format-link :target "https://kisaragi-hiu.com"
+       (minaduki--format-link :target "https://kisaragi-hiu.com"
                               :desc "ABC"))
      :to-equal
      "[[https://kisaragi-hiu.com][ABC]]"))
@@ -278,7 +278,7 @@ members that should be equal."
     (expect
      (let ((minaduki:link-insertion-format 'absolute)
            (major-mode 'markdown-mode))
-       (minaduki::format-link :target "https://kisaragi-hiu.com"
+       (minaduki--format-link :target "https://kisaragi-hiu.com"
                               :desc "ABC"))
      :to-equal
      "[ABC](https://kisaragi-hiu.com)"))
@@ -290,7 +290,7 @@ members that should be equal."
              (default-directory "/"))
          (org-mode)
          (minaduki-local-mode) ; this applies `minaduki/vaults'
-         (minaduki::format-link :target "file:///tmp/abc.org")))
+         (minaduki--format-link :target "file:///tmp/abc.org")))
      :to-equal
      "[[tmp:abc.org]]"))
   (it "formats relative links"
@@ -298,14 +298,14 @@ members that should be equal."
      (let ((minaduki:link-insertion-format 'relative)
            (major-mode 'org-mode)
            (default-directory "/"))
-       (minaduki::format-link :target "file:///tmp/abc.org"))
+       (minaduki--format-link :target "file:///tmp/abc.org"))
      :to-equal
      "[[file:tmp/abc.org]]")
     (expect
      (let ((minaduki:link-insertion-format 'relative)
            (major-mode 'markdown-mode)
            (default-directory "/"))
-       (minaduki::format-link :target "/tmp/abc.md"))
+       (minaduki--format-link :target "/tmp/abc.md"))
      :to-equal
      "[abc.md](tmp/abc.md)")))
 
@@ -314,40 +314,40 @@ members that should be equal."
     (test-minaduki--init))
 
   (it "converts between calendar.el dates and YYYY-MM-DD date strings"
-    (expect (minaduki-date::calendar.el->ymd '(7 17 2019))
+    (expect (minaduki-date--calendar.el->ymd '(7 17 2019))
             :to-equal
             "2019-07-17")
-    (expect (minaduki-date::ymd->calendar.el "2012-01-02")
+    (expect (minaduki-date--ymd->calendar.el "2012-01-02")
             :to-equal
             '(1 2 2012)))
   (it "converts a title to a slug"
-    (expect (minaduki::to-slug "English")
+    (expect (minaduki--to-slug "English")
             :to-equal "english")
-    (expect (minaduki::to-slug "Text with space と漢字")
+    (expect (minaduki--to-slug "Text with space と漢字")
             :to-equal "text-with-space-と漢字")
-    (expect (minaduki::to-slug "many____underscores")
+    (expect (minaduki--to-slug "many____underscores")
             :to-equal "many-underscores")
     ;; Keep diacritics
-    (expect (minaduki::to-slug "äöü")
+    (expect (minaduki--to-slug "äöü")
             :to-equal "äöü")
     ;; Normalizes to composed from
-    (expect (minaduki::to-slug (string ?て #x3099))
+    (expect (minaduki--to-slug (string ?て #x3099))
             :to-equal (string ?で))
-    (expect (minaduki::to-slug "_starting and ending_")
+    (expect (minaduki--to-slug "_starting and ending_")
             :to-equal "starting-and-ending")
-    (expect (minaduki::to-slug "isn't alpha numeric")
+    (expect (minaduki--to-slug "isn't alpha numeric")
             :to-equal "isn-t-alpha-numeric"))
   (describe "pure utils"
     (it "warns without error"
       (expect (let ((inhibit-message t))
-                (minaduki::warn :warning
+                (minaduki--warn :warning
                   "Values: %s,\n%s\n, %s"
                   "a string"
                   `((:a . b) (:c . d))
                   30))
               :not :to-throw))
     (it "converts between structs and vectors"
-      (expect (minaduki::object-to-vector (minaduki-node :path "a"
+      (expect (minaduki--object-to-vector (minaduki-node :path "a"
                                                          :title "b"
                                                          :tags (list "c")
                                                          :id "d"
@@ -356,7 +356,7 @@ members that should be equal."
                                                          :key-type "g"
                                                          :new? t))
               :to-equal ["a" "b" ("c") "d" "e" "f" "g" t])
-      (expect (minaduki::vector-to-object
+      (expect (minaduki--vector-to-object
                ["a" "b" ("c") "d" "e" "f" "g" t]
                'minaduki-node)
               :to-equal (minaduki-node :path "a"
@@ -386,22 +386,22 @@ members that should be equal."
           (f-files test-repository nil t))))))
   (it "removes Org links from a string"
     (expect
-     (minaduki::remove-org-links
+     (minaduki--remove-org-links
       "Abc [[https://gnu.org][Link1]] def [[https://gnu.org][Link2]]")
      :to-equal
      "Abc Link1 def Link2")
     (expect
-     (minaduki::remove-org-links
+     (minaduki--remove-org-links
       "Abc [not a link]")
      :to-equal
      "Abc [not a link]")
     (expect
-     (minaduki::remove-org-links
+     (minaduki--remove-org-links
       "Abc [[https://google.com]]")
      :to-equal
      "Abc https://google.com")
     (expect
-     (minaduki::remove-org-links
+     (minaduki--remove-org-links
       "Abc [[https://google.com][Google]]")
      :to-equal
      "Abc Google")))
@@ -564,23 +564,23 @@ members that should be equal."
 
 (describe "Test minaduki: wikilinks"
   (it ""
-    (expect (minaduki-wikilink::split-path "")
+    (expect (minaduki-wikilink--split-path "")
             :to-equal
             '(title "" "" nil)))
   (it "title"
-    (expect (minaduki-wikilink::split-path "title")
+    (expect (minaduki-wikilink--split-path "title")
             :to-equal
             '(title "title" "" nil)))
   (it "title*"
-    (expect (minaduki-wikilink::split-path "title*")
+    (expect (minaduki-wikilink--split-path "title*")
             :to-equal
             '(title+headline "title" "" 5)))
   (it "title*headline"
-    (expect (minaduki-wikilink::split-path "title*headline")
+    (expect (minaduki-wikilink--split-path "title*headline")
             :to-equal
             '(title+headline "title" "headline" 5)))
   (it "*headline"
-    (expect (minaduki-wikilink::split-path "*headline")
+    (expect (minaduki-wikilink--split-path "*headline")
             :to-equal
             '(headline "" "headline" 0))))
 
@@ -589,9 +589,9 @@ members that should be equal."
     (test-minaduki--init))
 
   (it "can check presence"
-    (expect (minaduki-db::file-present? (test-minaduki--abs-path "baz.md"))
+    (expect (minaduki-db--file-present? (test-minaduki--abs-path "baz.md"))
             :to-be-truthy)
-    (expect (minaduki-db::file-present? (test-minaduki--abs-path "no"))
+    (expect (minaduki-db--file-present? (test-minaduki--abs-path "no"))
             :to-be nil))
 
   (describe "fetch-nodes"
@@ -600,42 +600,42 @@ members that should be equal."
         (expect (length nodes)
                 :to-equal
                 58)
-        (expect (-uniq (--map (minaduki::file-type::path (oref it path)) nodes))
+        (expect (-uniq (--map (minaduki--file-type--path (oref it path)) nodes))
                 :to-have-same-items-as
                 '(org markdown json bibtex)))))
 
   (describe "fetch-file"
     (it "can fetch id"
-      (expect (minaduki-db::fetch-file :id "801b58eb-97e2-435f-a33e-ff59a2f0c213")
+      (expect (minaduki-db--fetch-file :id "801b58eb-97e2-435f-a33e-ff59a2f0c213")
               :to-equal
               (test-minaduki--abs-path "headlines/headline.org")))
     (it "can fetch citekey"
-      (expect (minaduki-db::fetch-file :key "hitomine2013")
+      (expect (minaduki-db--fetch-file :key "hitomine2013")
               :to-equal
               (test-minaduki--abs-path "lit/hitomine2013.org")))
     (it "can fetch title"
-      (expect (minaduki-db::fetch-file :title "Same title")
+      (expect (minaduki-db--fetch-file :title "Same title")
               :to-have-same-items-as
               (list (test-minaduki--abs-path "same-title2.org")
                     (test-minaduki--abs-path "same-title.org")))
-      (expect (minaduki-db::fetch-file :title "CSL-JSON sample data")
+      (expect (minaduki-db--fetch-file :title "CSL-JSON sample data")
               :to-equal
               (list (test-minaduki--abs-path "lit/README.org")))
-      (expect (minaduki-db::fetch-file :title "Foo")
+      (expect (minaduki-db--fetch-file :title "Foo")
               :to-equal
               (list (test-minaduki--abs-path "foo.org")))
-      (expect (minaduki-db::fetch-file :title "Headline")
+      (expect (minaduki-db--fetch-file :title "Headline")
               :to-have-same-items-as
               (-map #'test-minaduki--abs-path
                     '("headlines/headline.org"
                       "titles/headline.md"
                       "titles/headline.org"))))
     (it "can return a nested file from its title"
-      (expect (minaduki-db::fetch-file :title "Deeply Nested File")
+      (expect (minaduki-db--fetch-file :title "Deeply Nested File")
               :to-equal
               (list (test-minaduki--abs-path "nested/deeply/deeply_nested_file.org")))))
   (it "can fetch an id object"
-    (expect (minaduki-db::fetch-id "801b58eb-97e2-435f-a33e-ff59a2f0c213")
+    (expect (minaduki-db--fetch-id "801b58eb-97e2-435f-a33e-ff59a2f0c213")
             :to-equal
             (minaduki-id :id "801b58eb-97e2-435f-a33e-ff59a2f0c213"
                          :file (test-minaduki--abs-path "headlines/headline.org")
@@ -644,7 +644,7 @@ members that should be equal."
                          :title "Headline 2")))
   (describe "fetch-lit-entry"
     (it "can fetch a lit-entry object"
-      (let ((entry (minaduki-db::fetch-lit-entry "orgroam2020")))
+      (let ((entry (minaduki-db--fetch-lit-entry "orgroam2020")))
         (expect (oref entry file)
                 :to-equal
                 (test-minaduki--abs-path "multiple-refs.org"))
@@ -655,7 +655,7 @@ members that should be equal."
                 :to-equal
                 1)))
     (it "information from bibliography is used over the note file"
-      (let ((entry (minaduki-db::fetch-lit-entry "hitomine2013")))
+      (let ((entry (minaduki-db--fetch-lit-entry "hitomine2013")))
         (expect (oref entry file)
                 :to-equal
                 (test-minaduki--abs-path "lit/entries.org"))
@@ -676,27 +676,27 @@ members that should be equal."
                    "year" "2013"
                    "title" "あたらしい女声の教科書"))))))
   (it "can return all authors"
-    (expect (minaduki-db::fetch-lit-authors)
+    (expect (minaduki-db--fetch-lit-authors)
             :to-have-same-items-as
             '("Bert Bos" "シャノン" "大崎ひとみ")))
   (it "can return all tags"
-    (expect (minaduki-db::fetch-all-tags)
+    (expect (minaduki-db--fetch-all-tags)
             :to-have-same-items-as
             `("t3" "t2 with space" "t1" "t4 second-line" "tag3" "tag2" "hello" ,(file-name-base (directory-file-name org-directory)))))
   (it "can return the title of a file"
-    (expect (minaduki-db::fetch-title
+    (expect (minaduki-db--fetch-title
              (test-minaduki--abs-path "lit/hitomine2013.org"))
             :to-equal
             "あたらしい女声の教科書"))
   (it "can return files that are tagged with a given tag"
-    (expect (minaduki-db::fetch-tag-references "hello")
+    (expect (minaduki-db--fetch-tag-references "hello")
             :to-have-same-items-as
             (list (test-minaduki--abs-path "tags/hugo-style.org"))))
   (it "can fetch backlinks"
-    (expect (length (minaduki-db::fetch-backlinks "乙野四方字20180920"))
+    (expect (length (minaduki-db--fetch-backlinks "乙野四方字20180920"))
             :to-be-greater-than 0))
   (it "can get the stored hash of a file"
-    (expect (minaduki-db::fetch-file-hash
+    (expect (minaduki-db--fetch-file-hash
              (test-minaduki--abs-path "front-matter/json.md"))
             :to-equal
             "8735b00eebf501c1c39dc4d3ba21424df591aec7")))

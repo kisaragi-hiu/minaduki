@@ -32,9 +32,9 @@
 (declare-function org-element-citation-reference-parser "org-element")
 (defvar org-element-citation-prefix-re)
 
-(defvar-local minaduki-extract::file-prop::cache nil
+(defvar-local minaduki-extract--file-prop--cache nil
   "A cache for the current buffer's front matter.")
-(defvar minaduki-extract::file-prop::use-cache nil
+(defvar minaduki-extract--file-prop--use-cache nil
   "Whether the front matter cache should be used right now.
 
 It should be used when the buffer will be thrown away (like when
@@ -43,23 +43,23 @@ is meant to be edited, so this should not be set to non-nil globally.")
 
 (defun minaduki--get-file-prop (prop)
   "Return values of the file level property PROP as a list."
-  (minaduki::file-type-case
+  (minaduki--file-type-case
     (:markdown
-     (minaduki::with-front-matter
+     (minaduki--with-front-matter
        ;; TODO: We might have to fold cases here ourselves;
        ;; `case-fold-search' obviously does not affect `equal'
-       (if minaduki-extract::file-prop::use-cache
+       (if minaduki-extract--file-prop--use-cache
            ;; cached mode: set cache if available
-           (unless minaduki-extract::file-prop::cache
-             (setq minaduki-extract::file-prop::cache
+           (unless minaduki-extract--file-prop--cache
+             (setq minaduki-extract--file-prop--cache
                    (yaml-parse-string
                     (buffer-string)
                     :object-key-type 'string
                     :sequence-type 'list)))
          ;; uncached mode: clear cache
-         (setq minaduki-extract::file-prop::cache nil))
-       (let ((frontmatter (if minaduki-extract::file-prop::use-cache
-                              minaduki-extract::file-prop::cache
+         (setq minaduki-extract--file-prop--cache nil))
+       (let ((frontmatter (if minaduki-extract--file-prop--use-cache
+                              minaduki-extract--file-prop--cache
                             (yaml-parse-string
                              (buffer-string)
                              :object-key-type 'string
@@ -130,7 +130,7 @@ This is used to extract #+roam_tags."
 
 Currently citations are treated as links of the `cite' type, from
 FILE-FROM to the key."
-  (setq file-from (minaduki::current-file-name (list file-from)))
+  (setq file-from (minaduki--current-file-name (list file-from)))
   (save-excursion
     (goto-char (point-min))
     (cl-loop while (re-search-forward org-element-citation-prefix-re nil t)
@@ -141,7 +141,7 @@ FILE-FROM to the key."
                        file-from
                        (org-element-property :key it)
                        "cite"
-                       (list :outline (minaduki::get-outline-path)
+                       (list :outline (minaduki--get-outline-path)
                              :point (point)))
                       while (search-forward ";" (line-end-position) t)))))
 
@@ -175,7 +175,7 @@ FILE-FROM to the key."
   "Extract links in current buffer in Org mode format ([[target][desc]]).
 
 Assume links come from FILE-FROM."
-  (setq file-from (minaduki::current-file-name (list file-from)))
+  (setq file-from (minaduki--current-file-name (list file-from)))
   (save-excursion
     (goto-char (point-min))
     (let (links)
@@ -189,10 +189,10 @@ Assume links come from FILE-FROM."
                                  (equal "KEY"
                                         (org-element-property :key elem-at-point)))))
               (goto-char (org-element-property :begin link))
-              (let* ((type (minaduki::collate-types (org-element-property :type link)))
+              (let* ((type (minaduki--collate-types (org-element-property :type link)))
                      (path (org-element-property :path link))
                      (content (minaduki-extract//org-links-context))
-                     (properties (list :outline (minaduki::get-outline-path)
+                     (properties (list :outline (minaduki--get-outline-path)
                                        :point (point)
                                        :content content))
                      (names (pcase type
@@ -205,7 +205,7 @@ Assume links come from FILE-FROM."
                               ("fuzzy" (list (minaduki-obsidian-path path)))
                               ("roam" (list path))
                               (_ (if (or (file-remote-p path)
-                                         (minaduki::url? path))
+                                         (minaduki--url? path))
                                      (list path)
                                    (let ((file-maybe (expand-file-name path (file-name-directory file-from))))
                                      (if (f-exists? file-maybe)
@@ -220,7 +220,7 @@ Assume links come from FILE-FROM."
   "Extract Obsidian links from current buffer.
 
 Links are assumed to originate from FILE-FROM."
-  (setq file-from (minaduki::current-file-name (list file-from)))
+  (setq file-from (minaduki--current-file-name (list file-from)))
   (save-excursion
     (goto-char (point-min))
     (cl-loop
@@ -237,7 +237,7 @@ Links are assumed to originate from FILE-FROM."
   "Extract Markdown links from current buffer.
 
 Links are assumed to originate from FILE-FROM."
-  (setq file-from (minaduki::current-file-name (list file-from)))
+  (setq file-from (minaduki--current-file-name (list file-from)))
   (save-excursion
     (goto-char (point-min))
     ;; Adadpted from `markdown-get-used-uris'
@@ -257,7 +257,7 @@ Links are assumed to originate from FILE-FROM."
                                  (match-string-no-properties 13)))
                     (link-type-raw (url-type
                                     (url-generic-parse-url file-to)))
-                    (link-type (minaduki::collate-types
+                    (link-type (minaduki--collate-types
                                 (or link-type-raw "file")))
                     end-of-block begin-of-block
                     content)
@@ -298,7 +298,7 @@ Links are assumed to originate from FILE-FROM."
   "Extract cite links defined like this: @bibkey.
 
 Assume links come from FILE-FROM."
-  (setq file-from (minaduki::current-file-name (list file-from)))
+  (setq file-from (minaduki--current-file-name (list file-from)))
   (save-excursion
     (goto-char (point-min))
     (cl-loop while (re-search-forward
@@ -333,8 +333,8 @@ Link items are of the form:
 FILE-FROM is typically the buffer file path, but this may not exist, for example
 in temp buffers.  In cases where this occurs, we do know the file path, and pass
 it as FILE-FROM."
-  (setq file-from (minaduki::current-file-name (list file-from)))
-  (minaduki::file-type-case
+  (setq file-from (minaduki--current-file-name (list file-from)))
+  (minaduki--file-type-case
     (:org
      (append
       (minaduki-extract//org-links file-from)
@@ -363,13 +363,13 @@ headings with an ID are cached (extracted with
   ;;
   ;; This requires minaduki-open to not assume that when the ID is nil, it's a
   ;; file. We should grab the ID information from the ids table.
-  (setq file-path (minaduki::current-file-name (list file-path)))
+  (setq file-path (minaduki--current-file-name (list file-path)))
   (let (result)
-    (minaduki::file-type-case
+    (minaduki--file-type-case
       (:markdown
        (goto-char (point-min))
        (while (re-search-forward markdown-regex-header nil t)
-         (-let* (((id text level) (minaduki::markdown-matched-heading t)))
+         (-let* (((id text level) (minaduki--markdown-matched-heading t)))
            (push (minaduki-id :id id
                               :file file-path
                               :level level
@@ -392,13 +392,13 @@ headings with an ID are cached (extracted with
   "Extract all IDs within the current buffer.
 If FILE-PATH is nil, use the current file.
 Return a list of `minaduki-id' objects."
-  (setq file-path (minaduki::current-file-name (list file-path)))
+  (setq file-path (minaduki--current-file-name (list file-path)))
   (let (result)
-    (minaduki::file-type-case
+    (minaduki--file-type-case
       (:markdown
        (goto-char (point-min))
        (while (re-search-forward markdown-regex-header nil t)
-         (-when-let* (((id text level) (minaduki::markdown-matched-heading t)))
+         (-when-let* (((id text level) (minaduki--markdown-matched-heading t)))
            (push (minaduki-id :id id
                               :file file-path
                               :level level
@@ -432,9 +432,9 @@ Return a list of `minaduki-id' objects."
   "Return a list containing the main title of the current buffer."
   ;; Outside of a vault, the title is always the file name.
   (if (not (minaduki-vault-in-vault?))
-      (list (minaduki::apply-link-abbrev
+      (list (minaduki--apply-link-abbrev
              (buffer-file-name)))
-    (minaduki::file-type-case
+    (minaduki--file-type-case
       (:org
        (-some-> (car (minaduki--get-file-prop "title"))
          list))
@@ -444,7 +444,7 @@ Return a list of `minaduki-id' objects."
 
 (defun minaduki-extract/aliases ()
   "Return a list of aliases from the current buffer."
-  (minaduki::file-type-case
+  (minaduki--file-type-case
     (:org
      (minaduki--get-file-prop "ALIAS"))
     (:markdown
@@ -452,7 +452,7 @@ Return a list of `minaduki-id' objects."
 
 (defun minaduki-extract/first-headline ()
   "Extract the first headline."
-  (minaduki::file-type-case
+  (minaduki--file-type-case
     (:org
      (save-excursion
        (goto-char (point-min))
@@ -585,7 +585,7 @@ Tags are specified like this at the beginning of the buffer:
     ---
     tags: #tag1 #tag-with-hyphen #tag_with_underscore
     ---"
-  (minaduki::with-front-matter
+  (minaduki--with-front-matter
     (minaduki-extract//tags/hashtag)))
 
 ;; TODO: markdown frontmatter "tags: ["abc", "def"]". Just hook up //file-prop.
@@ -593,7 +593,7 @@ Tags are specified like this at the beginning of the buffer:
   "Extract file tags from the current buffer.
 
 If file-path FILE is non-nil, use it to determine the directory tags."
-  (let* ((file (minaduki::current-file-name (list file)))
+  (let* ((file (minaduki--current-file-name (list file)))
          tags)
     (when (memq 'nested-vault minaduki-tag-sources)
       (setq tags (append (minaduki-extract//tags/nested-vault file) tags)))
@@ -628,14 +628,14 @@ Returns a cons cell (TYPE . PATH) if ref is a valid ref.
 
 REF is either a plain link or a plain string. If it's a link, the
 protocol is treated as the TYPE (after processing through
-`minaduki::collate-types'). Otherwise, REF is assumed to be a cite ref.
+`minaduki--collate-types'). Otherwise, REF is assumed to be a cite ref.
 
 The \"cite:\" prefix is removed."
   (let ((type "cite")
         (ref ref))
     (save-match-data
       (when (string-match org-link-plain-re ref)
-        (setq type (minaduki::collate-types (match-string 1 ref))
+        (setq type (minaduki--collate-types (match-string 1 ref))
               ref (match-string 2 ref))))
     (cons type
           (s-replace-regexp (rx bos "cite:") "" ref))))
@@ -674,7 +674,7 @@ like `minaduki-lit/entry' objects.
 
 If this file is not in `minaduki-lit/bibliography', this does
 nothing and returns nil."
-  (minaduki::file-type-case
+  (minaduki--file-type-case
     (:bibtex (minaduki-lit/parse-entries/bibtex))
     (:json (minaduki-lit/parse-entries/csl-json))
     (t (minaduki-lit/parse-entries))))
@@ -685,17 +685,17 @@ nothing and returns nil."
 Return value: ((TYPE . KEY) (TYPE . KEY) ...)
 
 In Org mode, the keys are specified with the #+KEY keyword."
-  (minaduki::file-type-case
+  (minaduki--file-type-case
     (:org
      (let (refs)
        (dolist (key (minaduki--get-file-prop "key"))
          (pcase key
            ('nil nil)
            ((pred string-empty-p)
-            (minaduki::warn :warning
+            (minaduki--warn :warning
               "Org property #+key should not be empty (%s)"
               (f-filename
-               (minaduki::current-file-name))))
+               (minaduki--current-file-name))))
            (ref
             (when-let ((r (minaduki-extract//process-ref ref)))
               (push r refs)))))
@@ -711,7 +711,7 @@ In Org mode, the keys are specified with the #+KEY keyword."
                              (:constructor minaduki-link))
   desc to)
 
-(defun minaduki::link::write (link type)
+(defun minaduki--link--write (link type)
   "Write a `minaduki-link' LINK according to TYPE."
   (pcase type
     (:obsidian
@@ -728,7 +728,7 @@ In Org mode, the keys are specified with the #+KEY keyword."
      (if (oref link desc)
          (format "[%s](%s)" (oref link desc) (oref link to))
        (format "<%s>" (oref link to))))))
-(defun minaduki::link-markdown::parse ()
+(defun minaduki--link-markdown--parse ()
   "Return a representation of the native Markdown link at point."
   ;; Adadpted from `markdown-get-used-uris'
   (when (looking-at (concat "\\(?:" markdown-regex-link-inline
@@ -742,7 +742,7 @@ In Org mode, the keys are specified with the #+KEY keyword."
                   (match-string-no-properties 13)))
           (desc (match-string-no-properties 3)))
       (minaduki-link :to to :desc desc))))
-(defun minaduki::link-obsidian::parse ()
+(defun minaduki--link-obsidian--parse ()
   "Return a representation of the obsidian style link at point."
   (when (looking-at minaduki--wikilink-regexp)
     (let* ((first (match-string-no-properties 3))
@@ -759,7 +759,7 @@ In Org mode, the keys are specified with the #+KEY keyword."
                 (or second first)
               first)))
       (minaduki-link :to (minaduki-obsidian-path to) :desc desc))))
-(defun minaduki::link-org::parse ()
+(defun minaduki--link-org--parse ()
   "Return a simple representation of an Org link at point."
   (when (looking-at org-link-bracket-re)
     (let* ((first (match-string-no-properties 1))

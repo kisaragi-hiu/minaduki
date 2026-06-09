@@ -23,7 +23,7 @@
 (require 'minaduki-vars)
 (require 'minaduki-completion)
 
-(cl-defun minaduki-templates::list-templates (&key with-content all)
+(cl-defun minaduki-templates--list-templates (&key with-content all)
   "List templates, including files and those from the alist.
 
 When WITH-CONTENT is non-nil, also include their contents.
@@ -44,19 +44,19 @@ names prepended with a colon."
                      content
                    t)
                  templates)))
-    (dolist (file (minaduki-templates::list-files t))
+    (dolist (file (minaduki-templates--list-files t))
       (puthash (if all
                    file
                  (f-filename file))
                (if with-content
-                   (minaduki::file-content file)
+                   (minaduki--file-content file)
                  t)
                templates))
     (if with-content
         (map-into templates 'alist)
       (map-keys templates))))
 
-(defun minaduki-templates::list-files (&optional full)
+(defun minaduki-templates--list-files (&optional full)
   "List all template files.
 When FULL is non-nil, return full paths."
   (directory-files minaduki/templates-directory full (rx bos (not "."))))
@@ -99,12 +99,12 @@ string, the entire string is treated as the content."
     (or
      ;; Files have priority
      (and (not has-colon)
-          (let ((files (minaduki-templates::list-files t)))
+          (let ((files (minaduki-templates--list-files t)))
             (when-let (file (or (--first (equal name it) files)
                                 (--first (equal name (f-filename it)) files)
                                 (--first (equal name (f-base it)) files)))
-              (minaduki::with-temp-buffer file
-                (let ((frontmatter-region (minaduki::find-front-matter)))
+              (minaduki--with-temp-buffer file
+                (let ((frontmatter-region (minaduki--find-front-matter)))
                   (if frontmatter-region
                       (minaduki-template
                        :-frontmatter (buffer-substring-no-properties
@@ -135,9 +135,9 @@ When RETURN-CONTENT is non-nil, return the content of the
 selected template instead of the name."
   (declare (indent 1))
   (if return-content
-      (let ((templates (minaduki-templates::list-templates :all all :with-content t)))
+      (let ((templates (minaduki-templates--list-templates :all all :with-content t)))
         (map-elt templates (completing-read prompt (map-keys templates))))
-    (completing-read prompt (minaduki-templates::list-templates :all all))))
+    (completing-read prompt (minaduki-templates--list-templates :all all))))
 
 (defun minaduki-templates--fill (template moment &rest args)
   "Fill out TEMPLATE and return the result as a string.

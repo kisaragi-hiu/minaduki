@@ -318,11 +318,11 @@ A path is in a vault if it:
 - is not excluded (by `minaduki-file-exclude-regexp'),
 - and is located under a vault."
   (-when-let (path (or path
-                       (minaduki::current-file-name)))
+                       (minaduki--current-file-name)))
     (setq path (expand-file-name path))
     (save-match-data
       (and
-       (member (minaduki::file-name-extension path)
+       (member (minaduki--file-name-extension path)
                minaduki-file-extensions)
        (not (minaduki-vault-excluded? path))
        (--any? (s-prefix? (expand-file-name it) path)
@@ -390,7 +390,7 @@ the next time USE-CACHE is nil again."
         (setq vault-abbrev-alist (minaduki-vault--abbrev-alist :skip t)))
       (when use-cache
         (setq minaduki-vault-path-abbrev--cache vault-abbrev-alist))
-      (minaduki::apply-link-abbrev path vault-abbrev-alist :dont))))
+      (minaduki--apply-link-abbrev path vault-abbrev-alist :dont))))
 
 (defvar minaduki-vault-path-relative--cache nil
   "Used to store cache for `minaduki-vault-path-relative'.")
@@ -554,7 +554,7 @@ If MESSAGE? is non-nil, display a message after registering."
     (cl-block init
       (when (and (f-dir? directory)
                  (not (directory-empty-p directory)))
-        (minaduki::message "%s already has content, creation skipped; registering"
+        (minaduki--message "%s already has content, creation skipped; registering"
                            directory)
         (cl-return-from init))
       (make-directory directory t)

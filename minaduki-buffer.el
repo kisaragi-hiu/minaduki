@@ -121,7 +121,7 @@ For example: (setq minaduki-buffer/window-parameters \\='((no-other-window . t))
 (defun minaduki-buffer//find-file (file)
   "Open FILE in the other window."
   (setq file (expand-file-name file))
-  (let ((last-window minaduki::last-window))
+  (let ((last-window minaduki--last-window))
     (if (window-valid-p last-window)
         (progn (with-selected-window last-window
                  (find-file file))
@@ -130,7 +130,7 @@ For example: (setq minaduki-buffer/window-parameters \\='((no-other-window . t))
 
 (defun minaduki-buffer//insert-title ()
   "Insert the minaduki-buffer title."
-  (-> (minaduki-db::fetch-title
+  (-> (minaduki-db--fetch-title
        (buffer-file-name minaduki-buffer//current))
       (propertize 'font-lock-face 'org-document-title)
       insert))
@@ -221,11 +221,11 @@ TYPE can be:
 - `refs': references to keys from `minaduki-extract/refs', or
 - anything else: return both."
   (pcase type
-    (`titles (minaduki-db::fetch-backlinks
+    (`titles (minaduki-db--fetch-backlinks
               (cons (buffer-file-name)
                     (minaduki-extract/titles))))
     (`refs (mapcan
-            #'minaduki-db::fetch-backlinks
+            #'minaduki-db--fetch-backlinks
             (mapcar #'cdr (minaduki-extract/refs))))
     (_ (append (minaduki//backlinks 'titles)
                (minaduki//backlinks 'refs)))))
@@ -270,7 +270,7 @@ are returned."
                         append (list "-e" it))))
           (unless (equal "" (s-trim (buffer-string)))
             ;; Step 1: insert the output
-            (minaduki::set-buffer-substring
+            (minaduki--set-buffer-substring
                 (point-min) (point-max)
               (--> (buffer-string)
                    ;; Trim all starting and ending newlines for
@@ -297,14 +297,14 @@ are returned."
                       (let relpath (* any))
                       "[0m")
                   (let ((path (f-expand relpath)))
-                    (minaduki::set-buffer-substring start end
+                    (minaduki--set-buffer-substring start end
                       (format
                        ;; We intentionally do not close
                        ;; it, only doing so when the
                        ;; block is over.
                        "(:path %S :title %S :matches ("
                        path
-                       (or (minaduki-db::fetch-title path)
+                       (or (minaduki-db--fetch-title path)
                            relpath)))))
                  ;; matches lines
                  ((rx bos
@@ -322,13 +322,13 @@ are returned."
                       (let col (*? any))
                       "\x1b[0m" ":"
                       (let context (* any)))
-                  (minaduki::set-buffer-substring start end
+                  (minaduki--set-buffer-substring start end
                     (prin1-to-string
                      (list :line ln :column col
                            :context context))))
                  ;; Empty lines between files
                  (_
-                  (minaduki::set-buffer-substring start end
+                  (minaduki--set-buffer-substring start end
                     "))"))))
              do (setq start (point))))
           ;; Step 3: wrap the whole buffer in a set of parens so we
@@ -381,11 +381,11 @@ Links in titles are removed."
         (setq props (seq-sort-by (lambda (p) (map-elt p "point")) #'< props))
         (insert "\n\n** "
                 ;; title link
-                (minaduki::format-link :target file-from
-                                       :desc (-some-> (minaduki-db::fetch-title file-from)
-                                               minaduki::remove-org-links))
+                (minaduki--format-link :target file-from
+                                       :desc (-some-> (minaduki-db--fetch-title file-from)
+                                               minaduki--remove-org-links))
                 ;; tags
-                (or (-some->> (minaduki-db::fetch-tags file-from)
+                (or (-some->> (minaduki-db--fetch-tags file-from)
                       (--remove (member it minaduki-buffer/hidden-tags))
                       (--map (s-replace " " "_" (downcase it)))
                       (s-join ":")
@@ -423,7 +423,7 @@ Links in titles are removed."
                             ;; If there is only one match, make this
                             ;; link go point to it
                             (if (= 1 (length (plist-get file :matches)))
-                                (format "%s::%s"
+                                (format "%s--%s"
                                         (plist-get file :path)
                                         (-> file
                                             (plist-get :matches)
@@ -450,14 +450,14 @@ Links in titles are removed."
 (defun minaduki-buffer//insert-tag-references (tag)
   "Insert links to files tagged with TAG."
   (when tag
-    (-when-let (references (minaduki-db::fetch-tag-references tag))
+    (-when-let (references (minaduki-db--fetch-tag-references tag))
       (insert (format "\n\n* Files tagged with /%s/\n" tag))
       (->> (cl-loop for file in references
                     collect (concat "** "
-                                    (minaduki::format-link
+                                    (minaduki--format-link
                                      :target file
-                                     :desc (-some-> (minaduki-db::fetch-title file)
-                                             minaduki::remove-org-links))))
+                                     :desc (-some-> (minaduki-db--fetch-title file)
+                                             minaduki--remove-org-links))))
            (s-join "\n")
            insert))))
 
@@ -478,19 +478,19 @@ ORIG-PATH is the path where the CONTENT originated."
     (insert content)
     (goto-char (point-min))
     (let (link link-type)
-      (while (re-search-forward minaduki::org-link-bracket-typed-re (point-max) t)
+      (while (re-search-forward minaduki--org-link-bracket-typed-re (point-max) t)
         (setq link-type (match-string 1)
               link (match-string 2))
         (when (and (string-equal link-type "file")
                    (f-relative-p link))
-          (replace-match (minaduki::convert-path-format (expand-file-name link (file-name-directory orig-path)))
+          (replace-match (minaduki--convert-path-format (expand-file-name link (file-name-directory orig-path)))
                          nil t nil 2))))
     (buffer-string)))
 
 (defun minaduki-buffer/update ()
   "Render the backlinks buffer."
   (interactive)
-  (minaduki-db::ensure-built)
+  (minaduki-db--ensure-built)
   (let* ((source-org-directory org-directory))
     (with-current-buffer minaduki-buffer/name
       ;; When dir-locals.el is used to override org-directory,
@@ -516,7 +516,7 @@ ORIG-PATH is the path where the CONTENT originated."
         (minaduki-buffer//insert-title)
         (minaduki-buffer//insert-tag-references
          (--> (buffer-file-name minaduki-buffer//current)
-              minaduki-db::fetch-title
+              minaduki-db--fetch-title
               downcase))
         (minaduki-buffer//insert-backlinks
          cite-backlinks
@@ -542,8 +542,8 @@ what."
     (when (and (or redisplay
                    (not (eq minaduki-buffer//current buffer)))
                (minaduki-buffer/visible?)
-               (minaduki::current-file-name nil buffer)
-               (minaduki-db::file-present? (minaduki::current-file-name nil buffer)))
+               (minaduki--current-file-name nil buffer)
+               (minaduki-db--file-present? (minaduki--current-file-name nil buffer)))
       (setq minaduki-buffer//current buffer)
       (minaduki-buffer/update))))
 
@@ -570,7 +570,7 @@ what."
 (defun minaduki-buffer/activate ()
   "Activate display of the `minaduki-buffer'."
   (interactive)
-  (setq minaduki::last-window (get-buffer-window))
+  (setq minaduki--last-window (get-buffer-window))
   ;; Set up the window
   (let ((position (if (functionp minaduki-buffer/position)
                       (funcall minaduki-buffer/position)
@@ -596,7 +596,7 @@ what."
 (defun minaduki-buffer/deactivate ()
   "Deactivate display of the `minaduki-buffer'."
   (interactive)
-  (setq minaduki::last-window (get-buffer-window))
+  (setq minaduki--last-window (get-buffer-window))
   (delete-window (get-buffer-window minaduki-buffer/name)))
 
 (defun minaduki-buffer/toggle-display ()

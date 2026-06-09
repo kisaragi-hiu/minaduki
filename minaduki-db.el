@@ -14,8 +14,8 @@
 (require 'minaduki-extract)
 (require 'minaduki-utils)
 
-(defconst minaduki-db::version 19)
-(defconst minaduki-db::table-schemata
+(defconst minaduki-db--version 19)
+(defconst minaduki-db--table-schemata
   '((files
      "\"file\" UNIQUE PRIMARY KEY"
      "\"hash\" NOT NULL"
@@ -47,33 +47,33 @@
      "\"ref\" UNIQUE NOT NULL"
      "\"file\" NOT NULL REFERENCES files(\"file\") ON DELETE CASCADE"
      "\"type\" NOT NULL")))
-(defvar minaduki-db::connection nil
+(defvar minaduki-db--connection nil
   "The \"connection\" to the cache database.
 This is the value passed to `sqlite-execute' and the like.
 Use the function `minaduki-db' to access this value.")
 
-(defvar minaduki-db::stale t
+(defvar minaduki-db--stale t
   "Whether to consider the db stale.
 When this is non-nil, `minaduki-db' automatically updates the cache.")
 
 ;; Timer-based updating
 ;; The timer is hooked up in minaduki-mode.el
 ;; Current name is `minaduki-db/file-update-timer'
-(defvar minaduki-db::file-update-dirty nil
+(defvar minaduki-db--file-update-dirty nil
   "Whether the database needs to be updated by the timer.")
-(defvar minaduki-db::file-update-timer nil
+(defvar minaduki-db--file-update-timer nil
   "Timer for updating the database when dirty.")
-(defun minaduki-db::file-update-timer::update-cache ()
+(defun minaduki-db--file-update-timer--update-cache ()
   "Update the cache if the database is dirty."
-  (when minaduki-db::file-update-dirty
+  (when minaduki-db--file-update-dirty
     (minaduki-db:build-cache)
     (minaduki-db--export-lit-entries))
-  (setq minaduki-db::file-update-dirty nil))
-(defun minaduki-db::file-update-timer::mark-dirty ()
+  (setq minaduki-db--file-update-dirty nil))
+(defun minaduki-db--file-update-timer--mark-dirty ()
   "Mark the database as dirty for timer-based updating."
-  (setq minaduki-db::file-update-dirty t))
+  (setq minaduki-db--file-update-dirty t))
 
-(defun minaduki-db::init-and-migrate ()
+(defun minaduki-db--init-and-migrate ()
   "Initialize and migrate the database."
   (let ((should-init (not (file-exists-p minaduki:db-location)))
         db)
@@ -82,12 +82,12 @@ When this is non-nil, `minaduki-db' automatically updates the cache.")
     (setq db (sqlite-open minaduki:db-location))
     ;; Setting the global variable early allows us to use `minaduki-db-execute'
     ;; etc. during migration without fear for recursive initialization.
-    (setq minaduki-db::connection db)
+    (setq minaduki-db--connection db)
     (when should-init
       (sqlite-pragma db "foreign_keys = 1")
-      (sqlite-pragma db (format "user_version = %s" minaduki-db::version))
+      (sqlite-pragma db (format "user_version = %s" minaduki-db--version))
       (with-sqlite-transaction db
-        (pcase-dolist (`(,tbl . ,schemata) minaduki-db::table-schemata)
+        (pcase-dolist (`(,tbl . ,schemata) minaduki-db--table-schemata)
           (sqlite-execute
            db
            (format "CREATE TABLE \"%s\" (%s);"
@@ -95,35 +95,35 @@ When this is non-nil, `minaduki-db' automatically updates the cache.")
                    (string-join schemata ","))))))
     (let ((version (caar (sqlite-select db "PRAGMA user_version"))))
       (cond
-       ((> version minaduki-db::version)
-        (minaduki-db::close)
+       ((> version minaduki-db--version)
+        (minaduki-db--close)
         (user-error
          "The cache database was created with a newer Minaduki version. Please update Minaduki"))
-       ((< version minaduki-db::version)
+       ((< version minaduki-db--version)
         (message "Migrating the cache database from version %d to version %d"
-                 version minaduki-db::version)
+                 version minaduki-db--version)
         ;; Fallback case: rebuild everything
         (minaduki-db:build-cache t))))
-    minaduki-db::connection))
-(defun minaduki-db::close ()
+    minaduki-db--connection))
+(defun minaduki-db--close ()
   "Close the connection."
   ;; There doesn't appear to be a way to distinguish between a closed db and an
   ;; open db other than "try selecting and see what happens", so it seems better
   ;; to just remove the reference (so we don't have to worry about accessing a
   ;; closed db) and let Emacs automatically close it.
-  (setq minaduki-db::connection nil))
+  (setq minaduki-db--connection nil))
 (defun minaduki-db ()
   "Return the \"connection\" to the cache database.
 Performs initialization and migration when required."
-  (unless (sqlitep minaduki-db::connection)
-    (minaduki-db::init-and-migrate))
-  (when minaduki-db::stale
+  (unless (sqlitep minaduki-db--connection)
+    (minaduki-db--init-and-migrate))
+  (when minaduki-db--stale
     ;; build-cache sets stale to nil in its first steps
     (minaduki-db:build-cache nil minaduki-db-skip-initial-modification-check))
-  minaduki-db::connection)
+  minaduki-db--connection)
 
 ;; Like `emacsql-escape-scalar'
-(defun minaduki-db::escape-value (value)
+(defun minaduki-db--escape-value (value)
   "Escape VALUE for insertion into the database.
 Strings are stored as raw strings, nil is stored as NULL, and
 other values (including collections) are stored as JSON."
@@ -133,11 +133,11 @@ other values (including collections) are stored as JSON."
           ((stringp value) (->> value
                                 (replace-regexp-in-string (rx "'") "''")
                                 (format "'%s'")))
-          (t (minaduki-db::escape-value
+          (t (minaduki-db--escape-value
               (json-serialize
                value
                :false-object nil))))))
-(defun minaduki-db::parse-value (str)
+(defun minaduki-db--parse-value (str)
   "Parse stored STR into a value."
   (when str
     (json-parse-string
@@ -160,7 +160,7 @@ checks are performed as to whether MODE is valid."
              (--> values
                   (seq-map (lambda (row)
                              (--> row
-                                  (seq-map #'minaduki-db::escape-value it)
+                                  (seq-map #'minaduki-db--escape-value it)
                                   (string-join it ",")
                                   (format "(%s)" it)))
                            it)
@@ -179,23 +179,23 @@ If SQL is a list, join them with newlines."
     (setq sql (string-join sql "\n")))
   (sqlite-select (minaduki-db) sql args))
 
-(defun minaduki-db::initialized? ()
+(defun minaduki-db--initialized? ()
   "Return whether the cache database has been initialized."
   (and (file-exists-p minaduki:db-location)
        (> (length (minaduki-db-select "select * from files limit 1"))
           0)))
-(defun minaduki-db::ensure-built ()
+(defun minaduki-db--ensure-built ()
   "Assert that the database has been initialized, and barf otherwise."
-  (unless (minaduki-db::initialized?)
+  (unless (minaduki-db--initialized?)
     (error "(minaduki) The cache database has not been built yet. Please run `minaduki-db:build-cache to build it")))
 
 ;; Clearing
-(defun minaduki-db::clear-all ()
+(defun minaduki-db--clear-all ()
   "Clear all entries in the cache database."
   (when (file-exists-p minaduki:db-location)
-    (dolist (table (map-keys minaduki-db::table-schemata))
+    (dolist (table (map-keys minaduki-db--table-schemata))
       (minaduki-db-execute (format "delete from \"%s\"" table)))))
-(defun minaduki-db::clear-file (file)
+(defun minaduki-db--clear-file (file)
   "Clear information related to FILE.
 File defaults to the current buffer\\='s file name."
   (unless file
@@ -206,16 +206,16 @@ File defaults to the current buffer\\='s file name."
     (minaduki-db-execute "delete from files where file = ?" file)))
 
 ;; Inserting
-(defun minaduki-db::insert-meta (&optional update-p hash)
+(defun minaduki-db--insert-meta (&optional update-p hash)
   "Update the metadata of the current buffer into the cache.
 
 If UPDATE-P is non-nil, first remove the meta for the file in the database.
 If HASH is non-nil, assume that is the file's hash without recomputing it."
-  (let* ((file (minaduki::current-file-name))
+  (let* ((file (minaduki--current-file-name))
          (attr (file-attributes file))
          (mtime (file-attribute-modification-time attr))
          (modified (minaduki-extract--modified))
-         (hash (or hash (minaduki::compute-content-hash file t)))
+         (hash (or hash (minaduki--compute-content-hash file t)))
          (tags (minaduki-extract/tags file))
          (titles (minaduki-extract/titles))
          (keys (minaduki-extract/refs)))
@@ -239,7 +239,7 @@ If HASH is non-nil, assume that is the file's hash without recomputing it."
        for (type . key) in keys
        when (equal type "cite")
        do
-       (unless (minaduki-db::fetch-lit-entry key)
+       (unless (minaduki-db--fetch-lit-entry key)
          (minaduki-db-insert
           'keys
           (list (vector key
@@ -250,11 +250,11 @@ If HASH is non-nil, assume that is the file's hash without recomputing it."
                          :title (elt titles 0)
                          :key key
                          :sources sources)))))))))
-(defun minaduki-db::insert-note-lit-entries (&optional update-p)
+(defun minaduki-db--insert-note-lit-entries (&optional update-p)
   "Extract a lit entry from the current note, if any, and insert it into the cache.
 If UPDATE-P is non-nil, first remove the entries from the file in the database."
   (cl-block nil
-    (let ((file (or minaduki::file-name (buffer-file-name)))
+    (let ((file (or minaduki--file-name (buffer-file-name)))
           (count 0))
       ;; entries
       (-when-let (entry (minaduki-extract/note-lit-entry))
@@ -275,11 +275,11 @@ If UPDATE-P is non-nil, first remove the entries from the file in the database."
                        entry))
          "insert"))
       count)))
-(defun minaduki-db::insert-lit-entries (&optional update-p)
+(defun minaduki-db--insert-lit-entries (&optional update-p)
   "Update the lit-entries of the current bibliography buffer into the cache.
 If UPDATE-P is non-nil, first remove the entries from the file in the database."
   (cl-block nil
-    (let ((file (or minaduki::file-name (buffer-file-name)))
+    (let ((file (or minaduki--file-name (buffer-file-name)))
           (count 0))
       (when update-p
         (minaduki-db-execute
@@ -315,17 +315,17 @@ If UPDATE-P is non-nil, first remove the entries from the file in the database."
                                        point
                                        entry))
                          "insert or replace")
-                      (error (minaduki::warn
+                      (error (minaduki--warn
                                  :error
                                "Malformed entry. key: %s, point: %s, file: %s"
                                (gethash "key" entry)
                                point
                                file)))))))
       count)))
-(defun minaduki-db::insert-refs (&optional update-p)
+(defun minaduki-db--insert-refs (&optional update-p)
   "Insert the citekeys of the current buffer into the cache.
 If UPDATE-P is non-nil, first remove the ref for the file in the database."
-  (let ((file (minaduki::current-file-name))
+  (let ((file (minaduki--current-file-name))
         (count 0))
     (when update-p
       (minaduki-db-execute
@@ -337,38 +337,38 @@ If UPDATE-P is non-nil, first remove the ref for the file in the database."
         (condition-case nil
             (minaduki-db-insert 'refs rows)
           (error
-           (minaduki::warn :error
+           (minaduki--warn :error
              "Cannot insert citekeys declared in %s; skipping"
              file)))))
     count))
-(defun minaduki-db::insert-links ()
+(defun minaduki-db--insert-links ()
   "Put links from the current buffer into the cache database.
 Existing cached link entries from the current buffer are removed
 Return the number of rows inserted."
-  (let ((file (minaduki::current-file-name)))
+  (let ((file (minaduki--current-file-name)))
     (minaduki-db-execute
      "delete from \"links\" where source = ?"
      file)
     (let ((links (minaduki-extract/links)))
       (minaduki-db-insert 'links links)
       (length links))))
-(defun minaduki-db::insert-ids (&optional update-p)
+(defun minaduki-db--insert-ids (&optional update-p)
   "Update the ids of the current buffer into the cache.
 If UPDATE-P is non-nil, first remove ids for the file in the database.
 Returns the number of rows inserted."
-  (let ((file (minaduki::current-file-name)))
+  (let ((file (minaduki--current-file-name)))
     (when update-p
       (minaduki-db-execute
        "delete from \"ids\" where file = ?"
        file))
     (if-let ((ids (-some->> (minaduki-extract/ids file)
-                    (--map (minaduki::object-to-vector it)))))
+                    (--map (minaduki--object-to-vector it)))))
         (condition-case nil
             (progn
               (minaduki-db-insert 'ids ids)
               (length ids))
           (error
-           (minaduki::warn :error
+           (minaduki--warn :error
              "Duplicate IDs in %s, one of:\n\n%s\n\nskipping..."
              (aref (car ids) 1)
              (string-join (mapcar (lambda (hl)
@@ -377,13 +377,13 @@ Returns the number of rows inserted."
       0)))
 
 ;; Fetching
-(defun minaduki-db::file-present? (file)
+(defun minaduki-db--file-present? (file)
   "Does FILE exist in the cache DB?"
   (> (length (caar (minaduki-db-select
                     "select * from files where file = ? limit 1"
                     file)))
      0))
-(cl-defun minaduki-db::fetch-file (&key title key id nocase?)
+(cl-defun minaduki-db--fetch-file (&key title key id nocase?)
   "Return files from the DB.
 
 When NOCASE? is non-nil, match case-insentively.
@@ -412,7 +412,7 @@ When NOCASE? is non-nil, match case-insentively.
                                maybe-nocase)))
             files)
         (pcase-dolist (`(,file ,titles) possible)
-          (let ((titles (minaduki-db::parse-value titles)))
+          (let ((titles (minaduki-db--parse-value titles)))
             (when (if nocase?
                       (member (downcase title)
                               (mapcar #'downcase titles))
@@ -424,7 +424,7 @@ When NOCASE? is non-nil, match case-insentively.
              (format "select file from refs where ref = ? %s"
                      maybe-nocase)
              key))))))
-(defun minaduki-db::fetch-id (id)
+(defun minaduki-db--fetch-id (id)
   "Return a `minaduki-id' object for ID."
   (let ((row (car (minaduki-db-select
                    '("SELECT id, file, point, level, title FROM ids"
@@ -432,11 +432,11 @@ When NOCASE? is non-nil, match case-insentively.
                    id))))
     (when row
       (apply #'record 'minaduki-id row))))
-(defun minaduki-db::has-id? (id)
+(defun minaduki-db--has-id? (id)
   "Return whether ID is in the cache."
   (not (not (minaduki-db-select '("SELECT id FROM ids WHERE id = ?") id))))
 
-(defun minaduki-db::fetch-lit-entry (key)
+(defun minaduki-db--fetch-lit-entry (key)
   "Return a `minaduki-lit-entry' object for KEY."
   (let ((row (car (minaduki-db-select
                    '("select key, file, point, props from keys"
@@ -445,8 +445,8 @@ When NOCASE? is non-nil, match case-insentively.
     (when row
       (-let (((key file point props) row))
         (record 'minaduki-lit-entry
-                key file point (minaduki-db::parse-value props))))))
-(defun minaduki-db::fetch-lit-authors ()
+                key file point (minaduki-db--parse-value props))))))
+(defun minaduki-db--fetch-lit-authors ()
   "Fetch all authors in literature entries."
   ;; This approach is the second fastest out of five approaches I've tested,
   ;; The 5 variants are: (total time for 100 runs w/o GC in parens)
@@ -459,35 +459,35 @@ When NOCASE? is non-nil, match case-insentively.
              '("select props from keys"
                "where props like '%author%'"))
     (--map (-> (car it)
-               minaduki-db::parse-value
+               minaduki-db--parse-value
                (map-elt "author")))
     -uniq
     (remq nil)))
-(defun minaduki-db::fetch-all-files-hash ()
+(defun minaduki-db--fetch-all-files-hash ()
   "Return ((path . content-hash) ...) for all cached files as a hash-table."
   (let* ((current-files (minaduki-db-select "select file, hash from files"))
          (ht (make-hash-table :test #'equal)))
     (dolist (row current-files)
       (puthash (car row) (cadr row) ht))
     ht))
-(defun minaduki-db::fetch-title (file)
+(defun minaduki-db--fetch-title (file)
   "Return the main title of FILE from the cache."
   (-> (minaduki-db-select '("select titles from files"
                              "where file = ?")
                            file)
       caar
-      minaduki-db::parse-value
+      minaduki-db--parse-value
       car))
-(defun minaduki-db::fetch-all-tags ()
+(defun minaduki-db--fetch-all-tags ()
   "Return all distinct tags from the cache."
   (let ((rows (minaduki-db-select "select distinct tags from files"))
         (acc (make-hash-table :test #'equal)))
     (dolist (row rows)
-      (dolist (tag (minaduki-db::parse-value (car row)))
+      (dolist (tag (minaduki-db--parse-value (car row)))
         (unless (gethash tag acc)
           (puthash tag t acc))))
     (hash-table-keys acc)))
-(defun minaduki-db::fetch-tag-references (tag)
+(defun minaduki-db--fetch-tag-references (tag)
   "Return files that are tagged with TAG."
   ;; We narrow the list as much as possible in SQLite with the
   ;; string match first, then do the accurate filtering in Emacs
@@ -500,9 +500,9 @@ When NOCASE? is non-nil, match case-insentively.
             ,(format "WHERE tags LIKE '%s'"
                      (concat "%" tag "%"))))))
     (cl-loop for cand in candidates
-             when (member tag (minaduki-db::parse-value (cadr cand)))
+             when (member tag (minaduki-db--parse-value (cadr cand)))
              collect (car cand))))
-(defun minaduki-db::fetch-backlinks (targets)
+(defun minaduki-db--fetch-backlinks (targets)
   "Fetch backlinks to TARGETS from the cache.
 
 TARGETS are strings that are either file paths or ref keys. They
@@ -516,23 +516,23 @@ correspond to the TO field in the cache DB."
               (-interpose "OR" it))))
     (--map
      (-let (((source dest props) it))
-       (list source dest (minaduki-db::parse-value props)))
+       (list source dest (minaduki-db--parse-value props)))
      (minaduki-db-select
       `("SELECT DISTINCT source, dest, props FROM links"
         "WHERE" ,@conditions
         "ORDER BY source ASC")))))
-(defun minaduki-db::fetch-file-hash (&optional file)
+(defun minaduki-db--fetch-file-hash (&optional file)
   "Fetch the hash of FILE as stored in the cache."
   (setq file (or file (buffer-file-name (buffer-base-buffer))))
   (caar (minaduki-db-select
          "SELECT hash FROM files WHERE file = ?"
          file)))
 
-(defun minaduki-db::fetch-tags (file)
+(defun minaduki-db--fetch-tags (file)
   "Return the tags of FILE."
   (-some->> (minaduki-db-select "select tags from files where file = ?" file)
     caar
-    minaduki-db::parse-value))
+    minaduki-db--parse-value))
 
 (cl-defun minaduki-db--fetch-nodes (&key under-path)
   "Fetch all `minaduki-node' objects for completion.
@@ -556,13 +556,13 @@ If UNDER-PATH is non-nil, only return nodes that are under it."
                         "WHERE files.file LIKE ? || '%'")
                       (or under-path "")))
     (pcase-dolist (`(,file ,titles ,tags ,meta ,ref ,key-type) file-nodes)
-      (dolist (title (minaduki-db::parse-value titles))
+      (dolist (title (minaduki-db--parse-value titles))
         (when (or (not under-path)
                   (minaduki--fast-path-descendant-of? file under-path))
           (push (minaduki-node :path file
                                :title title
-                               :tags (minaduki-db::parse-value tags)
-                               :meta (minaduki-db::parse-value meta)
+                               :tags (minaduki-db--parse-value tags)
+                               :meta (minaduki-db--parse-value meta)
                                :key ref
                                :key-type key-type)
                 rows))))
@@ -586,10 +586,10 @@ If UNDER-PATH is non-nil, only return nodes that are under it."
                :id id
                :path file
                :title (format "%s/%s"
-                              (car (minaduki-db::parse-value file-titles))
+                              (car (minaduki-db--parse-value file-titles))
                               title)
                :tags nil
-               :meta (minaduki-db::parse-value meta))
+               :meta (minaduki-db--parse-value meta))
               rows)))
     (setq rows (sort rows
                      (lambda (a b)
@@ -597,22 +597,22 @@ If UNDER-PATH is non-nil, only return nodes that are under it."
                         (plist-get (oref a meta) :mtime)
                         (plist-get (oref b meta) :mtime)))))
     rows))
-(defun minaduki-db::fetch-all-titles ()
+(defun minaduki-db--fetch-all-titles ()
   "Return all titles from the cache."
   (let ((rows (minaduki-db-select "select distinct titles from files"))
         (acc nil))
     (dolist (row rows)
-      (dolist (title (minaduki-db::parse-value (car row)))
+      (dolist (title (minaduki-db--parse-value (car row)))
         (push title acc)))
     (-uniq acc)))
 
 ;; Updating
-(cl-defstruct (minaduki-db::count
+(cl-defstruct (minaduki-db--count
                (:copier nil)
-               (:constructor minaduki-db::count))
+               (:constructor minaduki-db--count))
   err modified id link ref lit)
 
-(defun minaduki-db:build-cache::find-modified-files (files db-files skip)
+(defun minaduki-db:build-cache--find-modified-files (files db-files skip)
   "Find modified files among FILES by comparing their hashes with DB-FILES.
 
 FILES is a list of file names.
@@ -629,7 +629,7 @@ Return a list of two items:
 - the second item is DB-FILES, containing just the entries not in FILES."
   (let ((modified-files (make-hash-table :test #'equal)))
     (if skip
-        (minaduki::message "Modification check skipped")
+        (minaduki--message "Modification check skipped")
       (minaduki--each-file-hash files
         (lambda (file contents-hash)
           ;; the file is modified unless the newly computed hash agrees with the
@@ -654,65 +654,65 @@ way."
   (interactive "P")
   (when force (delete-file minaduki:db-location))
   ;; Force a reconnect
-  (setq minaduki-db::connection nil)
+  (setq minaduki-db--connection nil)
   ;; This must come before other calls to `minaduki-db' otherwise we've just
   ;; created an infinite loop.
-  (setq minaduki-db::stale nil)
+  (setq minaduki-db--stale nil)
   ;; Initialize the database if necessary
   (minaduki-db)
   (let* ((gc-cons-threshold minaduki-db/gc-threshold)
          (org-agenda-files nil)
-         (minaduki-extract::file-prop::use-cache t)
+         (minaduki-extract--file-prop--use-cache t)
          (deleted-count 0)
          dir-files db-files counts modified-files)
     (setq dir-files (minaduki-vault-all-files)
-          db-files (minaduki-db::fetch-all-files-hash))
+          db-files (minaduki-db--fetch-all-files-hash))
     (setq modified-files
-          (car (minaduki-db:build-cache::find-modified-files
+          (car (minaduki-db:build-cache--find-modified-files
                 dir-files db-files skip-modification-check)))
     (unless skip-modification-check
-      (minaduki::for "Removing deleted files from cache (%s/%s)"
+      (minaduki--for "Removing deleted files from cache (%s/%s)"
           file (hash-table-keys db-files)
         ;; These files are no longer around, remove from cache...
-        (minaduki-db::clear-file file)
+        (minaduki-db--clear-file file)
         (cl-incf deleted-count)))
-    (setq counts (minaduki-db::update-files modified-files force))
-    (pcase-let (((cl-struct minaduki-db::count
+    (setq counts (minaduki-db--update-files modified-files force))
+    (pcase-let (((cl-struct minaduki-db--count
                             (modified modified-count)
                             (err error-count))
                  counts))
       (cond ((> error-count 0)
-             (minaduki::message
+             (minaduki--message
               "Updated cache for %s file(s). There are %s errors, please check *Warnings*"
               modified-count
               error-count))
             ((= modified-count 0)
-             (minaduki::message "Cache is up to date"))
+             (minaduki--message "Cache is up to date"))
             (t
-             (minaduki::message "Updated cache for %s file(s)" modified-count))))))
+             (minaduki--message "Updated cache for %s file(s)" modified-count))))))
 (defun minaduki-db:update-file (&optional file-path)
   "Update cache for FILE-PATH.
 If the file does not exist anymore, remove it from the cache.
 If the file exists, update the cache with information."
   (setq file-path (or file-path
                       (buffer-file-name (buffer-base-buffer))))
-  (let ((content-hash (minaduki::compute-content-hash file-path))
-        (db-hash (minaduki-db::fetch-file-hash file-path)))
+  (let ((content-hash (minaduki--compute-content-hash file-path))
+        (db-hash (minaduki-db--fetch-file-hash file-path)))
     (unless (string= content-hash db-hash)
       (let ((files-table (make-hash-table :test #'equal)))
         (puthash file-path content-hash files-table)
-        (minaduki-db::update-files files-table))
+        (minaduki-db--update-files files-table))
       (when (member file-path (minaduki-lit:bibliography))
         (minaduki-db--export-lit-entries))
-      (minaduki::message "Updated: %s" file-path))))
-(defun minaduki-db::update-files (files-table &optional rebuild)
+      (minaduki--message "Updated: %s" file-path))))
+(defun minaduki-db--update-files (files-table &optional rebuild)
   "Update cache for files in FILES-TABLE.
 
 FILES-TABLE is a hash table mapping file names to hash values.
 REBUILD signals that the DB is empty right now and we should skip
 clearning existing file entries.
 
-Returns a `minaduki-db::count' object."
+Returns a `minaduki-db--count' object."
   (let ((files (hash-table-keys files-table))
         (len (hash-table-count files-table))
         (error-count 0)
@@ -725,23 +725,23 @@ Returns a `minaduki-db::count' object."
     (unless rebuild
       (dolist-with-progress-reporter (file files)
           "(minaduki) Clearing files"
-        (minaduki-db::clear-file file)))
+        (minaduki-db--clear-file file)))
     ;; Process bibliographies first so that keys only present in files can
     ;; also be tracked.
-    (minaduki::message "Processing bibliographies...")
+    (minaduki--message "Processing bibliographies...")
     (--each (minaduki-lit:bibliography)
       (when-let ((contents-hash (gethash it files-table)))
         (condition-case nil
-            (minaduki::with-temp-buffer it
+            (minaduki--with-temp-buffer it
               ;; We need the files to be in the files table first
               ;; before we can reference them
-              (minaduki-db::insert-meta nil contents-hash)
-              (cl-incf lit-count (minaduki-db::insert-lit-entries t)))
+              (minaduki-db--insert-meta nil contents-hash)
+              (cl-incf lit-count (minaduki-db--insert-lit-entries t)))
           (error
            (cl-incf error-count)
-           (minaduki-db::clear-file it)
-           (minaduki::warn :warning "Skipping bibliography: %s" it)))))
-    (minaduki::message "Processing bibliographies...done")
+           (minaduki-db--clear-file it)
+           (minaduki--warn :warning "Skipping bibliography: %s" it)))))
+    (minaduki--message "Processing bibliographies...done")
     ;; Process file metadata (titles, tags) first to allow links to
     ;; depend on titles later; process IDs first so IDs are already
     ;; cached during link extraction
@@ -755,17 +755,17 @@ Returns a `minaduki-db::count' object."
               (cl-incf i)
               (let ((inhibit-message t))
                 (condition-case e
-                    (minaduki::with-temp-buffer file
+                    (minaduki--with-temp-buffer file
                       (unless (member file bibliographies)
-                        (minaduki-db::insert-meta nil contents-hash))
+                        (minaduki-db--insert-meta nil contents-hash))
                       (setq id-count
                             (+ id-count
-                               (minaduki-db::insert-ids t))))
+                               (minaduki-db--insert-ids t))))
                   (error
                    (setq error-count
                          (1+ error-count))
-                   (minaduki-db::clear-file file)
-                   (minaduki::warn :warning "Error processing metadata:\n%s"
+                   (minaduki-db--clear-file file)
+                   (minaduki--warn :warning "Error processing metadata:\n%s"
                                    (list :file file :error e))))))))
       (progress-reporter-done rep))
     ;; Process links and ref / cite links
@@ -776,32 +776,32 @@ Returns a `minaduki-db::count' object."
         (cl-incf i)
         (condition-case e
             (let ((inhibit-message t))
-              (minaduki::with-temp-buffer file
+              (minaduki--with-temp-buffer file
                 (setq modified-count (1+ modified-count))
-                (setq lit-count (+ lit-count (minaduki-db::insert-note-lit-entries t)))
-                (setq ref-count (+ ref-count (minaduki-db::insert-refs t)))
-                (setq link-count (+ link-count (minaduki-db::insert-links)))))
+                (setq lit-count (+ lit-count (minaduki-db--insert-note-lit-entries t)))
+                (setq ref-count (+ ref-count (minaduki-db--insert-refs t)))
+                (setq link-count (+ link-count (minaduki-db--insert-links)))))
           (error
            (setq error-count (1+ error-count))
-           (minaduki-db::clear-file file)
-           (minaduki::warn :warning
+           (minaduki-db--clear-file file)
+           (minaduki--warn :warning
              "Error while processing links:\n%s"
              (list :file file :error e)))))
       (progress-reporter-done rep))
-    (minaduki-db::count :err error-count
+    (minaduki-db--count :err error-count
                         :modified modified-count
                         :id id-count
                         :link link-count
                         :ref ref-count
                         :lit lit-count)))
-(defun minaduki-db::incremental-update ()
+(defun minaduki-db--incremental-update ()
   "Update the database."
   (let ((inhibit-message save-silently))
     (pcase minaduki-db/update-method
       ('immediate
        (minaduki-db:update-file (buffer-file-name (buffer-base-buffer))))
       ('idle-timer
-       (minaduki-db::file-update-timer::mark-dirty))
+       (minaduki-db--file-update-timer--mark-dirty))
       (_
        (user-error "Invalid `minaduki-db/update-method'")))))
 

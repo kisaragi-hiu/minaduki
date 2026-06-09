@@ -112,7 +112,7 @@ This considers:
                 (format "*%s*" long-day))
                (-filter
                 (pcase-lambda (`(,_path ,meta))
-                  (-some--> (minaduki-db::parse-value meta)
+                  (-some--> (minaduki-db--parse-value meta)
                     (map-elt it "modified")
                     (s-starts-with? long-day it))))
                (-map #'car)))
@@ -129,7 +129,7 @@ This considers:
       (_
        (let* ((title-file-alist
                (--map
-                `(,(or (minaduki-db::fetch-title it)
+                `(,(or (minaduki-db--fetch-title it)
                        (f-base it))
                   .
                   ,it)

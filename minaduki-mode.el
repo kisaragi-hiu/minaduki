@@ -30,34 +30,34 @@
       (buffer-name)))
 
 ;;;; Function faces
-(defun minaduki::link-to-current-p ()
+(defun minaduki--link-to-current-p ()
   "Return t if the link at point points to the current file."
   (save-match-data
     (let ((current-file (buffer-file-name minaduki-buffer//current))
           (link-dest
-           (minaduki::file-type-case
+           (minaduki--file-type-case
              (:org (let* ((context (org-element-context))
                           (type (org-element-property :type context))
                           (dest (org-element-property :path context)))
                      (pcase type
-                       ("id" (minaduki-db::fetch-file :id dest))
+                       ("id" (minaduki-db--fetch-file :id dest))
                        (_ dest))))
              (:markdown
               (when (markdown-link-p)
                 (let ((dest (markdown-link-url)))
                   (if (s-prefix? "#" dest)
-                      (minaduki-db::fetch-file :id dest)
+                      (minaduki-db--fetch-file :id dest)
                     (expand-file-name dest))))))))
       (string= current-file link-dest))))
 
-(defun minaduki::apply-link-faces? ()
+(defun minaduki--apply-link-faces? ()
   "Return whether we should apply custom link faces in the current context."
   (or (and (-> (buffer-file-name (buffer-base-buffer))
              minaduki-vault-in-vault?)
            minaduki:use-custom-link-faces)
       (eq minaduki:use-custom-link-faces 'everywhere)))
 
-(defun minaduki-org::a-fuzzy-face (orig-func type key)
+(defun minaduki-org--a-fuzzy-face (orig-func type key)
   "Advice for `org-link-get-parameter' to apply face for nonexistant wiki links.
 
 ORIG-FUNC is the original `org-link-get-parameter'.
@@ -68,7 +68,7 @@ point resolves to a nonexistant file."
     (unless (and minaduki-local-mode
                  (equal type "fuzzy")
                  (eq key :face)
-                 (minaduki::apply-link-faces?))
+                 (minaduki--apply-link-faces?))
       (cl-return (funcall orig-func type key)))
     (lambda (path)
       (let ((resolved (minaduki-obsidian-path path)))
@@ -77,21 +77,21 @@ point resolves to a nonexistant file."
             'minaduki-link-invalid
           'minaduki-link)))))
 
-(defun minaduki::file-link-face (path)
+(defun minaduki--file-link-face (path)
   "Conditional face for file: links.
 Applies the `minaduki-link-current' face if PATH corresponds
 to the current file in the backlink buffer, or the
 `minaduki-link' face if PATH corresponds to any other
 file in a vault."
   (save-match-data
-    (let ((custom (minaduki::apply-link-faces?)))
+    (let ((custom (minaduki--apply-link-faces?)))
       (cond ((and custom
                   (not (file-remote-p path)) ; Prevent lockups opening Tramp links
                   (not (file-exists-p path)))
              'minaduki-link-invalid)
             ((and custom
                   (bound-and-true-p minaduki-buffer/mode)
-                  (minaduki::link-to-current-p))
+                  (minaduki--link-to-current-p))
              'minaduki-link-current)
             ((and custom
                   (minaduki-vault-in-vault? path))
@@ -99,7 +99,7 @@ file in a vault."
             (t
              'org-link)))))
 
-(defun minaduki::id-link-face (id)
+(defun minaduki--id-link-face (id)
   "Conditional face for id links.
 Applies the `minaduki-link-current' face if ID corresponds
 to the current file in the backlink buffer, or the
@@ -112,21 +112,21 @@ file in a vault."
                        (eq minaduki:use-custom-link-faces 'everywhere))))
       (cond ((and custom
                   (bound-and-true-p minaduki-buffer/mode)
-                  (minaduki::link-to-current-p))
+                  (minaduki--link-to-current-p))
              'minaduki-link-current)
             ((and custom
-                  (minaduki-db::fetch-file :id id))
+                  (minaduki-db--fetch-file :id id))
              'minaduki-link)
             ;; FIXME: this breaks the display of ID links to untracked
             ;; files.
             ((and custom
-                  (not (minaduki-db::fetch-file :id id)))
+                  (not (minaduki-db--fetch-file :id id)))
              'minaduki-link-invalid)
             (t
              'org-link)))))
 
 ;;;; Custom link following behavior
-(defun minaduki::a-markdown-follow (orig-func arg)
+(defun minaduki--a-markdown-follow (orig-func arg)
   "Use `minaduki-markdown-follow' to replace `markdown-follow-thing-at-point'.
 ORIG-FUNC is the original function.
 ARG is whether the thing should be opened in another window."
@@ -141,13 +141,13 @@ ARG is whether the thing should be opened in another window."
         (minaduki-markdown-follow arg)
       (funcall orig-func arg))))
 
-(defun minaduki-org::h-open-wiki-link (target)
+(defun minaduki-org--h-open-wiki-link (target)
   "`org-open-link-functions' handler for Obsidian-style wiki links in Org.
 TARGET is the link's target, as passed to `org-open-link-functions'."
   (let ((resolved-path (minaduki-obsidian-path target)))
     (find-file resolved-path)))
 
-(defun minaduki-org::fuzzy-follow (target)
+(defun minaduki-org--fuzzy-follow (target)
   "A follow function that acts like Org [[plain]] links.
 
 This reads the link from the point position. TARGET is passed in
@@ -160,7 +160,7 @@ so we need another way to access fuzzy link features.
 Minaduki binds this to [[f:<target>]]."
   (let ((link (org-element-context))
         (org-open-link-functions
-         (remove 'minaduki-org::h-open-wiki-link org-open-link-functions)))
+         (remove 'minaduki-org--h-open-wiki-link org-open-link-functions)))
     (org-link-open
      `(link (:type "fuzzy" :path ,target
              :format bracket :raw-link ,target
@@ -173,26 +173,26 @@ Minaduki binds this to [[f:<target>]]."
              :begin ,(+ 2 (org-element-begin link)))))))
 
 ;;;; Link replacement after deletion and rename
-(defun minaduki::a-delete-file (file &optional _trash)
+(defun minaduki--a-delete-file (file &optional _trash)
   "Advice: as FILE is deleted, delete its cache entries as well."
   (when (and (not (auto-save-file-name-p file))
              (minaduki-vault-in-vault? file))
-    (minaduki-db::clear-file (expand-file-name file))))
+    (minaduki-db--clear-file (expand-file-name file))))
 
-(defun minaduki::get-link-replacement (old-path new-path &optional old-desc new-desc)
+(defun minaduki--get-link-replacement (old-path new-path &optional old-desc new-desc)
   "Create replacement text for link at point if OLD-PATH is a match.
 Will update link to NEW-PATH. If OLD-DESC is set, and is not the
 same as the link description, it is assumed that the user has
 modified the description, and the description will not be
 updated. Else, update with NEW-DESC."
-  (minaduki::file-type-case
+  (minaduki--file-type-case
     (:markdown
      (let ((type :obsidian) link
            label new-label)
-       (setq link (minaduki::link-obsidian::parse))
+       (setq link (minaduki--link-obsidian--parse))
        (unless link
          (setq type :markdown)
-         (setq link (minaduki::link-markdown::parse)))
+         (setq link (minaduki--link-markdown--parse)))
        (when link
          (when (equal (expand-file-name (oref link to))
                       old-path)
@@ -201,14 +201,14 @@ updated. Else, update with NEW-DESC."
            (setq new-label (if (equal label old-desc)
                                new-desc
                              label))
-           (minaduki::link::write
+           (minaduki--link--write
             (minaduki-link
              :to (minaduki-vault-path-relative new-path)
              :desc new-label)
             type)))))
     (:org
      (let (label new-label)
-       (when-let (link (minaduki::link-org::parse))
+       (when-let (link (minaduki--link-org--parse))
          (when (and (equal (expand-file-name (oref link to))
                            old-path)
                     (org-in-regexp org-link-bracket-re 1))
@@ -217,11 +217,11 @@ updated. Else, update with NEW-DESC."
            (setq new-label (if (equal label old-desc)
                                new-desc
                              label))
-           (minaduki::format-link
+           (minaduki--format-link
             :target (minaduki-vault-path-relative new-path)
             :desc new-label)))))))
 
-(defun minaduki::replace-link (old-path new-path &optional old-desc new-desc)
+(defun minaduki--replace-link (old-path new-path &optional old-desc new-desc)
   "Replace Org-roam file links with path OLD-PATH to path NEW-PATH.
 If OLD-DESC is passed, and is not the same as the link
 description, it is assumed that the user has modified the
@@ -230,7 +230,7 @@ update with NEW-DESC."
   (org-with-wide-buffer
    (goto-char 1)
    (while (re-search-forward
-           (minaduki::file-type-case
+           (minaduki--file-type-case
              (:org org-link-bracket-re)
              (:markdown (concat "\\(?:" markdown-regex-link-inline
                                 "\\|" markdown-regex-angle-uri
@@ -242,15 +242,15 @@ update with NEW-DESC."
            nil t)
      (save-excursion
        (goto-char (match-beginning 0))
-       (when-let ((link (save-match-data (minaduki::get-link-replacement old-path new-path old-desc new-desc))))
+       (when-let ((link (save-match-data (minaduki--get-link-replacement old-path new-path old-desc new-desc))))
          (replace-match link))))))
 
 ;; TODO: markdown
-(defun minaduki::fix-relative-links (old-path)
+(defun minaduki--fix-relative-links (old-path)
   "Fix file-relative links in current buffer.
 File relative links are assumed to originate from OLD-PATH. The
 replaced links are made relative to the current buffer."
-  (minaduki::file-type-case
+  (minaduki--file-type-case
     (:org
      (org-with-wide-buffer
       (goto-char 1)
@@ -262,10 +262,10 @@ replaced links are made relative to the current buffer."
             (when (and (string= type "file")
                        (f-relative-p path))
               (setq new-link
-                    (concat type ":" (minaduki::convert-path-format (expand-file-name path (file-name-directory old-path)))))
+                    (concat type ":" (minaduki--convert-path-format (expand-file-name path (file-name-directory old-path)))))
               (replace-match new-link nil t nil 1)))))))))
 
-(defun minaduki::rename-file-advice (old-file new-file-or-dir &rest _args)
+(defun minaduki--rename-file-advice (old-file new-file-or-dir &rest _args)
   "Rename backlinks of OLD-FILE to refer to NEW-FILE-OR-DIR.
 When NEW-FILE-OR-DIR is a directory, we use it to compute the new file path."
   (let ((new-file (if (directory-name-p new-file-or-dir)
@@ -279,17 +279,17 @@ When NEW-FILE-OR-DIR is a directory, we use it to compute the new file path."
                (not (backup-file-name-p old-file))
                (not (backup-file-name-p new-file))
                (minaduki-vault-in-vault? old-file))
-      (minaduki-db::ensure-built)
+      (minaduki-db--ensure-built)
       (setq files-affected
             (minaduki-db-select "select distinct source from links where dest = ?" old-file))
       ;; Remove database entries for old-file.org
-      (minaduki-db::clear-file old-file)
+      (minaduki-db--clear-file old-file)
       ;; If the new path is in a different directory, relative links
       ;; will break. Fix all file-relative links:
       (unless (string= (file-name-directory old-file)
                        (file-name-directory new-file))
-        (minaduki::with-file new-file nil
-          (minaduki::fix-relative-links old-file)))
+        (minaduki--with-file new-file nil
+          (minaduki--fix-relative-links old-file)))
       (when (minaduki-vault-in-vault? new-file)
         (minaduki-db:update-file new-file))
       ;; Replace links from old-file.org -> new-file.org in all Org-roam files with these links
@@ -297,13 +297,13 @@ When NEW-FILE-OR-DIR is a directory, we use it to compute the new file path."
               (setq file (if (string-equal (car file) old-file)
                              new-file
                            (car file)))
-              (minaduki::with-file file nil
-                (minaduki::replace-link old-file new-file)
+              (minaduki--with-file file nil
+                (minaduki--replace-link old-file new-file)
                 (save-buffer)
                 (minaduki-db:update-file)))
             files-affected))))
 
-(defun minaduki-org::buttonize-tags ()
+(defun minaduki-org--buttonize-tags ()
   "Turn tags into buttons in this buffer."
   (when (eq 'org-mode major-mode)
     (save-excursion
@@ -326,7 +326,7 @@ When NEW-FILE-OR-DIR is a directory, we use it to compute the new file path."
                            ;; Otherwise all iterations share the same
                            ;; `tag' variable.
                            (tag tag)
-                           (file (car (minaduki-db::fetch-file
+                           (file (car (minaduki-db--fetch-file
                                        :title tag
                                        :nocase? t))))
                       (remove-overlays start end 'face 'button)
@@ -338,7 +338,7 @@ When NEW-FILE-OR-DIR is a directory, we use it to compute the new file path."
                          'follow-link t
                          'face 'button))))))))
 
-(defun minaduki-mode::handle-double-bracket-h ()
+(defun minaduki-mode--handle-double-bracket-h ()
   "Run completion after inserting double brackets."
   (when (and (eql ?\[ (char-before (point)))
              ;; This does not cause out-of-bounds at point = 1
@@ -357,9 +357,9 @@ When NEW-FILE-OR-DIR is a directory, we use it to compute the new file path."
     (call-interactively #'minaduki-insert)))
 
 ;;;; The minor mode itself
-(defun minaduki::local-mode-enable ()
+(defun minaduki--local-mode-enable ()
   "Do the actual work to enable `minaduki-local-mode'."
-  (setq minaduki::last-window (get-buffer-window))
+  (setq minaduki--last-window (get-buffer-window))
   (when minaduki:note-title-in-frame-title
     (setq-local frame-title-format
                 (if (stringp frame-title-format)
@@ -369,14 +369,14 @@ When NEW-FILE-OR-DIR is a directory, we use it to compute the new file path."
                          (-remove-item ""))
                   '((:eval (minaduki:buffer-name-for-display))
                     " - GNU Emacs"))))
-  (minaduki::file-type-case
+  (minaduki--file-type-case
     (:org
      ;; FIXME: org-open-link-functions happens before Org does the current
      ;; buffer file search, and will override the target seeking behavior. This
      ;; makes it somewhat unusable in this case.
-     (add-hook 'org-open-link-functions #'minaduki-org::h-open-wiki-link nil t)
-     (add-hook 'before-save-hook #'minaduki-wikilink::replace-link-on-save nil t)
-     (add-hook 'post-command-hook #'minaduki-org::buttonize-tags nil t)))
+     (add-hook 'org-open-link-functions #'minaduki-org--h-open-wiki-link nil t)
+     (add-hook 'before-save-hook #'minaduki-wikilink--replace-link-on-save nil t)
+     (add-hook 'post-command-hook #'minaduki-org--buttonize-tags nil t)))
   ;; vaults can reference each other
   (dolist (vault
            ;; Ensure first element in `minaduki/vaults' is the
@@ -395,8 +395,8 @@ When NEW-FILE-OR-DIR is a directory, we use it to compute the new file path."
       (setf (map-elt org-link-abbrev-alist-local name)
             value)))
   (add-hook 'post-command-hook #'minaduki-buffer//update-maybe nil t)
-  (add-hook 'after-save-hook #'minaduki-db::incremental-update nil t)
-  (add-hook 'post-self-insert-hook #'minaduki-mode::handle-double-bracket-h nil t)
+  (add-hook 'after-save-hook #'minaduki-db--incremental-update nil t)
+  (add-hook 'post-self-insert-hook #'minaduki-mode--handle-double-bracket-h nil t)
   (dolist (fn '(minaduki-completion/tags-at-point))
     (add-hook 'completion-at-point-functions fn nil t))
   (minaduki-buffer//update-maybe :redisplay t))
@@ -417,7 +417,7 @@ when appropriate."
              do (let ((key (format "%s %s" minaduki-mode:command-prefix suffix)))
                   (define-key map (kbd key) cmd)))
             map)
-  (minaduki::local-mode-enable))
+  (minaduki--local-mode-enable))
 
 (defun minaduki-initialize ()
   "Initialize minaduki for this buffer."
@@ -444,16 +444,16 @@ See `minaduki-local-mode' for more information on Minaduki-Local mode."
   :require 'minaduki
   (unless (and (fboundp 'sqlite-available-p)
                (sqlite-available-p))
-    (minaduki::warn :error "SQLite support not found in this Emacs. Minaduki requires the builtin SQLite support found in Emacs 29 and higher."))
+    (minaduki--warn :error "SQLite support not found in this Emacs. Minaduki requires the builtin SQLite support found in Emacs 29 and higher."))
   (if minaduki-mode
       (progn
-        (when (and (not minaduki-db::file-update-timer)
+        (when (and (not minaduki-db--file-update-timer)
                    (eq minaduki-db/update-method 'idle-timer))
-          (setq minaduki-db::file-update-timer (run-with-idle-timer minaduki-db/update-idle-seconds t #'minaduki-db::file-update-timer::update-cache)))
-        (advice-add 'rename-file :after #'minaduki::rename-file-advice)
-        (advice-add 'delete-file :before #'minaduki::a-delete-file)
-        (advice-add 'markdown-follow-thing-at-point :around #'minaduki::a-markdown-follow)
-        (advice-add 'org-link-get-parameter :around #'minaduki-org::a-fuzzy-face)
+          (setq minaduki-db--file-update-timer (run-with-idle-timer minaduki-db/update-idle-seconds t #'minaduki-db--file-update-timer--update-cache)))
+        (advice-add 'rename-file :after #'minaduki--rename-file-advice)
+        (advice-add 'delete-file :before #'minaduki--a-delete-file)
+        (advice-add 'markdown-follow-thing-at-point :around #'minaduki--a-markdown-follow)
+        (advice-add 'org-link-get-parameter :around #'minaduki-org--a-fuzzy-face)
         (add-to-list 'org-execute-file-search-functions 'minaduki-org//move-to-row-col)
         (add-hook 'org-open-at-point-functions #'minaduki/open-id-at-point)
         (advice-add 'org-id-new :after #'minaduki-org//id-new-advice)
@@ -462,14 +462,14 @@ See `minaduki-local-mode' for more information on Minaduki-Local mode."
         (advice-add 'org-read-date :before #'minaduki//set-calendar-mark-diary-entries-flag-nil)
         (advice-add 'org-read-date :after #'minaduki//set-calendar-mark-diary-entries-flag-t)
         (when (fboundp 'org-link-set-parameters)
-          (org-link-set-parameters minaduki-wikilink::type :follow #'minaduki-wikilink:follow)
+          (org-link-set-parameters minaduki-wikilink--type :follow #'minaduki-wikilink:follow)
           (org-link-set-parameters "minaduki-btn" :follow #'minaduki-btn:follow)
           (when (fboundp 'magit-show-commit)
             (org-link-set-parameters "commit" :follow #'magit-show-commit))
           (org-link-set-parameters "info" :follow #'info)
-          (org-link-set-parameters "f" :follow #'minaduki-org::fuzzy-follow)
-          (org-link-set-parameters "file" :face 'minaduki::file-link-face)
-          (org-link-set-parameters "id" :face 'minaduki::id-link-face))
+          (org-link-set-parameters "f" :follow #'minaduki-org--fuzzy-follow)
+          (org-link-set-parameters "file" :face 'minaduki--file-link-face)
+          (org-link-set-parameters "id" :face 'minaduki--id-link-face))
         ;; Set up vault list save/load
         (minaduki-vaults-save-load-mode)
         (add-hook 'after-change-major-mode-hook 'minaduki-initialize)
@@ -482,21 +482,21 @@ See `minaduki-local-mode' for more information on Minaduki-Local mode."
     (remove-hook 'after-change-major-mode-hook 'minaduki-initialize)
     (remove-hook 'find-file-hook 'minaduki-initialize)
     (remove-hook 'org-open-at-point-functions #'minaduki/open-id-at-point)
-    (when minaduki-db::file-update-timer
-      (cancel-timer minaduki-db::file-update-timer))
-    (advice-remove 'rename-file #'minaduki::rename-file-advice)
-    (advice-remove 'delete-file #'minaduki::a-delete-file)
+    (when minaduki-db--file-update-timer
+      (cancel-timer minaduki-db--file-update-timer))
+    (advice-remove 'rename-file #'minaduki--rename-file-advice)
+    (advice-remove 'delete-file #'minaduki--a-delete-file)
     (advice-remove 'org-id-new #'minaduki-org//id-new-advice)
-    (advice-remove 'markdown-follow-thing-at-point #'minaduki::a-markdown-follow)
-    (advice-remove 'org-link-get-parameter #'minaduki-org::a-fuzzy-face)
+    (advice-remove 'markdown-follow-thing-at-point #'minaduki--a-markdown-follow)
+    (advice-remove 'org-link-get-parameter #'minaduki-org--a-fuzzy-face)
     (when (fboundp 'org-link-set-parameters)
-      (org-link-set-parameters minaduki-wikilink::type :follow nil)
+      (org-link-set-parameters minaduki-wikilink--type :follow nil)
       (org-link-set-parameters "minaduki-btn" :follow nil)
       (org-link-set-parameters "commit" :follow nil)
       (org-link-set-parameters "f" :follow nil)
       (dolist (face '("file" "id"))
         (org-link-set-parameters face :face 'org-link)))
-    (minaduki-db::close)
+    (minaduki-db--close)
     (setq calendar-mark-diary-entries-flag nil)
     (advice-remove 'diary-mark-entries
                    #'minaduki//mark-calendar)
