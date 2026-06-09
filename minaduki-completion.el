@@ -36,7 +36,7 @@
 (declare-function ivy--flx-sort "ivy")
 (declare-function ivy--shorter-matches-first "ivy")
 
-(cl-defun minaduki-read:author (&key def (prompt "Author: "))
+(cl-defun minaduki-read-author (&key def (prompt "Author: "))
   "Ask the user using PROMPT to select an author.
 DEF is passed to `completing-read'. Pass the current author value
 in with this to mimick `org-read-property-value'\\='s behavior
@@ -125,7 +125,7 @@ Embark to create what are in effect context menus."
                   (propertize 'face 'minaduki-path))))
     (s-join " " (list title cite tags path))))
 
-(cl-defun minaduki-read:note
+(cl-defun minaduki-read-note
     (&key initial-input (prompt "Note: ") under-path)
   "Read a note that is indexed by Minaduki.
 
@@ -159,21 +159,21 @@ UNDER-PATH: only list nodes under this path for completion."
            :path (s-trim selection)
            :new? t)))))
 
-(defvar minaduki-read:lit-entry--citekey nil
+(defvar minaduki-read-lit-entry--citekey nil
   "Let-bind this variable to use `org-cite-insert' on a particular citekey.
 
 For example:
 
-  (let ((minaduki-read:lit-entry--citekey \"iso20041201\"))
+  (let ((minaduki-read-lit-entry--citekey \"iso20041201\"))
     (org-cite-insert nil))")
 
-(cl-defun minaduki-read:lit-entry
+(cl-defun minaduki-read-lit-entry
     (multiple &key (prompt "Entry: "))
   "Read a literature entry and return its citekey.
 
 Always return a list of citekeys.
 
-If `minaduki-read:lit-entry--citekey' is non-nil,
+If `minaduki-read-lit-entry--citekey' is non-nil,
 return that instead. This allows us to call `org-cite-insert'
 without prompting.
 
@@ -182,12 +182,12 @@ MULTIPLE: if non-nil, try to read multiple values with
 for the `minaduki' org-cite insert processor.
 
 PROMPT: the text shown in the prompt."
-  (when minaduki-read:lit-entry--citekey
-    (cl-return-from minaduki-read:lit-entry
+  (when minaduki-read-lit-entry--citekey
+    (cl-return-from minaduki-read-lit-entry
       ;; org-cite expects a list if it asked for one
-      (if (listp minaduki-read:lit-entry--citekey)
-          minaduki-read:lit-entry--citekey
-        (list minaduki-read:lit-entry--citekey))))
+      (if (listp minaduki-read-lit-entry--citekey)
+          minaduki-read-lit-entry--citekey
+        (list minaduki-read-lit-entry--citekey))))
   (minaduki--with-comp-setup
       ((ivy-sort-functions-alist . nil)
        (ivy-sort-matches-functions-alist . #'ivy--shorter-matches-first))
@@ -254,7 +254,7 @@ ALIST maps each option to their annotation string."
                     (lambda (_)
                       (->> (minaduki-db--fetch-all-tags)
                            (--remove (string= prefix it)))))
-                   (completion-table-case-fold it (not minaduki:ignore-case-during-completion)))
+                   (completion-table-case-fold it (not minaduki-ignore-case-during-completion)))
               :exit-function (lambda (str _status)
                                (delete-char (- (length str)))
                                (insert "\"" str "\"")))))))

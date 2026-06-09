@@ -150,7 +150,7 @@ If ARG is a number less than 1, disable it, otherwise enable it."
     (plist-get vault :name)))
 
 (defun minaduki-vault-skipped (vault)
-  "Return whether VAULT is skipped by `minaduki-db:build-cache'."
+  "Return whether VAULT is skipped by `minaduki-db-build-cache'."
   (when (listp vault)
     (plist-get vault :skipped)))
 

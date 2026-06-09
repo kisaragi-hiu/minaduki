@@ -38,7 +38,7 @@
 
 (declare-function minaduki-open "minaduki-commands" (&optional entry))
 
-(defun minaduki-wikilink:follow (_path)
+(defun minaduki-wikilink-follow (_path)
   "Follow a minaduki: wikilink.
 This function is called by Org when following links of the type
 `minaduki'. This is registered by `minaduki-mode'."
@@ -208,7 +208,7 @@ DESC is the link description."
                                      :type (and (equal type "id")
                                                 'id))))))
 
-(defun minaduki-wikilink:replace-all ()
+(defun minaduki-wikilink-replace-all ()
   "Replace all wikilinks in the current buffer."
   (interactive)
   (save-excursion
@@ -223,7 +223,7 @@ DESC is the link description."
 (defun minaduki-wikilink--replace-link-on-save ()
   "Hook to replace all roam links on save."
   (when minaduki-wikilink-auto-replace
-    (minaduki-wikilink:replace-all)))
+    (minaduki-wikilink-replace-all)))
 
 (provide 'minaduki-wikilink)
 ;;; minaduki-wikilink.el ends here

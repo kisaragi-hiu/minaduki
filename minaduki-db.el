@@ -66,7 +66,7 @@ When this is non-nil, `minaduki-db' automatically updates the cache.")
 (defun minaduki-db--file-update-timer--update-cache ()
   "Update the cache if the database is dirty."
   (when minaduki-db--file-update-dirty
-    (minaduki-db:build-cache)
+    (minaduki-db-build-cache)
     (minaduki-db--export-lit-entries))
   (setq minaduki-db--file-update-dirty nil))
 (defun minaduki-db--file-update-timer--mark-dirty ()
@@ -75,11 +75,11 @@ When this is non-nil, `minaduki-db' automatically updates the cache.")
 
 (defun minaduki-db--init-and-migrate ()
   "Initialize and migrate the database."
-  (let ((should-init (not (file-exists-p minaduki:db-location)))
+  (let ((should-init (not (file-exists-p minaduki-db-location)))
         db)
     (when should-init
-      (make-directory (file-name-directory minaduki:db-location) t))
-    (setq db (sqlite-open minaduki:db-location))
+      (make-directory (file-name-directory minaduki-db-location) t))
+    (setq db (sqlite-open minaduki-db-location))
     ;; Setting the global variable early allows us to use `minaduki-db-execute'
     ;; etc. during migration without fear for recursive initialization.
     (setq minaduki-db--connection db)
@@ -103,7 +103,7 @@ When this is non-nil, `minaduki-db' automatically updates the cache.")
         (message "Migrating the cache database from version %d to version %d"
                  version minaduki-db--version)
         ;; Fallback case: rebuild everything
-        (minaduki-db:build-cache t))))
+        (minaduki-db-build-cache t))))
     minaduki-db--connection))
 (defun minaduki-db--close ()
   "Close the connection."
@@ -119,7 +119,7 @@ Performs initialization and migration when required."
     (minaduki-db--init-and-migrate))
   (when minaduki-db--stale
     ;; build-cache sets stale to nil in its first steps
-    (minaduki-db:build-cache nil minaduki-db-skip-initial-modification-check))
+    (minaduki-db-build-cache nil minaduki-db-skip-initial-modification-check))
   minaduki-db--connection)
 
 ;; Like `emacsql-escape-scalar'
@@ -181,18 +181,18 @@ If SQL is a list, join them with newlines."
 
 (defun minaduki-db--initialized? ()
   "Return whether the cache database has been initialized."
-  (and (file-exists-p minaduki:db-location)
+  (and (file-exists-p minaduki-db-location)
        (> (length (minaduki-db-select "select * from files limit 1"))
           0)))
 (defun minaduki-db--ensure-built ()
   "Assert that the database has been initialized, and barf otherwise."
   (unless (minaduki-db--initialized?)
-    (error "(minaduki) The cache database has not been built yet. Please run `minaduki-db:build-cache to build it")))
+    (error "(minaduki) The cache database has not been built yet. Please run `minaduki-db-build-cache to build it")))
 
 ;; Clearing
 (defun minaduki-db--clear-all ()
   "Clear all entries in the cache database."
-  (when (file-exists-p minaduki:db-location)
+  (when (file-exists-p minaduki-db-location)
     (dolist (table (map-keys minaduki-db--table-schemata))
       (minaduki-db-execute (format "delete from \"%s\"" table)))))
 (defun minaduki-db--clear-file (file)
@@ -612,7 +612,7 @@ If UNDER-PATH is non-nil, only return nodes that are under it."
                (:constructor minaduki-db--count))
   err modified id link ref lit)
 
-(defun minaduki-db:build-cache--find-modified-files (files db-files skip)
+(defun minaduki-db-build-cache--find-modified-files (files db-files skip)
   "Find modified files among FILES by comparing their hashes with DB-FILES.
 
 FILES is a list of file names.
@@ -639,8 +639,8 @@ Return a list of two items:
           (remhash file db-files))
        "(minaduki) Comparing hashes to find modified files"))
     (list modified-files db-files)))
-(defalias 'minaduki-db:refresh 'minaduki-db:build-cache)
-(defun minaduki-db:build-cache (&optional force skip-modification-check)
+(defalias 'minaduki-db-refresh 'minaduki-db-build-cache)
+(defun minaduki-db-build-cache (&optional force skip-modification-check)
   "Build the cache for all applicable notes.
 If FORCE, force a rebuild of the cache from scratch.
 If SKIP-MODIFICATION-CHECK, treat all files as unmodified and don't
@@ -652,7 +652,7 @@ run this directly, but in cases when you do have the need,
 SKIP-MODIFICATION-CHECK would be actively harmful if it is on in some
 way."
   (interactive "P")
-  (when force (delete-file minaduki:db-location))
+  (when force (delete-file minaduki-db-location))
   ;; Force a reconnect
   (setq minaduki-db--connection nil)
   ;; This must come before other calls to `minaduki-db' otherwise we've just
@@ -668,7 +668,7 @@ way."
     (setq dir-files (minaduki-vault-all-files)
           db-files (minaduki-db--fetch-all-files-hash))
     (setq modified-files
-          (car (minaduki-db:build-cache--find-modified-files
+          (car (minaduki-db-build-cache--find-modified-files
                 dir-files db-files skip-modification-check)))
     (unless skip-modification-check
       (minaduki--for "Removing deleted files from cache (%s/%s)"
@@ -690,7 +690,7 @@ way."
              (minaduki--message "Cache is up to date"))
             (t
              (minaduki--message "Updated cache for %s file(s)" modified-count))))))
-(defun minaduki-db:update-file (&optional file-path)
+(defun minaduki-db-update-file (&optional file-path)
   "Update cache for FILE-PATH.
 If the file does not exist anymore, remove it from the cache.
 If the file exists, update the cache with information."
@@ -702,7 +702,7 @@ If the file exists, update the cache with information."
       (let ((files-table (make-hash-table :test #'equal)))
         (puthash file-path content-hash files-table)
         (minaduki-db--update-files files-table))
-      (when (member file-path (minaduki-lit:bibliography))
+      (when (member file-path (minaduki-lit-bibliography))
         (minaduki-db--export-lit-entries))
       (minaduki--message "Updated: %s" file-path))))
 (defun minaduki-db--update-files (files-table &optional rebuild)
@@ -729,7 +729,7 @@ Returns a `minaduki-db--count' object."
     ;; Process bibliographies first so that keys only present in files can
     ;; also be tracked.
     (minaduki--message "Processing bibliographies...")
-    (--each (minaduki-lit:bibliography)
+    (--each (minaduki-lit-bibliography)
       (when-let ((contents-hash (gethash it files-table)))
         (condition-case nil
             (minaduki--with-temp-buffer it
@@ -745,7 +745,7 @@ Returns a `minaduki-db--count' object."
     ;; Process file metadata (titles, tags) first to allow links to
     ;; depend on titles later; process IDs first so IDs are already
     ;; cached during link extraction
-    (let* ((bibliographies (minaduki-lit:bibliography))
+    (let* ((bibliographies (minaduki-lit-bibliography))
            (i 1)
            (rep (make-progress-reporter "(minaduki) Processing file metadata" 1 len)))
       (->> files-table
@@ -799,7 +799,7 @@ Returns a `minaduki-db--count' object."
   (let ((inhibit-message save-silently))
     (pcase minaduki-db/update-method
       ('immediate
-       (minaduki-db:update-file (buffer-file-name (buffer-base-buffer))))
+       (minaduki-db-update-file (buffer-file-name (buffer-base-buffer))))
       ('idle-timer
        (minaduki-db--file-update-timer--mark-dirty))
       (_

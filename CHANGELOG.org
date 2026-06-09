@@ -3,7 +3,7 @@
 ** 0.2
 *** Add option to use note title in place of buffer name in the frame title
 
-When =minaduki:note-title-in-frame-title= is non-nil, the note title is used in place of the buffer name in the frame title.
+When =minaduki-note-title-in-frame-title= is non-nil, the note title is used in place of the buffer name in the frame title.
 
 For example, if this file is tracked by Minaduki, the frame title would be =Changelog - GNU Emacs= instead of =CHANGELOG.org - GNU Emacs=.
 

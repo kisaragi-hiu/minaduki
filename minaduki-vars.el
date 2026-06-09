@@ -50,12 +50,12 @@
 
 ;;;; User Options
 
-(defcustom minaduki:note-title-in-frame-title nil
+(defcustom minaduki-note-title-in-frame-title nil
   "Use the note's declared title instead of the buffer name as frame title.
 
 When this is non-nil, in files tracked by Minaduki, occurances of
 \"%b\" in `frame-title-format' are replaced with a call to
-`minaduki:buffer-name-for-display'.
+`minaduki-buffer-name-for-display'.
 
 For example, in a note stored as \"home.org\" that specified its
 title to be \"Index\", the frame title is:
@@ -73,7 +73,7 @@ take effect."
   :type 'key-sequence
   :group 'minaduki)
 
-(defcustom minaduki:db-location (expand-file-name "minaduki.db" user-emacs-directory)
+(defcustom minaduki-db-location (expand-file-name "minaduki.db" user-emacs-directory)
   "Full path to the cache database.
 
 All cache will be saved here regardless of which project a note
@@ -186,7 +186,7 @@ defaults, however."
   :group 'minaduki-lit
   :type 'string)
 
-(defun minaduki-lit:bibliography ()
+(defun minaduki-lit-bibliography ()
   "Get the bibliograpies from `minaduki-lit/bibliography'."
   (cond
    ((stringp minaduki-lit/bibliography)
@@ -219,7 +219,7 @@ defaults, however."
           (const :tag "Include everything" nil))
   :group 'minaduki)
 
-(defcustom minaduki:tags-file "tags.org"
+(defcustom minaduki-tags-file "tags.org"
   "Vault-local path to the tags library."
   :type 'string
   :group 'minaduki)
@@ -261,7 +261,7 @@ which will then be replaced with a single dash (\"-\")."
           :value-type (string :tag "To"))
   :group 'minaduki)
 
-(defcustom minaduki:use-custom-link-faces t
+(defcustom minaduki-use-custom-link-faces t
   "Whether to use custom link faces.
 
 Valide values are:
@@ -337,7 +337,7 @@ which case the list is passed to `cl-sort' as arguments."
           (sexp :tag "Arguments to cl-sort"))
   :group 'minaduki)
 
-(defcustom minaduki:ignore-case-during-completion t
+(defcustom minaduki-ignore-case-during-completion t
   "Whether to ignore case in Org-roam `completion-at-point' completions."
   :group 'minaduki
   :type 'boolean)
@@ -376,7 +376,7 @@ This can be set in a directory local variable."
 
 ;;;;; bibtex
 
-(defcustom minaduki-lit:slug-source 'citekey
+(defcustom minaduki-lit-slug-source 'citekey
   "How a note's slug should be created.
 Supported values are symbols `citekey' and `title'.
 
@@ -427,14 +427,14 @@ descriptive warnings when certain operations fail (e.g. parsing).")
     ("Open the index file"                . minaduki/open-index)
     ("Create a new literature note from URL" . minaduki/new-literature-note-from-url)
     ("Open a random note"                 . minaduki/open-random-note)
-    ("Refresh cache"                      . minaduki-db:build-cache))
+    ("Refresh cache"                      . minaduki-db-build-cache))
   "Global commands shown in `minaduki-global-commands'.
 
 List of (DISPLAY-NAME . COMMAND) pairs.")
 
 (defvar minaduki--local-commands
-  '(("Create ID for current heading" . minaduki:id-get-create)
-    ("Move file to..."               . minaduki:move-file-to-directory)
+  '(("Create ID for current heading" . minaduki-id-get-create)
+    ("Move file to..."               . minaduki-move-file-to-directory)
     ("Insert a button"               . minaduki-btn-insert)
     ("Insert a link"                 . minaduki-insert)
     ("Insert a link to a heading in the same file" . minaduki-insert-local)
@@ -450,10 +450,10 @@ List of (DISPLAY-NAME . COMMAND) pairs.")
   "Local commands that are specific to Org Mode.")
 
 (defvar minaduki--local-commands--lit
-  '(("Open URL, DOI, or PDF" . minaduki:visit-citekey-source)
-    ("Show entry in the bibliography file" . minaduki:citekey-show-entry)
+  '(("Open URL, DOI, or PDF" . minaduki-visit-citekey-source)
+    ("Show entry in the bibliography file" . minaduki-citekey-show-entry)
     ("Edit notes" . minaduki/edit-citekey-notes)
-    ("Copy citekey" . minaduki:copy-citekey)
+    ("Copy citekey" . minaduki-copy-citekey)
     ("Insert citation" . minaduki-insert-citation)
     ("Insert link to associated notes" . minaduki-insert-note-to-citekey))
   "Commands useful inside a literature note.
@@ -464,10 +464,10 @@ one argument, the citekey.
 Equivalent to `orb-note-actions-default'.")
 
 (defvar minaduki--local-commands--biblio
-  '(("Create bibliography ID for current heading" . minaduki-lit:literature-key-get-create)
+  '(("Create bibliography ID for current heading" . minaduki-lit-literature-key-get-create)
     ("Fill in information and turn current heading into a literature entry"
      .
-     minaduki-lit:fill-entry-info))
+     minaduki-lit-fill-entry-info))
   "Local commands in bibliography files.")
 
 (defconst minaduki-wikilink--type "minaduki"

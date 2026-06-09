@@ -187,7 +187,7 @@ open in another window instead of in the current one."
 (defalias 'minaduki-toggle-sidebar
   #'minaduki-buffer/toggle-display)
 
-(defun minaduki:id-get-create (&optional new-id)
+(defun minaduki-id-get-create (&optional new-id)
   "Return the ID to the current heading.
 
 If it doesn't have one yet, assign a generated one.
@@ -254,7 +254,7 @@ REPLACE-REGION?: whether to replace selected text."
     (when prefill?
       (setq initial-input desc))
     (unless entry
-      (setq entry (minaduki-read:note
+      (setq entry (minaduki-read-note
                    :initial-input initial-input
                    :prompt "Insert link to note: "
                    :under-path (minaduki-vault-closest))))
@@ -292,7 +292,7 @@ REPLACE-REGION?: whether to replace selected text."
              :type (cond (id 'id)
                          (t nil))))))
 
-(defun minaduki:move-file-to-directory ()
+(defun minaduki-move-file-to-directory ()
   "Move the current file to a new directory."
   (interactive)
   (-when-let* ((file (minaduki--current-file-name))
@@ -338,7 +338,7 @@ REPLACE-REGION?: whether to replace selected text."
                  (buffer-substring-no-properties (point) (point-max))))))
       (let ((id (save-excursion
                   (goto-char (minaduki-id-point selected-heading))
-                  (prog1 (minaduki:id-get-create)
+                  (prog1 (minaduki-id-get-create)
                     ;; Save it into the file & the DB so that the
                     ;; newly inserted link will not be highlighted as
                     ;; an invalid link.
@@ -550,7 +550,7 @@ REPLACE-REGION?: whether to replace selected text."
   "List all sources for browsing interactively."
   (interactive)
   (let ((key (car
-              (minaduki-read:lit-entry nil :prompt "Entry: "))))
+              (minaduki-read-lit-entry nil :prompt "Entry: "))))
     (minaduki-local-commands key)))
 
 ;;;###autoload
@@ -730,7 +730,7 @@ yesterday instead."
   "Open a template in `minaduki/templates-directory' for edit."
   (interactive)
   (find-file
-   (minaduki-templates:read "Open template file: " :all 'files)))
+   (minaduki-templates-read "Open template file: " :all 'files)))
 
 ;;;###autoload
 (defun minaduki/open-directory ()
@@ -774,7 +774,7 @@ The index file is specified in this order:
   ;; Some usages:
   ;; (minaduki-open title)
   ;; (minaduki-open
-  ;;   (minaduki-read:note :initial-input initial-input))
+  ;;   (minaduki-read-note :initial-input initial-input))
   "Find and open the note ENTRY.
 
 ENTRY is a plist (:path PATH :title TITLE). It can also be a
@@ -785,7 +785,7 @@ Interactively, provide a list of notes to search and select from.
 If a note with the entered title does not exist, create a new
 one."
   (interactive
-   (list (minaduki-read:note)))
+   (list (minaduki-read-note)))
   (when (stringp entry)
     (setq entry
           (minaduki-node
@@ -859,10 +859,10 @@ This function hooks into `org-open-at-point' via
         (cl-return
          (minaduki--warn :warning "Something went wrong while creating a new literature note")))
       (let ((slug (minaduki--to-slug
-                   (pcase minaduki-lit:slug-source
+                   (pcase minaduki-lit-slug-source
                      (`citekey citekey)
                      (`title title)
-                     (_ (user-error "`minaduki-lit:slug-source' can only be `citekey' or `title'")))))
+                     (_ (user-error "`minaduki-lit-slug-source' can only be `citekey' or `title'")))))
             (now (current-time)))
         ;; Create the note
         (minaduki-open
@@ -914,11 +914,11 @@ the following arguments:
   "Insert a citation to CITEKEY."
   (minaduki--file-type-case
     (:org
-     (let ((minaduki-read:lit-entry--citekey citekey))
+     (let ((minaduki-read-lit-entry--citekey citekey))
        (org-cite-insert nil)))
     (_ (insert "@" citekey))))
 
-(defun minaduki:copy-citekey (citekey)
+(defun minaduki-copy-citekey (citekey)
   "Save note's citation key to `kill-ring' and copy it to clipboard.
 CITEKEY is a list whose car is a citation key."
   (with-temp-buffer
@@ -926,7 +926,7 @@ CITEKEY is a list whose car is a citation key."
     (copy-region-as-kill (point-min) (point-max)))
   (message "Copied \"%s\"" citekey))
 
-(defun minaduki:visit-citekey-source (citekey)
+(defun minaduki-visit-citekey-source (citekey)
   "Visit the source (URL, file path, DOI...) of CITEKEY."
   (let ((entry (minaduki-db--fetch-lit-entry citekey))
         sources)
@@ -939,7 +939,7 @@ CITEKEY is a list whose car is a citation key."
       (t (browse-url
           (completing-read "Which one: " sources nil t))))))
 
-(defun minaduki:citekey-show-entry (citekey)
+(defun minaduki-citekey-show-entry (citekey)
   "Go to where CITEKEY is defined."
   (let ((entry (minaduki-db--fetch-lit-entry citekey)))
     (find-file (minaduki-lit-entry-file entry))
@@ -983,7 +983,7 @@ CITEKEY is a list whose car is a citation key."
               (elt doc)
               (alist-get 'id)))))))
 
-(defun minaduki-lit:fill-entry-info ()
+(defun minaduki-lit-fill-entry-info ()
   "Fill in information for the current heading, turning it into a literature entry."
   (interactive)
   (let ((key (minaduki-lit--literature-key-at-point)))
@@ -992,7 +992,7 @@ CITEKEY is a list whose car is a citation key."
         (:org
          (dolist (prop '("url" "author" "date"))
            (let ((value (pcase prop
-                          ("author" (minaduki-read:author))
+                          ("author" (minaduki-read-author))
                           (_ (org-read-property-value prop)))))
              (unless (or (null value)
                          (string= value ""))
@@ -1007,7 +1007,7 @@ CITEKEY is a list whose car is a citation key."
         (:json
          (error "Support for setting the key of the CSL-JSON entry at point has not yet been implemented"))))
     key))
-(defun minaduki-lit:literature-key-get-create ()
+(defun minaduki-lit-literature-key-get-create ()
   "Assign a literature key to the current heading if it doesn't have one yet.
 
 Return the key."
@@ -1034,7 +1034,7 @@ Return the key."
 This first adds an entry for it into a file in
 `minaduki-lit/bibliography'."
   (interactive)
-  (let* ((bibliographies (minaduki-lit:bibliography))
+  (let* ((bibliographies (minaduki-lit-bibliography))
          (target-biblio
           (cond
            ((= 1 (length bibliographies))
@@ -1087,13 +1087,13 @@ This first adds an entry for it into a file in
              (org-entry-put nil prop value)))
          ;; Then read and store it
          (let ((value (pcase prop
-                        ("author" (minaduki-read:author
+                        ("author" (minaduki-read-author
                                    :def (plist-get info :author)))
                         (_ (org-read-property-value prop)))))
            (unless (s-blank? value)
              (org-entry-put nil prop value)
              (setq info (plist-put info prop value)))))
-       (let* ((default (minaduki-lit:literature-key-get-create))
+       (let* ((default (minaduki-lit-literature-key-get-create))
               (answer (read-string "New literature key: " default 'minaduki-lit-key))
               (citekey (if (s-blank? answer) default answer)))
          (org-entry-put nil minaduki-lit/key-prop citekey)
@@ -1174,7 +1174,7 @@ given or can be retrieved, actions from
                        (when citekey
                          minaduki--local-commands--lit)
                        (when (member (buffer-file-name)
-                                     (minaduki-lit:bibliography))
+                                     (minaduki-lit-bibliography))
                          minaduki--local-commands--biblio)
                        (when (derived-mode-p 'org-mode)
                          minaduki--local-commands--org))))

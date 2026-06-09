@@ -125,7 +125,7 @@ string, the entire string is treated as the content."
                            (--first (equal name (f-base (car it))) templates)))
          (cdr pair))))))
 
-(cl-defun minaduki-templates:read (prompt &key all return-content)
+(cl-defun minaduki-templates-read (prompt &key all return-content)
   "Ask the user to select a template, using PROMPT.
 When ALL is `files', select from file templates only.
 If it's any other non-nil value, select from all available templates.

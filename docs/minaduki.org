@@ -10,7 +10,7 @@ It has support for reading Obsidian vaults.
 
 In the interest of keeping a controlled library of tags, the minaduki-tags module is made to help with that.
 
-Tags are kept in the vault-specific =minaduki:tags-file=. Headings in that file who have no subheadings are treated as tag definitions; this helps with explaining nuances of tags that are often single-word.
+Tags are kept in the vault-specific =minaduki-tags-file=. Headings in that file who have no subheadings are treated as tag definitions; this helps with explaining nuances of tags that are often single-word.
 
 Programmatic API:
 

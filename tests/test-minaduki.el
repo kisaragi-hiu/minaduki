@@ -58,12 +58,12 @@ In BODY, `fname' refers to the resolved path of FILE."
   (let ((inhibit-message t))
     (copy-directory test-repository temp-dir nil t)
     (setq org-directory temp-dir)
-    (setq minaduki:db-location (f-join temp-dir "minaduki.db"))
+    (setq minaduki-db-location (f-join temp-dir "minaduki.db"))
     (setq minaduki/vaults (list temp-dir))
     (setq minaduki-lit/bibliography
           (f-join temp-dir "lit" "entries.org"))
     (minaduki-mode)
-    (minaduki-db:build-cache)))
+    (minaduki-db-build-cache)))
 
 (defun test-minaduki--teardown ()
   (minaduki-mode -1)
@@ -156,21 +156,21 @@ members that should be equal."
                  (f-join temp-dir "lit" "date_LocalizedDateFormats-zh-TW.json")
                  (f-join temp-dir "lit" "name_EtAlKanji.json"))))
       (let ((inhibit-message t))
-        (minaduki-db:build-cache t))
+        (minaduki-db-build-cache t))
       (expect (minaduki-db--fetch-lit-authors)
               :to-have-same-items-as
               '("Bert Bos" "シャノン" "大崎ひとみ"
                 "Zither Ziggy and Yoda Yossarian and Xylophone Xerxes")))
     ;; Clear it when we're done
     (let ((inhibit-message t))
-      (minaduki-db:build-cache t)))
+      (minaduki-db-build-cache t)))
 
   (it "fails on invalid values"
     (let ((minaduki-lit/bibliography 'a))
-      (expect (minaduki-lit:bibliography)
+      (expect (minaduki-lit-bibliography)
               :to-throw 'error))
     (let ((minaduki-lit/bibliography '(a)))
-      (expect (minaduki-lit:bibliography)
+      (expect (minaduki-lit-bibliography)
               :to-throw 'error)))
   (it "parses our own Org-based bibliography format"
     (expect

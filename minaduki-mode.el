@@ -24,7 +24,7 @@
 ;; here.
 (defvar minaduki-local-mode)
 
-(defun minaduki:buffer-name-for-display ()
+(defun minaduki-buffer-name-for-display ()
   "Return a name for the current buffer suitable for display."
   (or (car (minaduki-extract/main-title))
       (buffer-name)))
@@ -54,8 +54,8 @@
   "Return whether we should apply custom link faces in the current context."
   (or (and (-> (buffer-file-name (buffer-base-buffer))
              minaduki-vault-in-vault?)
-           minaduki:use-custom-link-faces)
-      (eq minaduki:use-custom-link-faces 'everywhere)))
+           minaduki-use-custom-link-faces)
+      (eq minaduki-use-custom-link-faces 'everywhere)))
 
 (defun minaduki-org--a-fuzzy-face (orig-func type key)
   "Advice for `org-link-get-parameter' to apply face for nonexistant wiki links.
@@ -108,8 +108,8 @@ file in a vault."
   (save-match-data
     (let* ((in-vault (-> (buffer-file-name (buffer-base-buffer))
                          (minaduki-vault-in-vault?)))
-           (custom (or (and in-vault minaduki:use-custom-link-faces)
-                       (eq minaduki:use-custom-link-faces 'everywhere))))
+           (custom (or (and in-vault minaduki-use-custom-link-faces)
+                       (eq minaduki-use-custom-link-faces 'everywhere))))
       (cond ((and custom
                   (bound-and-true-p minaduki-buffer/mode)
                   (minaduki--link-to-current-p))
@@ -291,7 +291,7 @@ When NEW-FILE-OR-DIR is a directory, we use it to compute the new file path."
         (minaduki--with-file new-file nil
           (minaduki--fix-relative-links old-file)))
       (when (minaduki-vault-in-vault? new-file)
-        (minaduki-db:update-file new-file))
+        (minaduki-db-update-file new-file))
       ;; Replace links from old-file.org -> new-file.org in all Org-roam files with these links
       (mapc (lambda (file)
               (setq file (if (string-equal (car file) old-file)
@@ -300,7 +300,7 @@ When NEW-FILE-OR-DIR is a directory, we use it to compute the new file path."
               (minaduki--with-file file nil
                 (minaduki--replace-link old-file new-file)
                 (save-buffer)
-                (minaduki-db:update-file)))
+                (minaduki-db-update-file)))
             files-affected))))
 
 (defun minaduki-org--buttonize-tags ()
@@ -360,14 +360,14 @@ When NEW-FILE-OR-DIR is a directory, we use it to compute the new file path."
 (defun minaduki--local-mode-enable ()
   "Do the actual work to enable `minaduki-local-mode'."
   (setq minaduki--last-window (get-buffer-window))
-  (when minaduki:note-title-in-frame-title
+  (when minaduki-note-title-in-frame-title
     (setq-local frame-title-format
                 (if (stringp frame-title-format)
                     (->> frame-title-format
                          (s-split "%b")
-                         (-interpose '(:eval (minaduki:buffer-name-for-display)))
+                         (-interpose '(:eval (minaduki-buffer-name-for-display)))
                          (-remove-item ""))
-                  '((:eval (minaduki:buffer-name-for-display))
+                  '((:eval (minaduki-buffer-name-for-display))
                     " - GNU Emacs"))))
   (minaduki--file-type-case
     (:org
@@ -462,7 +462,7 @@ See `minaduki-local-mode' for more information on Minaduki-Local mode."
         (advice-add 'org-read-date :before #'minaduki//set-calendar-mark-diary-entries-flag-nil)
         (advice-add 'org-read-date :after #'minaduki//set-calendar-mark-diary-entries-flag-t)
         (when (fboundp 'org-link-set-parameters)
-          (org-link-set-parameters minaduki-wikilink--type :follow #'minaduki-wikilink:follow)
+          (org-link-set-parameters minaduki-wikilink--type :follow #'minaduki-wikilink-follow)
           (org-link-set-parameters "minaduki-btn" :follow #'minaduki-btn-follow)
           (when (fboundp 'magit-show-commit)
             (org-link-set-parameters "commit" :follow #'magit-show-commit))
