@@ -128,7 +128,7 @@ what they want to do with it."
              (keys
               (or (completing-read "Select citation key: " keys nil t)
                   (user-error "Aborted")))))))
-    (minaduki:local-commands key)))
+    (minaduki-local-commands key)))
 
 (defun minaduki-org-set-startup ()
   "Set the STARTUP option for the current buffer."
@@ -184,7 +184,7 @@ open in another window instead of in the current one."
 ;;;; Local commands
 
 ;;;###autoload
-(defalias 'minaduki:toggle-sidebar
+(defalias 'minaduki-toggle-sidebar
   #'minaduki-buffer/toggle-display)
 
 (defun minaduki:id-get-create (&optional new-id)
@@ -551,7 +551,7 @@ REPLACE-REGION?: whether to replace selected text."
   (interactive)
   (let ((key (car
               (minaduki-read:lit-entry nil :prompt "Entry: "))))
-    (minaduki:local-commands key)))
+    (minaduki-local-commands key)))
 
 ;;;###autoload
 (cl-defun minaduki/new-concept-note (&key title dir (visit? t))
@@ -752,15 +752,15 @@ yesterday instead."
 
 The index file is specified in this order:
 
-- `minaduki:index-file' (a string or function, see its docstring)
+- `minaduki-index-file' (a string or function, see its docstring)
 - A note with a title of \"Index\" in the main vault"
   (interactive)
   (let ((index (cond
-                ((functionp minaduki:index-file)
-                 (f-expand (funcall minaduki:index-file)
+                ((functionp minaduki-index-file)
+                 (f-expand (funcall minaduki-index-file)
                            (minaduki-vault-main)))
-                ((stringp minaduki:index-file)
-                 (f-expand minaduki:index-file
+                ((stringp minaduki-index-file)
+                 (f-expand minaduki-index-file
                            (minaduki-vault-main)))
                 (t
                  (car (minaduki-db--fetch-file :title "Index"))))))
@@ -1134,7 +1134,7 @@ This first adds an entry for it into a file in
 ;;;; Actions
 
 ;;;###autoload
-(defun minaduki:global-commands ()
+(defun minaduki-global-commands ()
   "Command palette."
   (declare (interactive-only command-execute))
   (interactive)
@@ -1146,7 +1146,7 @@ This first adds an entry for it into a file in
       t))))
 
 ;;;###autoload
-(defun minaduki:local-commands (&optional citekey)
+(defun minaduki-local-commands (&optional citekey)
   "Prompt for note-related actions.
 
 CITEKEY defaults to the entry at point. If there is no entry at

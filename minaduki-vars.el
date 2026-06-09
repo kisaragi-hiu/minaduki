@@ -65,7 +65,7 @@ title to be \"Index\", the frame title is:
   :type 'boolean
   :group 'minaduki)
 
-(defcustom minaduki-mode:command-prefix (kbd "C-c (")
+(defcustom minaduki-mode-command-prefix (kbd "C-c (")
   "The prefix for bindings in files managed by Minaduki.
 
 This should be set before `minaduki-mode' is loaded in order to
@@ -224,7 +224,7 @@ defaults, however."
   :type 'string
   :group 'minaduki)
 
-(defcustom minaduki:index-file "index.org"
+(defcustom minaduki-index-file "index.org"
   "Path to the index file.
 The path can be a string or a function.
 
@@ -352,7 +352,7 @@ which case the list is passed to `cl-sort' as arguments."
   :group 'minaduki
   :type 'boolean)
 
-(defcustom minaduki:link-insertion-format 'relative
+(defcustom minaduki-link-insertion-format 'relative
   "How a new link should be inserted.
 
 Options:
@@ -428,14 +428,14 @@ descriptive warnings when certain operations fail (e.g. parsing).")
     ("Create a new literature note from URL" . minaduki/new-literature-note-from-url)
     ("Open a random note"                 . minaduki/open-random-note)
     ("Refresh cache"                      . minaduki-db:build-cache))
-  "Global commands shown in `minaduki:global-commands'.
+  "Global commands shown in `minaduki-global-commands'.
 
 List of (DISPLAY-NAME . COMMAND) pairs.")
 
 (defvar minaduki--local-commands
   '(("Create ID for current heading" . minaduki:id-get-create)
     ("Move file to..."               . minaduki:move-file-to-directory)
-    ("Insert a button"               . minaduki-btn:insert)
+    ("Insert a button"               . minaduki-btn-insert)
     ("Insert a link"                 . minaduki-insert)
     ("Insert a link to a heading in the same file" . minaduki-insert-local)
     ("Insert a citation"             . org-cite-insert)

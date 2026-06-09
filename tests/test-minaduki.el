@@ -255,20 +255,20 @@ members that should be equal."
 (describe "minaduki--format-link"
   (it "formats Org links"
     (expect
-     (let ((minaduki:link-insertion-format 'absolute)
+     (let ((minaduki-link-insertion-format 'absolute)
            (major-mode 'org-mode))
        (minaduki--format-link :target "file:///tmp/abc.org"))
      :to-equal
      "[[/tmp/abc.org]]")
     (expect
-     (let ((minaduki:link-insertion-format 'absolute)
+     (let ((minaduki-link-insertion-format 'absolute)
            (major-mode 'org-mode))
        (minaduki--format-link :target "file:///tmp/abc.org"
                               :desc "ABC"))
      :to-equal
      "[[/tmp/abc.org][ABC]]")
     (expect
-     (let ((minaduki:link-insertion-format 'absolute)
+     (let ((minaduki-link-insertion-format 'absolute)
            (major-mode 'org-mode))
        (minaduki--format-link :target "https://kisaragi-hiu.com"
                               :desc "ABC"))
@@ -276,7 +276,7 @@ members that should be equal."
      "[[https://kisaragi-hiu.com][ABC]]"))
   (it "formats Markdown links"
     (expect
-     (let ((minaduki:link-insertion-format 'absolute)
+     (let ((minaduki-link-insertion-format 'absolute)
            (major-mode 'markdown-mode))
        (minaduki--format-link :target "https://kisaragi-hiu.com"
                               :desc "ABC"))
@@ -285,7 +285,7 @@ members that should be equal."
   (it "formats local absolute links"
     (expect
      (with-temp-buffer
-       (let ((minaduki:link-insertion-format 'absolute-in-vault)
+       (let ((minaduki-link-insertion-format 'absolute-in-vault)
              (minaduki/vaults '((:name "tmp" :path "/tmp/")))
              (default-directory "/"))
          (org-mode)
@@ -295,14 +295,14 @@ members that should be equal."
      "[[tmp:abc.org]]"))
   (it "formats relative links"
     (expect
-     (let ((minaduki:link-insertion-format 'relative)
+     (let ((minaduki-link-insertion-format 'relative)
            (major-mode 'org-mode)
            (default-directory "/"))
        (minaduki--format-link :target "file:///tmp/abc.org"))
      :to-equal
      "[[file:tmp/abc.org]]")
     (expect
-     (let ((minaduki:link-insertion-format 'relative)
+     (let ((minaduki-link-insertion-format 'relative)
            (major-mode 'markdown-mode)
            (default-directory "/"))
        (minaduki--format-link :target "/tmp/abc.md"))

@@ -412,9 +412,9 @@ when appropriate."
   :keymap (let ((map (make-sparse-keymap)))
             (cl-loop
              for (suffix . cmd)
-             in '(("n" . minaduki:local-commands)
-                  ("l" . minaduki:toggle-sidebar))
-             do (let ((key (format "%s %s" minaduki-mode:command-prefix suffix)))
+             in '(("n" . minaduki-local-commands)
+                  ("l" . minaduki-toggle-sidebar))
+             do (let ((key (format "%s %s" minaduki-mode-command-prefix suffix)))
                   (define-key map (kbd key) cmd)))
             map)
   (minaduki--local-mode-enable))
@@ -438,8 +438,8 @@ See `minaduki-local-mode' for more information on Minaduki-Local mode."
   :group 'minaduki
   :keymap (let ((map (make-sparse-keymap)))
             (define-key map
-                        (kbd (format "%s N" minaduki-mode:command-prefix))
-                        #'minaduki:global-commands)
+                        (kbd (format "%s N" minaduki-mode-command-prefix))
+                        #'minaduki-global-commands)
             map)
   :require 'minaduki
   (unless (and (fboundp 'sqlite-available-p)
@@ -463,7 +463,7 @@ See `minaduki-local-mode' for more information on Minaduki-Local mode."
         (advice-add 'org-read-date :after #'minaduki//set-calendar-mark-diary-entries-flag-t)
         (when (fboundp 'org-link-set-parameters)
           (org-link-set-parameters minaduki-wikilink--type :follow #'minaduki-wikilink:follow)
-          (org-link-set-parameters "minaduki-btn" :follow #'minaduki-btn:follow)
+          (org-link-set-parameters "minaduki-btn" :follow #'minaduki-btn-follow)
           (when (fboundp 'magit-show-commit)
             (org-link-set-parameters "commit" :follow #'magit-show-commit))
           (org-link-set-parameters "info" :follow #'info)

@@ -480,9 +480,9 @@ means tomorrow, and N = -1 means yesterday."
     path))
 
 (defun minaduki--convert-path-format (path)
-  "Convert PATH to the right format according to `minaduki:link-insertion-format'."
+  "Convert PATH to the right format according to `minaduki-link-insertion-format'."
   (setq path (minaduki--ensure-not-file:// path))
-  (pcase minaduki:link-insertion-format
+  (pcase minaduki-link-insertion-format
     ('absolute
      (abbreviate-file-name (expand-file-name path)))
     ('absolute-in-vault

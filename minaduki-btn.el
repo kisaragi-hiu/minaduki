@@ -14,16 +14,16 @@
 (require 'minaduki-vars)
 
 (defvar minaduki-btn--pressed nil
-  "This becomes t during `minaduki-btn:follow'.")
+  "This becomes t during `minaduki-btn-follow'.")
 
-(defun minaduki-btn:follow (cmd)
+(defun minaduki-btn-follow (cmd)
   "Follow CMD."
   (if (rassoc (intern-soft cmd) minaduki--global-commands)
       (let ((minaduki-btn--pressed t))
         (call-interactively (intern-soft cmd)))
     (message "%s is not a valid command in a button" cmd)))
 
-(defun minaduki-btn:insert ()
+(defun minaduki-btn-insert ()
   "Insert a button for a global command."
   (interactive)
   (let* ((candidates minaduki--global-commands)
