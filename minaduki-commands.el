@@ -1064,11 +1064,20 @@ This first adds an entry for it into a file in
        (forward-char -1)
        (unless (eq ?\n (char-before))
          (insert "\n"))
-       (insert (format "%s %s\n"
-                       (make-string (1+ (or (org-current-level)
-                                            0))
-                                    ?*)
-                       (plist-get info :title)))
+       (let ((title (plist-get info :title)))
+         (when (string-blank-p title)
+           (setq title (read-string "Title: ")))
+         ;; If it is still blank, set a reasonable default
+         ;; (We do this since `read-string' would only use DEFAULT-VALUE when
+         ;; the input is completely empty. We want the default to be used if the
+         ;; user inputs just whitespace.)
+         (when (string-blank-p title)
+           (setq title "<no title>"))
+         (insert (format "%s %s\n"
+                         (make-string (1+ (or (org-current-level)
+                                              0))
+                                      ?*)
+                         title)))
        (dolist (prop '("url" "author" "date"))
          ;; Store the value we extracted first so that `org-read-property-value'
          ;; will show it as an option
