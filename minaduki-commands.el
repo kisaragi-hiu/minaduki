@@ -580,7 +580,8 @@ If VISIT? is non-nil (default), go to the newly created note."
        "concept"
        now
        :title title)
-      (minaduki--set-created-prop now))
+      (minaduki--set-created-prop now)
+      (basic-save-buffer))
     (when visit? (pop-to-buffer-same-window buf))
     file))
 
