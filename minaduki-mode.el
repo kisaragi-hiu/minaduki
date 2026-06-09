@@ -33,7 +33,7 @@
 (defun minaduki--link-to-current-p ()
   "Return t if the link at point points to the current file."
   (save-match-data
-    (let ((current-file (buffer-file-name minaduki-buffer//current))
+    (let ((current-file (buffer-file-name minaduki-buffer--current))
           (link-dest
            (minaduki--file-type-case
              (:org (let* ((context (org-element-context))
@@ -90,7 +90,7 @@ file in a vault."
                   (not (file-exists-p path)))
              'minaduki-link-invalid)
             ((and custom
-                  (bound-and-true-p minaduki-buffer/mode)
+                  (bound-and-true-p minaduki-buffer-mode)
                   (minaduki--link-to-current-p))
              'minaduki-link-current)
             ((and custom
@@ -111,7 +111,7 @@ file in a vault."
            (custom (or (and in-vault minaduki-use-custom-link-faces)
                        (eq minaduki-use-custom-link-faces 'everywhere))))
       (cond ((and custom
-                  (bound-and-true-p minaduki-buffer/mode)
+                  (bound-and-true-p minaduki-buffer-mode)
                   (minaduki--link-to-current-p))
              'minaduki-link-current)
             ((and custom
@@ -394,12 +394,12 @@ When NEW-FILE-OR-DIR is a directory, we use it to compute the new file path."
           (value (cdr resources)))
       (setf (map-elt org-link-abbrev-alist-local name)
             value)))
-  (add-hook 'post-command-hook #'minaduki-buffer//update-maybe nil t)
+  (add-hook 'post-command-hook #'minaduki-buffer--update-maybe nil t)
   (add-hook 'after-save-hook #'minaduki-db--incremental-update nil t)
   (add-hook 'post-self-insert-hook #'minaduki-mode--handle-double-bracket-h nil t)
   (dolist (fn '(minaduki-completion/tags-at-point))
     (add-hook 'completion-at-point-functions fn nil t))
-  (minaduki-buffer//update-maybe :redisplay t))
+  (minaduki-buffer--update-maybe :redisplay t))
 
 (define-minor-mode minaduki-local-mode
   "Minor mode active in files tracked by minaduki.

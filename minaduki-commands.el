@@ -185,7 +185,7 @@ open in another window instead of in the current one."
 
 ;;;###autoload
 (defalias 'minaduki-toggle-sidebar
-  #'minaduki-buffer/toggle-display)
+  #'minaduki-buffer-toggle-display)
 
 (defun minaduki-id-get-create (&optional new-id)
   "Return the ID to the current heading.

@@ -25,12 +25,12 @@
 
 ;; The backlinks buffer.
 ;;
-;; minaduki-buffer/activate shows the buffer; if the buffer doesn't
+;; minaduki-buffer-activate shows the buffer; if the buffer doesn't
 ;; exist beforehand, it will create it and start the right major mode
-;; and minor mode (org-mode and minaduki-buffer/mode (for keybinds)).
+;; and minor mode (org-mode and minaduki-buffer-mode (for keybinds)).
 ;;
-;; The content is rendered by minaduki-buffer/update (through
-;; minaduki-buffer/update-maybe), which is triggered in
+;; The content is rendered by minaduki-buffer-update (through
+;; minaduki-buffer-update-maybe), which is triggered in
 ;; `post-command-hook' (registered by find-file-hook)
 
 ;;; Code:
@@ -56,7 +56,7 @@
 (defvar org-link-frame-setup)
 (defvar org-return-follows-link)
 
-(defcustom minaduki-buffer/position 'right
+(defcustom minaduki-buffer-position 'right
   "Where the metadata buffer should be placed.
 
 Valid values are
@@ -74,51 +74,51 @@ or a function returning one of the above."
                  function)
   :group 'minaduki)
 
-(defcustom minaduki-buffer/width 0.33
+(defcustom minaduki-buffer-width 0.33
   "Width of the metadata buffer.
 
-Has an effect if and only if `minaduki-buffer/position' is `left' or `right'."
+Has an effect if and only if `minaduki-buffer-position' is `left' or `right'."
   :type 'number
   :group 'minaduki)
 
-(defcustom minaduki-buffer/height 0.27
+(defcustom minaduki-buffer-height 0.27
   "Height of the metadata buffer.
 
-Has an effect if and only if `minaduki-buffer/position' is `top' or `bottom'."
+Has an effect if and only if `minaduki-buffer-position' is `top' or `bottom'."
   :type 'number
   :group 'minaduki)
 
-(defcustom minaduki-buffer/hidden-tags nil
+(defcustom minaduki-buffer-hidden-tags nil
   "Tags that should not be inserted into the metadata buffer."
   :type '(repeat string)
   :group 'minaduki)
 
-(defcustom minaduki-buffer/name "*minaduki*"
+(defcustom minaduki-buffer-name "*minaduki*"
   "Name of the metadata buffer."
   :type 'string
   :group 'minaduki)
 
-(defcustom minaduki-buffer/before-insert-hook nil
+(defcustom minaduki-buffer-before-insert-hook nil
   "Hook run in the metadata buffer before new content is inserted."
   :type 'hook
   :group 'minaduki)
 
-(defcustom minaduki-buffer/after-insert-hook
-  '(minaduki-buffer//restore-point)
+(defcustom minaduki-buffer-after-insert-hook
+  '(minaduki-buffer--restore-point)
   "Hook run in the metadata buffer after new content is inserted."
   :type 'hook
   :group 'minaduki)
 
-(defcustom minaduki-buffer/window-parameters nil
+(defcustom minaduki-buffer-window-parameters nil
   "Additional window parameters for the `minaduki-buffer' side window.
-For example: (setq minaduki-buffer/window-parameters \\='((no-other-window . t)))"
+For example: (setq minaduki-buffer-window-parameters \\='((no-other-window . t)))"
   :type '(alist)
   :group 'minaduki)
 
-(defvar minaduki-buffer//current nil
+(defvar minaduki-buffer--current nil
   "Currently displayed file in `org-roam' buffer.")
 
-(defun minaduki-buffer//find-file (file)
+(defun minaduki-buffer--find-file (file)
   "Open FILE in the other window."
   (setq file (expand-file-name file))
   (let ((last-window minaduki--last-window))
@@ -128,14 +128,14 @@ For example: (setq minaduki-buffer/window-parameters \\='((no-other-window . t))
                (select-window last-window))
       (find-file file))))
 
-(defun minaduki-buffer//insert-title ()
+(defun minaduki-buffer--insert-title ()
   "Insert the minaduki-buffer title."
   (-> (minaduki-db--fetch-title
-       (buffer-file-name minaduki-buffer//current))
+       (buffer-file-name minaduki-buffer--current))
       (propertize 'font-lock-face 'org-document-title)
       insert))
 
-(defun minaduki-buffer//open-at-point ()
+(defun minaduki-buffer--open-at-point ()
   "Open an Org-roam link or visit the text previewed at point.
 
 When point is on an Org-roam link, open the link in the Org-roam window.
@@ -148,18 +148,18 @@ This function hooks into `org-open-at-point' via `org-open-at-point-functions'."
            (path (org-element-property :path context)))
       (when (and (eq (org-element-type context) 'link)
                  (minaduki-vault-in-vault? path))
-        (minaduki-buffer//find-file path)
+        (minaduki-buffer--find-file path)
         t)))
    ;; Backlinks context
    ((when-let ((file-from (get-text-property (point) 'file-from))
                (p (get-text-property (point) 'file-from-point)))
-      (minaduki-buffer//find-file file-from)
+      (minaduki-buffer--find-file file-from)
       (goto-char p)
       t))
    ;; Unlinked references context
    ((-when-let* ((file-from (get-text-property (point) 'file-from))
                  ((line . col) (get-text-property (point) 'file-from-line/col)))
-      (minaduki-buffer//find-file file-from)
+      (minaduki-buffer--find-file file-from)
       (goto-char (point-min))
       (forward-line (1- line))
       (forward-char col)
@@ -167,10 +167,10 @@ This function hooks into `org-open-at-point' via `org-open-at-point-functions'."
    ;; If called via `org-open-at-point', fall back to default behavior.
    (t nil)))
 
-(define-minor-mode minaduki-buffer/mode
+(define-minor-mode minaduki-buffer-mode
   "Minor mode for a local keymap in the backlinks buffer.
 
-\\{minaduki-buffer/mode-map}"
+\\{minaduki-buffer-mode-map}"
   :lighter " Backlinks"
   :interactive nil
   :keymap (let ((map (make-sparse-keymap)))
@@ -180,32 +180,32 @@ This function hooks into `org-open-at-point' via `org-open-at-point-functions'."
   ;; We use a minor mode just for the keymap. It's not meant to be
   ;; turned off.
   ;;
-  ;; Content is rendered in `minaduki-buffer/update'.
+  ;; Content is rendered in `minaduki-buffer-update'.
   (setq-local org-return-follows-link t)
   (add-hook 'post-command-hook
-            #'minaduki-buffer//save-point
+            #'minaduki-buffer--save-point
             nil :local)
   (add-hook 'org-open-at-point-functions
-            #'minaduki-buffer//open-at-point
+            #'minaduki-buffer--open-at-point
             nil :local))
 
 ;;;; Saving cursor position
 
-(defvar minaduki-buffer//point-map (make-hash-table :test #'equal)
+(defvar minaduki-buffer--point-map (make-hash-table :test #'equal)
   "A hash table storing cursor position in the backlinks buffer.")
 
-(defun minaduki-buffer//save-point ()
+(defun minaduki-buffer--save-point ()
   "Save cursor position in backlinks buffer for the current file."
-  (with-current-buffer minaduki-buffer/name
-    (puthash (buffer-file-name minaduki-buffer//current)
+  (with-current-buffer minaduki-buffer-name
+    (puthash (buffer-file-name minaduki-buffer--current)
              (point)
-             minaduki-buffer//point-map)))
+             minaduki-buffer--point-map)))
 
-(defun minaduki-buffer//restore-point ()
+(defun minaduki-buffer--restore-point ()
   "Restore last visited point in backlinks buffer for this file."
-  (with-selected-window (get-buffer-window minaduki-buffer/name)
-    (let ((saved-point (gethash (buffer-file-name minaduki-buffer//current)
-                                minaduki-buffer//point-map)))
+  (with-selected-window (get-buffer-window minaduki-buffer-name)
+    (let ((saved-point (gethash (buffer-file-name minaduki-buffer--current)
+                                minaduki-buffer--point-map)))
       (when (and (integerp saved-point)
                  (<= (point-min) saved-point (point-max)))
         (goto-char saved-point)))))
@@ -343,12 +343,12 @@ are returned."
           (->> (read (current-buffer))
                (--remove (memq 'ignore (plist-get it :matches)))))))))
 
-(cl-defun minaduki-buffer//insert-backlinks (backlinks &key (heading "Backlink"))
+(cl-defun minaduki-buffer--insert-backlinks (backlinks &key (heading "Backlink"))
   "Insert BACKLINKS.
 
 Get the backlinks with this:
 
-  (with-current-buffer minaduki-buffer//current
+  (with-current-buffer minaduki-buffer--current
     (minaduki//backlinks \\='refs) ; only cite backlinks
     (minaduki//backlinks \\='titles) ; only non-cite backlinks
     (minaduki//backlinks)) ; both
@@ -361,7 +361,7 @@ plural automatically.
 Nothing is inserted when there are no backlinks.
 
 Tags are shown for each entry, except for those in
-`minaduki-buffer/hidden-tags'.
+`minaduki-buffer-hidden-tags'.
 
 Links in titles are removed."
   (let (props file-from)
@@ -369,7 +369,7 @@ Links in titles are removed."
       ;; The heading
       (insert (let ((l (length backlinks)))
                 (format "\n\n* %d %s"
-                        l (minaduki-buffer//pluralize heading l))))
+                        l (minaduki-buffer--pluralize heading l))))
       ;; Backlinks
       ;; Links from the same group originate from the same file
       (dolist (group backlink-groups)
@@ -386,7 +386,7 @@ Links in titles are removed."
                                                minaduki--remove-org-links))
                 ;; tags
                 (or (-some->> (minaduki-db--fetch-tags file-from)
-                      (--remove (member it minaduki-buffer/hidden-tags))
+                      (--remove (member it minaduki-buffer-hidden-tags))
                       (--map (s-replace " " "_" (downcase it)))
                       (s-join ":")
                       (format "  :%s:"))
@@ -396,12 +396,12 @@ Links in titles are removed."
            (format "\n\n/%s/\n\n"
                    (or (-some--> (plist-get prop :outline)
                          (string-join it " › ")
-                         (minaduki-buffer/expand-links it file-from)
+                         (minaduki-buffer-expand-links it file-from)
                          (format "Top › %s" it))
                        "Top")))
           (when-let ((content (plist-get prop :content)))
             (insert
-             (--> (minaduki-buffer/expand-links content file-from)
+             (--> (minaduki-buffer-expand-links content file-from)
                   s-trim
                   (if (= ?* (elt it 0))
                       (concat "  " it)
@@ -412,7 +412,7 @@ Links in titles are removed."
                    'file-from file-from
                    'file-from-point (plist-get prop :point))))))))))
 
-(defun minaduki-buffer//insert-unlinked-references (references)
+(defun minaduki-buffer--insert-unlinked-references (references)
   "Insert unlinked REFERENCES."
   (when references
     (insert "\n\n* Unlinked references\n")
@@ -447,7 +447,7 @@ Links in titles are removed."
                                 'file-from path
                                 'file-from-line/col (cons line col))))))))))
 
-(defun minaduki-buffer//insert-tag-references (tag)
+(defun minaduki-buffer--insert-tag-references (tag)
   "Insert links to files tagged with TAG."
   (when tag
     (-when-let (references (minaduki-db--fetch-tag-references tag))
@@ -461,7 +461,7 @@ Links in titles are removed."
            (s-join "\n")
            insert))))
 
-(defun minaduki-buffer//pluralize (string number)
+(defun minaduki-buffer--pluralize (string number)
   "Conditionally pluralize STRING if NUMBER is above 1."
   (let ((l (pcase number
              ((pred (listp)) (length number))
@@ -471,7 +471,7 @@ Links in titles are removed."
                                    ,wrong-type))))))
     (concat string (when (> l 1) "s"))))
 
-(defun minaduki-buffer/expand-links (content orig-path)
+(defun minaduki-buffer-expand-links (content orig-path)
   "Crawl CONTENT for relative links and corrects them to be correctly displayed.
 ORIG-PATH is the path where the CONTENT originated."
   (with-temp-buffer
@@ -487,12 +487,12 @@ ORIG-PATH is the path where the CONTENT originated."
                          nil t nil 2))))
     (buffer-string)))
 
-(defun minaduki-buffer/update ()
+(defun minaduki-buffer-update ()
   "Render the backlinks buffer."
   (interactive)
   (minaduki-db--ensure-built)
   (let* ((source-org-directory org-directory))
-    (with-current-buffer minaduki-buffer/name
+    (with-current-buffer minaduki-buffer-name
       ;; When dir-locals.el is used to override org-directory,
       ;; minaduki-buffer should have a different local org-directory and
       ;; default-directory, as relative links are relative from the overridden
@@ -506,33 +506,33 @@ ORIG-PATH is the path where the CONTENT originated."
       (let ((inhibit-read-only t)
             backlinks cite-backlinks
             unlinked-references)
-        (with-current-buffer minaduki-buffer//current
+        (with-current-buffer minaduki-buffer--current
           (setq cite-backlinks (minaduki//backlinks 'refs)
                 backlinks (minaduki//backlinks 'titles))
           (when (minaduki-vault-in-vault?)
             (setq unlinked-references (minaduki//unlinked-references))))
         (erase-buffer)
-        (run-hooks 'minaduki-buffer/before-insert-hook)
-        (minaduki-buffer//insert-title)
-        (minaduki-buffer//insert-tag-references
-         (--> (buffer-file-name minaduki-buffer//current)
+        (run-hooks 'minaduki-buffer-before-insert-hook)
+        (minaduki-buffer--insert-title)
+        (minaduki-buffer--insert-tag-references
+         (--> (buffer-file-name minaduki-buffer--current)
               minaduki-db--fetch-title
               downcase))
-        (minaduki-buffer//insert-backlinks
+        (minaduki-buffer--insert-backlinks
          cite-backlinks
          :heading "Citation Backlink")
-        (minaduki-buffer//insert-backlinks
+        (minaduki-buffer--insert-backlinks
          backlinks
          :heading "Backlink")
         ;; (when unlinked-references
-        ;;   (minaduki-buffer//insert-unlinked-references unlinked-references))
+        ;;   (minaduki-buffer--insert-unlinked-references unlinked-references))
         (unless (or backlinks cite-backlinks unlinked-references)
           (insert "\n\n/No backlinks/"))
-        (minaduki-buffer//restore-point)
-        (run-hooks 'minaduki-buffer/after-insert-hook)
+        (minaduki-buffer--restore-point)
+        (run-hooks 'minaduki-buffer-after-insert-hook)
         (read-only-mode 1)))))
 
-(cl-defun minaduki-buffer//update-maybe (&key redisplay)
+(cl-defun minaduki-buffer--update-maybe (&key redisplay)
   "Reconstruct the backlinks buffer.
 
 This needs to be quick or infrequent, because this is run at
@@ -540,71 +540,71 @@ This needs to be quick or infrequent, because this is run at
 what."
   (let ((buffer (window-buffer)))
     (when (and (or redisplay
-                   (not (eq minaduki-buffer//current buffer)))
-               (minaduki-buffer/visible?)
+                   (not (eq minaduki-buffer--current buffer)))
+               (minaduki-buffer-visible?)
                (minaduki--current-file-name nil buffer)
                (minaduki-db--file-present? (minaduki--current-file-name nil buffer)))
-      (setq minaduki-buffer//current buffer)
-      (minaduki-buffer/update))))
+      (setq minaduki-buffer--current buffer)
+      (minaduki-buffer-update))))
 
 ;;;; Toggling the org-roam buffer
-(defun minaduki-buffer/visible? ()
+(defun minaduki-buffer-visible? ()
   "Is the metadata buffer currently visible?"
   (declare (side-effect-free t))
-  (get-buffer-window minaduki-buffer/name))
+  (get-buffer-window minaduki-buffer-name))
 
-(defun minaduki-buffer//set-width (width)
+(defun minaduki-buffer--set-width (width)
   "Set the width of the current window to WIDTH."
   (unless (one-window-p)
     (let ((window-size-fixed)
           (w (max width window-min-width)))
       (enlarge-window-horizontally (- w (window-width))))))
 
-(defun minaduki-buffer//set-height (height)
+(defun minaduki-buffer--set-height (height)
   "Set the height of the current window to HEIGHT."
   (unless (one-window-p)
     (let ((window-size-fixed)
           (h (max height window-min-height)))
       (enlarge-window (- h (window-height))))))
 
-(defun minaduki-buffer/activate ()
+(defun minaduki-buffer-activate ()
   "Activate display of the `minaduki-buffer'."
   (interactive)
   (setq minaduki--last-window (get-buffer-window))
   ;; Set up the window
-  (let ((position (if (functionp minaduki-buffer/position)
-                      (funcall minaduki-buffer/position)
-                    minaduki-buffer/position)))
+  (let ((position (if (functionp minaduki-buffer-position)
+                      (funcall minaduki-buffer-position)
+                    minaduki-buffer-position)))
     (save-selected-window
-      (-> (get-buffer-create minaduki-buffer/name)
+      (-> (get-buffer-create minaduki-buffer-name)
           (display-buffer-in-side-window
            `((side . ,position)
-             (window-parameters . ,minaduki-buffer/window-parameters)))
+             (window-parameters . ,minaduki-buffer-window-parameters)))
           (select-window))
       (pcase position
         ((or 'right 'left)
-         (minaduki-buffer//set-width
-          (round (* (frame-width)  minaduki-buffer/width))))
+         (minaduki-buffer--set-width
+          (round (* (frame-width)  minaduki-buffer-width))))
         ((or 'top  'bottom)
-         (minaduki-buffer//set-height
-          (round (* (frame-height) minaduki-buffer/height)))))))
+         (minaduki-buffer--set-height
+          (round (* (frame-height) minaduki-buffer-height)))))))
   ;; Set up the buffer
-  (with-current-buffer minaduki-buffer/name
+  (with-current-buffer minaduki-buffer-name
     (org-mode)
-    (minaduki-buffer/mode)))
+    (minaduki-buffer-mode)))
 
-(defun minaduki-buffer/deactivate ()
+(defun minaduki-buffer-deactivate ()
   "Deactivate display of the `minaduki-buffer'."
   (interactive)
   (setq minaduki--last-window (get-buffer-window))
-  (delete-window (get-buffer-window minaduki-buffer/name)))
+  (delete-window (get-buffer-window minaduki-buffer-name)))
 
-(defun minaduki-buffer/toggle-display ()
+(defun minaduki-buffer-toggle-display ()
   "Toggle display of the `minaduki-buffer'."
   (interactive)
-  (if (minaduki-buffer/visible?)
-      (minaduki-buffer/deactivate)
-    (minaduki-buffer/activate)))
+  (if (minaduki-buffer-visible?)
+      (minaduki-buffer-deactivate)
+    (minaduki-buffer-activate)))
 
 (provide 'minaduki-buffer)
 
