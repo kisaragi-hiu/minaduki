@@ -650,17 +650,19 @@ title) and author (declared as the \"author\" property), no lit entry is
 created.
 
 Return a `minaduki-lit/entry' object."
-  (let ((title (car (minaduki-extract/main-title)))
-        (author (car (minaduki--get-file-prop "author")))
-        sources)
-    (when (and title author)
-      (setq sources (mapcan #'minaduki--get-file-prop minaduki--source-keys))
+  (let* ((title (car (minaduki-extract/main-title)))
+         (author (car (minaduki--get-file-prop "author")))
+         (sources (and title author
+                       ;; perf: only do this if title and author are present
+                       (mapcan #'minaduki--get-file-prop minaduki--source-keys)))
+         (key (or (car (minaduki--get-file-prop "key"))
+                  (car sources))))
+    (when key
       (minaduki-lit/entry
        :author author
        :date (car (minaduki--get-file-prop "published"))
        :title title
-       :key (or (car (minaduki--get-file-prop "key"))
-                (car sources))
+       :key key
        :sources sources
        :tags (append
               (minaduki--get-file-prop "tags")
