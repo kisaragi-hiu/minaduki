@@ -1034,6 +1034,21 @@ Return the key."
 This first adds an entry for it into a file in
 `minaduki-lit/bibliography'."
   (interactive)
+  (minaduki/new-literature-note
+   (minaduki-lit/fetch-new-entry-from-url
+    (string-trim
+     (read-string "Create new literature entry for URL: ")))))
+
+;;;###autoload
+(defun minaduki/new-literature-note (&optional info)
+  "Create a new literature note.
+
+INFO is a plist for default values for its properties. Possible keys are
+`:title', `:url', `:author', and `:date'.
+
+This first adds an entry for it into a file in
+`minaduki-lit/bibliography'."
+  (interactive)
   (let* ((bibliographies (minaduki-lit-bibliography))
          (target-biblio
           (cond
@@ -1051,10 +1066,7 @@ This first adds an entry for it into a file in
                maybe-relative
                (minaduki-completion//mark-category it 'file)
                (completing-read "Which bibliography? " it nil t)
-               f-expand)))))
-         (info (minaduki-lit/fetch-new-entry-from-url
-                (string-trim
-                 (read-string "Create new literature entry for URL: ")))))
+               f-expand))))))
     ;; Use find-file to ensure we save into it
     (find-file target-biblio)
     (minaduki--file-type-case
