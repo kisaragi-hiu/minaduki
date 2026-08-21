@@ -657,7 +657,7 @@ Return a `minaduki-lit/entry' object."
                        (mapcan #'minaduki--get-file-prop minaduki--source-keys)))
          (key (or (car (minaduki--get-file-prop "key"))
                   (car sources))))
-    (when key
+    (when (and title author key)
       (minaduki-lit/entry
        :author author
        :date (car (minaduki--get-file-prop "published"))
