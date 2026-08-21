@@ -1078,7 +1078,8 @@ This first adds an entry for it into a file in
        (unless (eq ?\n (char-before))
          (insert "\n"))
        (let ((title (plist-get info :title)))
-         (when (string-blank-p title)
+         (when (or (eq title nil)
+                   (string-blank-p title))
            (setq title (read-string "Title: ")))
          ;; If it is still blank, set a reasonable default
          ;; (We do this since `read-string' would only use DEFAULT-VALUE when
