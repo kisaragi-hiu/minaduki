@@ -14,6 +14,26 @@
 (require 'minaduki-extract)
 (require 'minaduki-utils)
 
+(defmacro minaduki-db--with-error (error-msg &rest body)
+  "Run BODY and return its value.
+If an error occurs, emit ERROR-MSG as a warning with `minaduki--warn'.
+BODY can start with a plist, which would be passed into the warning call
+as a map argument."
+  (declare (indent 1))
+  (let (args)
+    (while (keywordp (car body))
+      (let ((key (pop body))
+            (value (pop body)))
+        (setq args (cl-list* key value args))))
+    `(condition-case e
+         (progn ,@body)
+       (error
+        ,(if args
+             `(minaduki--warn :error
+               (concat ,error-msg "\n%s")
+               (list ,@args :error e))
+           `(minaduki--warn :error ,error-msg))))))
+
 (defconst minaduki-db--version 19)
 (defconst minaduki-db--table-schemata
   '((files
@@ -254,7 +274,7 @@ If HASH is non-nil, assume that is the file's hash without recomputing it."
   "Extract a lit entry from the current note, if any, and insert it into the cache.
 If UPDATE-P is non-nil, first remove the entries from the file in the database."
   (cl-block nil
-    (let ((file (or minaduki--file-name (buffer-file-name)))
+    (let ((file (minaduki--current-file-name))
           (count 0))
       ;; entries
       (when-let* ((entry (minaduki-extract/note-lit-entry))
@@ -267,14 +287,16 @@ If UPDATE-P is non-nil, first remove the entries from the file in the database."
           (minaduki-db-execute
            "delete from \"keys\" where file = ? or key = ?"
            file key))
-        (cl-incf count)
-        (minaduki-db-insert
-         'keys
-         (list (vector (gethash "key" entry)
-                       file
-                       1
-                       entry))
-         "insert"))
+        (minaduki-db--with-error "Error while inserting note lit entry"
+          :file file
+          (minaduki-db-insert
+           'keys
+           (list (vector (gethash "key" entry)
+                         file
+                         1
+                         entry))
+           "insert")
+          (cl-incf count)))
       count)))
 (defun minaduki-db--insert-lit-entries (&optional update-p)
   "Update the lit-entries of the current bibliography buffer into the cache.
@@ -308,20 +330,15 @@ If UPDATE-P is non-nil, first remove the entries from the file in the database."
           (error
            (cl-loop for (point . entry) in entries
                     do
-                    (condition-case nil
-                        (minaduki-db-insert
+                    (minaduki-db--with-error "Malformed entry"
+                      :file file :key (gethash "key" entry) :point point
+                      (minaduki-db-insert
                          'keys
                          (list (vector (gethash "key" entry)
                                        file
                                        point
                                        entry))
-                         "insert or replace")
-                      (error (minaduki--warn
-                                 :error
-                               "Malformed entry. key: %s, point: %s, file: %s"
-                               (gethash "key" entry)
-                               point
-                               file)))))))
+                         "insert or replace"))))))
       count)))
 (defun minaduki-db--insert-refs (&optional update-p)
   "Insert the citekeys of the current buffer into the cache.
@@ -335,47 +352,46 @@ If UPDATE-P is non-nil, first remove the ref for the file in the database."
     (when-let ((refs (minaduki-extract/refs)))
       (let ((rows (cl-loop for (type . key) in refs
                            collect (vector key file type))))
-        (condition-case nil
-            (minaduki-db-insert 'refs rows)
-          (error
-           (minaduki--warn :error
-             "Cannot insert citekeys declared in %s; skipping"
-             file)))))
+        (minaduki-db--with-error "Cannot insert citekeys"
+          :file file
+          (minaduki-db-insert 'refs rows))))
     count))
 (defun minaduki-db--insert-links ()
   "Put links from the current buffer into the cache database.
 Existing cached link entries from the current buffer are removed
 Return the number of rows inserted."
-  (let ((file (minaduki--current-file-name)))
+  (let ((file (minaduki--current-file-name))
+        (count 0))
     (minaduki-db-execute
      "delete from \"links\" where source = ?"
      file)
     (let ((links (minaduki-extract/links)))
-      (minaduki-db-insert 'links links)
-      (length links))))
+      (minaduki-db--with-error "Error while inserting links"
+        :file file
+        (minaduki-db-insert 'links links)
+        (setq count (length links))))
+    count))
 (defun minaduki-db--insert-ids (&optional update-p)
   "Update the ids of the current buffer into the cache.
 If UPDATE-P is non-nil, first remove ids for the file in the database.
 Returns the number of rows inserted."
-  (let ((file (minaduki--current-file-name)))
+  (let ((file (minaduki--current-file-name))
+        (count 0))
     (when update-p
       (minaduki-db-execute
        "delete from \"ids\" where file = ?"
        file))
-    (if-let ((ids (-some->> (minaduki-extract/ids file)
-                    (--map (minaduki--object-to-vector it)))))
-        (condition-case nil
-            (progn
-              (minaduki-db-insert 'ids ids)
-              (length ids))
-          (error
-           (minaduki--warn :error
-             "Duplicate IDs in %s, one of:\n\n%s\n\nskipping..."
-             (aref (car ids) 1)
-             (string-join (mapcar (lambda (hl)
-                                    (aref hl 0)) ids) "\n"))
-           0))
-      0)))
+    (when-let* ((ids (-some->> (minaduki-extract/ids file)
+                       (--map (minaduki--object-to-vector it)))))
+      (minaduki-db--with-error (format "Duplicate IDs in %s, one of:\n%s"
+                                       (aref (car ids) 1)
+                                       (->> ids
+                                            (--map (aref it 0))
+                                            (s-join "\n")))
+        :file file
+        (minaduki-db-insert 'ids ids)
+        (setq count (length ids))))
+    count))
 
 ;; Fetching
 (defun minaduki-db--file-present? (file)
@@ -759,12 +775,9 @@ Returns a `minaduki-db--count' object."
                     (minaduki--with-temp-buffer file
                       (unless (member file bibliographies)
                         (minaduki-db--insert-meta nil contents-hash))
-                      (setq id-count
-                            (+ id-count
-                               (minaduki-db--insert-ids t))))
+                      (cl-incf id-count (minaduki-db--insert-ids t)))
                   (error
-                   (setq error-count
-                         (1+ error-count))
+                   (cl-incf error-count)
                    (minaduki-db--clear-file file)
                    (minaduki--warn :warning "Error processing metadata:\n%s"
                                    (list :file file :error e))))))))
@@ -775,19 +788,14 @@ Returns a `minaduki-db--count' object."
       (dolist (file files)
         (progress-reporter-update rep i (format "(%s/%s)" i len))
         (cl-incf i)
-        (condition-case e
-            (let ((inhibit-message t))
-              (minaduki--with-temp-buffer file
-                (setq modified-count (1+ modified-count))
-                (setq lit-count (+ lit-count (minaduki-db--insert-note-lit-entries t)))
-                (setq ref-count (+ ref-count (minaduki-db--insert-refs t)))
-                (setq link-count (+ link-count (minaduki-db--insert-links)))))
+        (condition-case nil
+            (minaduki--with-temp-buffer file
+              (cl-incf modified-count)
+              (cl-incf lit-count (minaduki-db--insert-note-lit-entries t))
+              (cl-incf ref-count (minaduki-db--insert-refs t))
+              (cl-incf link-count (minaduki-db--insert-links)))
           (error
-           (setq error-count (1+ error-count))
-           (minaduki-db--clear-file file)
-           (minaduki--warn :warning
-             "Error while processing links:\n%s"
-             (list :file file :error e)))))
+           (cl-incf error-count))))
       (progress-reporter-done rep))
     (minaduki-db--count :err error-count
                         :modified modified-count
