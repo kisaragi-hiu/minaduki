@@ -426,7 +426,8 @@ Return a list of `minaduki-id' objects."
                result))
        ;; Extract every other ID
        (let ((index-all (car (minaduki--get-file-prop "minaduki_index_all"))))
-         (when (string-match-p "^[0-9]+$" index-all)
+         (when (and (stringp index-all)
+                    (string-match-p "^[0-9]+$" index-all))
            (setq index-all (string-to-number index-all)))
          (org-map-region
           (lambda ()
