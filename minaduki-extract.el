@@ -430,7 +430,10 @@ Return a list of `minaduki-id' objects."
            (setq index-all (string-to-number index-all)))
          (org-map-region
           (lambda ()
-            (let ((id (org-entry-get nil "ID"))
+            (let ((id (or (org-entry-get nil "ID")
+                          ;; HACK: ID visiting uses the point position we've
+                          ;; stored, so this really can be anything.
+                          (org-entry-get nil "created")))
                   (level (org-outline-level)))
               (when (or id
                         (if (numberp index-all)
