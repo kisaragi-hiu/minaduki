@@ -391,14 +391,12 @@ headings with an ID are cached (extracted with
 (defun minaduki-extract--indexed-headings (&optional file-path)
   "Extract all indexed headings within the current buffer.
 
-Indexed headings are those with an ID. If the buffer has set the file
-prop MINADUKI_INDEX_ALL, then all headings will be indexed. (TODO: this
-only works for Org for now.)
+Indexed headings are those with an ID or those with a \"CREATED\" prop.
+If the buffer has set the file prop MINADUKI_INDEX_ALL, then all
+headings will be indexed. If that prop is a number, only headings up to
+that level will be indexed. (TODO: this only works for Org for now.)
 
 If FILE-PATH is nil, use the current file.
-
-If ALL-LEVEL is non-nil, all headings with an outline level at or under
-ALL-LEVEL will be indexed, regardless of whether they have an ID.
 
 Return a list of `minaduki-id' objects."
   (setq file-path (minaduki--current-file-name (list file-path)))
