@@ -358,7 +358,7 @@ in the buffer.
 
 Note that this is presently not used for DB caching. Only
 headings with an ID are cached (extracted with
-`minaduki-extract/ids')."
+`minaduki-extract--indexed-headings')."
   ;; TODO: cache all headings, even those without IDs.
   ;;
   ;; This requires minaduki-open to not assume that when the ID is nil, it's a
@@ -388,9 +388,18 @@ headings with an ID are cached (extracted with
         (point-min) (point-max))))
     (nreverse result)))
 
-(defun minaduki-extract/ids (&optional file-path)
-  "Extract all IDs within the current buffer.
+(defun minaduki-extract--indexed-headings (&optional file-path)
+  "Extract all indexed headings within the current buffer.
+
+Indexed headings are those with an ID. If the buffer has set the file
+prop MINADUKI_INDEX_ALL, then all headings will be indexed. (TODO: this
+only works for Org for now.)
+
 If FILE-PATH is nil, use the current file.
+
+If ALL-LEVEL is non-nil, all headings with an outline level at or under
+ALL-LEVEL will be indexed, regardless of whether they have an ID.
+
 Return a list of `minaduki-id' objects."
   (setq file-path (minaduki--current-file-name (list file-path)))
   (let (result)
@@ -408,24 +417,32 @@ Return a list of `minaduki-id' objects."
       (:org
        ;; Handle the file property drawer (outline level 0)
        (goto-char (point-min))
-       (when-let ((before-first-heading (= 0 (org-outline-level)))
-                  (id (org-entry-get nil "ID")))
+       (when-let* ((before-first-heading (= 0 (org-outline-level)))
+                   (id (org-entry-get nil "ID")))
          (push (minaduki-id :id id
                             :file file-path
                             :level 0
                             :point (point))
                result))
        ;; Extract every other ID
-       (org-map-region
-        (lambda ()
-          (when-let ((id (org-entry-get nil "ID")))
-            (push (minaduki-id :id id
-                               :file file-path
-                               :level (org-outline-level)
-                               :title (org-entry-get nil "ITEM")
-                               :point (point))
-                  result)))
-        (point-min) (point-max))))
+       (let ((index-all (car (minaduki--get-file-prop "minaduki_index_all"))))
+         (when (string-match-p "^[0-9]+$" index-all)
+           (setq index-all (string-to-number index-all)))
+         (org-map-region
+          (lambda ()
+            (let ((id (org-entry-get nil "ID"))
+                  (level (org-outline-level)))
+              (when (or id
+                        (if (numberp index-all)
+                            (<= level index-all)
+                          index-all))
+                (push (minaduki-id :id id
+                                   :file file-path
+                                   :level level
+                                   :title (org-entry-get nil "ITEM")
+                                   :point (point))
+                      result))))
+          (point-min) (point-max)))))
     result))
 
 (defun minaduki-extract/main-title ()

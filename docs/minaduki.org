@@ -152,7 +152,7 @@ A /literature note/ is one that is associated with a literature entry. A literat
 
   Ask for a URL, then automatically create a literature entry for it along with its associated literature note.
 
-** Keywords
+** Keywords / File properties
 *** How keywords are specified
 
 In Markdown, keywords are specified in YAML front matter. There is no special treatment for plural noun keys — yes, “aliases” is a better key for a list of aliases, but that complicates things somewhat as the same keywords have to work in Org.
@@ -173,6 +173,7 @@ In Org, keywords are specified using =#+KEYWORD: VALUE=. Multiple occurrences of
 - alias :: an alternative title.
 - key :: a unique identifier for this file. Could be a link or any other ID. This is used to associate bibliography items with note files, as well as for citation backlinks.
 - (to be renamed) =roam_tags= :: a list of tags.
+- minaduki_index_all :: if a number, index every heading at or below this outline level. If set to anything else, then index every heading.
 
 ** Bibliography management
 

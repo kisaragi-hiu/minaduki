@@ -371,8 +371,9 @@ Return the number of rows inserted."
         (minaduki-db-insert 'links links)
         (setq count (length links))))
     count))
-(defun minaduki-db--insert-ids (&optional update-p)
-  "Update the ids of the current buffer into the cache.
+(defun minaduki-db--insert-headings (&optional update-p)
+  "Insert indexed headings of the current buffer into the cache.
+Indexed headings are those with IDs.
 If UPDATE-P is non-nil, first remove ids for the file in the database.
 Returns the number of rows inserted."
   (let ((file (minaduki--current-file-name))
@@ -381,7 +382,7 @@ Returns the number of rows inserted."
       (minaduki-db-execute
        "delete from \"ids\" where file = ?"
        file))
-    (when-let* ((ids (-some->> (minaduki-extract/ids file)
+    (when-let* ((ids (-some->> (minaduki-extract--indexed-headings file)
                        (--map (minaduki--object-to-vector it)))))
       (minaduki-db--with-error (format "Duplicate IDs in %s, one of:\n%s"
                                        (aref (car ids) 1)
@@ -775,7 +776,7 @@ Returns a `minaduki-db--count' object."
                     (minaduki--with-temp-buffer file
                       (unless (member file bibliographies)
                         (minaduki-db--insert-meta nil contents-hash))
-                      (cl-incf id-count (minaduki-db--insert-ids t)))
+                      (cl-incf id-count (minaduki-db--insert-headings t)))
                   (error
                    (cl-incf error-count)
                    (minaduki-db--clear-file file)

@@ -549,7 +549,7 @@ members that should be equal."
   ;; IDs
   (it "extracts ids"
     (expect (test-in-file "headlines/headline.org"
-              (minaduki-extract/ids fname))
+              (minaduki-extract--indexed-headings fname))
             :to-have-same-items-as
             (list (minaduki-id :id "e84d0630-efad-4017-9059-5ef917908823"
                                :file (test-minaduki--abs-path "headlines/headline.org")
