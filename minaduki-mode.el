@@ -208,7 +208,7 @@ updated. Else, update with NEW-DESC."
             type)))))
     (:org
      (let (label new-label)
-       (when-let (link (minaduki--link-org--parse))
+       (-when-let (link (minaduki--link-org--parse))
          (when (and (equal (expand-file-name (oref link to))
                            old-path)
                     (org-in-regexp org-link-bracket-re 1))
@@ -242,7 +242,7 @@ update with NEW-DESC."
            nil t)
      (save-excursion
        (goto-char (match-beginning 0))
-       (when-let ((link (save-match-data (minaduki--get-link-replacement old-path new-path old-desc new-desc))))
+       (-when-let (link (save-match-data (minaduki--get-link-replacement old-path new-path old-desc new-desc)))
          (replace-match link))))))
 
 ;; TODO: markdown

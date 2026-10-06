@@ -17,17 +17,25 @@
 (defmacro minaduki-db--with-error (error-msg &rest body)
   "Run BODY and return its value.
 If an error occurs, emit ERROR-MSG as a warning with `minaduki--warn'.
-BODY can start with a plist, which would be passed into the warning call
-as a map argument."
+BODY can start with a plist. Apart from some specific keys, other keys
+would be passed into the warning call as a map argument.
+Special keys:
+- :on-error - form to run on error before sending the warning message"
   (declare (indent 1))
-  (let (args)
+  (let (args on-error)
     (while (keywordp (car body))
       (let ((key (pop body))
             (value (pop body)))
-        (setq args (cl-list* key value args))))
+        (cl-case key
+          (:on-error (setq on-error value))
+          (t (setq args (cl-list* key value args))))))
     `(condition-case e
          (progn ,@body)
        (error
+        ;; Splice it but only when it's nil
+        ,@(if on-error
+              (list on-error)
+            nil)
         ,(if args
              `(minaduki--warn :error
                (concat ,error-msg "\n%s")
@@ -349,7 +357,7 @@ If UPDATE-P is non-nil, first remove the ref for the file in the database."
       (minaduki-db-execute
        "delete from \"refs\" where file = ?"
        file))
-    (when-let ((refs (minaduki-extract/refs)))
+    (-when-let (refs (minaduki-extract/refs))
       (let ((rows (cl-loop for (type . key) in refs
                            collect (vector key file type))))
         (minaduki-db--with-error "Cannot insert citekeys"
@@ -382,8 +390,8 @@ Returns the number of rows inserted."
       (minaduki-db-execute
        "delete from \"ids\" where file = ?"
        file))
-    (when-let* ((ids (-some->> (minaduki-extract--indexed-headings file)
-                       (--map (minaduki--object-to-vector it)))))
+    (-when-let (ids (-some->> (minaduki-extract--indexed-headings file)
+                      (--map (minaduki--object-to-vector it))))
       (minaduki-db--with-error (format "Duplicate IDs in %s, one of:\n%s"
                                        (aref (car ids) 1)
                                        (->> ids
@@ -748,7 +756,7 @@ Returns a `minaduki-db--count' object."
     ;; also be tracked.
     (minaduki--message "Processing bibliographies...")
     (--each (minaduki-lit-bibliography)
-      (when-let ((contents-hash (gethash it files-table)))
+      (-when-let (contents-hash (gethash it files-table))
         (condition-case nil
             (minaduki--with-temp-buffer it
               ;; We need the files to be in the files table first
@@ -772,16 +780,15 @@ Returns a `minaduki-db--count' object."
               (progress-reporter-update rep i (format "(%s/%s)" i len))
               (cl-incf i)
               (let ((inhibit-message t))
-                (condition-case e
-                    (minaduki--with-temp-buffer file
-                      (unless (member file bibliographies)
-                        (minaduki-db--insert-meta nil contents-hash))
-                      (cl-incf id-count (minaduki-db--insert-headings t)))
-                  (error
-                   (cl-incf error-count)
-                   (minaduki-db--clear-file file)
-                   (minaduki--warn :warning "Error processing metadata:\n%s"
-                                   (list :file file :error e))))))))
+                (minaduki-db--with-error "Error processing metadata"
+                  :file file
+                  :on-error (progn
+                              (cl-incf error-count)
+                              (minaduki-db--clear-file file))
+                  (minaduki--with-temp-buffer file
+                    (unless (member file bibliographies)
+                      (minaduki-db--insert-meta nil contents-hash))
+                    (cl-incf id-count (minaduki-db--insert-headings t))))))))
       (progress-reporter-done rep))
     ;; Process links and ref / cite links
     (let ((i 1)

@@ -417,7 +417,7 @@ next time USE-CACHE is nil again."
           (key (and use-cache (list path vault)))
           value)
       (when use-cache
-        (when-let (cached-value (gethash key minaduki-vault-path-relative--cache))
+        (-when-let (cached-value (gethash key minaduki-vault-path-relative--cache))
           (cl-return cached-value)))
       ;; A short common parent means forcing PATH to be relative to vault-path
       ;; might just end up pointing all the way back to root. Leave it as-is in

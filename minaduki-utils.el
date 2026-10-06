@@ -564,7 +564,7 @@ If CACHED is non-nil, use a memoized cache. If not, clear it."
     ;; if not using cache, clear the cache
     (if cached
         (if minaduki--content-hash-cache
-            (when-let (cached-value (gethash file minaduki--content-hash-cache))
+            (-when-let (cached-value (gethash file minaduki--content-hash-cache))
               (cl-return cached-value))
           (setq minaduki--content-hash-cache (make-hash-table :test #'equal)))
       (when minaduki--content-hash-cache

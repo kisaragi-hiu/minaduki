@@ -100,9 +100,9 @@ string, the entire string is treated as the content."
      ;; Files have priority
      (and (not has-colon)
           (let ((files (minaduki-templates--list-files t)))
-            (when-let (file (or (--first (equal name it) files)
-                                (--first (equal name (f-filename it)) files)
-                                (--first (equal name (f-base it)) files)))
+            (-when-let (file (or (--first (equal name it) files)
+                                 (--first (equal name (f-filename it)) files)
+                                 (--first (equal name (f-base it)) files)))
               (minaduki--with-temp-buffer file
                 (let ((frontmatter-region (minaduki--find-front-matter)))
                   (if frontmatter-region
@@ -120,9 +120,9 @@ string, the entire string is treated as the content."
                                                   (point-min) (point-max)))))))))
      ;; Then `minaduki-templates-alist', using the same matching logic
      (let ((templates minaduki-templates-alist))
-       (when-let (pair (or (--first (equal name (car it)) templates)
-                           ;; second case above is not applicable
-                           (--first (equal name (f-base (car it))) templates)))
+       (-when-let (pair (or (--first (equal name (car it)) templates)
+                            ;; second case above is not applicable
+                            (--first (equal name (f-base (car it))) templates)))
          (cdr pair))))))
 
 (cl-defun minaduki-templates-read (prompt &key all return-content)

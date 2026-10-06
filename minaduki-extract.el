@@ -198,7 +198,7 @@ Assume links come from FILE-FROM."
                      (names (pcase type
                               ("id"
                                ;; The cache is not available yet
-                               (when-let ((file-from (minaduki-extract//id-file path)))
+                               (-when-let (file-from (minaduki-extract//id-file path))
                                  (list file-from)))
                               ("cite" (list path))
                               ("website" (list path))
@@ -516,9 +516,9 @@ Return a list of `minaduki-id' objects."
 
 This only considers the \"modified\", \"created\", or \"date\"
 properties, and does not consider the modification time of the file."
-  (when-let ((timestamps (or (minaduki--get-file-prop "modified")
+  (-when-let (timestamps (or (minaduki--get-file-prop "modified")
                              (minaduki--get-file-prop "created")
-                             (minaduki--get-file-prop "date"))))
+                             (minaduki--get-file-prop "date")))
     (car timestamps)))
 
 (defun minaduki-extract/titles ()
@@ -720,7 +720,7 @@ In Org mode, the keys are specified with the #+KEY keyword."
               (f-filename
                (minaduki--current-file-name))))
            (ref
-            (when-let ((r (minaduki-extract//process-ref ref)))
+            (-when-let (r (minaduki-extract//process-ref ref))
               (push r refs)))))
        refs))
     (:markdown

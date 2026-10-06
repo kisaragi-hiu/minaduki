@@ -8,3 +8,10 @@ Right now I'm moving towards:
 - Everything should be private by default
 - Try to add a =-org= or =-markdown= if a function is specific to that format
 - Advices and hooks: prefix =a-= for advices, =h-= for hook functions
+
+* when-let
+Use =-when-let*= if destructuring, even if there is only one variable. =(-when-let ((a) b))= looks too much like binding both a and b to nil, instead of destructuring b as a list and setting a to the first element.
+
+Use =-when-let= when there is only one variable. =when-let*= expands to =let*= which is different and annoying even though it works just fine. Yes, I am salty that core Elisp cares less about compatibility than Dash does. =-zip= was deprecated for a good reason (unclear if you want a list or a pair with two entries). What problem did =when-let= cause?
+
+Use =when-let*= when there are multiple variables.

@@ -111,7 +111,7 @@ If there is no corresponding headline, return nil."
   (save-excursion
     (minaduki--with-file file 'keep
       (let ((headlines (minaduki-wikilink--get-headlines file 'with-markers)))
-        (when-let ((marker (cdr (assoc-string headline headlines))))
+        (-when-let (marker (cdr (assoc-string headline headlines)))
           (goto-char marker)
           (cons marker
                 (when minaduki-wikilink-auto-replace

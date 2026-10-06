@@ -79,7 +79,7 @@ before the matching options. Put `-maxdepth' here, for example."
                "File finder for finding files based on TAG."
                (let ((rest ""))
                  (when split-path
-                   `((when-let ((first-slash-index (cl-position ?/ tag)))
+                   `((-when-let (first-slash-index (cl-position ?/ tag))
                        (setq rest (substring tag (1+ first-slash-index))
                              tag (substring tag 0 first-slash-index)))))
                  (when (eq match-type 'regex)
@@ -137,8 +137,8 @@ A resource can have the following properties:
       ;; this does expand to a maphash.
       (cl-loop
        for key being the hash-keys of resources using (hash-values resource)
-       do (when-let (path (minaduki-resources--path
-                           (map-elt resource 'path)))
+       do (-when-let (path (minaduki-resources--path
+                            (map-elt resource 'path)))
             (let ((regexp
                    (-some--> (map-elt resource 'regexp)
                      ;; this eval is to allow writing rx.
@@ -182,10 +182,10 @@ VALUE can be:
       (cl-return value))
     (when (not (hash-table-p value))
       (cl-return nil))
-    (when-let (join (map-elt value 'join))
+    (-when-let (join (map-elt value 'join))
       (cl-return
        (ignore-errors (apply #'f-join (mapcar #'minaduki-resources--path join)))))
-    (when-let (variable (map-elt value 'variable))
+    (-when-let (variable (map-elt value 'variable))
       (let ((resolved (ignore-errors
                         (symbol-value
                          (intern variable)))))

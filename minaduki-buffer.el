@@ -151,8 +151,8 @@ This function hooks into `org-open-at-point' via `org-open-at-point-functions'."
         (minaduki-buffer--find-file path)
         t)))
    ;; Backlinks context
-   ((when-let ((file-from (get-text-property (point) 'file-from))
-               (p (get-text-property (point) 'file-from-point)))
+   ((when-let* ((file-from (get-text-property (point) 'file-from))
+                (p (get-text-property (point) 'file-from-point)))
       (minaduki-buffer--find-file file-from)
       (goto-char p)
       t))
@@ -365,7 +365,7 @@ Tags are shown for each entry, except for those in
 
 Links in titles are removed."
   (let (props file-from)
-    (when-let* ((backlink-groups (--group-by (nth 0 it) backlinks)))
+    (-when-let (backlink-groups (--group-by (nth 0 it) backlinks))
       ;; The heading
       (insert (let ((l (length backlinks)))
                 (format "\n\n* %d %s"
@@ -399,7 +399,7 @@ Links in titles are removed."
                          (minaduki-buffer-expand-links it file-from)
                          (format "Top › %s" it))
                        "Top")))
-          (when-let ((content (plist-get prop :content)))
+          (-when-let (content (plist-get prop :content))
             (insert
              (--> (minaduki-buffer-expand-links content file-from)
                   s-trim

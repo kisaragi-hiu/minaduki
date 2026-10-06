@@ -295,8 +295,8 @@ REPLACE-REGION?: whether to replace selected text."
 (defun minaduki-move-file-to-directory ()
   "Move the current file to a new directory."
   (interactive)
-  (-when-let* ((file (minaduki--current-file-name))
-               (vault (minaduki-vault-closest)))
+  (when-let* ((file (minaduki--current-file-name))
+              (vault (minaduki-vault-closest)))
     (let* ((newdir (read-directory-name
                     "Move current file to directory: "
                     vault nil t))
@@ -843,10 +843,10 @@ This function hooks into `org-open-at-point' via
                      (minaduki--warn :warning
                        "Could not find the literature entry %s" citekey)
                      (make-hash-table :test #'equal))))
-      (when-let (key (gethash "key" props))
+      (-when-let (key (gethash "key" props))
         (puthash "=key=" key props)
         (remhash "key" props))
-      (when-let (type (gethash "type" props))
+      (-when-let (type (gethash "type" props))
         (puthash "=type=" type props)
         (remhash "type" props))
       (setq props (map-into props 'alist))

@@ -45,7 +45,7 @@ If region isn\\='t active, do it for the current line only."
 (defun minaduki-embed-links--add-title-to-url-at-point (&optional sync)
   "Fetch the title of the URL at point, then write it in.
 If SYNC is non-nil, do this synchronously."
-  (when-let ((bounds (bounds-of-thing-at-point 'url)))
+  (-when-let (bounds (bounds-of-thing-at-point 'url))
     (let* ((start (car bounds))
            (end (cdr bounds))
            (url (string-trim

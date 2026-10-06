@@ -140,7 +140,7 @@ CONTEXT keys:
     ;; This is needed to accept non-ASCII domain names
     (setq url-parsed (url-generic-parse-url url))
     (setf (url-host url-parsed) (puny-encode-domain (url-host url-parsed)))
-    (when-let ((buf (url-retrieve-synchronously url-parsed :silent)))
+    (-when-let (buf (url-retrieve-synchronously url-parsed :silent))
       ;; Extract the DOM first
       (with-current-buffer buf
         (decode-coding-region (point-min) (point-max) 'utf-8)
@@ -278,7 +278,7 @@ like `minaduki-lit/entry' objects."
                      ;; entries with only a URL and no CUSTOM_ID.
                      (and (member "url" (map-keys props))
                           (setq url-as-key t)))
-             (when-let (tags (org-get-tags))
+             (-when-let (tags (org-get-tags))
                (push (cons "tags" (vconcat tags)) props))
              (dolist (pair props)
                ;; Clear all text properties
@@ -290,23 +290,23 @@ like `minaduki-lit/entry' objects."
                ;;
                ;; Leave the "type" open to other arbitrary purposes.
                (unless (member (car pair) '("type"))
-                 (when-let (new (cdr
-                                 (assoc (car pair)
-                                        ;; Key replacements
-                                        ;; (ORG_PROP . KEY)
-                                        `(("category" . "type")
-                                          (,minaduki-lit/key-prop . "key")
-                                          ,@(and url-as-key
-                                                 `(("url" . "key")))
-                                          ("item" . "title")))))
+                 (-when-let (new (cdr
+                                  (assoc (car pair)
+                                         ;; Key replacements
+                                         ;; (ORG_PROP . KEY)
+                                         `(("category" . "type")
+                                           (,minaduki-lit/key-prop . "key")
+                                           ,@(and url-as-key
+                                                  `(("url" . "key")))
+                                           ("item" . "title")))))
                    (setcar pair new))))
              ;; Collect various props into "sources"
              (let (sources)
                (dolist (k '("link" "url" "sources"))
-                 (when-let (pair (assoc k props))
+                 (-when-let (pair (assoc k props))
                    (push (cdr pair)
                          sources)))
-               (when-let (pair (assoc "doi" props))
+               (-when-let (pair (assoc "doi" props))
                  (push (concat "https://doi.org/" (cdr pair))
                        sources))
                (when sources
@@ -415,13 +415,13 @@ Return a list of entries."
                       ('id (cons "key" value))
                       (_ (cons (format "%s" field) value)))))
         (let (sources)
-          (when-let (pair (assoc "link" item))
+          (-when-let (pair (assoc "link" item))
             (push (cdr pair)
                   sources))
-          (when-let (pair (assoc "url" item))
+          (-when-let (pair (assoc "url" item))
             (push (cdr pair)
                   sources))
-          (when-let (pair (assoc "doi" item))
+          (-when-let (pair (assoc "doi" item))
             (push (concat "https://doi.org/" (cdr pair))
                   sources))
           (when sources
