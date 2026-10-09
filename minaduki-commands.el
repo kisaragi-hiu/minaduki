@@ -794,9 +794,16 @@ one."
   (let ((path (oref entry path))
         (title (oref entry title)))
     (cond ((oref entry new?)
-           (minaduki/new-concept-note
-            :title title
-            :visit? t))
+           ;; we use f-n-d here to figure out if the title has a directory in
+           ;; it, because f-dirname would return ./ in that case
+           (if (file-name-directory title)
+               (minaduki/new-concept-note
+                :title (f-filename title)
+                :dir (f-dirname title)
+                :visit? t)
+             (minaduki/new-concept-note
+              :title title
+              :visit? t)))
           ((oref entry id)
            (minaduki/open-id (oref entry id)))
           (t
