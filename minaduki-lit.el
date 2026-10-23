@@ -213,7 +213,7 @@ CONTEXT keys:
                                         (string-match-p
                                          (rx bos
                                              (opt "og:")
-                                             (* any)
+                                             (* nonl)
                                              (or
                                               "published_time"
                                               "release_date")

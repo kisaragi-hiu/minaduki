@@ -294,7 +294,7 @@ are returned."
                  ;; path line
                  ((rx bos
                       "[0m[32m"
-                      (let relpath (* any))
+                      (let relpath (* nonl))
                       "[0m")
                   (let ((path (f-expand relpath)))
                     (minaduki--set-buffer-substring start end
@@ -316,12 +316,12 @@ are returned."
                       ;; Case in point: look at the diff for these
                       ;; lines with a tool that isn't Emacs.
                       "\x1b[0m\x1b[34m"
-                      (let ln (*? any))
+                      (let ln (*? nonl))
                       "\x1b[0m" ":"
                       "\x1b[0m\x1b[33m"
-                      (let col (*? any))
+                      (let col (*? nonl))
                       "\x1b[0m" ":"
-                      (let context (* any)))
+                      (let context (* nonl)))
                   (minaduki--set-buffer-substring start end
                     (prin1-to-string
                      (list :line ln :column col

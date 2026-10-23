@@ -119,7 +119,7 @@ This considers:
          (diary-file-list
           (directory-files
            minaduki/diary-directory :full
-           (format (rx bos "%s" (0+ any) ".org")
+           (format (rx bos "%s" (0+ nonl) ".org")
                    day)
            :nosort))
          (file-list (append modified-file-list diary-file-list)))

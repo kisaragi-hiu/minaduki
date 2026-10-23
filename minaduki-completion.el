@@ -43,7 +43,7 @@ in with this to mimick `org-read-property-value'\\='s behavior
 when a value is already present."
   ;; Mimick `org-read-property-value' on its prompt display for the default
   ;; value.
-  (when (and def (string-match (rx (group (* any))
+  (when (and def (string-match (rx (group (* nonl))
                                    ":" (opt " ") eol)
                                prompt))
     ;; We don't want to mutate the input, but this just changes the local
