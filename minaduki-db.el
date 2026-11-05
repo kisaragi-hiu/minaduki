@@ -611,9 +611,7 @@ If UNDER-PATH is non-nil, only return nodes that are under it."
         (push (minaduki-node
                :id id
                :path file
-               :title (format "%s/%s"
-                              (car (minaduki-db--parse-value file-titles))
-                              title)
+               :title title
                :tags nil
                :meta (minaduki-db--parse-value meta))
               rows)))
