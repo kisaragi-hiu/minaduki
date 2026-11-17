@@ -531,8 +531,8 @@ When NOCASE? is non-nil, match case-insentively.
   (let ((candidates
          (minaduki-db-select
           `("SELECT file, tags FROM files"
-            ,(format "WHERE tags LIKE '%s'"
-                     (concat "%" tag "%"))))))
+            "WHERE tags LIKE ?")
+          (concat "%" tag "%"))))
     (cl-loop for cand in candidates
              when (member tag (minaduki-db--parse-value (cadr cand)))
              collect (car cand))))
@@ -546,15 +546,17 @@ correspond to the TO field in the cache DB."
   (let ((conditions
          ;; '("dest = 'target1'" "OR" "dest = 'target2'" "OR" ...)
          (--> targets
-              (--map (format "dest = '%s'" it) it)
+              (--map "dest = ?" it)
               (-interpose "OR" it))))
     (--map
      (-let (((source dest props) it))
        (list source dest (minaduki-db--parse-value props)))
-     (minaduki-db-select
+     (apply
+      #'minaduki-db-select
       `("SELECT DISTINCT source, dest, props FROM links"
         "WHERE" ,@conditions
-        "ORDER BY source ASC")))))
+        "ORDER BY source ASC")
+      targets))))
 (defun minaduki-db--fetch-file-hash (&optional file)
   "Fetch the hash of FILE as stored in the cache."
   (setq file (or file (buffer-file-name (buffer-base-buffer))))
