@@ -630,6 +630,7 @@ If FILE, set `minaduki--file-name' and variable
            ,@(when file
                `((insert-file-contents ,file)))
            (set-auto-mode)
+           (minaduki--set-up-link-abbrev :cache)
            ,@body)))))
 
 (defmacro minaduki--lambda-self (args &rest body)
