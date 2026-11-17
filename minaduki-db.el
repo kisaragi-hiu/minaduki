@@ -544,7 +544,7 @@ correspond to the TO field in the cache DB."
   (unless (listp targets)
     (setq targets (list targets)))
   (let ((conditions
-         ;; '("dest = 'target1'" "OR" "dest = 'target2'" "OR" ...)
+         ;; '("dest = ?" "OR" "dest = ?" "OR" ...)
          (--> targets
               (--map "dest = ?" it)
               (-interpose "OR" it))))
