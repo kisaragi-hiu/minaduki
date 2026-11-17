@@ -199,13 +199,21 @@ checks are performed as to whether MODE is valid."
 If SQL is a list, join them with newlines."
   (when (listp sql)
     (setq sql (string-join sql "\n")))
-  (sqlite-execute (minaduki-db) sql args))
+  (condition-case e
+      (sqlite-execute (minaduki-db) sql args)
+    (sqlite-error
+     (minaduki--message "sqlite error; sql: %S, args: %S" sql args)
+     (signal e))))
 (defun minaduki-db-select (sql &rest args)
   "Run `sqlite-select' with SQL and ARGS on the cache database.
 If SQL is a list, join them with newlines."
   (when (listp sql)
     (setq sql (string-join sql "\n")))
-  (sqlite-select (minaduki-db) sql args))
+  (condition-case e
+      (sqlite-select (minaduki-db) sql args)
+    (sqlite-error
+     (minaduki--message "sqlite error; sql: %S, args: %S" sql args)
+     (signal e))))
 
 (defun minaduki-db--initialized? ()
   "Return whether the cache database has been initialized."
