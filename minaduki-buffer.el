@@ -574,11 +574,13 @@ what."
   "Display a buffer containing backlinks of the current buffer.
 Unlike `minaduki-buffer-activate', this is fixed and not dynamically updated."
   (interactive)
-  (with-current-buffer
-      (pop-to-buffer (get-buffer-create (format "*minaduki backlinks: %s*" (buffer-name))))
-    (org-mode)
-    (minaduki-buffer-mode)
-    (minaduki-buffer-update (current-buffer))))
+  (let ((buffer (get-buffer-create (format "*minaduki backlinks: %s*" (buffer-name)))))
+    (with-current-buffer (pop-to-buffer buffer)
+      (org-mode)
+      (minaduki-buffer-mode)
+      (setq revert-buffer-function (lambda (&rest _)
+                                     (minaduki-buffer-update buffer)))
+      (minaduki-buffer-update (current-buffer)))))
 
 (defun minaduki-buffer-activate ()
   "Activate display of the `minaduki-buffer'."
