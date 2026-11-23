@@ -579,8 +579,10 @@ Unlike `minaduki-buffer-activate', this is fixed and not dynamically updated."
       (org-mode)
       (minaduki-buffer-mode)
       (setq revert-buffer-function (lambda (&rest _)
-                                     (minaduki-buffer-update buffer)))
-      (minaduki-buffer-update (current-buffer)))))
+                                     (minaduki-buffer-update buffer)
+                                     (goto-char (point-min))))
+      (minaduki-buffer-update (current-buffer))
+      (goto-char (point-min)))))
 
 (defun minaduki-buffer-activate ()
   "Activate display of the `minaduki-buffer'."
