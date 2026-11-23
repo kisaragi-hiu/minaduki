@@ -203,12 +203,14 @@ This function hooks into `org-open-at-point' via `org-open-at-point-functions'."
 
 (defun minaduki-buffer--restore-point ()
   "Restore last visited point in backlinks buffer for this file."
-  (with-selected-window (get-buffer-window minaduki-buffer-name)
-    (let ((saved-point (gethash (buffer-file-name minaduki-buffer--current)
-                                minaduki-buffer--point-map)))
-      (when (and (integerp saved-point)
-                 (<= (point-min) saved-point (point-max)))
-        (goto-char saved-point)))))
+  (let ((window (get-buffer-window minaduki-buffer-name)))
+    (when (window-live-p window)
+      (with-selected-window window
+        (let ((saved-point (gethash (buffer-file-name minaduki-buffer--current)
+                                    minaduki-buffer--point-map)))
+          (when (and (integerp saved-point)
+                     (<= (point-min) saved-point (point-max)))
+            (goto-char saved-point)))))))
 
 ;;;; Inserting backlinks
 
@@ -573,7 +575,7 @@ what."
 Unlike `minaduki-buffer-activate', this is fixed and not dynamically updated."
   (interactive)
   (with-current-buffer
-      (get-buffer-create (format "*minaduki backlinks: %s*" (buffer-name)))
+      (pop-to-buffer (get-buffer-create (format "*minaduki backlinks: %s*" (buffer-name))))
     (org-mode)
     (minaduki-buffer-mode)
     (minaduki-buffer-update (current-buffer))))
