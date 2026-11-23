@@ -72,7 +72,7 @@ before the matching options. Put `-maxdepth' here, for example."
                                 ('regex '("-regextype" "emacs" "-regex"))
                                 ('nil nil)
                                 (_ (list (concat "-" (symbol-name match-type))))))
-                  (extra-args ,extra-args))
+                  (extra-args (--map (format "%s" it) ,extra-args)))
              (defvar ,cache-sym nil)
              (cl-pushnew ',cache-sym minaduki-file-finders-cache-vars)
              (defun ,name (tag)
