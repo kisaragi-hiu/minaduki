@@ -126,7 +126,7 @@ For example: (setq minaduki-buffer-window-parameters \\='((no-other-window . t))
         (progn (with-selected-window last-window
                  (find-file file))
                (select-window last-window))
-      (find-file file))))
+      (find-file-other-window file))))
 
 (defun minaduki-buffer--insert-title ()
   "Insert the minaduki-buffer title."
