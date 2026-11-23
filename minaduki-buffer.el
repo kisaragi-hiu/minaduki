@@ -487,12 +487,13 @@ ORIG-PATH is the path where the CONTENT originated."
                          nil t nil 2))))
     (buffer-string)))
 
-(defun minaduki-buffer-update ()
-  "Render the backlinks buffer."
+(defun minaduki-buffer-update (&optional alt-buffer)
+  "Render the backlinks buffer.
+If ALT-BUFFER is non-nil, render that buffer instead."
   (interactive)
   (minaduki-db--ensure-built)
   (let* ((source-org-directory org-directory))
-    (with-current-buffer minaduki-buffer-name
+    (with-current-buffer (or alt-buffer minaduki-buffer-name)
       ;; When dir-locals.el is used to override org-directory,
       ;; minaduki-buffer should have a different local org-directory and
       ;; default-directory, as relative links are relative from the overridden
@@ -566,6 +567,16 @@ what."
     (let ((window-size-fixed)
           (h (max height window-min-height)))
       (enlarge-window (- h (window-height))))))
+
+(defun minaduki-backlinks ()
+  "Display a buffer containing backlinks of the current buffer.
+Unlike `minaduki-buffer-activate', this is fixed and not dynamically updated."
+  (interactive)
+  (with-current-buffer
+      (get-buffer-create (format "*minaduki backlinks: %s*" (buffer-name)))
+    (org-mode)
+    (minaduki-buffer-mode)
+    (minaduki-buffer-update (current-buffer))))
 
 (defun minaduki-buffer-activate ()
   "Activate display of the `minaduki-buffer'."
