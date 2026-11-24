@@ -574,14 +574,17 @@ what."
   "Display a buffer containing backlinks of the current buffer.
 Unlike `minaduki-buffer-activate', this is fixed and not dynamically updated."
   (interactive)
-  (let ((buffer (get-buffer-create (format "*minaduki backlinks: %s*" (buffer-name)))))
-    (with-current-buffer (pop-to-buffer buffer)
+  (let ((note-buf (current-buffer))
+        (backlinks-buf (get-buffer-create (format "*minaduki backlinks: %s*" (buffer-name)))))
+    (with-current-buffer (pop-to-buffer backlinks-buf)
       (org-mode)
       (minaduki-buffer-mode)
       (setq revert-buffer-function (lambda (&rest _)
-                                     (minaduki-buffer-update buffer)
+                                     (let ((minaduki-buffer--current note-buf))
+                                       (minaduki-buffer-update backlinks-buf))
                                      (goto-char (point-min))))
-      (minaduki-buffer-update (current-buffer))
+      (let ((minaduki-buffer--current note-buf))
+        (minaduki-buffer-update backlinks-buf))
       (goto-char (point-min)))))
 
 (defun minaduki-buffer-activate ()
